@@ -4,14 +4,15 @@ This describes what was actually built. It implements the decisions in
 [`../Plan.md`](../Plan.md) sections 3–6; read that first for the *why*.
 
 **Stack note (Plan §2).** HTTP is Fastify 5. Runtime SQL and the transaction
-boundary are Kysely. Plan §2 designates Prisma as the schema/migration owner
-with types flowing Prisma → Kysely. **Half done:** Prisma now owns the schema
-*definition* — `prisma/schema/*.prisma` models mirror every table, and
-`prisma-kysely` generates `core/kernel/db/schema.ts` (`npm run db:generate`).
-Migrations are *still* Kysely's migrator (`core/kernel/db/migrator.ts` +
-`migrations-manifest.ts`, module-owned files under `core/<module>/migrations/`);
-swapping it for `prisma migrate deploy` is the remaining step. See
-`integration-guide.md` and `prisma/README.md`.
+boundary are Kysely. **Prisma owns the schema definition and the migration
+history**, with types flowing Prisma → Kysely (Prisma Client is never
+generated): `prisma/schema/*.prisma` models mirror every table,
+`prisma-kysely` generates `core/kernel/db/schema.ts` (`npm run db:generate`),
+and `prisma/migrations/` is applied by `prisma migrate deploy` —
+`core/kernel/db/migrate.ts` shells that from `core.migrate()`. Objects Prisma
+can't express (CHECK constraints, the `updated_at` and audit-immutability
+triggers, the outbox partial index) live in a hand-written follow-up
+migration. See `integration-guide.md` and `prisma/README.md`.
 
 ## Shape: modular monolith
 

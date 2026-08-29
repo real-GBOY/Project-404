@@ -1,6 +1,7 @@
 // core/audit — append-only audit trail (§7.7). DB-enforced immutability
-// (no UPDATE/DELETE) is a trigger added by core/audit/migrations; Prisma
-// cannot express it (see docs/integration-guide.md, deferred cutover).
+// (no UPDATE/DELETE) is the `audit_logs_no_mutation` trigger in
+// ../migrations/20260829120100_constraints_triggers_indexes — Prisma's schema
+// language can't express it.
 
 model audit_logs {
   id             String   @id

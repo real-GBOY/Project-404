@@ -40,12 +40,13 @@ TypeScript · Node 22.12+/24 · PostgreSQL (only — no Mongo in v0.1) ·
 definition only — generates Kysely's types, no Prisma Client) · Zod ·
 `jsonwebtoken` + `argon2` (argon2id) · `nodemailer` · `pino` · Vitest.
 
-> **Schema** is now owned by **Prisma** (Plan §2): `prisma/schema/*.prisma`
-> models mirror every table and `prisma-kysely` generates
-> `core/kernel/db/schema.ts` — run `npm run db:generate` after a model change.
-> **Migrations** are still owned by Kysely's migrator (`core/kernel/db/`);
-> replacing it with `prisma migrate deploy` is the remaining step — see
-> `prisma/README.md` and `docs/integration-guide.md`.
+> **Prisma owns the schema and the migration history** (Plan §2).
+> `prisma/schema/*.prisma` models mirror every table; `prisma-kysely`
+> generates `core/kernel/db/schema.ts` (`npm run db:generate` after a model
+> change); migrations live in `prisma/migrations/` and are applied with
+> `prisma migrate deploy` (`npm run migrate`, and `core.migrate()` on boot).
+> Kysely stays the runtime query builder — it no longer migrates. See
+> `prisma/README.md`.
 >
 > Requires Node **22.12+ or 24+** (Prisma won't install on odd majors like
 > 23.x). Use `nvm use` (`.nvmrc` pins 24).
@@ -56,7 +57,7 @@ definition only — generates Kysely's types, no Prisma Client) · Zod ·
 npm install
 cp .env.example .env          # adjust AURIC_DATABASE_URL etc.
 createdb auric                # or: psql -c 'create database auric'
-npm run migrate               # apply all module migrations
+npm run migrate               # prisma migrate deploy — apply all migrations
 npm run serve                 # migrate + seed + start worker + serve on :3000
 ```
 
@@ -73,7 +74,9 @@ curl localhost:3000/api/health/ready      # includes outbox-worker backlog
 |---|---|
 | `npm run serve` | Run the whole modular monolith in one process |
 | `npm run dev` | Same, with reload |
-| `npm run migrate` / `migrate:down` / `migrate:status` | Migrations |
+| `npm run migrate` / `migrate:status` | Apply / inspect Prisma migrations |
+| `npm run migrate:dev` | Author a new migration (`prisma migrate dev`) |
+| `npm run db:generate` | Regenerate `core/kernel/db/schema.ts` from `prisma/schema/` |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm test` | Unit + integration (integration needs a Postgres; see below) |
 
@@ -92,7 +95,7 @@ Locally they default to `…/auric_test` if that env var is unset.
 
 ```
 core/
-├── kernel/         config, db (pool + Kysely + unit-of-work + migrator), logging, ids, clock, errors
+├── kernel/         config, db (pool + Kysely + unit-of-work + prisma migrate runner), logging, ids, clock, errors
 ├── contracts/      the provider interfaces every module depends on (Plan §4)
 ├── events/         in-process bus + outbox + worker + DLQ (Plan §6)
 ├── identity/  rbac/  organizations/  audit/  files/  notifications/
@@ -103,7 +106,8 @@ core/
 ```
 
 Every module follows the same anatomy (`domain/ application/ infrastructure/
-api/ events/ permissions/ validation/ migrations/ tests/`) so any AURIC
-developer can navigate any module — Plan §3.2.
+api/ events/ permissions/ validation/ tests/`) so any AURIC developer can
+navigate any module — Plan §3.2. Schema for a module's tables lives in
+`prisma/schema/<module>.prisma`, not in the module folder.
 
 See `docs/` for architecture, integration, and conventions.

@@ -1,48 +1,63 @@
 # prisma/
 
-Prisma owns the **schema definition** here; it does not run at runtime and it
-does not (yet) own migrations. Plan §2: types flow **Prisma → Kysely**. Prisma
-Client is never generated — the only generator is `prisma-kysely`, which emits
-`core/kernel/db/schema.ts` (the `Database` interface every repository types
-against).
+Prisma owns the **schema definition** and the **migration history** (Plan §2).
+Types flow **Prisma → Kysely**: Prisma Client is never generated — the only
+generator is `prisma-kysely`, which emits `core/kernel/db/schema.ts` (the
+`Database` interface every repository types against). Kysely runs every query;
+Prisma never touches a runtime query path — only migrations.
 
 ## Layout
 
 | Path | What |
 |---|---|
-| `../prisma.config.ts` | Prisma 7 config — loads `.env`, points at `prisma/schema/`, sets the datasource URL from `AURIC_DATABASE_URL` |
+| `../prisma.config.ts` | Prisma 7 config — loads `.env`, points at `prisma/schema/`, datasource URL from `AURIC_DATABASE_URL` |
 | `schema/datasource.prisma` | datasource + the `prisma-kysely` generator |
-| `schema/<module>.prisma` | one file per Core module, models mirroring the tables that module's Kysely migrations create (`@@map` / `@map` keep the snake_case names) |
+| `schema/<module>.prisma` | one file per Core module, models mirroring that module's tables (`@@map` / `@map` keep the snake_case names) |
+| `migrations/` | Prisma migration history, applied with `prisma migrate deploy` |
 
 ## Workflow
 
 ```bash
-npm run db:generate   # prisma generate → regenerates core/kernel/db/schema.ts
-npm run db:pull       # prisma db pull  → re-introspect the DB into the schema
+npm run db:generate                    # regenerate core/kernel/db/schema.ts
+npm run migrate                         # prisma migrate deploy (apply pending)
+npm run migrate:status                  # prisma migrate status
+npm run migrate:dev -- --name <change>  # author a new migration during dev
+npm run db:pull                         # re-introspect the DB into the schema
 ```
 
 `core/kernel/db/schema.ts` is **generated** — do not hand-edit it. Change a
-`prisma/schema/*.prisma` model and run `npm run db:generate`. `json.ts` beside
-it is hand-written (the `Json<T>` column helper the generated file imports).
+`prisma/schema/*.prisma` model and run `npm run db:generate`. `../core/kernel/db/json.ts`
+is hand-written (the `Json<T>` column helper the generated file imports).
 
-## What Prisma can't express
+At runtime, `core.migrate()` (via `core/kernel/db/migrate.ts`) shells
+`prisma migrate deploy` with `AURIC_DATABASE_URL` pointed at the caller's DB.
 
-These live in `core/*/migrations/` and stay there — a `/// @kyselyType(...)`
-annotation narrows the Kysely type where it matters, but the DB objects
-themselves are not in this schema:
+## What Prisma's schema language can't express
+
+Prisma models can't carry these, so they're hand-written into
+`migrations/20260829120100_constraints_triggers_indexes/migration.sql`. A
+`/// @kyselyType(...)` annotation narrows the Kysely type where it matters, but
+the DB object itself is in the migration:
 
 - CHECK constraints backing the string-union columns
   (`users.status`, `verification_tokens.purpose`, `audit_logs.actor_type`,
   `files.visibility`, `notification_templates.channel`, `outbox_messages.status`)
-- the `auric_set_updated_at` trigger + per-table triggers
-- the `audit_logs` immutability trigger
+- `auric_set_updated_at()` + the `users` / `roles` / `organizations` /
+  `notification_templates` per-table triggers
+- the `audit_logs` append-only (immutability) trigger
 - the partial index `outbox_ready_idx` on `outbox_messages`
-- the `citext` extension (created by the bootstrap migration)
+- the `citext` extension (`CREATE EXTENSION` prepended to the baseline migration)
 
-## Not done yet: the migrator cutover
+Keep that migration in sync by hand when a `/// @kyselyType('a' | 'b')` union
+changes or a table gains/loses `updated_at`.
 
-Migrations are still owned by the Kysely migrator (`core/kernel/db/migrator.ts`
-+ `migrations-manifest.ts` + `scripts/migrate.ts`). Replacing that with
-`prisma migrate deploy` — including a baseline migration and a hand-written
-follow-up for the objects listed above — is the remaining step. See
-`docs/integration-guide.md` § "The Prisma cutover".
+## Baselining an existing database
+
+A database already migrated by the old Kysely migrator is marked up to date
+without re-running the baseline:
+
+```bash
+psql "$AURIC_DATABASE_URL" -c 'DROP TABLE IF EXISTS auric_migrations, auric_migrations_lock;'
+npx prisma migrate resolve --applied 20260829120000_baseline
+npx prisma migrate resolve --applied 20260829120100_constraints_triggers_indexes
+```

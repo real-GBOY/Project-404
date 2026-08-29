@@ -6,15 +6,13 @@
 // queries — Kysely stays the query builder. See docs/integration-guide.md.
 //
 // Models live in the sibling *.prisma files in this folder, split by module
-// and mirroring the tables the Kysely migrator currently creates
-// (`@@map` / `@map` keep the existing snake_case names).
+// and mirroring the tables (`@@map` / `@map` keep the snake_case names).
+// Migrations are in ../migrations, applied with `prisma migrate deploy`.
 //
-// NOTE: the `citext` extension the schema relies on is created by the
-// bootstrap Kysely migration. Declaring `extensions = [citext]` here needs
-// the `postgresqlExtensions` preview feature, which lives on a
-// `generator client` block — and Core has no Prisma Client generator. When
-// the full migrator cutover happens (docs/integration-guide.md), add that
-// generator + preview feature and move extension ownership here.
+// NOTE: `citext` is created by the baseline migration (CREATE EXTENSION),
+// not declared here — `extensions = [citext]` needs the `postgresqlExtensions`
+// preview feature, which lives on a `generator client` block, and Core has no
+// Prisma Client generator.
 
 datasource db {
   provider = "postgresql"

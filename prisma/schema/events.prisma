@@ -1,7 +1,7 @@
 // core/events — transactional outbox + dead-letter queue (§6).
 //
-// NOT expressed here (Prisma can't, or it needs a preview feature) and owned
-// by core/events/outbox/migrations until the cutover follow-up migration:
+// In ../migrations/20260829120100_constraints_triggers_indexes, not here
+// (Prisma's schema language can't express either):
 //   - the partial index `outbox_ready_idx` on outbox_messages
 //     (next_attempt_at) WHERE status = 'pending'
 //   - the `outbox_status_check` CHECK constraint

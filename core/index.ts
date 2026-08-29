@@ -4,7 +4,7 @@ import { getConfig, type AuricConfig } from "./kernel/config.js";
 import { systemClock, type Clock } from "./kernel/clock.js";
 import { unitOfWork, closeDb, type UnitOfWork } from "./kernel/db/db.js";
 import { closePool } from "./kernel/db/pool.js";
-import { createMigrator } from "./kernel/db/migrator.js";
+import { migrateToLatest } from "./kernel/db/migrate.js";
 import { rootLogger } from "./kernel/logging/logger.js";
 import type { PermissionDefinition } from "./rbac/domain/permission.js";
 
@@ -159,12 +159,7 @@ export function createAuricCore(options: CreateCoreOptions = {}): AuricCore {
   );
 
   const migrate = async () => {
-    const migrator = createMigrator();
-    const { error, results } = await migrator.migrateToLatest();
-    for (const r of results ?? []) {
-      if (r.status === "Success") rootLogger.info({ migration: r.migrationName }, "migration applied");
-    }
-    if (error) throw error instanceof Error ? error : new Error(String(error));
+    await migrateToLatest(config.databaseUrl);
   };
 
   const seed = async () => {

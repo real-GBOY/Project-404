@@ -31,8 +31,9 @@ Never call `new Date()` / `Date.now()` in Core logic. Take a `Clock` and call
 
 ## Database
 
-- All access through Kysely; the schema type lives in
-  `core/kernel/db/schema.ts` and every migration must keep it accurate.
+- All access through Kysely; the schema type in `core/kernel/db/schema.ts` is
+  **generated** by `prisma-kysely` from `prisma/schema/*.prisma` — edit the
+  model, then `npm run db:generate`. Never hand-edit `schema.ts`.
 - Repositories are the only code that references tables. They call
   `currentExecutor()` — no executor argument in method signatures.
 - Timestamps read/written as `Date`. `created_at` / `updated_at` are
@@ -41,8 +42,10 @@ Never call `new Date()` / `Date.now()` in Core logic. Take a `Clock` and call
 - JSONB: plain objects can be passed straight through; **arrays and
   primitives must be `JSON.stringify`-ed** on write (node-postgres would
   otherwise coerce an array to a Postgres array literal).
-- Migrations: `NNN_snake_name.ts` exporting `up(db)` / `down(db)`, registered
-  in `migrations-manifest.ts`. Order guarantees FK targets exist first.
+- Migrations: Prisma-owned in `prisma/migrations/`. Change a model, then
+  `npm run migrate:dev -- --name <change>` to generate the SQL; add CHECK
+  constraints / triggers / partial indexes by hand to that migration (Prisma
+  can't express them). `npm run migrate` (= `prisma migrate deploy`) applies.
 
 ## Events
 

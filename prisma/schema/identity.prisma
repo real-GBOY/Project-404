@@ -1,5 +1,5 @@
 // core/identity — users, refresh tokens, verification tokens (§7.1).
-// Tables created by core/identity/migrations/*; names kept via @@map.
+// Names kept via @@map. See ../migrations for the DDL.
 
 model users {
   id                String    @id
