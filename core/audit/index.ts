@@ -1,4 +1,4 @@
-import type { Router } from "express";
+import type { FastifyPluginAsync } from "fastify";
 import type { IAuditLogger } from "../contracts/index.js";
 import type { RouteContext } from "../http/route-context.js";
 import type { PermissionDefinition } from "../rbac/domain/permission.js";
@@ -11,7 +11,7 @@ export interface AuditModule {
   logger: IAuditLogger;
   repository: AuditRepository;
   permissions: PermissionDefinition[];
-  routes(ctx: RouteContext): Router;
+  routes(ctx: RouteContext): FastifyPluginAsync;
 }
 
 export function createAuditModule(): AuditModule {

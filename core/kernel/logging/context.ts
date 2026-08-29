@@ -17,6 +17,15 @@ export function runWithContext<T>(ctx: RequestContext, fn: () => T): T {
   return storage.run(ctx, fn);
 }
 
+/**
+ * Bind the context for the remainder of the current async execution without a
+ * wrapping callback. Used by the Fastify `onRequest` hook, whose lifecycle
+ * cannot be wrapped in `run()`.
+ */
+export function enterContext(ctx: RequestContext): void {
+  storage.enterWith(ctx);
+}
+
 export function getContext(): RequestContext | undefined {
   return storage.getStore();
 }

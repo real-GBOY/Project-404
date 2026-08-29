@@ -1,4 +1,5 @@
-import express, { type Express } from "express";
+import { randomUUID } from "node:crypto";
+import Fastify, { type FastifyBaseLogger, type FastifyInstance } from "fastify";
 import { getConfig, type AuricConfig } from "./kernel/config.js";
 import { systemClock, type Clock } from "./kernel/clock.js";
 import { unitOfWork, closeDb, type UnitOfWork } from "./kernel/db/db.js";
@@ -21,11 +22,9 @@ import { createNotificationsModule } from "./notifications/index.js";
 import { createLocalizationModule } from "./localization/index.js";
 
 import { createRouteContext } from "./http/route-context.js";
-import { correlationId } from "./observability/middleware/correlation-id.js";
-import { requestLogger } from "./observability/middleware/request-logger.js";
-import { errorHandler, notFoundHandler } from "./observability/middleware/error-handler.js";
+import { installObservability } from "./observability/http.js";
 import { loggingErrorTracker } from "./observability/errors/error-tracker.js";
-import { healthRoutes } from "./observability/health/health.js";
+import { healthPlugin } from "./observability/health/health.js";
 
 export const CORE_VERSION = "0.1.0";
 
@@ -39,7 +38,7 @@ export interface CreateCoreOptions {
 }
 
 export interface AuricCore {
-  app: Express;
+  app: FastifyInstance;
   config: AuricConfig;
   modules: {
     audit: ReturnType<typeof createAuditModule>;
@@ -69,7 +68,7 @@ export interface AuricCore {
 /**
  * The composition root (§3.4: "Core is the shared set of capabilities the use
  * case leans on"). Wires the kernel, the event system, and every Core module
- * in dependency order, then mounts their routes onto one Express app — the
+ * in dependency order, then mounts their routes onto one Fastify app — the
  * modular monolith (§3.0): one deployable, strict module boundaries, no
  * network hops between modules.
  */
@@ -130,26 +129,34 @@ export function createAuricCore(options: CreateCoreOptions = {}): AuricCore {
   ];
 
   // ── HTTP app (the in-process API layer, §3.1 — not a gateway service) ────
-  const app = express();
-  app.disable("x-powered-by");
-  app.use(correlationId());
-  app.use(localization.middleware);
-  app.use(requestLogger());
-  app.use(express.json({ limit: "1mb" }));
+  const app: FastifyInstance = Fastify({
+    // pino's Logger is a superset of FastifyBaseLogger; share the one instance
+    // so HTTP logs carry the same correlation-id mixin and redaction. Request
+    // logging follows the log level — silent in tests, on in prod.
+    loggerInstance: rootLogger as unknown as FastifyBaseLogger,
+    bodyLimit: 1_048_576,
+    genReqId: (req) => {
+      const h = req.headers["x-correlation-id"];
+      return (Array.isArray(h) ? h[0] : h)?.trim() || randomUUID();
+    },
+  });
+
+  installObservability(app, { errorTracker: loggingErrorTracker });
+  app.addHook("onRequest", localization.hook);
 
   const routeCtx = createRouteContext(identity.jwt, rbac.permissionProvider);
-  const api = express.Router();
-  api.use(healthRoutes({ outbox: outboxRepo, worker, version: CORE_VERSION }));
-  api.use(identity.routes(routeCtx));
-  api.use(rbac.routes(routeCtx));
-  api.use(organizations.routes(routeCtx));
-  api.use(audit.routes(routeCtx));
-  api.use(files.routes(routeCtx));
-  api.use(notifications.routes(routeCtx));
-  app.use("/api", api);
-
-  app.use(notFoundHandler());
-  app.use(errorHandler(loggingErrorTracker));
+  app.register(
+    async (api) => {
+      await api.register(healthPlugin({ outbox: outboxRepo, worker, version: CORE_VERSION }));
+      await api.register(identity.routes(routeCtx));
+      await api.register(rbac.routes(routeCtx));
+      await api.register(organizations.routes(routeCtx));
+      await api.register(audit.routes(routeCtx));
+      await api.register(files.routes(routeCtx));
+      await api.register(notifications.routes(routeCtx));
+    },
+    { prefix: "/api" },
+  );
 
   const migrate = async () => {
     const migrator = createMigrator();
@@ -180,11 +187,13 @@ export function createAuricCore(options: CreateCoreOptions = {}): AuricCore {
     async start() {
       await migrate();
       await seed();
+      await app.ready();
       if (options.startWorker !== false) worker.start();
       rootLogger.info({ version: CORE_VERSION }, "AURIC Core started");
     },
     async stop() {
       await worker.stop();
+      await app.close().catch(() => {});
       await closeDb().catch(() => {});
       await closePool().catch(() => {});
     },

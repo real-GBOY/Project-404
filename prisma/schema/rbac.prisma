@@ -1,0 +1,56 @@
+// core/rbac — roles, permissions, and their join tables (§7.2).
+
+model roles {
+  id          String   @id
+  key         String   @unique
+  name        String
+  description String?
+  is_system   Boolean  @default(false)
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @default(now()) @db.Timestamptz(6)
+
+  role_permissions role_permissions[]
+  user_roles       user_roles[]
+
+  @@map("roles")
+}
+
+model permissions {
+  id          String   @id
+  /// "<action>:<resource>", e.g. "employee:create".
+  key         String   @unique
+  action      String
+  resource    String
+  description String?
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+
+  role_permissions role_permissions[]
+
+  @@unique([action, resource], map: "permissions_action_resource_uq")
+  @@map("permissions")
+}
+
+model role_permissions {
+  role_id       String
+  permission_id String
+
+  permissions permissions @relation(fields: [permission_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  roles       roles       @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([role_id, permission_id], map: "role_permissions_pk")
+  @@map("role_permissions")
+}
+
+model user_roles {
+  user_id    String
+  role_id    String
+  granted_at DateTime @default(now()) @db.Timestamptz(6)
+  granted_by String?
+
+  roles roles @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users users @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([user_id, role_id], map: "user_roles_pk")
+  @@index([user_id], map: "user_roles_user_idx")
+  @@map("user_roles")
+}

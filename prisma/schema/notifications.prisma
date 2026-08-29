@@ -1,0 +1,34 @@
+// core/notifications — in-app + email, templated, bilingual AR/EN (§7.5).
+
+model notifications {
+  id         String    @id
+  user_id    String
+  type       String
+  title      String
+  body       String
+  locale     String
+  /// @kyselyType(Json<Record<string, unknown>>)
+  data       Json?
+  read_at    DateTime? @db.Timestamptz(6)
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+
+  users users @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id, created_at], map: "notifications_user_unread_idx")
+  @@map("notifications")
+}
+
+model notification_templates {
+  id         String   @id
+  key        String
+  locale     String
+  /// @kyselyType('in_app' | 'email')
+  channel    String
+  subject    String?
+  body       String
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([key, locale, channel], map: "notification_templates_uq")
+  @@map("notification_templates")
+}

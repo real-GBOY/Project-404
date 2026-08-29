@@ -1,7 +1,7 @@
-import type { RequestHandler } from "express";
+import type { onRequestHookHandler } from "fastify";
 import type { AuricConfig } from "../kernel/config.js";
 import { directionOf, negotiateLocale } from "./domain/locale.js";
-import { localeMiddleware } from "./middleware/locale-middleware.js";
+import { localeHook } from "./middleware/locale-middleware.js";
 import { t, bundleFor } from "./i18n/catalog.js";
 import {
   formatCurrency,
@@ -23,7 +23,7 @@ export {
 export { t, bundleFor } from "./i18n/catalog.js";
 
 export interface LocalizationModule {
-  middleware: RequestHandler;
+  hook: onRequestHookHandler;
   t: typeof t;
   bundleFor: typeof bundleFor;
   format: {
@@ -44,7 +44,7 @@ export interface LocalizationModule {
  */
 export function createLocalizationModule(config: AuricConfig): LocalizationModule {
   return {
-    middleware: localeMiddleware({
+    hook: localeHook({
       supported: config.supportedLocales,
       fallback: config.defaultLocale,
     }),

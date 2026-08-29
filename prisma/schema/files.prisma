@@ -1,0 +1,23 @@
+// core/files — file metadata; content lives in a storage driver (§7.6).
+
+model files {
+  id              String    @id
+  storage_key     String
+  driver          String
+  original_name   String
+  content_type    String
+  /// @kyselyType(number)
+  byte_size       BigInt
+  checksum_sha256 String
+  owner_id        String?
+  /// Coarse access scope; fine-grained checks are done via RBAC in the use case.
+  /// @kyselyType('private' | 'public')
+  visibility      String    @default("private")
+  /// @kyselyType(Json<Record<string, unknown>>)
+  metadata        Json?
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  deleted_at      DateTime? @db.Timestamptz(6)
+
+  @@index([owner_id], map: "files_owner_idx")
+  @@map("files")
+}

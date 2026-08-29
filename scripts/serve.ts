@@ -12,14 +12,11 @@ async function main() {
   const core = createAuricCore();
 
   await core.start();
-
-  const server = core.app.listen(config.port, () => {
-    rootLogger.info({ port: config.port, url: `http://localhost:${config.port}/api/health` }, "listening");
-  });
+  await core.app.listen({ port: config.port, host: "0.0.0.0" });
+  rootLogger.info({ url: `http://localhost:${config.port}/api/health` }, "listening");
 
   const shutdown = async (signal: string) => {
     rootLogger.info({ signal }, "shutting down");
-    server.close();
     await core.stop();
     process.exit(0);
   };

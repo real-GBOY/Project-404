@@ -1,4 +1,4 @@
-import type { Router } from "express";
+import type { FastifyPluginAsync } from "fastify";
 import type { UnitOfWork } from "../kernel/db/db.js";
 import type { IAuditLogger, IEventBus, IOrganizationProvider, IUserProvider } from "../contracts/index.js";
 import type { RouteContext } from "../http/route-context.js";
@@ -20,7 +20,7 @@ export interface OrganizationsModule {
   service: OrganizationService;
   organizationProvider: IOrganizationProvider;
   permissions: PermissionDefinition[];
-  routes(ctx: RouteContext): Router;
+  routes(ctx: RouteContext): FastifyPluginAsync;
 }
 
 export function createOrganizationsModule(deps: OrganizationsModuleDeps): OrganizationsModule {

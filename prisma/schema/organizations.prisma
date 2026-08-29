@@ -1,0 +1,31 @@
+// core/organizations — organizations and their members (§7.4).
+
+model organizations {
+  id         String   @id
+  name       String
+  slug       String   @unique
+  /// @kyselyType(Json<Record<string, unknown>>)
+  settings   Json     @default("{}")
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+
+  organization_members organization_members[]
+
+  @@map("organizations")
+}
+
+model organization_members {
+  id              String   @id
+  organization_id String
+  user_id         String
+  /// Free-form membership role label, distinct from RBAC roles.
+  membership_role String   @default("member")
+  joined_at       DateTime @default(now()) @db.Timestamptz(6)
+
+  organizations organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users         users         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([organization_id, user_id], map: "organization_members_uq")
+  @@index([user_id], map: "organization_members_user_idx")
+  @@map("organization_members")
+}

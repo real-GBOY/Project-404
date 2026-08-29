@@ -1,7 +1,6 @@
-import { Router } from "express";
+import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { sql } from "kysely";
 import { getDb } from "../../kernel/db/db.js";
-import { handler } from "../../http/handler.js";
 import type { OutboxRepository } from "../../events/outbox/outbox-repository.js";
 import type { OutboxWorker } from "../../events/outbox/outbox-worker.js";
 
@@ -16,19 +15,15 @@ export interface HealthDeps {
  * makes mandatory the moment the outbox exists, because the worker "can fail
  * quietly while events pile up".
  */
-export function healthRoutes(deps: HealthDeps): Router {
-  const r = Router();
+export function healthPlugin(deps: HealthDeps): FastifyPluginAsync {
+  return async (app: FastifyInstance) => {
+    app.get("/health", async () => ({
+      status: "ok",
+      version: deps.version,
+      time: new Date().toISOString(),
+    }));
 
-  r.get(
-    "/health",
-    handler(async (_req, res) => {
-      res.json({ status: "ok", version: deps.version, time: new Date().toISOString() });
-    }),
-  );
-
-  r.get(
-    "/health/ready",
-    handler(async (_req, res) => {
+    app.get("/health/ready", async (_req, reply) => {
       const checks: Record<string, { ok: boolean; detail?: unknown }> = {};
 
       try {
@@ -53,9 +48,7 @@ export function healthRoutes(deps: HealthDeps): Router {
       }
 
       const ok = Object.values(checks).every((c) => c.ok);
-      res.status(ok ? 200 : 503).json({ status: ok ? "ready" : "degraded", checks });
-    }),
-  );
-
-  return r;
+      reply.status(ok ? 200 : 503).send({ status: ok ? "ready" : "degraded", checks });
+    });
+  };
 }

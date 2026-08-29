@@ -3,18 +3,28 @@
 This describes what was actually built. It implements the decisions in
 [`../Plan.md`](../Plan.md) sections 3–6; read that first for the *why*.
 
+**Stack note (Plan §2).** HTTP is Fastify 5. Runtime SQL and the transaction
+boundary are Kysely. Plan §2 designates Prisma as the schema/migration owner
+with types flowing Prisma → Kysely. **Half done:** Prisma now owns the schema
+*definition* — `prisma/schema/*.prisma` models mirror every table, and
+`prisma-kysely` generates `core/kernel/db/schema.ts` (`npm run db:generate`).
+Migrations are *still* Kysely's migrator (`core/kernel/db/migrator.ts` +
+`migrations-manifest.ts`, module-owned files under `core/<module>/migrations/`);
+swapping it for `prisma migrate deploy` is the remaining step. See
+`integration-guide.md` and `prisma/README.md`.
+
 ## Shape: modular monolith
 
 One deployable process. Modules are logical boundaries, not services. They
 never call each other directly and never touch each other's tables — they
-talk through the provider interfaces in `core/contracts/` (Plan §4). The
-`/api` router mounts every module's routes onto one Express app in-process;
-there is no gateway service.
+talk through the provider interfaces in `core/contracts/` (Plan §4). Every
+module's routes are registered as a Fastify plugin under the `/api` prefix on
+one in-process app; there is no gateway service.
 
 ```
-HTTP (Express)  ─ correlation-id ─ locale ─ request-log ─ json body
+HTTP (Fastify)  ─ onRequest: correlation-id → locale ─ JSON body parse
       │
-      ▼  /api
+      ▼  /api  (each module = one Fastify plugin)
   health · identity · rbac · organizations · audit · files · notifications
       │
       ▼  each controller: validate (Zod) → guard (RBAC) → call a use case
@@ -34,11 +44,13 @@ PostgreSQL
 
 `POST /api/auth/register`:
 
-1. `correlationId()` opens an `AsyncLocalStorage` context — every log line,
-   audit row and outbox message downstream carries the same id.
-2. `localeMiddleware` resolves AR/EN from `?locale` → `Accept-Language` →
-   default, sets `Content-Language` + `X-Content-Direction`.
-3. Router → `identityRoutes` → controller. Zod validates the body.
+1. `onRequest` hook binds an `AsyncLocalStorage` context (`enterContext`) with
+   the request id (from an inbound `x-correlation-id` header or a fresh uuid)
+   — every log line, audit row and outbox message downstream carries it.
+2. `localeHook` resolves AR/EN from `?locale` → `Accept-Language` → default,
+   sets `Content-Language` + `X-Content-Direction`.
+3. Route plugin → handler. Zod validates the body (`parseBody`). Auth /
+   permission run as `preHandler` hooks.
 4. `IdentityService.register()` — **the use case owns the transaction**:
    `unitOfWork.transaction(async () => { … })`.
    - build `UserEntity` (domain decides: new user is `pending`)
@@ -111,8 +123,9 @@ any dead-lettered message.
 - **localization** — `directionOf`, `negotiateLocale`, `Translatable<T>`
   (AR-first), `Intl`-based `ar-EG` / `en-EG` formatters (Hijri calendar
   option already threaded, output is "Later").
-- **observability** — pino structured logs with correlation-id mixin, request
-  logger, single error→HTTP mapper, health + readiness.
+- **observability** — pino structured logs with a correlation-id mixin
+  (shared with Fastify's request logging), a single `setErrorHandler`
+  mapping `AppError.kind` → status, `setNotFoundHandler`, health + readiness.
 
 ## Deliberately deferred (Plan §7, §8)
 

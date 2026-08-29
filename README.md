@@ -35,9 +35,20 @@ monitoring (§7.12, §6.2) come in with v0.1. See `docs/architecture.md`.
 
 ## Stack
 
-TypeScript · Node ≥ 20 · PostgreSQL (only — no Mongo in v0.1) · Express 5 ·
-Kysely (typed query builder, no ORM) · Zod · `jsonwebtoken` + `argon2` ·
-`nodemailer` · `pino` · Vitest.
+TypeScript · Node 22.12+/24 · PostgreSQL (only — no Mongo in v0.1) ·
+**Fastify 5** · Kysely (typed query builder, no ORM) · Prisma (schema
+definition only — generates Kysely's types, no Prisma Client) · Zod ·
+`jsonwebtoken` + `argon2` (argon2id) · `nodemailer` · `pino` · Vitest.
+
+> **Schema** is now owned by **Prisma** (Plan §2): `prisma/schema/*.prisma`
+> models mirror every table and `prisma-kysely` generates
+> `core/kernel/db/schema.ts` — run `npm run db:generate` after a model change.
+> **Migrations** are still owned by Kysely's migrator (`core/kernel/db/`);
+> replacing it with `prisma migrate deploy` is the remaining step — see
+> `prisma/README.md` and `docs/integration-guide.md`.
+>
+> Requires Node **22.12+ or 24+** (Prisma won't install on odd majors like
+> 23.x). Use `nvm use` (`.nvmrc` pins 24).
 
 ## Quick start
 
@@ -81,14 +92,14 @@ Locally they default to `…/auric_test` if that env var is unset.
 
 ```
 core/
-├── kernel/         config, db (pool + Kysely + unit-of-work), logging, ids, clock, errors
+├── kernel/         config, db (pool + Kysely + unit-of-work + migrator), logging, ids, clock, errors
 ├── contracts/      the provider interfaces every module depends on (Plan §4)
 ├── events/         in-process bus + outbox + worker + DLQ (Plan §6)
 ├── identity/  rbac/  organizations/  audit/  files/  notifications/
 ├── localization/   language, direction, AR-EG formatting (Plan §7.10)
-├── observability/  correlation id, request log, error handler, health
-├── http/           shared route helpers + route context
-└── index.ts        the composition root — wires everything, mounts /api
+├── observability/  correlation id, error handler, health + readiness (Fastify hooks)
+├── http/           shared Zod parse helpers + route context (auth + guard preHandlers)
+└── index.ts        the composition root — wires everything, mounts the Fastify /api
 ```
 
 Every module follows the same anatomy (`domain/ application/ infrastructure/

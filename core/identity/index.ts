@@ -1,4 +1,4 @@
-import type { Router } from "express";
+import type { FastifyPluginAsync } from "fastify";
 import type { Clock } from "../kernel/clock.js";
 import type { UnitOfWork } from "../kernel/db/db.js";
 import type { AuricConfig } from "../kernel/config.js";
@@ -30,7 +30,7 @@ export interface IdentityModule {
   service: IdentityService;
   userProvider: IUserProvider;
   jwt: JwtService;
-  routes(ctx: RouteContext): Router;
+  routes(ctx: RouteContext): FastifyPluginAsync;
   permissions: typeof identityPermissions;
 }
 

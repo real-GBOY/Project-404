@@ -1,4 +1,5 @@
-import { Migrator, type MigrationProvider, type Kysely } from "kysely";
+import type { Kysely } from "kysely";
+import { Migrator, type MigrationProvider } from "kysely/migration";
 import { getDb } from "./db.js";
 import { MIGRATIONS } from "./migrations-manifest.js";
 

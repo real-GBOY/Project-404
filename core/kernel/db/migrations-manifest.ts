@@ -1,4 +1,4 @@
-import type { Migration } from "kysely";
+import type { Migration } from "kysely/migration";
 
 /**
  * The ordered migration manifest. Each module owns its migration files

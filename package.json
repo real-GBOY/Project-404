@@ -5,7 +5,7 @@
   "description": "AURIC Core — thin, versioned cross-cutting foundation reused across client projects.",
   "type": "module",
   "engines": {
-    "node": ">=20"
+    "node": "^22.12.0 || >=24.0.0"
   },
   "exports": {
     ".": "./core/index.ts",
@@ -17,31 +17,35 @@
     "migrate": "tsx scripts/migrate.ts up",
     "migrate:down": "tsx scripts/migrate.ts down",
     "migrate:status": "tsx scripts/migrate.ts status",
+    "db:generate": "prisma generate",
+    "db:pull": "prisma db pull",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@fastify/multipart": "^9.0.3",
     "argon2": "^0.41.1",
     "dotenv": "^16.4.7",
-    "express": "^5.1.0",
+    "fastify": "^5.2.1",
     "jsonwebtoken": "^9.0.2",
-    "kysely": "^0.27.5",
+    "kysely": "^0.29.5",
     "nanoid": "^5.0.9",
-    "nodemailer": "^6.9.16",
+    "nodemailer": "^9.0.6",
     "pg": "^8.13.1",
     "pino": "^9.5.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@types/express": "^5.0.0",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^22.10.5",
     "@types/nodemailer": "^6.4.17",
     "@types/pg": "^8.11.10",
     "pino-pretty": "^13.0.0",
+    "prisma": "^7.10.0",
+    "prisma-kysely": "^3.2.1",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
-    "vitest": "^2.1.8"
+    "vitest": "^3.2.7"
   }
 }

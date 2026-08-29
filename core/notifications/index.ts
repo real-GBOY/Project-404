@@ -1,4 +1,4 @@
-import type { Router } from "express";
+import type { FastifyPluginAsync } from "fastify";
 import type { UnitOfWork } from "../kernel/db/db.js";
 import type { Clock } from "../kernel/clock.js";
 import type { AuricConfig } from "../kernel/config.js";
@@ -31,7 +31,7 @@ export interface NotificationsModule {
   templates: TemplateRepository;
   permissions: PermissionDefinition[];
   seed(): Promise<void>;
-  routes(ctx: RouteContext): Router;
+  routes(ctx: RouteContext): FastifyPluginAsync;
 }
 
 export function createNotificationsModule(deps: NotificationsModuleDeps): NotificationsModule {

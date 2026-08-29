@@ -1,17 +1,14 @@
-import type { NextFunction, Request, Response } from "express";
+import type { onRequestHookHandler } from "fastify";
 import { patchContext } from "../../kernel/logging/context.js";
 import { directionOf, negotiateLocale } from "../domain/locale.js";
 
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace Express {
-    interface Request {
-      locale?: string;
-    }
+declare module "fastify" {
+  interface FastifyRequest {
+    locale?: string;
   }
 }
 
-export interface LocaleMiddlewareOptions {
+export interface LocaleHookOptions {
   supported: string[];
   fallback: string;
 }
@@ -22,9 +19,10 @@ export interface LocaleMiddlewareOptions {
  * request and the ambient context, and sets `Content-Language` +
  * `X-Content-Direction` so an Arabic-first client can lay out RTL correctly.
  */
-export function localeMiddleware(opts: LocaleMiddlewareOptions) {
-  return function resolveLocale(req: Request, res: Response, next: NextFunction): void {
-    const queryLocale = typeof req.query.locale === "string" ? req.query.locale : null;
+export function localeHook(opts: LocaleHookOptions): onRequestHookHandler {
+  return async function resolveLocale(req, reply) {
+    const query = req.query as Record<string, unknown> | undefined;
+    const queryLocale = typeof query?.locale === "string" ? query.locale : null;
     const headerLocales = (req.headers["accept-language"] ?? "")
       .split(",")
       .map((part) => part.split(";")[0]?.trim())
@@ -33,8 +31,7 @@ export function localeMiddleware(opts: LocaleMiddlewareOptions) {
     const locale = negotiateLocale([queryLocale, ...headerLocales], opts.supported, opts.fallback);
     req.locale = locale;
     patchContext({ locale });
-    res.setHeader("Content-Language", locale);
-    res.setHeader("X-Content-Direction", directionOf(locale));
-    next();
+    reply.header("Content-Language", locale);
+    reply.header("X-Content-Direction", directionOf(locale));
   };
 }

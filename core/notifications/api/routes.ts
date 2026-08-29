@@ -1,6 +1,6 @@
-import { Router } from "express";
+import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
-import { handler, parseQuery } from "../../http/handler.js";
+import { parseQuery } from "../../http/handler.js";
 import type { RouteContext } from "../../http/route-context.js";
 import { requireAuth } from "../../identity/api/auth-middleware.js";
 import type { NotificationService } from "../application/notification-service.js";
@@ -14,41 +14,29 @@ const listQuery = z.object({
   cursor: z.string().optional(),
 });
 
-export function notificationRoutes(service: NotificationService, ctx: RouteContext): Router {
-  const r = Router();
-  r.use(ctx.authenticate);
+export function notificationRoutes(service: NotificationService, ctx: RouteContext): FastifyPluginAsync {
+  return async (app) => {
+    app.addHook("preHandler", ctx.authenticate);
 
-  r.get(
-    "/notifications",
-    handler(async (req, res) => {
+    app.get("/notifications", async (req) => {
       const principal = requireAuth(req);
       const q = parseQuery(listQuery, req.query);
       const rows = await service.listForUser(principal.userId, q);
-      res.json({
+      return {
         notifications: rows.map((row) => service.toPublic(row)),
         unreadCount: await service.unreadCount(principal.userId),
         nextCursor: rows.length === (q.limit ?? 30) ? rows[rows.length - 1]?.id : undefined,
-      });
-    }),
-  );
+      };
+    });
 
-  r.post(
-    "/notifications/:id/read",
-    handler(async (req, res) => {
-      const principal = requireAuth(req);
-      await service.markRead(principal.userId, req.params.id);
-      res.status(204).end();
-    }),
-  );
+    app.post<{ Params: { id: string } }>("/notifications/:id/read", async (req, reply) => {
+      await service.markRead(requireAuth(req).userId, req.params.id);
+      reply.status(204).send();
+    });
 
-  r.post(
-    "/notifications/read-all",
-    handler(async (req, res) => {
-      const principal = requireAuth(req);
-      await service.markAllRead(principal.userId);
-      res.status(204).end();
-    }),
-  );
-
-  return r;
+    app.post("/notifications/read-all", async (req, reply) => {
+      await service.markAllRead(requireAuth(req).userId);
+      reply.status(204).send();
+    });
+  };
 }

@@ -52,14 +52,20 @@ Never call `new Date()` / `Date.now()` in Core logic. Take a `Clock` and call
 - Choose delivery by side-effect location, not by importance
   (`onInProcess` vs `onExternal`) — see the integration guide.
 
-## HTTP
+## HTTP (Fastify)
 
-- Controllers: validate → guard → call one use case → shape response. No
-  business logic, no DB.
-- `handler()` wraps async handlers so throws reach the error middleware.
-- Route params are typed as flat `string` via `ApiRequest`.
-- Guard with `ctx.guard(action, resource)` (live RBAC check) — not by reading
-  token claims.
+- Each module exports its routes as a `FastifyPluginAsync`, registered under
+  `/api` by the composition root. Never wire auth or prefixes inside a module.
+- Handlers: validate (`parseBody` / `parseQuery` with a Zod schema) → call one
+  use case → return / `reply.send`. No business logic, no DB. Fastify handles
+  async + turns a thrown `AppError` into a response via `setErrorHandler`.
+- Auth and permissions are `preHandler` hooks: `{ preHandler: ctx.authenticate }`
+  or `{ preHandler: ctx.guard(action, resource) }`. `guard` does a **live**
+  RBAC check, not a token-claims read. Plugin-wide: `app.addHook("preHandler", ctx.authenticate)`.
+- Typed route params: `app.get<{ Params: { id: string } }>("/x/:id", …)`.
+- Per-request context is bound in an `onRequest` hook with
+  `enterContext(...)` (`enterWith`, since the Fastify lifecycle can't be
+  wrapped in a callback).
 
 ## Localization
 

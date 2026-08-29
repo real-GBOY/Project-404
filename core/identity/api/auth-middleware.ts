@@ -1,4 +1,4 @@
-import type { NextFunction, Request, Response } from "express";
+import type { FastifyReply, FastifyRequest, preHandlerHookHandler } from "fastify";
 import jwt from "jsonwebtoken";
 import { Forbidden, Unauthenticated } from "../../kernel/errors.js";
 import { patchContext } from "../../kernel/logging/context.js";
@@ -6,9 +6,9 @@ import type { IPermissionProvider } from "../../contracts/index.js";
 import type { JwtService } from "../infrastructure/jwt-service.js";
 
 /**
- * Auth middleware (§3.4): verifies the bearer JWT, attaches the principal to
- * the request, and adds userId to the ambient request context so logs and
- * audit entries carry it automatically.
+ * Auth hooks (§3.4): verify the bearer JWT, attach the principal to the
+ * request, and add userId to the ambient request context so logs and audit
+ * entries carry it automatically.
  */
 export interface Principal {
   userId: string;
@@ -17,33 +17,25 @@ export interface Principal {
   permissions: string[];
 }
 
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace Express {
-    interface Request {
-      principal?: Principal;
-    }
+declare module "fastify" {
+  interface FastifyRequest {
+    principal?: Principal;
   }
 }
 
-export function createAuthMiddleware(jwtService: JwtService) {
-  return function authenticate(req: Request, _res: Response, next: NextFunction): void {
+export function createAuthenticate(jwtService: JwtService): preHandlerHookHandler {
+  return async function authenticate(req: FastifyRequest): Promise<void> {
     const header = req.headers.authorization;
-    if (!header?.startsWith("Bearer ")) {
-      next(Unauthenticated());
-      return;
-    }
+    if (!header?.startsWith("Bearer ")) throw Unauthenticated();
     try {
       const claims = jwtService.verifyAccessToken(header.slice("Bearer ".length));
       req.principal = { userId: claims.sub, email: claims.email, permissions: claims.perms };
       patchContext({ userId: claims.sub });
-      next();
     } catch (err) {
       if (err instanceof jwt.TokenExpiredError) {
-        next(Unauthenticated("auth.token_expired", "Your session has expired."));
-      } else {
-        next(Unauthenticated("auth.invalid_token", "Invalid authentication token."));
+        throw Unauthenticated("auth.token_expired", "Your session has expired.");
       }
+      throw Unauthenticated("auth.invalid_token", "Invalid authentication token.");
     }
   };
 }
@@ -55,21 +47,18 @@ export function requireAuth(req: { principal?: Principal }): Principal {
 
 /**
  * Route guard backed by the live RBAC provider (not just the token claims),
- * so a permission revoked after login takes effect immediately.
+ * so a permission revoked after login takes effect immediately. Runs after
+ * `authenticate` in the same preHandler array.
  */
-export function requirePermission(permissions: IPermissionProvider, action: string, resource: string) {
-  return function guard(req: Request, _res: Response, next: NextFunction): void {
+export function requirePermission(
+  permissions: IPermissionProvider,
+  action: string,
+  resource: string,
+): preHandlerHookHandler {
+  return async function guard(req: FastifyRequest, _reply: FastifyReply): Promise<void> {
     const principal = req.principal;
-    if (!principal) {
-      next(Unauthenticated());
-      return;
-    }
-    permissions
-      .can(principal.userId, action, resource)
-      .then((allowed) => {
-        if (allowed) next();
-        else next(Forbidden("auth.forbidden", `Missing permission: ${action}:${resource}`));
-      })
-      .catch(next);
+    if (!principal) throw Unauthenticated();
+    const allowed = await permissions.can(principal.userId, action, resource);
+    if (!allowed) throw Forbidden("auth.forbidden", `Missing permission: ${action}:${resource}`);
   };
 }

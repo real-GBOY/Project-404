@@ -1,4 +1,4 @@
-import type { Router } from "express";
+import type { FastifyPluginAsync } from "fastify";
 import type { UnitOfWork } from "../kernel/db/db.js";
 import type { Clock } from "../kernel/clock.js";
 import type { AuricConfig } from "../kernel/config.js";
@@ -23,7 +23,7 @@ export interface FilesModuleDeps {
 export interface FilesModule {
   storage: IFileStorage & { getMetadata(id: string): Promise<unknown> };
   permissions: PermissionDefinition[];
-  routes(ctx: RouteContext): Router;
+  routes(ctx: RouteContext): FastifyPluginAsync;
 }
 
 export function createFilesModule(deps: FilesModuleDeps): FilesModule {

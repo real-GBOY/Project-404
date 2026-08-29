@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile, unlink } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 
 /**
  * The physical bytes store. The Employee/domain modules never see this — they
@@ -29,7 +29,9 @@ export class LocalDiskAdapter implements StorageAdapter {
   }
 
   private pathFor(key: string): string {
-    const full = resolve(this.root, key);
+    // Storage keys are always forward-slash separated (see storageKeyFor); map
+    // to the OS separator only here, at the filesystem boundary.
+    const full = resolve(this.root, ...key.split("/"));
     if (!full.startsWith(this.root)) throw new Error("storage key escapes the storage root");
     return full;
   }
@@ -55,9 +57,12 @@ export class LocalDiskAdapter implements StorageAdapter {
   }
 }
 
-/** `2026/08/file-id` — keeps directories from growing unbounded. */
+/**
+ * `2026/08/file-id` — keeps directories from growing unbounded. Always
+ * forward-slash separated so the same key works for local disk and S3.
+ */
 export function storageKeyFor(fileId: string, now: Date): string {
   const y = now.getUTCFullYear();
   const m = String(now.getUTCMonth() + 1).padStart(2, "0");
-  return join(String(y), m, fileId);
+  return `${y}/${m}/${fileId}`;
 }

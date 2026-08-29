@@ -1,8 +1,8 @@
-import { Router } from "express";
+import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
-import { handler, parseQuery } from "../../http/handler.js";
+import { parseQuery } from "../../http/handler.js";
 import type { RouteContext } from "../../http/route-context.js";
-import type { AuditRepository } from "../infrastructure/audit-repository.js";
+import type { AuditRepository, AuditQuery } from "../infrastructure/audit-repository.js";
 
 const querySchema = z.object({
   actorId: z.string().optional(),
@@ -15,20 +15,19 @@ const querySchema = z.object({
   cursor: z.string().optional(),
 });
 
-export function auditRoutes(repo: AuditRepository, ctx: RouteContext): Router {
-  const r = Router();
-
-  r.get(
-    "/audit-logs",
-    ctx.authenticate,
-    ctx.guard("read", "audit_log"),
-    handler(async (req, res) => {
-      const q = parseQuery(querySchema, req.query);
-      const records = await repo.query(q);
-      const nextCursor = records.length === (q.limit ?? 50) ? records[records.length - 1]?.id : undefined;
-      res.json({ records, nextCursor });
-    }),
-  );
-
-  return r;
+export function auditRoutes(repo: AuditRepository, ctx: RouteContext): FastifyPluginAsync {
+  return async (app) => {
+    app.get(
+      "/audit-logs",
+      { preHandler: [ctx.authenticate, ctx.guard("read", "audit_log")] },
+      async (req) => {
+        const q = parseQuery(querySchema, req.query) as AuditQuery;
+        const records = await repo.query(q);
+        const limit = q.limit ?? 50;
+        const nextCursor =
+          records.length === limit ? records[records.length - 1]?.id : undefined;
+        return { records, nextCursor };
+      },
+    );
+  };
 }

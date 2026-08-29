@@ -15,8 +15,8 @@ const core = createAuricCore({
   // emailChannel: myClientSmtpChannel,   // optional overrides
 });
 
-await core.start();            // migrate + seed + start outbox worker
-core.app.listen(3000);         // Express app — mount client routes on it too
+await core.start();                     // migrate + seed + start outbox worker
+await core.app.listen({ port: 3000 }); // Fastify app — register client route plugins on it too
 
 // client code calls use cases directly, or depends on the provider interfaces:
 core.modules.identity.userProvider;      // IUserProvider
@@ -53,11 +53,12 @@ employee/
 ├── domain/          Employee entity + rules (no SQL, no HTTP)
 ├── application/     use cases — each owns its transaction
 ├── infrastructure/  repositories via `currentExecutor()`; provider impls
-├── api/             Express router; controllers stay thin
+├── api/             FastifyPluginAsync; handlers stay thin
 ├── events/          events it publishes (employee.created, …) + subscribers
 ├── permissions/     PermissionDefinition[] it contributes to RBAC
 ├── validation/      Zod schemas
 ├── migrations/      NNN_*.ts, added to core/kernel/db/migrations-manifest.ts
+│                    (until the Prisma cutover — then a prisma/schema/employee.prisma model)
 └── tests/
 ```
 
@@ -86,6 +87,48 @@ added when a real project needs them, living behind an interface in an
 `infrastructure/` or an adapters layer, invoked as external-effect events
 through the outbox. They do not go in `core/localization`, which is only
 language, direction, and formatting.
+
+## The Prisma cutover
+
+Plan §2 makes Prisma the owner of the schema definition and migration history,
+with its generated types feeding Kysely's `Database` interface (Prisma Client
+is **not** used for runtime queries — Kysely stays).
+
+### Done — the schema half
+
+The dev machine is now on Node 24 (via nvm; `.nvmrc` pins it, `package.json`
+`engines` is `^22.12 || >=24` — Prisma won't install on odd majors like 23.x).
+
+- `prisma@7` + `prisma-kysely@3` in devDependencies. Prisma 7's config lives in
+  `prisma.config.ts` (loads `.env`, sets the datasource URL from
+  `AURIC_DATABASE_URL`). Prisma 7 dropped `url` from the schema datasource block
+  and needs a preview feature for `extensions = [...]`, so `citext` is **not**
+  declared there — it stays owned by the bootstrap migration.
+- `prisma/schema/` is split by module (`identity.prisma`, `rbac.prisma`, …);
+  models mirror the current tables (`@@map` / `@map` keep the names). Columns
+  Prisma can't type precisely (string-union CHECK columns, JSONB payloads,
+  `files.byte_size` as `number`) carry a `/// @kyselyType(...)` annotation.
+- The `prisma-kysely` generator writes `core/kernel/db/schema.ts` with
+  `dbTypeName = "Database"`, so `db.ts` imports the same `Database` name as
+  before — no change there. `core/kernel/db/json.ts` holds the hand-written
+  `Json<T>` helper the generated file imports (via the generator `banner`).
+- `npm run db:generate` regenerates; `npm run db:pull` re-introspects.
+
+### Remaining — the migrations half
+
+Migrations are still owned by the Kysely migrator. To finish:
+
+1. `prisma migrate diff` (or `migrate dev` against a scratch DB) for the
+   baseline; hand-add a follow-up migration for what Prisma can't express: the
+   CHECK constraints, the `auric_set_updated_at` trigger + per-table triggers,
+   the `audit_logs` immutability trigger, and the partial index on
+   `outbox_messages`.
+2. Replace `core/kernel/db/migrator.ts` + `migrations-manifest.ts` +
+   `core/*/migrations/` + `scripts/migrate.ts` with `prisma migrate deploy`
+   (wire `core.migrate()` to shell it; `resetSchema()` in tests too).
+
+Nothing above touches a use case, a contract, or the event system — the
+boundaries that matter are ORM-agnostic.
 
 ## Upgrading Core in a client (Plan §11.3)
 

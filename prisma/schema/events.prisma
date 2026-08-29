@@ -1,0 +1,41 @@
+// core/events — transactional outbox + dead-letter queue (§6).
+//
+// NOT expressed here (Prisma can't, or it needs a preview feature) and owned
+// by core/events/outbox/migrations until the cutover follow-up migration:
+//   - the partial index `outbox_ready_idx` on outbox_messages
+//     (next_attempt_at) WHERE status = 'pending'
+//   - the `outbox_status_check` CHECK constraint
+
+model outbox_messages {
+  id              String    @id
+  event_name      String
+  /// @kyselyType(Json<Record<string, unknown>>)
+  payload         Json
+  /// @kyselyType('pending' | 'processing' | 'delivered' | 'failed')
+  status          String    @default("pending")
+  attempts        Int       @default(0)
+  max_attempts    Int
+  next_attempt_at DateTime  @default(now()) @db.Timestamptz(6)
+  last_error      String?
+  locked_at       DateTime? @db.Timestamptz(6)
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  delivered_at    DateTime? @db.Timestamptz(6)
+
+  @@map("outbox_messages")
+}
+
+model dead_letter_messages {
+  id            String    @id
+  outbox_id     String
+  event_name    String
+  /// @kyselyType(Json<Record<string, unknown>>)
+  payload       Json
+  attempts      Int
+  last_error    String
+  /// @kyselyType(Json<Array<{ at: string; error: string }>>)
+  retry_history Json      @default("[]")
+  created_at    DateTime  @default(now()) @db.Timestamptz(6)
+  replayed_at   DateTime? @db.Timestamptz(6)
+
+  @@map("dead_letter_messages")
+}

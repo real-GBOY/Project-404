@@ -1,0 +1,26 @@
+// core/audit — append-only audit trail (§7.7). DB-enforced immutability
+// (no UPDATE/DELETE) is a trigger added by core/audit/migrations; Prisma
+// cannot express it (see docs/integration-guide.md, deferred cutover).
+
+model audit_logs {
+  id             String   @id
+  actor_id       String?
+  /// @kyselyType('user' | 'system')
+  actor_type     String   @default("user")
+  action         String
+  resource_type  String
+  resource_id    String?
+  /// @kyselyType(Json<unknown>)
+  before         Json?
+  /// @kyselyType(Json<unknown>)
+  after          Json?
+  /// @kyselyType(Json<Record<string, unknown>>)
+  metadata       Json?
+  correlation_id String?
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([actor_id], map: "audit_logs_actor_idx")
+  @@index([created_at], map: "audit_logs_created_idx")
+  @@index([resource_type, resource_id], map: "audit_logs_resource_idx")
+  @@map("audit_logs")
+}

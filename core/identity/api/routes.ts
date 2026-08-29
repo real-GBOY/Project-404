@@ -1,5 +1,5 @@
-import { Router } from "express";
-import { handler, parseBody } from "../../http/handler.js";
+import type { FastifyPluginAsync } from "fastify";
+import { parseBody } from "../../http/handler.js";
 import type { RouteContext } from "../../http/route-context.js";
 import { requireAuth } from "./auth-middleware.js";
 import type { IdentityService } from "../application/identity-service.js";
@@ -18,100 +18,63 @@ export function identityRoutes(
   service: IdentityService,
   userProvider: IUserProvider,
   ctx: RouteContext,
-): Router {
-  const r = Router();
-
-  r.post(
-    "/auth/register",
-    handler(async (req, res) => {
+): FastifyPluginAsync {
+  return async (app) => {
+    app.post("/auth/register", async (req, reply) => {
       const input = parseBody(registerSchema, req.body);
       const user = await service.register(input);
-      res.status(201).json({ user });
-    }),
-  );
+      reply.status(201).send({ user });
+    });
 
-  r.post(
-    "/auth/login",
-    handler(async (req, res) => {
+    app.post("/auth/login", async (req, reply) => {
       const input = parseBody(loginSchema, req.body);
-      const result = await service.login({ ...input, userAgent: req.headers["user-agent"] });
-      res.json(result);
-    }),
-  );
+      const ua = req.headers["user-agent"];
+      reply.send(await service.login({ ...input, ...(ua ? { userAgent: ua } : {}) }));
+    });
 
-  r.post(
-    "/auth/refresh",
-    handler(async (req, res) => {
+    app.post("/auth/refresh", async (req, reply) => {
       const { refreshToken } = parseBody(refreshSchema, req.body);
-      const tokens = await service.refresh(refreshToken);
-      res.json({ tokens });
-    }),
-  );
+      reply.send({ tokens: await service.refresh(refreshToken) });
+    });
 
-  r.post(
-    "/auth/logout",
-    handler(async (req, res) => {
+    app.post("/auth/logout", async (req, reply) => {
       const { refreshToken } = parseBody(refreshSchema, req.body);
       await service.logout(refreshToken);
-      res.status(204).end();
-    }),
-  );
+      reply.status(204).send();
+    });
 
-  r.post(
-    "/auth/logout-all",
-    ctx.authenticate,
-    handler(async (req, res) => {
-      const principal = requireAuth(req);
-      await service.logoutAll(principal.userId);
-      res.status(204).end();
-    }),
-  );
+    app.post("/auth/logout-all", { preHandler: ctx.authenticate }, async (req, reply) => {
+      await service.logoutAll(requireAuth(req).userId);
+      reply.status(204).send();
+    });
 
-  r.post(
-    "/auth/password/forgot",
-    handler(async (req, res) => {
+    app.post("/auth/password/forgot", async (req, reply) => {
       const { email } = parseBody(requestPasswordResetSchema, req.body);
       await service.requestPasswordReset(email);
-      res.status(202).json({ message: "If that email is registered, a reset link is on its way." });
-    }),
-  );
+      reply.status(202).send({ message: "If that email is registered, a reset link is on its way." });
+    });
 
-  r.post(
-    "/auth/password/reset",
-    handler(async (req, res) => {
+    app.post("/auth/password/reset", async (req, reply) => {
       const { token, password } = parseBody(resetPasswordSchema, req.body);
       await service.resetPassword(token, password);
-      res.status(204).end();
-    }),
-  );
+      reply.status(204).send();
+    });
 
-  r.post(
-    "/auth/email/verify",
-    handler(async (req, res) => {
+    app.post("/auth/email/verify", async (req, reply) => {
       const { token } = parseBody(verifyEmailSchema, req.body);
       await service.verifyEmail(token);
-      res.status(204).end();
-    }),
-  );
+      reply.status(204).send();
+    });
 
-  r.post(
-    "/auth/email/resend",
-    handler(async (req, res) => {
+    app.post("/auth/email/resend", async (req, reply) => {
       const { email } = parseBody(requestEmailVerificationSchema, req.body);
       await service.requestEmailVerification(email);
-      res.status(202).json({ message: "If that account needs verification, a new link is on its way." });
-    }),
-  );
+      reply.status(202).send({ message: "If that account needs verification, a new link is on its way." });
+    });
 
-  r.get(
-    "/me",
-    ctx.authenticate,
-    handler(async (req, res) => {
+    app.get("/me", { preHandler: ctx.authenticate }, async (req, reply) => {
       const principal = requireAuth(req);
-      const user = await userProvider.getUser(principal.userId);
-      res.json({ user, permissions: principal.permissions });
-    }),
-  );
-
-  return r;
+      reply.send({ user: await userProvider.getUser(principal.userId), permissions: principal.permissions });
+    });
+  };
 }
