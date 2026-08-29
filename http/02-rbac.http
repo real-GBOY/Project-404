@@ -1,18 +1,16 @@
 ### RBAC  (core/rbac/api/routes.ts) — every route needs a role permission
 ###       read:role · manage:role · assign:role  (admin wildcard *:* covers all)
 @baseUrl = http://localhost:3000/api
-@email = tester@example.com
-@password = correct horse battery staple
 
-### Log in (user must already have the admin role — see http/README.md)
+### Log in — dev@auric.local already has the admin role (see http/README.md)
 # @name login
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
-{ "email": "{{email}}", "password": "{{password}}" }
+{ "email": "dev@auric.local", "password": "correct horse battery staple" }
 
 ###
-@token = {{login.response.body.tokens.accessToken}}
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImRldkBhdXJpYy5sb2NhbCIsInBlcm1zIjpbIio6KiJdLCJpYXQiOjE3ODgwMzQ2NTksImV4cCI6MTc4ODAzNTU1OSwiaXNzIjoiYXVyaWMtY29yZSIsInN1YiI6InVzcl9XYjR1ZXRIcVlZR1hTaVI5Z3BDRnIifQ.NFJumBfGBHBa00wo843FWPbZxhSleJpsCmGOV_vF7RY
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Roles

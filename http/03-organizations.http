@@ -1,15 +1,13 @@
 ### Organizations  (core/organizations/api/routes.ts)
 ###   create:organization · read:organization · update:organization · manage_members:organization
 @baseUrl = http://localhost:3000/api
-@email = tester@example.com
-@password = correct horse battery staple
 
-### Log in (needs the organization permissions, e.g. via the admin role)
+### Log in — dev@auric.local already has the admin role
 # @name login
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
-{ "email": "{{email}}", "password": "{{password}}" }
+{ "email": "dev@auric.local", "password": "correct horse battery staple" }
 
 ###
 @token = {{login.response.body.tokens.accessToken}}

@@ -3,15 +3,13 @@
 ###   Registering a user creates a "welcome" notification, so a fresh account
 ###   already has one to list.
 @baseUrl = http://localhost:3000/api
-@email = tester@example.com
-@password = correct horse battery staple
 
 ### Log in
 # @name login
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
-{ "email": "{{email}}", "password": "{{password}}" }
+{ "email": "dev@auric.local", "password": "correct horse battery staple" }
 
 ###
 @token = {{login.response.body.tokens.accessToken}}

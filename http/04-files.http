@@ -3,15 +3,13 @@
 ###   reaching someone else's file needs read:file / delete:file.
 ###   Max upload 25 MB, single file, field name "file".
 @baseUrl = http://localhost:3000/api
-@email = tester@example.com
-@password = correct horse battery staple
 
-### Log in (needs upload:file — e.g. via the admin role)
+### Log in — dev@auric.local already has the admin role
 # @name login
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
-{ "email": "{{email}}", "password": "{{password}}" }
+{ "email": "dev@auric.local", "password": "correct horse battery staple" }
 
 ###
 @token = {{login.response.body.tokens.accessToken}}

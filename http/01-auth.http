@@ -1,53 +1,22 @@
 ### Identity & Auth  (core/identity/api/routes.ts, mounted at /api)
 @baseUrl = http://localhost:3000/api
-@email = tester@example.com
-@password = correct horse battery staple
-
-# Paste the token from the server console (see http/README.md → email verification)
-@verificationToken = PASTE_FROM_SERVER_LOGS
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 1. Register — creates a `pending` user, fires user.registered + a welcome
-#    notification (same tx) and an email-verification email (via the outbox).
+# WORKING CREDENTIALS — this account already exists in the dev DB:
+#   email:    dev@auric.local
+#   password: correct horse battery staple
+#   • email verified, status = active
+#   • granted the `admin` role (so 02-rbac / 03-organizations / 06-audit work too)
+# Credentials are inlined below (not variables) so nothing needs resolving.
 # ─────────────────────────────────────────────────────────────────────────────
-# @name register
-POST {{baseUrl}}/auth/register
-Content-Type: application/json
 
-{
-  "email": "{{email}}",
-  "password": "{{password}}",
-  "displayName": "Test User",
-  "locale": "ar"
-}
-
-###
-@userId = {{register.response.body.user.id}}
-
-# ─────────────────────────────────────────────────────────────────────────────
-# 2. Verify email — required before login. Token comes from the dev email log.
-# ─────────────────────────────────────────────────────────────────────────────
-POST {{baseUrl}}/auth/email/verify
-Content-Type: application/json
-
-{ "token": "{{verificationToken}}" }
-
-### Resend the verification email (re-queues it through the outbox)
-POST {{baseUrl}}/auth/email/resend
-Content-Type: application/json
-
-{ "email": "{{email}}" }
-
-# ─────────────────────────────────────────────────────────────────────────────
-# 3. Login — returns { user, tokens: { accessToken, refreshToken, expiresIn, tokenType } }
-# ─────────────────────────────────────────────────────────────────────────────
 # @name login
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
 {
-  "email": "{{email}}",
-  "password": "{{password}}"
+  "email": "dev@auric.local",
+  "password": "correct horse battery staple"
 }
 
 ###
@@ -59,8 +28,8 @@ GET {{baseUrl}}/me
 Authorization: Bearer {{accessToken}}
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 4. Refresh — rotates the refresh token. Reusing a consumed one trips theft
-#    protection and revokes the whole token family.
+# Refresh — rotates the refresh token. Reusing a consumed one trips theft
+# protection and revokes the whole token family.
 # ─────────────────────────────────────────────────────────────────────────────
 # @name refresh
 POST {{baseUrl}}/auth/refresh
@@ -71,40 +40,79 @@ Content-Type: application/json
 ###
 @rotatedRefreshToken = {{refresh.response.body.tokens.refreshToken}}
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 5. Password reset
-# ─────────────────────────────────────────────────────────────────────────────
-### Forgot — always 202, emails a reset link via the outbox (token in dev logs)
-POST {{baseUrl}}/auth/password/forgot
-Content-Type: application/json
-
-{ "email": "{{email}}" }
-
-### Reset — consume the token from the reset email
-POST {{baseUrl}}/auth/password/reset
-Content-Type: application/json
-
-{
-  "token": "PASTE_RESET_TOKEN_FROM_LOGS",
-  "password": "a brand new long password"
-}
-
-# ─────────────────────────────────────────────────────────────────────────────
-# 6. Logout
-# ─────────────────────────────────────────────────────────────────────────────
 ### Logout — revokes a single refresh token
 POST {{baseUrl}}/auth/logout
 Content-Type: application/json
 
 { "refreshToken": "{{rotatedRefreshToken}}" }
 
-### Logout everywhere — revokes every refresh token for the user (needs a valid access token)
+### Logout everywhere — revokes every refresh token for the user
+# (run Login again afterwards to get fresh tokens)
 POST {{baseUrl}}/auth/logout-all
 Authorization: Bearer {{accessToken}}
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Negative checks
-# ─────────────────────────────────────────────────────────────────────────────
+
+# ═════════════════════════════════════════════════════════════════════════════
+# CREATING A NEW ACCOUNT FROM SCRATCH
+# A fresh user is `pending` and cannot log in until the email is verified.
+# No SMTP in dev — the outbox worker logs the email instead. Get the token
+# from the server console OR from the DB:
+#
+#   psql "postgres://postgres:postgres@localhost:5432/auric" -t -A -c "select payload->>'token' from outbox_messages where payload::text like '%verify-email%' order by created_at desc limit 1;"
+# ═════════════════════════════════════════════════════════════════════════════
+
+### 1. Register — creates a `pending` user, welcome notification, verification email
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "new-user@auric.local",
+  "password": "another long enough password",
+  "displayName": "New User",
+  "locale": "ar"
+}
+
+### 2. Verify email (paste the token from the console / DB query above) — 204 on success
+POST {{baseUrl}}/auth/email/verify
+Content-Type: application/json
+
+{ "token": "PASTE_VERIFICATION_TOKEN" }
+
+### Resend the verification email (re-queues it through the outbox)
+POST {{baseUrl}}/auth/email/resend
+Content-Type: application/json
+
+{ "email": "new-user@auric.local" }
+
+### 3. Now login works for the new account
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "email": "new-user@auric.local", "password": "another long enough password" }
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# PASSWORD RESET
+# ═════════════════════════════════════════════════════════════════════════════
+### Forgot — always 202, emails a reset link via the outbox (token in dev logs / DB)
+POST {{baseUrl}}/auth/password/forgot
+Content-Type: application/json
+
+{ "email": "dev@auric.local" }
+
+### Reset — consume the token from the reset email, then log in with the new password
+POST {{baseUrl}}/auth/password/reset
+Content-Type: application/json
+
+{
+  "token": "PASTE_RESET_TOKEN",
+  "password": "a brand new long password"
+}
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# NEGATIVE CHECKS
+# ═════════════════════════════════════════════════════════════════════════════
 ### 401 — no token
 GET {{baseUrl}}/me
 
@@ -112,8 +120,20 @@ GET {{baseUrl}}/me
 GET {{baseUrl}}/me
 Authorization: Bearer not-a-real-token
 
+### 401 — wrong password
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "email": "dev@auric.local", "password": "wrong" }
+
 ### 422 — password too short (min 10)
 POST {{baseUrl}}/auth/register
 Content-Type: application/json
 
 { "email": "shortpw@example.com", "password": "short" }
+
+### 409 — email already registered
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{ "email": "dev@auric.local", "password": "some long password here" }

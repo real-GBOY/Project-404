@@ -17,6 +17,20 @@ npm run dev          # tsx watch scripts/serve.ts  → http://localhost:3000
 
 Needs Postgres running with the `auric` database (see `.env` / `AURIC_DATABASE_URL`).
 
+## Ready-made account
+
+A dev user is already seeded in the local DB, so the files work with no setup:
+
+| | |
+|---|---|
+| email | `dev@auric.local` |
+| password | `correct horse battery staple` |
+| status | verified + `active` |
+| role | `admin` (`*:*`) — so the RBAC / organizations / audit files work too |
+
+Just open `01-auth.http` and send **Login**. The sections below only matter if you
+want to create *additional* accounts.
+
 ## The one manual step: email verification
 
 A freshly registered user has status `pending` and **cannot log in until the email is verified**. No SMTP is configured in dev, so the outbox worker's email transport just logs the message. Watch the server console for a line like:
@@ -31,7 +45,12 @@ Copy that token into `@verificationToken` in `01-auth.http` and send the "Verify
 
 ## The other manual step: becoming an admin
 
-RBAC / organizations / audit routes are permission-gated. The very first admin has to be granted directly in the DB — there is no bootstrap endpoint. After registering + verifying a user, grab its id (from the register response or `/me`) and run:
+The seeded `dev@auric.local` account already has the `admin` role, so you only need
+this for *other* accounts you create.
+
+RBAC / organizations / audit routes are permission-gated, and there is no bootstrap
+endpoint — an admin has to be granted directly in the DB. Grab the user id (from the
+register response or `/me`) and run:
 
 ```sql
 INSERT INTO user_roles (user_id, role_id)
