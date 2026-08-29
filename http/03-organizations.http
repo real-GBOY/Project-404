@@ -1,0 +1,61 @@
+### Organizations  (core/organizations/api/routes.ts)
+###   create:organization · read:organization · update:organization · manage_members:organization
+@baseUrl = http://localhost:3000/api
+@email = tester@example.com
+@password = correct horse battery staple
+
+### Log in (needs the organization permissions, e.g. via the admin role)
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "email": "{{email}}", "password": "{{password}}" }
+
+###
+@token = {{login.response.body.tokens.accessToken}}
+
+### Create an organization  (create:organization). `slug` optional; `settings` optional.
+# @name createOrg
+POST {{baseUrl}}/organizations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Acme Egypt",
+  "slug": "acme-eg",
+  "settings": { "timezone": "Africa/Cairo" }
+}
+
+###
+@orgId = {{createOrg.response.body.organization.id}}
+
+### Get an organization  (read:organization)
+GET {{baseUrl}}/organizations/{{orgId}}
+Authorization: Bearer {{token}}
+
+### Update settings  (update:organization) — replaces the settings object
+PATCH {{baseUrl}}/organizations/{{orgId}}/settings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "settings": { "timezone": "Africa/Cairo", "currency": "EGP" }
+}
+
+### List members  (read:organization)
+GET {{baseUrl}}/organizations/{{orgId}}/members
+Authorization: Bearer {{token}}
+
+### Add a member  (manage_members:organization). membershipRole optional (defaults "member").
+POST {{baseUrl}}/organizations/{{orgId}}/members
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "userId": "PASTE_TARGET_USER_ID",
+  "membershipRole": "admin"
+}
+
+### Remove a member  (manage_members:organization)
+DELETE {{baseUrl}}/organizations/{{orgId}}/members/PASTE_TARGET_USER_ID
+Authorization: Bearer {{token}}

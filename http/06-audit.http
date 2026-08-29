@@ -1,0 +1,36 @@
+### Audit trail  (core/audit/api/routes.ts) — needs read:audit_log
+###   Append-only. Populated automatically: user.registered, user.logged_in,
+###   rbac.role_created, org events, etc.
+@baseUrl = http://localhost:3000/api
+@email = tester@example.com
+@password = correct horse battery staple
+
+### Log in (needs read:audit_log — e.g. via the admin role)
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "email": "{{email}}", "password": "{{password}}" }
+
+###
+@token = {{login.response.body.tokens.accessToken}}
+
+### All recent entries — { records, nextCursor }
+GET {{baseUrl}}/audit-logs
+Authorization: Bearer {{token}}
+
+### Filter by action
+GET {{baseUrl}}/audit-logs?action=user.logged_in&limit=20
+Authorization: Bearer {{token}}
+
+### Filter by actor
+GET {{baseUrl}}/audit-logs?actorId=PASTE_USER_ID
+Authorization: Bearer {{token}}
+
+### Filter by resource + time window (ISO dates)
+GET {{baseUrl}}/audit-logs?resourceType=user&from=2026-08-01&to=2026-09-01&limit=50
+Authorization: Bearer {{token}}
+
+### Next page
+GET {{baseUrl}}/audit-logs?limit=50&cursor=PASTE_nextCursor
+Authorization: Bearer {{token}}

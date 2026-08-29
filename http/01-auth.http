@@ -1,0 +1,119 @@
+### Identity & Auth  (core/identity/api/routes.ts, mounted at /api)
+@baseUrl = http://localhost:3000/api
+@email = tester@example.com
+@password = correct horse battery staple
+
+# Paste the token from the server console (see http/README.md → email verification)
+@verificationToken = PASTE_FROM_SERVER_LOGS
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 1. Register — creates a `pending` user, fires user.registered + a welcome
+#    notification (same tx) and an email-verification email (via the outbox).
+# ─────────────────────────────────────────────────────────────────────────────
+# @name register
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}",
+  "displayName": "Test User",
+  "locale": "ar"
+}
+
+###
+@userId = {{register.response.body.user.id}}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 2. Verify email — required before login. Token comes from the dev email log.
+# ─────────────────────────────────────────────────────────────────────────────
+POST {{baseUrl}}/auth/email/verify
+Content-Type: application/json
+
+{ "token": "{{verificationToken}}" }
+
+### Resend the verification email (re-queues it through the outbox)
+POST {{baseUrl}}/auth/email/resend
+Content-Type: application/json
+
+{ "email": "{{email}}" }
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 3. Login — returns { user, tokens: { accessToken, refreshToken, expiresIn, tokenType } }
+# ─────────────────────────────────────────────────────────────────────────────
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+###
+@accessToken = {{login.response.body.tokens.accessToken}}
+@refreshToken = {{login.response.body.tokens.refreshToken}}
+
+### Current principal + permission keys baked into the token
+GET {{baseUrl}}/me
+Authorization: Bearer {{accessToken}}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 4. Refresh — rotates the refresh token. Reusing a consumed one trips theft
+#    protection and revokes the whole token family.
+# ─────────────────────────────────────────────────────────────────────────────
+# @name refresh
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+
+{ "refreshToken": "{{refreshToken}}" }
+
+###
+@rotatedRefreshToken = {{refresh.response.body.tokens.refreshToken}}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 5. Password reset
+# ─────────────────────────────────────────────────────────────────────────────
+### Forgot — always 202, emails a reset link via the outbox (token in dev logs)
+POST {{baseUrl}}/auth/password/forgot
+Content-Type: application/json
+
+{ "email": "{{email}}" }
+
+### Reset — consume the token from the reset email
+POST {{baseUrl}}/auth/password/reset
+Content-Type: application/json
+
+{
+  "token": "PASTE_RESET_TOKEN_FROM_LOGS",
+  "password": "a brand new long password"
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 6. Logout
+# ─────────────────────────────────────────────────────────────────────────────
+### Logout — revokes a single refresh token
+POST {{baseUrl}}/auth/logout
+Content-Type: application/json
+
+{ "refreshToken": "{{rotatedRefreshToken}}" }
+
+### Logout everywhere — revokes every refresh token for the user (needs a valid access token)
+POST {{baseUrl}}/auth/logout-all
+Authorization: Bearer {{accessToken}}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Negative checks
+# ─────────────────────────────────────────────────────────────────────────────
+### 401 — no token
+GET {{baseUrl}}/me
+
+### 401 — garbage token
+GET {{baseUrl}}/me
+Authorization: Bearer not-a-real-token
+
+### 422 — password too short (min 10)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{ "email": "shortpw@example.com", "password": "short" }

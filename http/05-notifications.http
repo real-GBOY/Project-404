@@ -1,0 +1,38 @@
+### Notifications  (core/notifications/api/routes.ts)
+###   Auth only — every user manages their own notifications, no extra permission.
+###   Registering a user creates a "welcome" notification, so a fresh account
+###   already has one to list.
+@baseUrl = http://localhost:3000/api
+@email = tester@example.com
+@password = correct horse battery staple
+
+### Log in
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "email": "{{email}}", "password": "{{password}}" }
+
+###
+@token = {{login.response.body.tokens.accessToken}}
+
+### List notifications — { notifications, unreadCount, nextCursor }
+# @name list
+GET {{baseUrl}}/notifications
+Authorization: Bearer {{token}}
+
+### List with filters: unreadOnly (true|false), limit (1..100), cursor
+GET {{baseUrl}}/notifications?unreadOnly=true&limit=10
+Authorization: Bearer {{token}}
+
+### Next page
+GET {{baseUrl}}/notifications?limit=10&cursor=PASTE_nextCursor
+Authorization: Bearer {{token}}
+
+### Mark one as read (uses the first notification from the list request above)
+POST {{baseUrl}}/notifications/{{list.response.body.$.notifications[0].id}}/read
+Authorization: Bearer {{token}}
+
+### Mark all as read
+POST {{baseUrl}}/notifications/read-all
+Authorization: Bearer {{token}}

@@ -1,0 +1,72 @@
+### RBAC  (core/rbac/api/routes.ts) — every route needs a role permission
+###       read:role · manage:role · assign:role  (admin wildcard *:* covers all)
+@baseUrl = http://localhost:3000/api
+@email = tester@example.com
+@password = correct horse battery staple
+
+### Log in (user must already have the admin role — see http/README.md)
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "email": "{{email}}", "password": "{{password}}" }
+
+###
+@token = {{login.response.body.tokens.accessToken}}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Roles
+# ─────────────────────────────────────────────────────────────────────────────
+### List roles  (read:role)
+GET {{baseUrl}}/rbac/roles
+Authorization: Bearer {{token}}
+
+### Create a role  (manage:role)
+POST {{baseUrl}}/rbac/roles
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "key": "editor",
+  "name": "Editor",
+  "description": "Can manage content"
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Permissions on a role
+# ─────────────────────────────────────────────────────────────────────────────
+### Grant a permission to a role  (manage:role)
+POST {{baseUrl}}/rbac/roles/editor/permissions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "action": "read", "resource": "file" }
+
+### Revoke a permission from a role  (manage:role) — permissionKey is "action:resource"
+DELETE {{baseUrl}}/rbac/roles/editor/permissions/read:file
+Authorization: Bearer {{token}}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Role assignments
+# ─────────────────────────────────────────────────────────────────────────────
+### Assign a role to a user  (assign:role)
+POST {{baseUrl}}/rbac/assignments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "userId": "PASTE_TARGET_USER_ID",
+  "roleKey": "editor"
+}
+
+### Remove a role from a user  (assign:role)
+DELETE {{baseUrl}}/rbac/assignments/PASTE_TARGET_USER_ID/editor
+Authorization: Bearer {{token}}
+
+### A user's roles + effective permissions  (read:role)
+GET {{baseUrl}}/rbac/users/PASTE_TARGET_USER_ID
+Authorization: Bearer {{token}}
+
+### 403 — authenticated but missing the permission (try with a non-admin token)
+GET {{baseUrl}}/rbac/roles
+Authorization: Bearer {{token}}

@@ -1,0 +1,68 @@
+### Files  (core/files/api/routes.ts)
+###   upload:file to POST. GET/DELETE: the owner is always allowed;
+###   reaching someone else's file needs read:file / delete:file.
+###   Max upload 25 MB, single file, field name "file".
+@baseUrl = http://localhost:3000/api
+@email = tester@example.com
+@password = correct horse battery staple
+
+### Log in (needs upload:file — e.g. via the admin role)
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "email": "{{email}}", "password": "{{password}}" }
+
+###
+@token = {{login.response.body.tokens.accessToken}}
+
+### Upload a file from disk  (upload:file). ?visibility=private|public (default private)
+# @name upload
+POST {{baseUrl}}/files?visibility=private
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----AuricBoundary
+
+------AuricBoundary
+Content-Disposition: form-data; name="file"; filename="sample.txt"
+Content-Type: text/plain
+
+< ./sample.txt
+------AuricBoundary--
+
+###
+@fileId = {{upload.response.body.file.id}}
+
+### Upload with inline content
+POST {{baseUrl}}/files
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----AuricBoundary
+
+------AuricBoundary
+Content-Disposition: form-data; name="file"; filename="note.txt"
+Content-Type: text/plain
+
+inline body written straight into the request
+------AuricBoundary--
+
+### File metadata (checksum, size, visibility, owner)
+GET {{baseUrl}}/files/{{fileId}}/metadata
+Authorization: Bearer {{token}}
+
+### Download the file content
+GET {{baseUrl}}/files/{{fileId}}
+Authorization: Bearer {{token}}
+
+### Delete the file
+DELETE {{baseUrl}}/files/{{fileId}}
+Authorization: Bearer {{token}}
+
+### 422 — no file part in the multipart body
+POST {{baseUrl}}/files
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----AuricBoundary
+
+------AuricBoundary
+Content-Disposition: form-data; name="notafile"
+
+x
+------AuricBoundary--

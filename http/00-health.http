@@ -1,0 +1,8 @@
+### Health & readiness — no auth required
+@baseUrl = http://localhost:3000/api
+
+### Liveness — always 200 while the process is up
+GET {{baseUrl}}/health
+
+### Readiness — 200 "ready" / 503 "degraded"; checks DB + outbox worker backlog
+GET {{baseUrl}}/health/ready
