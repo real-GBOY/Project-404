@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { directionOf, negotiateLocale } from "../domain/locale.js";
-import { resolveTranslatable, translatable } from "../domain/translatable.js";
+import { directionOf, isSupported, languageOf, negotiateLocale } from "../domain/locale.js";
+import { isTranslatable, resolveTranslatable, translatable } from "../domain/translatable.js";
 import { formatCurrency, formatDate, formatNumber } from "../formatters/formatters.js";
-import { t } from "../i18n/catalog.js";
+import { bundleFor, t } from "../i18n/catalog.js";
 
 describe("locale", () => {
   it("knows Arabic is RTL and English is LTR", () => {
@@ -16,6 +16,23 @@ describe("locale", () => {
     expect(negotiateLocale([null, undefined], ["ar", "en"], "ar")).toBe("ar");
     expect(negotiateLocale(["de"], ["ar", "en"], "ar")).toBe("ar");
   });
+
+  it("negotiation matches on the language subtag and returns the supported entry", () => {
+    expect(negotiateLocale(["ar-EG"], ["ar", "en"], "en")).toBe("ar");
+    // earlier candidate wins over a later one
+    expect(negotiateLocale(["en", "ar"], ["ar", "en"], "ar")).toBe("en");
+  });
+
+  it("languageOf takes the primary subtag", () => {
+    expect(languageOf("ar-EG")).toBe("ar");
+    expect(languageOf("EN_us")).toBe("en");
+    expect(languageOf("fr")).toBe("fr");
+  });
+
+  it("isSupported compares by language, ignoring region", () => {
+    expect(isSupported("ar-EG", ["ar", "en"])).toBe(true);
+    expect(isSupported("de", ["ar", "en"])).toBe(false);
+  });
 });
 
 describe("translatable", () => {
@@ -24,6 +41,18 @@ describe("translatable", () => {
     expect(resolveTranslatable(v, "ar")).toBe("مرحبا");
     expect(resolveTranslatable(v, "en")).toBe("Hello");
     expect(resolveTranslatable(v, "fr")).toBe("مرحبا");
+  });
+
+  it("uses an extra locale when one is provided", () => {
+    const v = translatable("مرحبا", "Hello", { fr: "Bonjour" });
+    expect(resolveTranslatable(v, "fr-FR")).toBe("Bonjour");
+  });
+
+  it("isTranslatable recognises the bilingual shape", () => {
+    expect(isTranslatable({ ar: "أ", en: "a" })).toBe(true);
+    expect(isTranslatable({ ar: "أ" })).toBe(false);
+    expect(isTranslatable("plain string")).toBe(false);
+    expect(isTranslatable(null)).toBe(false);
   });
 });
 
@@ -51,5 +80,18 @@ describe("i18n catalog", () => {
 
   it("interpolates params", () => {
     expect(t("notification.welcome_title", "en", { app: "AURIC" })).toBe("Welcome to AURIC");
+  });
+
+  it("leaves an unfilled placeholder visible rather than blanking it", () => {
+    expect(t("notification.welcome_title", "en")).toBe("Welcome to {{app}}");
+  });
+
+  it("resolves via the Arabic bundle for an unsupported locale", () => {
+    expect(t("common.ok", "de")).toBe("تم");
+  });
+
+  it("bundleFor returns the language bundle, defaulting to Arabic", () => {
+    expect(bundleFor("en").common).toMatchObject({ ok: "OK" });
+    expect(bundleFor("de")).toBe(bundleFor("ar"));
   });
 });
