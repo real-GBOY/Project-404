@@ -39,15 +39,18 @@ Chosen to match AURIC's existing repos and expertise. One stack, done excellentl
 | Layer | Technology |
 |---|---|
 | Language | TypeScript (dominant across all repos) |
-| Backend runtime | Node.js |
-| Primary database | PostgreSQL (relational, transactional, most Core data) |
-| Secondary database | MongoDB (documents, logs, flexible schemas where justified) |
+| Backend runtime | Node.js + Fastify |
+| Database | PostgreSQL — the only datastore. Relational, transactional, holds all Core and domain data. No secondary database. |
+| Queries & transactions | Kysely — typed query builder; owns all runtime SQL and the transaction boundary |
+| Schema & migrations | Prisma — owns the schema definition and migration history. Its generated types are the source for Kysely's `Database` types (types flow Prisma → Kysely). Prisma Client is **not** used for runtime queries. |
+| Validation | Zod — request schemas at the API boundary and startup config parsing |
 | API style | REST, documented with OpenAPI |
-| Web frontend | React + TypeScript |
-| Mobile frontend | React Native (shared TypeScript domain types) |
-| Auth tokens | JWT access tokens + refresh tokens |
-| Background jobs | Queue-based worker (e.g. BullMQ on Redis) |
+| Auth | JWT access + refresh tokens; passwords hashed with Argon2 (argon2id) |
+| Logging | pino — structured JSON, request-correlated |
+| Background jobs | Queue-based worker, Postgres-backed; added only when a real job appears (see §6.1) |
 | Real-time | WebSocket channel for notifications and live updates |
+| Web frontend (later) | React + TypeScript + Tailwind CSS + shadcn/ui |
+| Mobile frontend (later) | React Native (shared TypeScript domain types) |
 
 Second implementations (.NET, Laravel, Django) are explicitly out of scope until the business is validated. The **business architecture** stays conceptually consistent even if a second runtime is ever added.
 
@@ -94,8 +97,8 @@ The modules are logical boundaries, **not** separate services. Do not split them
         └─────────┬─────────┘
                   ▼
              DATA LAYER
-      (PostgreSQL; MongoDB only where a flexible
-       schema is genuinely justified)
+      (PostgreSQL only — Kysely for queries and
+       transactions, Prisma for schema and migrations)
 ```
 
 ### 3.2 Module anatomy
@@ -331,7 +334,7 @@ There is a real distinction here that must not be blurred:
 This is a **menu of what Core capabilities can grow into**, not a build list. Each capability has a **Start here** minimum (build this when the capability is first needed) and **Later** items (add only when a real project asks). Applying the Governing Rule: build the Start-here line, ship, and let projects pull the Later items in.
 
 ### 7.1 Identity & Authentication
-- **Start here:** register, login, logout, refresh, forgot password, email verification, secure password hashing.
+- **Start here:** register, login, logout, refresh, forgot password, email verification, secure password hashing (Argon2id).
 - **Later (from real demand):** two-factor (TOTP), social/OAuth login, sophisticated session management/revocation, account lockout and brute-force protection.
 
 ### 7.2 RBAC (Role-Based Access Control)

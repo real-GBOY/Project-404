@@ -1,0 +1,138 @@
+import type { DomainEvent } from "../../contracts/domain-event.js";
+import type { Clock } from "../../kernel/clock.js";
+import { moduleLogger } from "../../kernel/logging/logger.js";
+import { runWithContext } from "../../kernel/logging/context.js";
+import { unitOfWork } from "../../kernel/db/db.js";
+import { newId } from "../../kernel/id.js";
+import type { EventRegistry } from "../registry.js";
+import type { OutboxRepository, OutboxRow } from "./outbox-repository.js";
+
+const log = moduleLogger("outbox-worker");
+
+export interface OutboxWorkerOptions {
+  pollIntervalMs: number;
+  batchSize: number;
+  /** A processing row untouched for this long is considered abandoned. */
+  staleLockMs?: number;
+}
+
+/**
+ * The silent background process (§6.2). It MUST be monitored — it can fail
+ * quietly while events pile up. `stats()` on the repository and the health
+ * check surface its backlog.
+ */
+export class OutboxWorker {
+  private timer: NodeJS.Timeout | undefined;
+  private running = false;
+  private ticking = false;
+  private lastTickAt: Date | undefined;
+  private lastError: string | undefined;
+
+  constructor(
+    private readonly registry: EventRegistry,
+    private readonly outbox: OutboxRepository,
+    private readonly clock: Clock,
+    private readonly opts: OutboxWorkerOptions,
+  ) {}
+
+  start(): void {
+    if (this.running) return;
+    this.running = true;
+    log.info({ intervalMs: this.opts.pollIntervalMs }, "outbox worker started");
+    this.timer = setInterval(() => void this.tick(), this.opts.pollIntervalMs);
+    // Kick once immediately so tests and dev don't wait a full interval.
+    void this.tick();
+  }
+
+  async stop(): Promise<void> {
+    this.running = false;
+    if (this.timer) clearInterval(this.timer);
+    this.timer = undefined;
+    // let an in-flight tick settle
+    while (this.ticking) await new Promise((r) => setTimeout(r, 25));
+  }
+
+  health() {
+    return {
+      running: this.running,
+      lastTickAt: this.lastTickAt?.toISOString() ?? null,
+      lastError: this.lastError ?? null,
+    };
+  }
+
+  /** Public so tests can drive the worker deterministically. */
+  async tick(): Promise<number> {
+    if (this.ticking) return 0;
+    this.ticking = true;
+    let processed = 0;
+    try {
+      const staleMs = this.opts.staleLockMs ?? 5 * 60 * 1000;
+      await unitOfWork.transaction(() => this.outbox.releaseStale(staleMs));
+
+      // Claim + process batches until the queue is drained for this tick.
+      for (;;) {
+        const batch = await unitOfWork.transaction(() => this.outbox.claimDue(this.opts.batchSize));
+        if (batch.length === 0) break;
+        for (const row of batch) {
+          await this.deliver(row);
+          processed++;
+        }
+        if (batch.length < this.opts.batchSize) break;
+      }
+      this.lastError = undefined;
+    } catch (err) {
+      this.lastError = err instanceof Error ? err.message : String(err);
+      log.error({ err }, "outbox tick failed");
+    } finally {
+      this.lastTickAt = this.clock.now();
+      this.ticking = false;
+    }
+    return processed;
+  }
+
+  private async deliver(row: OutboxRow): Promise<void> {
+    const correlationId =
+      (typeof row.payload.__correlationId === "string" && row.payload.__correlationId) ||
+      newId("evt");
+
+    await runWithContext({ correlationId }, async () => {
+      const handlers = this.registry.externalHandlers(row.event_name);
+      const event = this.rehydrate(row);
+      const attempt = row.attempts + 1;
+
+      try {
+        for (const sub of handlers) {
+          await sub.handle(event);
+        }
+        await unitOfWork.transaction(() => this.outbox.markDelivered(row.id));
+        log.info({ event: row.event_name, id: row.id, attempt }, "outbox message delivered");
+      } catch (err) {
+        const message = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+        if (attempt >= row.max_attempts) {
+          await unitOfWork.transaction(() => this.outbox.deadLetter(row, attempt, message));
+          log.error(
+            { event: row.event_name, id: row.id, attempt, err },
+            "outbox message dead-lettered after exhausting retries",
+          );
+        } else {
+          await unitOfWork.transaction(() => this.outbox.reschedule(row.id, attempt, message));
+          log.warn({ event: row.event_name, id: row.id, attempt, err }, "outbox message rescheduled");
+        }
+      }
+    });
+  }
+
+  private rehydrate(row: OutboxRow): DomainEvent {
+    const { __version, __occurredAt, __correlationId, ...payload } = row.payload as Record<
+      string,
+      unknown
+    >;
+    return {
+      name: row.event_name,
+      version: typeof __version === "number" ? __version : 1,
+      payload,
+      occurredAt: typeof __occurredAt === "string" ? new Date(__occurredAt) : this.clock.now(),
+      correlationId: typeof __correlationId === "string" ? __correlationId : undefined,
+    };
+  }
+}
