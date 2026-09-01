@@ -1,6 +1,7 @@
+import { Injectable } from "@nestjs/common";
 import type { IAuditLogger, AuditEntry } from "../../contracts/index.js";
 import { moduleLogger } from "../../kernel/logging/logger.js";
-import type { AuditRepository } from "./audit-repository.js";
+import { AuditRepository } from "./audit-repository.js";
 
 const log = moduleLogger("audit");
 
@@ -9,6 +10,7 @@ const log = moduleLogger("audit");
  * transaction, so the audit row commits or rolls back with the change it
  * describes (§3.4 step 5).
  */
+@Injectable()
 export class AuditLogger implements IAuditLogger {
   constructor(private readonly repo: AuditRepository) {}
 

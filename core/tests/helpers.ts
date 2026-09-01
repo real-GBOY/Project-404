@@ -1,7 +1,19 @@
 import pg from "pg";
+import { Test, type TestingModule } from "@nestjs/testing";
+import { AppModule } from "../app.module.js";
 import { setConfigForTests } from "../kernel/config.js";
+import type { Clock } from "../kernel/clock.js";
 import { unitOfWork } from "../kernel/db/db.js";
 import { runAsSystem, withContext } from "../kernel/logging/context.js";
+import {
+  CLOCK,
+  EMAIL_CHANNEL,
+  REQUIRE_EMAIL_VERIFICATION,
+  WORKER_AUTOSTART,
+} from "../kernel/tokens.js";
+import type { EmailChannel } from "../notifications/infrastructure/email-channel.js";
+import { migrateToLatest } from "../kernel/db/migrate.js";
+import { SeedService } from "../bootstrap/seed.service.js";
 
 /**
  * Integration tests run against a real Postgres (the modular monolith owns
@@ -96,5 +108,46 @@ export function applyTestConfig(): void {
     jwtSecret: "test-secret",
     logLevel: "silent",
     outboxPollIntervalMs: 50,
+    appUrl: "https://app.test",
   });
+}
+
+export interface TestCoreOptions {
+  clock?: Clock;
+  emailChannel?: EmailChannel;
+  requireEmailVerification?: boolean;
+}
+
+/**
+ * Boots the whole Nest app for an integration test: resets + migrates the
+ * schema (as owner), compiles `AppModule` as `auric_app`, runs the seed, and
+ * wires the event subscribers via `init()`. The outbox worker does NOT
+ * autostart — tests drive `worker.tick()`.
+ */
+export async function createTestCore(opts: TestCoreOptions = {}): Promise<TestingModule> {
+  applyTestConfig();
+  await resetSchema();
+  await migrateToLatest(TEST_DATABASE_URL);
+
+  const builder = Test.createTestingModule({ imports: [AppModule] })
+    .overrideProvider(WORKER_AUTOSTART)
+    .useValue(false);
+  if (opts.clock) builder.overrideProvider(CLOCK).useValue(opts.clock);
+  if (opts.emailChannel) builder.overrideProvider(EMAIL_CHANNEL).useValue(opts.emailChannel);
+  if (opts.requireEmailVerification !== undefined) {
+    builder.overrideProvider(REQUIRE_EMAIL_VERIFICATION).useValue(opts.requireEmailVerification);
+  }
+
+  const moduleRef = await builder.compile();
+  await moduleRef.init(); // runs OnModuleInit (subscribers) + OnApplicationBootstrap (worker no-op)
+  await get(moduleRef, SeedService).seed();
+  return moduleRef;
+}
+
+/** `moduleRef.get` across feature modules (providers aren't all in the root). */
+export function get<T>(
+  moduleRef: TestingModule,
+  token: string | symbol | (new (...args: never[]) => T) | (abstract new (...args: never[]) => T),
+): T {
+  return moduleRef.get<T>(token as never, { strict: false });
 }

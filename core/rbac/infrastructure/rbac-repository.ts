@@ -1,3 +1,4 @@
+import { Injectable } from "@nestjs/common";
 import { currentExecutor } from "../../kernel/db/db.js";
 import { newId } from "../../kernel/id.js";
 import type { Role } from "../domain/role.js";
@@ -8,6 +9,7 @@ import { permissionKey, type PermissionDefinition } from "../domain/permission.j
  * schema (§3.4); the permission provider and the RBAC service both go through
  * here.
  */
+@Injectable()
 export class RbacRepository {
   async findRoleByKey(key: string): Promise<Role | null> {
     const row = await currentExecutor()

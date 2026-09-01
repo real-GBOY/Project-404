@@ -1,33 +1,34 @@
+import { Inject, Injectable } from "@nestjs/common";
 import type { UnitOfWork } from "../../kernel/db/db.js";
 import { readInTenant } from "../../kernel/db/db.js";
 import { Conflict, NotFound } from "../../kernel/errors.js";
 import { requireOrganizationId } from "../../kernel/tenant.js";
+import { AUDIT_LOGGER, UNIT_OF_WORK } from "../../kernel/tokens.js";
 import type { IAuditLogger } from "../../contracts/index.js";
 import type { Role } from "../domain/role.js";
 import { parsePermissionKey, permissionKey } from "../domain/permission.js";
-import type { RbacRepository } from "../infrastructure/rbac-repository.js";
-
-export interface RbacServiceDeps {
-  repo: RbacRepository;
-  audit: IAuditLogger;
-  uow: UnitOfWork;
-}
+import { RbacRepository } from "../infrastructure/rbac-repository.js";
 
 /** RBAC use cases (§7.2 start-here: User, Role, Permission, mappings, can()). */
+@Injectable()
 export class RbacService {
-  constructor(private readonly d: RbacServiceDeps) {}
+  constructor(
+    private readonly repo: RbacRepository,
+    @Inject(AUDIT_LOGGER) private readonly audit: IAuditLogger,
+    @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
+  ) {}
 
   listRoles(): Promise<Role[]> {
-    return this.d.repo.listRoles();
+    return this.repo.listRoles();
   }
 
   async createRole(input: { key: string; name: string; description?: string }): Promise<Role> {
-    return this.d.uow.transaction(async () => {
-      if (await this.d.repo.findRoleByKey(input.key)) {
+    return this.uow.transaction(async () => {
+      if (await this.repo.findRoleByKey(input.key)) {
         throw Conflict("rbac.role_exists", `A role with key "${input.key}" already exists.`);
       }
-      const role = await this.d.repo.createRole(input);
-      await this.d.audit.record({
+      const role = await this.repo.createRole(input);
+      await this.audit.record({
         actorId: null,
         actorType: "system",
         action: "rbac.role_created",
@@ -51,10 +52,10 @@ export class RbacService {
     organizationId?: string,
   ): Promise<void> {
     const orgId = organizationId ?? requireOrganizationId();
-    await this.d.uow.transaction(async () => {
+    await this.uow.transaction(async () => {
       const role = await this.requireRole(roleKey);
-      await this.d.repo.assignRoleToUser(userId, role.id, orgId, grantedBy ?? null);
-      await this.d.audit.record({
+      await this.repo.assignRoleToUser(userId, role.id, orgId, grantedBy ?? null);
+      await this.audit.record({
         actorId: grantedBy ?? null,
         actorType: grantedBy ? "user" : "system",
         action: "rbac.role_assigned",
@@ -67,10 +68,10 @@ export class RbacService {
 
   async removeRole(userId: string, roleKey: string, organizationId?: string): Promise<void> {
     const orgId = organizationId ?? requireOrganizationId();
-    await this.d.uow.transaction(async () => {
+    await this.uow.transaction(async () => {
       const role = await this.requireRole(roleKey);
-      await this.d.repo.removeRoleFromUser(userId, role.id, orgId);
-      await this.d.audit.record({
+      await this.repo.removeRoleFromUser(userId, role.id, orgId);
+      await this.audit.record({
         actorId: null,
         actorType: "system",
         action: "rbac.role_removed",
@@ -82,11 +83,11 @@ export class RbacService {
   }
 
   async grantPermission(roleKey: string, action: string, resource: string): Promise<void> {
-    await this.d.uow.transaction(async () => {
+    await this.uow.transaction(async () => {
       const role = await this.requireRole(roleKey);
-      const permId = await this.d.repo.upsertPermission({ action, resource });
-      await this.d.repo.grantPermissionToRole(role.id, permId);
-      await this.d.audit.record({
+      const permId = await this.repo.upsertPermission({ action, resource });
+      await this.repo.grantPermissionToRole(role.id, permId);
+      await this.audit.record({
         actorId: null,
         actorType: "system",
         action: "rbac.permission_granted",
@@ -100,25 +101,25 @@ export class RbacService {
   async revokePermission(roleKey: string, key: string): Promise<void> {
     const parsed = parsePermissionKey(key);
     if (!parsed) throw NotFound("rbac.bad_permission_key", `"${key}" is not a valid permission key.`);
-    await this.d.uow.transaction(async () => {
+    await this.uow.transaction(async () => {
       const role = await this.requireRole(roleKey);
-      const permId = await this.d.repo.permissionIdByKey(key);
-      if (permId) await this.d.repo.revokePermissionFromRole(role.id, permId);
+      const permId = await this.repo.permissionIdByKey(key);
+      if (permId) await this.repo.revokePermissionFromRole(role.id, permId);
     });
   }
 
   rolesForUser(userId: string, organizationId?: string): Promise<Role[]> {
     const orgId = organizationId ?? requireOrganizationId();
-    return readInTenant(() => this.d.repo.rolesForUser(userId, orgId));
+    return readInTenant(() => this.repo.rolesForUser(userId, orgId));
   }
 
   permissionsForUser(userId: string, organizationId?: string): Promise<string[]> {
     const orgId = organizationId ?? requireOrganizationId();
-    return readInTenant(() => this.d.repo.permissionKeysForUser(userId, orgId));
+    return readInTenant(() => this.repo.permissionKeysForUser(userId, orgId));
   }
 
   private async requireRole(roleKey: string): Promise<Role> {
-    const role = await this.d.repo.findRoleByKey(roleKey);
+    const role = await this.repo.findRoleByKey(roleKey);
     if (!role) throw NotFound("rbac.role_not_found", `No role with key "${roleKey}".`);
     return role;
   }

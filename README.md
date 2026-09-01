@@ -36,15 +36,17 @@ monitoring (§7.12, §6.2) come in with v0.1. See `docs/architecture.md`.
 ## Stack
 
 TypeScript · Node 22.12+/24 · PostgreSQL (only — no Mongo in v0.1) ·
-**Fastify 5** · Kysely (typed query builder, no ORM) · Prisma (schema
-definition only — generates Kysely's types, no Prisma Client) · Zod ·
-`jsonwebtoken` + `argon2` (argon2id) · `nodemailer` · `pino` · Vitest.
+**NestJS 11 on `@nestjs/platform-fastify`** (Fastify 5 underneath) · SWC
+transform (decorator metadata; esbuild can't) · Kysely (typed query builder,
+no ORM) · Prisma (schema definition only — generates Kysely's types, no Prisma
+Client) · Zod · `jsonwebtoken` + `argon2` (argon2id) · `nodemailer` · `pino` ·
+Vitest (+ `unplugin-swc`).
 
 > **Prisma owns the schema and the migration history** (Plan §2).
 > `prisma/schema/*.prisma` models mirror every table; `prisma-kysely`
 > generates `core/kernel/db/schema.ts` (`npm run db:generate` after a model
 > change); migrations live in `prisma/migrations/` and are applied with
-> `prisma migrate deploy` (`npm run migrate`, and `core.migrate()` on boot).
+> `prisma migrate deploy` (`npm run migrate`, and from `main.ts` on boot).
 > Kysely stays the runtime query builder — it no longer migrates. See
 > `prisma/README.md`.
 >
@@ -57,8 +59,9 @@ definition only — generates Kysely's types, no Prisma Client) · Zod ·
 npm install
 cp .env.example .env          # adjust AURIC_DATABASE_URL etc.
 createdb auric                # or: psql -c 'create database auric'
+npm run provision-db          # once: give auric_app / auric_system a login + password (see docs/tenancy.md)
 npm run migrate               # prisma migrate deploy — apply all migrations
-npm run serve                 # migrate + seed + start worker + serve on :3000
+npm run serve                 # migrate + Nest bootstrap + seed + serve on :3000
 ```
 
 Then:
@@ -95,14 +98,18 @@ Locally they default to `…/auric_test` if that env var is unset.
 
 ```
 core/
-├── kernel/         config, db (pool + Kysely + unit-of-work + prisma migrate runner), logging, ids, clock, errors
+├── kernel/         config, db (pools + Kysely + unit-of-work + prisma migrate runner), logging, ids, clock, errors, tenant, DI tokens, KernelModule
 ├── contracts/      the provider interfaces every module depends on (Plan §4)
-├── events/         in-process bus + outbox + worker + DLQ (Plan §6)
-├── identity/  rbac/  organizations/  audit/  files/  notifications/
+├── events/         in-process bus + outbox + worker + DLQ (Plan §6), EventsModule
+├── identity/  rbac/  organizations/  audit/  files/  notifications/   (each a @Module + controller)
 ├── localization/   language, direction, AR-EG formatting (Plan §7.10)
-├── observability/  correlation id, error handler, health + readiness (Fastify hooks)
-├── http/           shared Zod parse helpers + route context (auth + guard preHandlers)
-└── index.ts        the composition root — wires everything, mounts the Fastify /api
+├── observability/  error tracker + HealthController
+├── http/           Zod pipe, guards (JwtAuth + Permission), exception filter, request-context middleware, SecurityModule
+├── bootstrap/      SeedService (RBAC + template seed)
+├── app.module.ts   the composition root — imports every feature @Module
+└── index.ts        public surface (re-exports the modules, tokens, contracts)
+
+main.ts             entrypoint — migrate, NestFactory.create on the Fastify adapter, seed, listen
 ```
 
 Every module follows the same anatomy (`domain/ application/ infrastructure/

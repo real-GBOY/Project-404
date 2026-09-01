@@ -1,7 +1,8 @@
+import { Injectable } from "@nestjs/common";
 import type { IPermissionProvider } from "../../contracts/index.js";
 import { currentOrganizationId, requireOrganizationId } from "../../kernel/tenant.js";
 import { permissionMatches } from "../domain/permission.js";
-import type { RbacRepository } from "./rbac-repository.js";
+import { RbacRepository } from "./rbac-repository.js";
 
 /**
  * RBAC's implementation of the IPermissionProvider contract (§4). This is how
@@ -13,6 +14,7 @@ import type { RbacRepository } from "./rbac-repository.js";
  * tenant → no permissions. Callers outside a transaction (a Fastify `preHandler`
  * guard) wrap the call in `readInTenant` so RLS on `user_roles` is in force.
  */
+@Injectable()
 export class RbacPermissionProvider implements IPermissionProvider {
   constructor(private readonly repo: RbacRepository) {}
 

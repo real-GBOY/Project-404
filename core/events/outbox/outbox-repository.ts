@@ -1,7 +1,10 @@
+import { Inject, Injectable } from "@nestjs/common";
 import { currentExecutor } from "../../kernel/db/db.js";
 import { newId } from "../../kernel/id.js";
 import type { DomainEvent } from "../../contracts/domain-event.js";
 import type { Clock } from "../../kernel/clock.js";
+import type { AuricConfig } from "../../kernel/config.js";
+import { CLOCK, CONFIG } from "../../kernel/tokens.js";
 import { currentOrganizationId } from "../../kernel/tenant.js";
 
 export interface OutboxRow {
@@ -20,11 +23,16 @@ export interface OutboxRow {
  * written atomically with the business data. Everything else is called by the
  * worker on its own connection.
  */
+@Injectable()
 export class OutboxRepository {
+  private readonly defaultMaxAttempts: number;
+
   constructor(
-    private readonly clock: Clock,
-    private readonly defaultMaxAttempts: number,
-  ) {}
+    @Inject(CLOCK) private readonly clock: Clock,
+    @Inject(CONFIG) config: AuricConfig,
+  ) {
+    this.defaultMaxAttempts = config.outboxMaxAttempts;
+  }
 
   async enqueue(event: DomainEvent): Promise<void> {
     await currentExecutor()

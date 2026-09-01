@@ -20,6 +20,6 @@
     "declaration": true,
     "sourceMap": true
   },
-  "include": ["core", "scripts", "vitest.config.ts", "prisma.config.ts"],
+  "include": ["core", "scripts", "main.ts", "vitest.config.ts", "prisma.config.ts"],
   "exclude": ["node_modules", "dist"]
 }

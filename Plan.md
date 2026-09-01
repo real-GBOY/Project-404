@@ -39,7 +39,7 @@ Chosen to match AURIC's existing repos and expertise. One stack, done excellentl
 | Layer | Technology |
 |---|---|
 | Language | TypeScript (dominant across all repos) |
-| Backend runtime | Node.js + Fastify |
+| Backend runtime | Node.js + NestJS (on the Fastify adapter). NestJS owns HTTP, DI, and module wiring; Fastify is the HTTP engine underneath. |
 | Database | PostgreSQL — the only datastore. Relational, transactional, holds all Core and domain data. No secondary database. |
 | Queries & transactions | Kysely — typed query builder; owns all runtime SQL and the transaction boundary |
 | Schema & migrations | Prisma — owns the schema definition and migration history. Its generated types are the source for Kysely's `Database` types (types flow Prisma → Kysely). Prisma Client is **not** used for runtime queries. |

@@ -1,16 +1,18 @@
+import { Injectable } from "@nestjs/common";
 import type {
   IOrganizationProvider,
   Organization,
   OrganizationMembership,
 } from "../../contracts/index.js";
 import { readInTenant } from "../../kernel/db/db.js";
-import type { OrganizationRepository } from "./organization-repository.js";
+import { OrganizationRepository } from "./organization-repository.js";
 
 /**
  * IOrganizationProvider implementation (§4). An organization *is* the tenant
  * (§ docs/tenancy.md), so this contract carries no separate tenant context.
  * Reads run through `readInTenant` so the RLS-scoped registry tables resolve.
  */
+@Injectable()
 export class OrganizationProvider implements IOrganizationProvider {
   constructor(private readonly repo: OrganizationRepository) {}
 

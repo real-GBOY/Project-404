@@ -7,24 +7,32 @@ How to build on Core in a client project (Plan §13), and how to add a module.
 Core is consumed as a versioned internal package, pinned per project
 (Plan §10.3, §11.2). A client repo:
 
+Core is a NestJS app. A client repo builds its own `AppModule` that imports the
+Core feature modules it needs, plus its own domain modules:
+
 ```ts
-import { createAuricCore } from "@auric/core";
+import { Module } from "@nestjs/common";
+import {
+  KernelModule, EventsModule, IdentityModule, RbacModule,
+  OrganizationsModule, AuditModule, NotificationsModule, FilesModule,
+} from "@auric/core";
+import { EmployeeModule } from "./employee/employee.module.js";
 
-const core = createAuricCore({
-  config: { appName: "Client X", defaultLocale: "ar" },
-  // emailChannel: myClientSmtpChannel,   // optional overrides
-});
-
-await core.start();                     // migrate + seed + start outbox worker
-await core.app.listen({ port: 3000 }); // Fastify app — register client route plugins on it too
-
-// client code calls use cases directly, or depends on the provider interfaces:
-core.modules.identity.userProvider;      // IUserProvider
-core.modules.rbac.permissionProvider;    // IPermissionProvider
-core.modules.notifications.provider;     // INotificationProvider
-core.modules.files.storage;              // IFileStorage
-core.events;                             // IEventBus
+@Module({
+  imports: [
+    KernelModule, EventsModule, IdentityModule, RbacModule,
+    OrganizationsModule, AuditModule, NotificationsModule, FilesModule,
+    EmployeeModule,          // client domain
+  ],
+})
+export class ClientAppModule {}
 ```
+
+Client `main.ts` migrates, then `NestFactory.create(ClientAppModule,
+new FastifyAdapter())`. Domain code injects the Core contracts by token:
+`@Inject(USER_PROVIDER)`, `@Inject(PERMISSION_PROVIDER)`,
+`@Inject(NOTIFICATION_PROVIDER)`, `@Inject(FILE_STORAGE)`, `@Inject(EVENT_BUS)`,
+`@Inject(TENANT_CONTEXT)`.
 
 Client-specific domain code lives in the client repo (Plan §10.1 `app/`), not
 in Core. It depends on the contracts, never on Core's tables.
@@ -51,15 +59,19 @@ Follow the module anatomy (Plan §3.2):
 
 ```
 employee/
-├── domain/          Employee entity + rules (no SQL, no HTTP)
-├── application/     use cases — each owns its transaction
-├── infrastructure/  repositories via `currentExecutor()`; provider impls
-├── api/             FastifyPluginAsync; handlers stay thin
-├── events/          events it publishes (employee.created, …) + subscribers
-├── permissions/     PermissionDefinition[] it contributes to RBAC
-├── validation/      Zod schemas
+├── domain/            Employee entity + rules (no SQL, no HTTP, no Nest)
+├── application/       @Injectable use cases — each owns its transaction
+├── infrastructure/    @Injectable repositories via `currentExecutor()`; provider impls
+├── api/               @Controller; handlers stay thin
+├── events/            events it publishes (employee.created, …) + subscribers
+├── permissions/       PermissionDefinition[] it contributes to RBAC
+├── validation/        Zod schemas
+├── employee.module.ts @Module wiring the above
 └── tests/
 ```
+
+Register subscribers in the module's `OnModuleInit`; contribute the module's
+`PermissionDefinition[]` to the client's seed step.
 
 The module's tables are a `prisma/schema/employee.prisma` model (`@@map` to
 keep snake_case names); its migration is Prisma-owned in `prisma/migrations/`.

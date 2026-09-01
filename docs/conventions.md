@@ -2,13 +2,32 @@
 
 ## Language & tooling
 
-- TypeScript, ESM, `strict`. `verbatimModuleSyntax` — use `import type` for
-  type-only imports.
+- TypeScript, ESM, `strict`, `experimentalDecorators` + `emitDecoratorMetadata`
+  (Nest DI). `verbatimModuleSyntax` — use `import type` for type-only imports,
+  but a class that is DI-injected must be a **value** import.
 - Module resolution is `Bundler`; relative imports are written **with** a
-  `.js` extension (`./foo.js`) so the same source runs under tsx, Vitest, and
-  a future bundled build.
+  `.js` extension (`./foo.js`).
+- Runtime + tests transform via **SWC** (`.swcrc`) — esbuild does not emit the
+  decorator metadata Nest needs. `npm run serve` / `dev` = `node --import
+  @swc-node/register/esm-register`; Vitest uses `unplugin-swc`.
 - Formatting/lint: keep to the surrounding style. No runtime `console.*` —
   use the logger.
+
+## NestJS
+
+- Every service, repository, and provider is `@Injectable()`. Each Core
+  capability is a `@Module` (`core/<cap>/<cap>.module.ts`); `core/app.module.ts`
+  composes them; `main.ts` bootstraps on the Fastify adapter.
+- Cross-module contracts (§4) are bound to symbol tokens in
+  `core/kernel/tokens.ts` (`USER_PROVIDER`, `EVENT_BUS`, …). Inject with
+  `@Inject(TOKEN)`; a module `exports` the token, the consumer `imports` the
+  module. `KernelModule` (config/clock/uow) and `SecurityModule` (guards +
+  identity/RBAC contracts) are `@Global()`.
+- The identity ↔ organizations cycle uses `forwardRef(() => OtherModule)` on
+  both sides.
+- Event subscribers register in the module's `OnModuleInit`; the outbox worker
+  starts/stops via `OnApplicationBootstrap` / `OnApplicationShutdown` (gated by
+  the `WORKER_AUTOSTART` token — `false` in tests).
 
 ## Errors
 
@@ -62,20 +81,22 @@ Never call `new Date()` / `Date.now()` in Core logic. Take a `Clock` and call
 - Choose delivery by side-effect location, not by importance
   (`onInProcess` vs `onExternal`) — see the integration guide.
 
-## HTTP (Fastify)
+## HTTP (Nest controllers)
 
-- Each module exports its routes as a `FastifyPluginAsync`, registered under
-  `/api` by the composition root. Never wire auth or prefixes inside a module.
-- Handlers: validate (`parseBody` / `parseQuery` with a Zod schema) → call one
-  use case → return / `reply.send`. No business logic, no DB. Fastify handles
-  async + turns a thrown `AppError` into a response via `setErrorHandler`.
-- Auth and permissions are `preHandler` hooks: `{ preHandler: ctx.authenticate }`
-  or `{ preHandler: ctx.guard(action, resource) }`. `guard` does a **live**
-  RBAC check, not a token-claims read. Plugin-wide: `app.addHook("preHandler", ctx.authenticate)`.
-- Typed route params: `app.get<{ Params: { id: string } }>("/x/:id", …)`.
-- Per-request context is bound in an `onRequest` hook with
-  `enterContext(...)` (`enterWith`, since the Fastify lifecycle can't be
-  wrapped in a callback).
+- One `@Controller` per module, in `core/<cap>/api/<name>.controller.ts`. The
+  `/api` prefix is global (`main.ts`); never set it in a module.
+- Handlers: validate with a Zod pipe (`@Body(ZodBody(schema))`,
+  `@Query(ZodQuery(schema))`) → call one use case → return a plain object. No
+  business logic, no DB. A thrown `AppError` is turned into a response by the
+  global `AppExceptionFilter` (`kind` → status).
+- Auth/permissions are guards: `@UseGuards(JwtAuthGuard, PermissionGuard)` on
+  the controller, `@RequirePermission("update", "organization")` on the method.
+  `PermissionGuard` does a **live** RBAC check (not a token-claims read),
+  wrapped in `readInTenant`. Read the caller with `@CurrentUser()`.
+- Public routes (login, register, refresh) carry no `@UseGuards`.
+- Non-2xx codes via `@HttpCode(204)`; stream a body with `@Res() reply` (Fastify
+  reply). File upload reads `req.file()` (`@fastify/multipart`, registered in
+  `main.ts`) — Nest's `FileInterceptor` is Express-only.
 
 ## Localization
 
@@ -87,11 +108,14 @@ Never call `new Date()` / `Date.now()` in Core logic. Take a `Clock` and call
 
 ## Tests
 
-- Unit tests next to the code (`*.test.ts`), no DB.
-- Integration tests in `core/tests/`, gated on `AURIC_TEST_DATABASE_URL`,
-  reset the schema (as owner) and boot the real Core (as `auric_app`, so RLS is
-  live). Wrap direct service calls in `asUser(userId, orgId, fn)` /
-  `asSystem(fn)` from `helpers.ts` to stand in for the request context.
+- Unit tests next to the code (`*.test.ts`), no DB, no Nest (`new TheClass(stub)`).
+- Integration tests in `core/tests/`, gated on `AURIC_TEST_DATABASE_URL`.
+  `createTestCore()` (helpers) resets + migrates the schema as owner, compiles
+  `AppModule` as `auric_app` (so RLS is live), seeds, and wires subscribers;
+  `overrideProvider` swaps `CLOCK` / `EMAIL_CHANNEL` / `REQUIRE_EMAIL_VERIFICATION`.
+  Pull services with `get(core, TheClass)` (non-strict `moduleRef.get`).
+- Wrap direct service calls in `asUser(userId, orgId, fn)` / `asSystem(fn)` to
+  stand in for the request context.
 - Drive the outbox worker with `worker.tick()`; advance a `fixedClock` past
   backoff windows rather than sleeping.
 

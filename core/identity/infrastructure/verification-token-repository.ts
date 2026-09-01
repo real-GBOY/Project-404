@@ -1,7 +1,9 @@
 import crypto from "node:crypto";
+import { Inject, Injectable } from "@nestjs/common";
 import { currentExecutor } from "../../kernel/db/db.js";
 import { newId } from "../../kernel/id.js";
 import type { Clock } from "../../kernel/clock.js";
+import { CLOCK } from "../../kernel/tokens.js";
 
 export type VerificationPurpose = "email_verification" | "password_reset";
 
@@ -10,8 +12,9 @@ export type VerificationPurpose = "email_verification" | "password_reset";
  * token goes to the user (by email); only its SHA-256 hash is stored, so a
  * database leak does not hand out working reset links.
  */
+@Injectable()
 export class VerificationTokenRepository {
-  constructor(private readonly clock: Clock) {}
+  constructor(@Inject(CLOCK) private readonly clock: Clock) {}
 
   private hash(token: string): string {
     return crypto.createHash("sha256").update(token).digest("hex");

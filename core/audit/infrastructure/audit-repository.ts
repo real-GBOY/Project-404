@@ -1,3 +1,4 @@
+import { Injectable } from "@nestjs/common";
 import { currentExecutor } from "../../kernel/db/db.js";
 import { newId } from "../../kernel/id.js";
 import type { AuditEntry } from "../../contracts/index.js";
@@ -30,6 +31,7 @@ export interface AuditQuery {
   cursor?: string; // id to page before
 }
 
+@Injectable()
 export class AuditRepository {
   async append(entry: AuditEntry): Promise<void> {
     await currentExecutor()

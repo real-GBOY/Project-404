@@ -24,10 +24,9 @@ resolutions supersede the conflicting text further down:
    org). `POST /auth/refresh` accepts an optional `organizationId` to switch
    tenants. The login response gains `organizations: [{ id, slug, name,
    membershipRole }]`. The `{ user, tokens }` shape is preserved.
-3. **`can()` / `guard()` reads run inside a tenant transaction.**
-   `RbacPermissionProvider` gains a `readInTenant` dependency and wraps its
-   `user_roles` reads, because Fastify `preHandler` guards otherwise query the
-   raw pool with no `app.organization_id`.
+3. **`can()` / permission reads run inside a tenant transaction.** The
+   `PermissionGuard` (`CanActivate`) wraps its check in `readInTenant`, because a
+   guard otherwise queries the raw pool with no `app.organization_id`.
 4. **Any authenticated user may create an organization** and becomes its
    `owner` + tenant-scoped `admin`. The `create:organization` RBAC guard is
    removed from `POST /organizations` (self-service SaaS). In-org permissions
@@ -204,8 +203,8 @@ export interface RequestContext {
 }
 ```
 
-The Fastify `authenticate` hook verifies the JWT, checks the `org` claim against
-`organization_members`, and calls `patchContext({ userId, organizationId })`.
+`JwtAuthGuard` verifies the JWT, checks the `org` claim, and calls
+`patchContext({ userId, organizationId })`.
 
 The context is pushed into Postgres **per transaction**, in
 `core/kernel/db/db.ts`'s `unitOfWork.transaction`, right after the transaction

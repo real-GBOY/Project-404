@@ -1,9 +1,11 @@
+import { Inject, Injectable } from "@nestjs/common";
 import type { UnitOfWork } from "../../kernel/db/db.js";
 import { readInTenant } from "../../kernel/db/db.js";
 import type { Clock } from "../../kernel/clock.js";
 import { newId } from "../../kernel/id.js";
 import { NotFound } from "../../kernel/errors.js";
 import { requireOrganizationId } from "../../kernel/tenant.js";
+import { CLOCK, STORAGE_ADAPTER, UNIT_OF_WORK } from "../../kernel/tokens.js";
 import type { FileInput, FileRef, IFileStorage } from "../../contracts/index.js";
 import { FileRepository, type FileRow } from "./file-repository.js";
 import { sha256, storageKeyFor, type StorageAdapter } from "./storage-adapter.js";
@@ -13,12 +15,13 @@ import { sha256, storageKeyFor, type StorageAdapter } from "./storage-adapter.js
  * §5) depend on this interface and do their own authorization in their use
  * cases. The Files HTTP API layers RBAC on top for direct file endpoints.
  */
+@Injectable()
 export class FileStorageService implements IFileStorage {
   constructor(
     private readonly repo: FileRepository,
-    private readonly adapter: StorageAdapter,
-    private readonly uow: UnitOfWork,
-    private readonly clock: Clock,
+    @Inject(STORAGE_ADAPTER) private readonly adapter: StorageAdapter,
+    @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
+    @Inject(CLOCK) private readonly clock: Clock,
   ) {}
 
   async upload(file: FileInput): Promise<FileRef> {

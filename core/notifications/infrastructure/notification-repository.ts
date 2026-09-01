@@ -1,6 +1,8 @@
+import { Inject, Injectable } from "@nestjs/common";
 import { currentExecutor } from "../../kernel/db/db.js";
 import { newId } from "../../kernel/id.js";
 import type { Clock } from "../../kernel/clock.js";
+import { CLOCK } from "../../kernel/tokens.js";
 import { currentOrganizationId } from "../../kernel/tenant.js";
 
 export interface NotificationRow {
@@ -16,8 +18,9 @@ export interface NotificationRow {
   createdAt: Date;
 }
 
+@Injectable()
 export class NotificationRepository {
-  constructor(private readonly clock: Clock) {}
+  constructor(@Inject(CLOCK) private readonly clock: Clock) {}
 
   async insert(input: {
     userId: string;

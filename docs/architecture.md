@@ -3,39 +3,44 @@
 This describes what was actually built. It implements the decisions in
 [`../Plan.md`](../Plan.md) sections 3–6; read that first for the *why*.
 
-**Stack note (Plan §2).** HTTP is Fastify 5. Runtime SQL and the transaction
-boundary are Kysely. **Prisma owns the schema definition and the migration
-history**, with types flowing Prisma → Kysely (Prisma Client is never
-generated): `prisma/schema/*.prisma` models mirror every table,
-`prisma-kysely` generates `core/kernel/db/schema.ts` (`npm run db:generate`),
-and `prisma/migrations/` is applied by `prisma migrate deploy` —
-`core/kernel/db/migrate.ts` shells that from `core.migrate()`. Objects Prisma
+**Stack note (Plan §2).** HTTP, DI, and module wiring are **NestJS** on the
+`@nestjs/platform-fastify` adapter (Fastify 5 underneath). Every class is an
+`@Injectable` provider; each Core capability is a `@Module`; `core/app.module.ts`
+is the composition root and `main.ts` the entrypoint. TypeScript compiles under
+**SWC** (`@swc-node/register` for dev, `unplugin-swc` for Vitest) because esbuild
+does not emit the decorator metadata Nest's DI needs. Runtime SQL and the
+transaction boundary are Kysely. **Prisma owns the schema definition and the
+migration history**, with types flowing Prisma → Kysely (Prisma Client is never
+generated): `prisma/schema/*.prisma` models mirror every table, `prisma-kysely`
+generates `core/kernel/db/schema.ts` (`npm run db:generate`), and
+`prisma/migrations/` is applied by `prisma migrate deploy` —
+`core/kernel/db/migrate.ts` shells that, called from `main.ts`. Objects Prisma
 can't express (CHECK constraints, the `updated_at` and audit-immutability
-triggers, the outbox partial index) live in a hand-written follow-up
-migration. See `integration-guide.md` and `prisma/README.md`.
+triggers, the outbox partial index, the RLS policies) live in hand-written
+follow-up migrations. See `integration-guide.md` and `prisma/README.md`.
 
 ## Shape: modular monolith
 
-One deployable process. Modules are logical boundaries, not services. They
-never call each other directly and never touch each other's tables — they
-talk through the provider interfaces in `core/contracts/` (Plan §4). Every
-module's routes are registered as a Fastify plugin under the `/api` prefix on
-one in-process app; there is no gateway service.
+One deployable process — one Nest application. Modules are logical boundaries,
+not services. They never call each other directly and never touch each other's
+tables — they talk through the provider interfaces in `core/contracts/`, bound
+to DI tokens in `core/kernel/tokens.ts` (Plan §4). Every module's controllers
+mount under the `/api` global prefix; there is no gateway service.
 
 ```
-HTTP (Fastify)  ─ onRequest: correlation-id → locale ─ JSON body parse
+HTTP (Nest on Fastify)  ─ RequestContextMiddleware: correlation-id → locale
       │
-      ▼  /api  (each module = one Fastify plugin)
+      ▼  /api  (each Core capability = one @Module + controller)
   health · identity · rbac · organizations · audit · files · notifications
       │
-      ▼  each controller: validate (Zod) → guard (RBAC) → call a use case
-APPLICATION  use-case owns the transaction; publishes events inside it
+      ▼  each controller: ZodBody/Query pipe → JwtAuthGuard + PermissionGuard → call a use case
+APPLICATION  use-case (@Injectable) owns the transaction; publishes events inside it
       │
       ▼
-DOMAIN  entities + rules (no SQL, no HTTP)
+DOMAIN  entities + rules (no SQL, no HTTP, no Nest)
       │
       ▼
-INFRASTRUCTURE  repositories (the only code that knows Postgres) via Kysely
+INFRASTRUCTURE  repositories (@Injectable; the only code that knows Postgres) via Kysely
       │
       ▼
 PostgreSQL
@@ -45,21 +50,23 @@ PostgreSQL
 
 `POST /api/auth/register`:
 
-1. `onRequest` hook binds an `AsyncLocalStorage` context (`enterContext`) with
-   the request id (from an inbound `x-correlation-id` header or a fresh uuid)
-   — every log line, audit row and outbox message downstream carries it.
-2. `localeHook` resolves AR/EN from `?locale` → `Accept-Language` → default,
-   sets `Content-Language` + `X-Content-Direction`.
-3. Route plugin → handler. Zod validates the body (`parseBody`). Auth /
-   permission run as `preHandler` hooks.
-4. `IdentityService.register()` — **the use case owns the transaction**:
+1. `RequestContextMiddleware` (runs before guards) binds an `AsyncLocalStorage`
+   context (`enterContext`) with the request id (inbound `x-correlation-id`
+   header or a fresh uuid) — every log line, audit row and outbox message
+   downstream carries it — and resolves AR/EN from `?locale` → `Accept-Language`
+   → default, setting `Content-Language` + `X-Content-Direction`.
+2. `AuthController.register` — `@Body(ZodBody(registerSchema))` validates the
+   body. This route has no `@UseGuards` (registration is public). Guarded routes
+   run `JwtAuthGuard` then `PermissionGuard` (a **live** RBAC check) as
+   `CanActivate` guards.
+3. `IdentityService.register()` — **the use case owns the transaction**:
    `unitOfWork.transaction(async () => { … })`.
    - build `UserEntity` (domain decides: new user is `pending`)
    - `userRepository.insert()`
    - `auditLogger.record()` — same transaction
    - `eventBus.publish("user.registered")` — same transaction
    - issue an email-verification token, `publish("user.email_verification_requested")`
-5. Commit. Response travels back up. Frontend shows the created user.
+4. Commit. Response travels back up. Frontend shows the created user.
 
 Nothing threads a transaction handle around: repositories and the event bus
 read the ambient transaction via `currentExecutor()` (an `AsyncLocalStorage`
@@ -79,10 +86,10 @@ AURIC Core is a shared multi-tenant SaaS. **An organization is the tenant.**
   `pool.ts` keeps a pool per role; `unitOfWork.transaction` routes by
   `ctx.system` and, on the app connection, runs `SET LOCAL app.organization_id /
   app.user_id` so the policies resolve.
-- The tenant rides the **existing `RequestContext`** (`logging/context.ts`) — no
-  second `AsyncLocalStorage`. The auth hook sets it from the JWT `org` claim.
-  `kernel/tenant.ts` exposes `currentOrganizationId()` / `requireOrganizationId()`
-  and the `ITenantContext` contract.
+- The tenant rides the **`RequestContext`** (`logging/context.ts`) — one
+  `AsyncLocalStorage`, shared with the correlation id. `JwtAuthGuard` sets it
+  from the JWT `org` claim. `kernel/tenant.ts` exposes `currentOrganizationId()`
+  / `requireOrganizationId()` and the `ITenantContext` contract.
 - Identity is **global** (one `users` row per person, email globally unique);
   `organization_members` is the tenancy link. The access token carries a
   nullable `org` claim + the perms *for that org*; `POST /auth/refresh
@@ -148,9 +155,10 @@ any dead-lettered message.
 - **localization** — `directionOf`, `negotiateLocale`, `Translatable<T>`
   (AR-first), `Intl`-based `ar-EG` / `en-EG` formatters (Hijri calendar
   option already threaded, output is "Later").
-- **observability** — pino structured logs with a correlation-id mixin
-  (shared with Fastify's request logging), a single `setErrorHandler`
-  mapping `AppError.kind` → status, `setNotFoundHandler`, health + readiness.
+- **observability** — pino structured logs with a correlation-id mixin, a
+  global `AppExceptionFilter` mapping `AppError.kind` → status (Nest's default
+  handler covers 404), and `HealthController` (`/api/health`, `/api/health/ready`
+  — the latter 503s on a stopped / backed-up / dead-lettering outbox worker).
 
 ## Deliberately deferred (Plan §7, §8)
 

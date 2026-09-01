@@ -1,11 +1,13 @@
+import { Inject, Injectable } from "@nestjs/common";
 import type { DomainEvent } from "../contracts/domain-event.js";
 import type { IEventBus } from "../contracts/index.js";
 import type { Clock } from "../kernel/clock.js";
+import { CLOCK } from "../kernel/tokens.js";
 import { moduleLogger } from "../kernel/logging/logger.js";
 import { getContext } from "../kernel/logging/context.js";
 import { inTransaction } from "../kernel/db/db.js";
-import type { EventRegistry } from "./registry.js";
-import type { OutboxRepository } from "./outbox/outbox-repository.js";
+import { EventRegistry } from "./registry.js";
+import { OutboxRepository } from "./outbox/outbox-repository.js";
 
 const log = moduleLogger("events");
 
@@ -21,11 +23,12 @@ const log = moduleLogger("events");
  * The bus never opens a transaction. If an external-effect event is published
  * outside a transaction, that is a bug in the use case — we warn loudly.
  */
+@Injectable()
 export class EventBus implements IEventBus {
   constructor(
     private readonly registry: EventRegistry,
     private readonly outbox: OutboxRepository,
-    private readonly clock: Clock,
+    @Inject(CLOCK) private readonly clock: Clock,
   ) {}
 
   async publish(event: DomainEvent): Promise<void> {

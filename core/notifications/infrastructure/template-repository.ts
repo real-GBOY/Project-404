@@ -1,3 +1,4 @@
+import { Injectable } from "@nestjs/common";
 import { currentExecutor } from "../../kernel/db/db.js";
 import { newId } from "../../kernel/id.js";
 import { languageOf } from "../../localization/domain/locale.js";
@@ -22,6 +23,7 @@ function interpolate(template: string, params: Record<string, string | number>):
   );
 }
 
+@Injectable()
 export class TemplateRepository {
   async render(
     key: string,

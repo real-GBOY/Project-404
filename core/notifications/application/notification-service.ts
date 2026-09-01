@@ -1,7 +1,9 @@
+import { Inject, Injectable } from "@nestjs/common";
 import type { UnitOfWork } from "../../kernel/db/db.js";
 import { readInTenant } from "../../kernel/db/db.js";
-import type { Clock } from "../../kernel/clock.js";
+import type { AuricConfig } from "../../kernel/config.js";
 import { moduleLogger } from "../../kernel/logging/logger.js";
+import { CONFIG, EMAIL_CHANNEL, EVENT_BUS, UNIT_OF_WORK, USER_PROVIDER } from "../../kernel/tokens.js";
 import type {
   INotificationProvider,
   IUserProvider,
@@ -10,8 +12,8 @@ import type {
 } from "../../contracts/index.js";
 import type { DomainEvent } from "../../contracts/domain-event.js";
 import { t } from "../../localization/i18n/catalog.js";
-import type { NotificationRepository, NotificationRow } from "../infrastructure/notification-repository.js";
-import type { TemplateRepository } from "../infrastructure/template-repository.js";
+import { NotificationRepository, type NotificationRow } from "../infrastructure/notification-repository.js";
+import { TemplateRepository } from "../infrastructure/template-repository.js";
 import type { EmailChannel } from "../infrastructure/email-channel.js";
 
 const log = moduleLogger("notifications");
@@ -20,27 +22,23 @@ export const NotificationEvents = {
   EmailRequested: "notification.email_requested",
 } as const;
 
-export interface NotificationServiceDeps {
-  notifications: NotificationRepository;
-  templates: TemplateRepository;
-  email: EmailChannel;
-  users: IUserProvider;
-  events: IEventBus;
-  uow: UnitOfWork;
-  clock: Clock;
-  defaultLocale: string;
-  appName: string;
-  appUrl: string;
-}
-
 /**
  * Notifications start-here (§7.5): in-app + email, templated, bilingual.
  * In-app writes happen inside the caller's transaction (internal effect).
  * Email is an external effect → published as an event and delivered by the
  * outbox worker (§6.1), never inline.
  */
+@Injectable()
 export class NotificationService implements INotificationProvider {
-  constructor(private readonly d: NotificationServiceDeps) {}
+  constructor(
+    private readonly notifications: NotificationRepository,
+    private readonly templates: TemplateRepository,
+    @Inject(EMAIL_CHANNEL) private readonly email: EmailChannel,
+    @Inject(USER_PROVIDER) private readonly users: IUserProvider,
+    @Inject(EVENT_BUS) private readonly events: IEventBus,
+    @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
+    @Inject(CONFIG) private readonly config: AuricConfig,
+  ) {}
 
   async send(payload: NotificationPayload): Promise<void> {
     const locale = payload.locale ?? (await this.localeFor(payload.userId));
@@ -48,14 +46,14 @@ export class NotificationService implements INotificationProvider {
 
     if (channels.includes("in_app")) {
       const rendered = payload.templateKey
-        ? await this.d.templates.render(payload.templateKey, "in_app", locale, {
-            app: this.d.appName,
+        ? await this.templates.render(payload.templateKey, "in_app", locale, {
+            app: this.config.appName,
             ...(payload.data as Record<string, string | number> | undefined),
           })
         : null;
-      const title = rendered?.subject ?? payload.title ?? this.d.appName;
+      const title = rendered?.subject ?? payload.title ?? this.config.appName;
       const body = rendered?.body ?? payload.body ?? "";
-      await this.d.notifications.insert({
+      await this.notifications.insert({
         userId: payload.userId,
         type: payload.type,
         title,
@@ -66,12 +64,12 @@ export class NotificationService implements INotificationProvider {
     }
 
     if (channels.includes("email")) {
-      const user = await this.d.users.getUser(payload.userId);
+      const user = await this.users.getUser(payload.userId);
       if (!user?.email) {
         log.warn({ userId: payload.userId }, "email notification skipped — no address");
         return;
       }
-      await this.d.events.publish({
+      await this.events.publish({
         name: NotificationEvents.EmailRequested,
         version: 1,
         payload: {
@@ -97,12 +95,12 @@ export class NotificationService implements INotificationProvider {
       params: Record<string, string | number>;
     };
 
-    let subject = p.subject ?? this.d.appName;
+    let subject = p.subject ?? this.config.appName;
     let body = p.body ?? "";
 
     if (p.templateKey) {
-      const rendered = await this.d.uow.transaction(() =>
-        this.d.templates.render(p.templateKey!, "email", p.locale, { app: this.d.appName, ...p.params }),
+      const rendered = await this.uow.transaction(() =>
+        this.templates.render(p.templateKey!, "email", p.locale, { app: this.config.appName, ...p.params }),
       );
       if (rendered) {
         subject = rendered.subject ?? subject;
@@ -112,15 +110,15 @@ export class NotificationService implements INotificationProvider {
       }
     }
 
-    await this.d.email.send({ to: p.to, subject, text: body });
+    await this.email.send({ to: p.to, subject, text: body });
   }
 
   // ─── Identity event handlers (external → email) ────────────────────────────
 
   async onEmailVerificationRequested(event: DomainEvent): Promise<void> {
     const p = event.payload as { email: string; token: string; locale: string | null };
-    const link = `${this.d.appUrl}/verify-email?token=${encodeURIComponent(p.token)}`;
-    await this.d.email.send({
+    const link = `${this.config.appUrl}/verify-email?token=${encodeURIComponent(p.token)}`;
+    await this.email.send({
       to: p.email,
       subject: await this.subjectFor("email_verification", p.locale),
       text: await this.bodyFor("email_verification", p.locale, { link }),
@@ -129,8 +127,8 @@ export class NotificationService implements INotificationProvider {
 
   async onPasswordResetRequested(event: DomainEvent): Promise<void> {
     const p = event.payload as { email: string; token: string; locale: string | null };
-    const link = `${this.d.appUrl}/reset-password?token=${encodeURIComponent(p.token)}`;
-    await this.d.email.send({
+    const link = `${this.config.appUrl}/reset-password?token=${encodeURIComponent(p.token)}`;
+    await this.email.send({
       to: p.email,
       subject: await this.subjectFor("password_reset", p.locale),
       text: await this.bodyFor("password_reset", p.locale, { link }),
@@ -140,13 +138,13 @@ export class NotificationService implements INotificationProvider {
   /** In-process handler: a welcome notification, written in the register tx. */
   async onUserRegistered(event: DomainEvent): Promise<void> {
     const p = event.payload as { userId: string; locale: string | null };
-    const locale = p.locale ?? this.d.defaultLocale;
-    const rendered = await this.d.templates.render("welcome", "in_app", locale, { app: this.d.appName });
-    await this.d.notifications.insert({
+    const locale = p.locale ?? this.config.defaultLocale;
+    const rendered = await this.templates.render("welcome", "in_app", locale, { app: this.config.appName });
+    await this.notifications.insert({
       userId: p.userId,
       type: "welcome",
-      title: rendered?.subject ?? t("notification.welcome_title", locale, { app: this.d.appName }),
-      body: rendered?.body ?? t("notification.welcome_body", locale, { app: this.d.appName }),
+      title: rendered?.subject ?? t("notification.welcome_title", locale, { app: this.config.appName }),
+      body: rendered?.body ?? t("notification.welcome_body", locale, { app: this.config.appName }),
       locale,
     });
   }
@@ -154,30 +152,30 @@ export class NotificationService implements INotificationProvider {
   // ─── Read side ────────────────────────────────────────────────────────────
 
   listForUser(userId: string, opts: { unreadOnly?: boolean; limit?: number; cursor?: string }) {
-    return readInTenant(() => this.d.notifications.listForUser(userId, opts));
+    return readInTenant(() => this.notifications.listForUser(userId, opts));
   }
   unreadCount(userId: string): Promise<number> {
-    return readInTenant(() => this.d.notifications.unreadCount(userId));
+    return readInTenant(() => this.notifications.unreadCount(userId));
   }
   markRead(userId: string, id: string): Promise<void> {
-    return this.d.uow.transaction(() => this.d.notifications.markRead(userId, id));
+    return this.uow.transaction(() => this.notifications.markRead(userId, id));
   }
   markAllRead(userId: string): Promise<void> {
-    return this.d.uow.transaction(() => this.d.notifications.markAllRead(userId));
+    return this.uow.transaction(() => this.notifications.markAllRead(userId));
   }
 
   // ─── helpers ──────────────────────────────────────────────────────────────
 
   private async localeFor(userId: string): Promise<string> {
-    const user = await this.d.users.getUser(userId);
-    return user?.locale ?? this.d.defaultLocale;
+    const user = await this.users.getUser(userId);
+    return user?.locale ?? this.config.defaultLocale;
   }
 
   private async subjectFor(key: string, locale: string | null): Promise<string> {
-    const rendered = await this.d.uow.transaction(() =>
-      this.d.templates.render(key, "email", locale ?? this.d.defaultLocale, { app: this.d.appName }),
+    const rendered = await this.uow.transaction(() =>
+      this.templates.render(key, "email", locale ?? this.config.defaultLocale, { app: this.config.appName }),
     );
-    return rendered?.subject ?? this.d.appName;
+    return rendered?.subject ?? this.config.appName;
   }
 
   private async bodyFor(
@@ -185,9 +183,9 @@ export class NotificationService implements INotificationProvider {
     locale: string | null,
     params: Record<string, string | number>,
   ): Promise<string> {
-    const rendered = await this.d.uow.transaction(() =>
-      this.d.templates.render(key, "email", locale ?? this.d.defaultLocale, {
-        app: this.d.appName,
+    const rendered = await this.uow.transaction(() =>
+      this.templates.render(key, "email", locale ?? this.config.defaultLocale, {
+        app: this.config.appName,
         ...params,
       }),
     );

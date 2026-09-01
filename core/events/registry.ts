@@ -1,3 +1,4 @@
+import { Injectable } from "@nestjs/common";
 import type { DomainEvent } from "../contracts/domain-event.js";
 
 /**
@@ -21,6 +22,7 @@ interface ExternalSubscription {
   handle: EventHandler;
 }
 
+@Injectable()
 export class EventRegistry {
   private readonly inProcess = new Map<string, EventHandler[]>();
   private readonly external = new Map<string, ExternalSubscription[]>();

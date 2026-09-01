@@ -1,11 +1,13 @@
+import { Injectable } from "@nestjs/common";
 import type { IUserProvider, User } from "../../contracts/index.js";
-import type { UserRepository } from "./user-repository.js";
+import { UserRepository } from "./user-repository.js";
 
 /**
  * The Identity module's implementation of the IUserProvider contract (§4).
  * This is the ONLY way other modules reach user data — they call
  * `getUser(userId)`, never `SELECT ... FROM users`.
  */
+@Injectable()
 export class IdentityUserProvider implements IUserProvider {
   constructor(private readonly users: UserRepository) {}
 

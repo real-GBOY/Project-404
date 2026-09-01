@@ -1,23 +1,33 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import type { AuricCore } from "../index.js";
-import type { EmailChannel, EmailMessage } from "../notifications/infrastructure/email-channel.js";
+import type { TestingModule } from "@nestjs/testing";
 import { fixedClock } from "../kernel/clock.js";
-import { applyTestConfig, asSystem, asUser, hasTestDb, resetSchema } from "./helpers.js";
+import { unitOfWork } from "../kernel/db/db.js";
+import { EVENT_BUS, JWT_SERVICE } from "../kernel/tokens.js";
+import type { IEventBus } from "../contracts/index.js";
+import { EventRegistry } from "../events/registry.js";
+import { OutboxRepository } from "../events/outbox/outbox-repository.js";
+import { OutboxWorker } from "../events/outbox/outbox-worker.js";
+import { IdentityService } from "../identity/application/identity-service.js";
+import type { JwtService } from "../identity/infrastructure/jwt-service.js";
+import { RbacService } from "../rbac/application/rbac-service.js";
+import { RbacPermissionProvider } from "../rbac/infrastructure/permission-provider.js";
+import { OrganizationService } from "../organizations/application/organization-service.js";
+import { NotificationService } from "../notifications/application/notification-service.js";
+import { AuditRepository } from "../audit/infrastructure/audit-repository.js";
+import type { EmailChannel, EmailMessage } from "../notifications/infrastructure/email-channel.js";
+import { asSystem, asUser, createTestCore, get, hasTestDb } from "./helpers.js";
 
 /**
  * End-to-end exercise of AURIC Core through its public surface: migrations, RBAC
  * seed, the full auth lifecycle, RBAC enforcement, the in-process event bus, and
  * the transactional outbox + worker delivering an email side effect, including
- * the dead-letter path.
- *
- * The Core runs as `auric_app` here (see helpers), so every RLS policy is live;
- * direct service calls are wrapped in `asUser` / `asSystem` to stand in for the
- * request context (§ docs/tenancy.md).
+ * the dead-letter path. The Core runs as `auric_app`, so every RLS policy is
+ * live; direct service calls are wrapped in `asUser` / `asSystem`.
  */
 const suite = hasTestDb ? describe : describe.skip;
 
 suite("AURIC Core — integration", () => {
-  let core: AuricCore;
+  let core: TestingModule;
   const clock = fixedClock("2026-08-29T09:00:00.000Z");
   const sent: EmailMessage[] = [];
   const captureEmail: EmailChannel = {
@@ -26,41 +36,32 @@ suite("AURIC Core — integration", () => {
     },
   };
 
+  const identity = () => get(core, IdentityService);
+  const worker = () => get(core, OutboxWorker);
+
   beforeAll(async () => {
-    applyTestConfig();
-    await resetSchema();
-    const { createAuricCore } = await import("../index.js");
-    core = createAuricCore({
-      startWorker: false,
-      emailChannel: captureEmail,
-      clock,
-      config: { appUrl: "https://app.test" },
-    });
-    await core.migrate();
-    await core.seed();
+    core = await createTestCore({ clock, emailChannel: captureEmail });
   }, 60_000);
 
   afterAll(async () => {
-    await core?.stop();
+    await core?.close();
   });
 
   it("seeds the admin role with a wildcard permission", async () => {
-    const roles = await core.modules.rbac.service.listRoles();
+    const roles = await get(core, RbacService).listRoles();
     expect(roles.map((r) => r.key)).toContain("admin");
   });
 
   it("register writes a welcome notification in the same transaction", async () => {
-    const email = `welcome+${Date.now()}@example.com`;
-    const user = await core.modules.identity.service.register({
-      email,
+    const user = await identity().register({
+      email: `welcome+${Date.now()}@example.com`,
       password: "correct horse battery",
       locale: "ar",
     });
     expect(user.status).toBe("pending");
 
-    // Account-level (NULL-org) notification, visible to the owner in any context.
     const notes = await asUser(user.id, null, () =>
-      core.modules.notifications.service.listForUser(user.id, {}),
+      get(core, NotificationService).listForUser(user.id, {}),
     );
     expect(notes.some((n) => n.type === "welcome")).toBe(true);
   });
@@ -68,87 +69,77 @@ suite("AURIC Core — integration", () => {
   it("delivers the verification email through the outbox, then login works", async () => {
     const email = `owner+${Date.now()}@example.com`;
     const password = "correct horse battery";
-    await core.modules.identity.service.register({ email, password, locale: "en" });
+    await identity().register({ email, password, locale: "en" });
 
     sent.length = 0;
-    const processed = await core.worker.tick();
+    const processed = await worker().tick();
     expect(processed).toBeGreaterThan(0);
 
     const mail = sent.find((m) => m.to === email);
     expect(mail?.text).toMatch(/https:\/\/app\.test\/verify-email\?token=/);
 
     const token = decodeURIComponent(mail!.text.match(/token=([A-Za-z0-9_\-]+)/)![1]!);
-    await core.modules.identity.service.verifyEmail(token);
+    await identity().verifyEmail(token);
 
-    const login = await core.modules.identity.service.login({ email, password });
+    const login = await identity().login({ email, password });
     expect(login.user.status).toBe("active");
     expect(login.tokens.tokenType).toBe("Bearer");
-    // No org yet → orgless token, empty membership list.
     expect(login.organizations).toEqual([]);
-    expect(core.modules.identity.jwt.verifyAccessToken(login.tokens.accessToken).org).toBeNull();
+    expect(get<JwtService>(core, JWT_SERVICE).verifyAccessToken(login.tokens.accessToken).org).toBeNull();
 
-    // refresh rotates the refresh token...
-    const rotated = await core.modules.identity.service.refresh(login.tokens.refreshToken);
+    const rotated = await identity().refresh(login.tokens.refreshToken);
     expect(rotated.refreshToken).not.toBe(login.tokens.refreshToken);
-    // ...and reusing the consumed one is rejected (and trips theft protection,
-    // revoking the whole token family).
-    await expect(core.modules.identity.service.refresh(login.tokens.refreshToken)).rejects.toThrow();
-    await expect(core.modules.identity.service.refresh(rotated.refreshToken)).rejects.toThrow();
+    await expect(identity().refresh(login.tokens.refreshToken)).rejects.toThrow();
+    await expect(identity().refresh(rotated.refreshToken)).rejects.toThrow();
   }, 30_000);
 
   it("makes the organization creator a tenant-scoped admin, and honours the wildcard", async () => {
-    const user = await core.modules.identity.service.register({
+    const user = await identity().register({
       email: `founder+${Date.now()}@example.com`,
       password: "correct horse battery",
     });
-    const org = await core.modules.organizations.service.createOrganization({
+    const org = await get(core, OrganizationService).createOrganization({
       name: "Acme",
       createdBy: user.id,
     });
+    const perms = get(core, RbacPermissionProvider);
 
-    // The `organization.created` subscriber granted `admin` in the new tenant.
-    expect(
-      await asUser(user.id, org.id, () =>
-        core.modules.rbac.permissionProvider.can(user.id, "manage", "role"),
-      ),
-    ).toBe(true);
-    expect(
-      await asUser(user.id, org.id, () =>
-        core.modules.rbac.permissionProvider.can(user.id, "whatever", "anything"),
-      ),
-    ).toBe(true);
-    // ...but not outside that tenant.
-    expect(
-      await asUser(user.id, null, () =>
-        core.modules.rbac.permissionProvider.can(user.id, "manage", "role"),
-      ),
-    ).toBe(false);
+    expect(await asUser(user.id, org.id, () => perms.can(user.id, "manage", "role"))).toBe(true);
+    expect(await asUser(user.id, org.id, () => perms.can(user.id, "whatever", "anything"))).toBe(true);
+    expect(await asUser(user.id, null, () => perms.can(user.id, "manage", "role"))).toBe(false);
   }, 30_000);
 
   it("dead-letters an external event whose handler never succeeds", async () => {
-    core.registry.onExternal("test.always_fails", "test.boom", async () => {
+    get(core, EventRegistry).onExternal("test.always_fails", "test.boom", async () => {
       throw new Error("boom");
     });
 
-    await core.uow.transaction(() =>
-      core.events.publish({ name: "test.always_fails", version: 1, payload: { n: 1 } }),
+    await asSystem(() =>
+      unitOfWork.transaction(() =>
+        get<IEventBus>(core, EVENT_BUS).publish({
+          name: "test.always_fails",
+          version: 1,
+          payload: { n: 1 },
+        }),
+      ),
     );
 
-    // max attempts defaults to 5; advance past each exponential backoff window.
     for (let i = 0; i < 8; i++) {
-      await core.worker.tick();
+      await worker().tick();
       clock.advance(2 * 60 * 60 * 1000);
     }
 
-    const stats = await asSystem(() => core.uow.transaction(() => core.outbox.stats()));
+    const stats = await asSystem(() =>
+      unitOfWork.transaction(() => get(core, OutboxRepository).stats()),
+    );
     expect(stats.deadLettered).toBeGreaterThan(0);
     expect(stats.pending).toBe(0);
   }, 30_000);
 
   it("audit trail is append-only", async () => {
     const rows = await asSystem(() =>
-      core.uow.transaction(() =>
-        core.modules.audit.repository.query({ action: "user.registered", limit: 1 }),
+      unitOfWork.transaction(() =>
+        get(core, AuditRepository).query({ action: "user.registered", limit: 1 }),
       ),
     );
     expect(rows.length).toBe(1);

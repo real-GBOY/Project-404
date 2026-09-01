@@ -1,3 +1,4 @@
+import { Injectable } from "@nestjs/common";
 import { currentExecutor } from "../../kernel/db/db.js";
 import { requireOrganizationId } from "../../kernel/tenant.js";
 
@@ -17,6 +18,7 @@ export interface FileRow {
   deletedAt: Date | null;
 }
 
+@Injectable()
 export class FileRepository {
   async insert(input: Omit<FileRow, "createdAt" | "deletedAt" | "organizationId">): Promise<void> {
     await currentExecutor()

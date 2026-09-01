@@ -1,11 +1,19 @@
+import {
+  Inject,
+  Injectable,
+  type OnApplicationBootstrap,
+  type OnApplicationShutdown,
+} from "@nestjs/common";
 import type { DomainEvent } from "../../contracts/domain-event.js";
 import type { Clock } from "../../kernel/clock.js";
+import type { AuricConfig } from "../../kernel/config.js";
+import { CLOCK, CONFIG, WORKER_AUTOSTART } from "../../kernel/tokens.js";
 import { moduleLogger } from "../../kernel/logging/logger.js";
 import { runWithContext, runAsSystem } from "../../kernel/logging/context.js";
 import { unitOfWork } from "../../kernel/db/db.js";
 import { newId } from "../../kernel/id.js";
-import type { EventRegistry } from "../registry.js";
-import type { OutboxRepository, OutboxRow } from "./outbox-repository.js";
+import { EventRegistry } from "../registry.js";
+import { OutboxRepository, type OutboxRow } from "./outbox-repository.js";
 
 const log = moduleLogger("outbox-worker");
 
@@ -20,20 +28,37 @@ export interface OutboxWorkerOptions {
  * The silent background process (§6.2). It MUST be monitored — it can fail
  * quietly while events pile up. `stats()` on the repository and the health
  * check surface its backlog.
+ *
+ * Starts on app bootstrap and stops on shutdown. Test module refs that
+ * `.compile()` without `.init()` never bootstrap, so they drive `tick()`
+ * by hand — the historical `startWorker: false`.
  */
-export class OutboxWorker {
+@Injectable()
+export class OutboxWorker implements OnApplicationBootstrap, OnApplicationShutdown {
   private timer: NodeJS.Timeout | undefined;
   private running = false;
   private ticking = false;
   private lastTickAt: Date | undefined;
   private lastError: string | undefined;
+  private readonly opts: OutboxWorkerOptions;
 
   constructor(
     private readonly registry: EventRegistry,
     private readonly outbox: OutboxRepository,
-    private readonly clock: Clock,
-    private readonly opts: OutboxWorkerOptions,
-  ) {}
+    @Inject(CLOCK) private readonly clock: Clock,
+    @Inject(CONFIG) config: AuricConfig,
+    @Inject(WORKER_AUTOSTART) private readonly autostart: boolean,
+  ) {
+    this.opts = { pollIntervalMs: config.outboxPollIntervalMs, batchSize: config.outboxBatchSize };
+  }
+
+  onApplicationBootstrap(): void {
+    if (this.autostart) this.start();
+  }
+
+  async onApplicationShutdown(): Promise<void> {
+    await this.stop();
+  }
 
   start(): void {
     if (this.running) return;

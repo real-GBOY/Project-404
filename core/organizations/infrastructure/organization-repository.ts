@@ -1,7 +1,9 @@
+import { Injectable } from "@nestjs/common";
 import { currentExecutor } from "../../kernel/db/db.js";
 import { newId } from "../../kernel/id.js";
 import type { Organization, OrganizationMember } from "../domain/organization.js";
 
+@Injectable()
 export class OrganizationRepository {
   async create(input: {
     name: string;
