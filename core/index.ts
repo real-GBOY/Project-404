@@ -33,6 +33,8 @@ export interface CreateCoreOptions {
   clock?: Clock;
   /** Skip starting the outbox worker (tests drive it by hand). */
   startWorker?: boolean;
+  /** Override email-verification-before-login (admin-provisioned / tests). */
+  requireEmailVerification?: boolean;
   /** Replace the email transport (tests capture instead of sending). */
   emailChannel?: import("./notifications/infrastructure/email-channel.js").EmailChannel;
 }
@@ -88,7 +90,12 @@ export function createAuricCore(options: CreateCoreOptions = {}): AuricCore {
   // ── modules, in dependency order ────────────────────────────────────────
   const localization = createLocalizationModule(config);
   const audit = createAuditModule();
-  const rbac = createRbacModule({ uow: unitOfWork, audit: audit.logger });
+  const rbac = createRbacModule({ uow: unitOfWork, audit: audit.logger, registry });
+  // identity ↔ organizations is a wiring cycle: identity needs membership
+  // lookups at login, organizations needs the user provider. `organizations` is
+  // declared with `let` and passed to identity as a thunk resolved at request
+  // time (§ docs/tenancy.md).
+  let organizations: ReturnType<typeof createOrganizationsModule>;
   const identity = createIdentityModule({
     config,
     clock,
@@ -96,8 +103,12 @@ export function createAuricCore(options: CreateCoreOptions = {}): AuricCore {
     events,
     audit: audit.logger,
     permissions: rbac.permissionProvider,
+    organizations: () => organizations.organizationProvider,
+    ...(options.requireEmailVerification !== undefined
+      ? { requireEmailVerification: options.requireEmailVerification }
+      : {}),
   });
-  const organizations = createOrganizationsModule({
+  organizations = createOrganizationsModule({
     uow: unitOfWork,
     users: identity.userProvider,
     audit: audit.logger,

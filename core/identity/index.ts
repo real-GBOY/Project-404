@@ -2,7 +2,13 @@ import type { FastifyPluginAsync } from "fastify";
 import type { Clock } from "../kernel/clock.js";
 import type { UnitOfWork } from "../kernel/db/db.js";
 import type { AuricConfig } from "../kernel/config.js";
-import type { IAuditLogger, IEventBus, IPermissionProvider, IUserProvider } from "../contracts/index.js";
+import type {
+  IAuditLogger,
+  IEventBus,
+  IOrganizationProvider,
+  IPermissionProvider,
+  IUserProvider,
+} from "../contracts/index.js";
 import type { RouteContext } from "../http/route-context.js";
 import { UserRepository } from "./infrastructure/user-repository.js";
 import { RefreshTokenRepository } from "./infrastructure/refresh-token-repository.js";
@@ -21,6 +27,12 @@ export interface IdentityModuleDeps {
   events: IEventBus;
   audit: IAuditLogger;
   permissions: IPermissionProvider;
+  /**
+   * Lazily resolved to break the identity ↔ organizations wiring cycle
+   * (identity needs membership lookups at login; organizations needs the user
+   * provider). Only called at request time, by which point both modules exist.
+   */
+  organizations: () => IOrganizationProvider;
   hasher?: PasswordHasher;
   /** Override to false for admin-provisioned deployments. */
   requireEmailVerification?: boolean;
@@ -54,6 +66,7 @@ export function createIdentityModule(deps: IdentityModuleDeps): IdentityModule {
     events: deps.events,
     audit: deps.audit,
     permissions: deps.permissions,
+    organizations: deps.organizations,
     uow: deps.uow,
     clock: deps.clock,
     options: {

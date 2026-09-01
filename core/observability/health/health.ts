@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { sql } from "kysely";
-import { getDb } from "../../kernel/db/db.js";
+import { getDb, unitOfWork } from "../../kernel/db/db.js";
+import { runAsSystem } from "../../kernel/logging/context.js";
 import type { OutboxRepository } from "../../events/outbox/outbox-repository.js";
 import type { OutboxWorker } from "../../events/outbox/outbox-worker.js";
 
@@ -35,7 +36,10 @@ export function healthPlugin(deps: HealthDeps): FastifyPluginAsync {
 
       if (deps.outbox && deps.worker) {
         try {
-          const stats = await deps.outbox.stats();
+          // Backlog spans every tenant — read it on the system connection.
+          const stats = await runAsSystem(() =>
+            unitOfWork.transaction(() => deps.outbox!.stats()),
+          );
           const wh = deps.worker.health();
           const backlogHealthy = stats.pending < 1000 && stats.deadLettered === 0;
           checks.outbox = {

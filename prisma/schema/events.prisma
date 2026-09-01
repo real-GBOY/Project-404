@@ -8,6 +8,10 @@
 
 model outbox_messages {
   id              String    @id
+  /// The tenant the originating action belonged to (§ docs/tenancy.md). The
+  /// worker runs system-context and re-sets `app.organization_id` from this
+  /// value before invoking each message's handlers. NULL for system events.
+  organization_id String?
   event_name      String
   /// @kyselyType(Json<Record<string, unknown>>)
   payload         Json
@@ -25,9 +29,10 @@ model outbox_messages {
 }
 
 model dead_letter_messages {
-  id            String    @id
-  outbox_id     String
-  event_name    String
+  id              String    @id
+  organization_id String?
+  outbox_id       String
+  event_name      String
   /// @kyselyType(Json<Record<string, unknown>>)
   payload       Json
   attempts      Int

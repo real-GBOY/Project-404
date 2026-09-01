@@ -1,10 +1,12 @@
 import { currentExecutor } from "../../kernel/db/db.js";
 import { newId } from "../../kernel/id.js";
 import type { Clock } from "../../kernel/clock.js";
+import { currentOrganizationId } from "../../kernel/tenant.js";
 
 export interface NotificationRow {
   id: string;
   userId: string;
+  organizationId: string | null;
   type: string;
   title: string;
   body: string;
@@ -31,6 +33,9 @@ export class NotificationRepository {
       .values({
         id,
         user_id: input.userId,
+        // NULL for account-level notifications (welcome, security); the active
+        // tenant otherwise. See docs/tenancy.md.
+        organization_id: currentOrganizationId(),
         type: input.type,
         title: input.title,
         body: input.body,
@@ -88,6 +93,7 @@ export class NotificationRepository {
   private toRow(r: {
     id: string;
     user_id: string;
+    organization_id: string | null;
     type: string;
     title: string;
     body: string;
@@ -99,6 +105,7 @@ export class NotificationRepository {
     return {
       id: r.id,
       userId: r.user_id,
+      organizationId: r.organization_id,
       type: r.type,
       title: r.title,
       body: r.body,

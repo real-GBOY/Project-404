@@ -1,18 +1,23 @@
 // core/notifications — in-app + email, templated, bilingual AR/EN (§7.5).
 
 model notifications {
-  id         String    @id
-  user_id    String
-  type       String
-  title      String
-  body       String
-  locale     String
+  id              String    @id
+  user_id         String
+  /// The tenant this notification belongs to (§ docs/tenancy.md). NULL for
+  /// account-level notifications (welcome, security, invitations) that are not
+  /// scoped to one organization — those stay visible to the user in any tenant.
+  organization_id String?
+  type            String
+  title           String
+  body            String
+  locale          String
   /// @kyselyType(Json<Record<string, unknown>>)
-  data       Json?
-  read_at    DateTime? @db.Timestamptz(6)
-  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  data            Json?
+  read_at         DateTime? @db.Timestamptz(6)
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
 
-  users users @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users         users          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  organizations organizations? @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([user_id, created_at], map: "notifications_user_unread_idx")
   @@map("notifications")

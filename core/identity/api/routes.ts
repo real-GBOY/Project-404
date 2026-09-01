@@ -33,8 +33,8 @@ export function identityRoutes(
     });
 
     app.post("/auth/refresh", async (req, reply) => {
-      const { refreshToken } = parseBody(refreshSchema, req.body);
-      reply.send({ tokens: await service.refresh(refreshToken) });
+      const { refreshToken, organizationId } = parseBody(refreshSchema, req.body);
+      reply.send({ tokens: await service.refresh(refreshToken, organizationId) });
     });
 
     app.post("/auth/logout", async (req, reply) => {
@@ -74,7 +74,11 @@ export function identityRoutes(
 
     app.get("/me", { preHandler: ctx.authenticate }, async (req, reply) => {
       const principal = requireAuth(req);
-      reply.send({ user: await userProvider.getUser(principal.userId), permissions: principal.permissions });
+      reply.send({
+        user: await userProvider.getUser(principal.userId),
+        organizationId: principal.organizationId,
+        permissions: principal.permissions,
+      });
     });
   };
 }

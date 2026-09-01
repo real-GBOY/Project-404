@@ -1,5 +1,7 @@
 import type { UnitOfWork } from "../../kernel/db/db.js";
+import { readInTenant } from "../../kernel/db/db.js";
 import { Conflict, NotFound } from "../../kernel/errors.js";
+import { requireOrganizationId } from "../../kernel/tenant.js";
 import type { IAuditLogger } from "../../contracts/index.js";
 import type { Role } from "../domain/role.js";
 import { parsePermissionKey, permissionKey } from "../domain/permission.js";
@@ -37,32 +39,44 @@ export class RbacService {
     });
   }
 
-  async assignRole(userId: string, roleKey: string, grantedBy?: string): Promise<void> {
+  /**
+   * Assign a role to a user *within a tenant*. `organizationId` defaults to the
+   * active tenant; the org-creation flow passes the new org's id explicitly
+   * (it runs system-context, with no active tenant).
+   */
+  async assignRole(
+    userId: string,
+    roleKey: string,
+    grantedBy?: string,
+    organizationId?: string,
+  ): Promise<void> {
+    const orgId = organizationId ?? requireOrganizationId();
     await this.d.uow.transaction(async () => {
       const role = await this.requireRole(roleKey);
-      await this.d.repo.assignRoleToUser(userId, role.id, grantedBy ?? null);
+      await this.d.repo.assignRoleToUser(userId, role.id, orgId, grantedBy ?? null);
       await this.d.audit.record({
         actorId: grantedBy ?? null,
         actorType: grantedBy ? "user" : "system",
         action: "rbac.role_assigned",
         resourceType: "user",
         resourceId: userId,
-        after: { roleKey },
+        after: { roleKey, organizationId: orgId },
       });
     });
   }
 
-  async removeRole(userId: string, roleKey: string): Promise<void> {
+  async removeRole(userId: string, roleKey: string, organizationId?: string): Promise<void> {
+    const orgId = organizationId ?? requireOrganizationId();
     await this.d.uow.transaction(async () => {
       const role = await this.requireRole(roleKey);
-      await this.d.repo.removeRoleFromUser(userId, role.id);
+      await this.d.repo.removeRoleFromUser(userId, role.id, orgId);
       await this.d.audit.record({
         actorId: null,
         actorType: "system",
         action: "rbac.role_removed",
         resourceType: "user",
         resourceId: userId,
-        after: { roleKey },
+        after: { roleKey, organizationId: orgId },
       });
     });
   }
@@ -93,12 +107,14 @@ export class RbacService {
     });
   }
 
-  rolesForUser(userId: string): Promise<Role[]> {
-    return this.d.repo.rolesForUser(userId);
+  rolesForUser(userId: string, organizationId?: string): Promise<Role[]> {
+    const orgId = organizationId ?? requireOrganizationId();
+    return readInTenant(() => this.d.repo.rolesForUser(userId, orgId));
   }
 
-  permissionsForUser(userId: string): Promise<string[]> {
-    return this.d.repo.permissionKeysForUser(userId);
+  permissionsForUser(userId: string, organizationId?: string): Promise<string[]> {
+    const orgId = organizationId ?? requireOrganizationId();
+    return readInTenant(() => this.d.repo.permissionKeysForUser(userId, orgId));
   }
 
   private async requireRole(roleKey: string): Promise<Role> {

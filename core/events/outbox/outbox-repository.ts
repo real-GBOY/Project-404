@@ -1,11 +1,12 @@
-import { sql } from "kysely";
 import { currentExecutor } from "../../kernel/db/db.js";
 import { newId } from "../../kernel/id.js";
 import type { DomainEvent } from "../../contracts/domain-event.js";
 import type { Clock } from "../../kernel/clock.js";
+import { currentOrganizationId } from "../../kernel/tenant.js";
 
 export interface OutboxRow {
   id: string;
+  organization_id: string | null;
   event_name: string;
   payload: Record<string, unknown>;
   attempts: number;
@@ -30,6 +31,7 @@ export class OutboxRepository {
       .insertInto("outbox_messages")
       .values({
         id: newId("obx"),
+        organization_id: currentOrganizationId(),
         event_name: event.name,
         payload: {
           __version: event.version,
@@ -67,11 +69,20 @@ export class OutboxRepository {
             .forUpdate()
             .skipLocked(),
       )
-      .returning(["id", "event_name", "payload", "attempts", "max_attempts", "last_error"])
+      .returning([
+        "id",
+        "organization_id",
+        "event_name",
+        "payload",
+        "attempts",
+        "max_attempts",
+        "last_error",
+      ])
       .execute();
 
     return rows.map((r) => ({
       id: r.id,
+      organization_id: r.organization_id,
       event_name: r.event_name,
       payload: r.payload as Record<string, unknown>,
       attempts: r.attempts,
@@ -121,6 +132,7 @@ export class OutboxRepository {
       .insertInto("dead_letter_messages")
       .values({
         id: newId("dlq"),
+        organization_id: row.organization_id,
         outbox_id: row.id,
         event_name: row.event_name,
         payload: row.payload,

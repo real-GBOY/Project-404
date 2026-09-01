@@ -66,6 +66,29 @@ read the ambient transaction via `currentExecutor()` (an `AsyncLocalStorage`
 set by `unitOfWork.transaction`). This is the Plan's "the bus merely runs
 inside the transaction the caller controls."
 
+## Multi-tenancy (Plan §7.3, docs/tenancy.md)
+
+AURIC Core is a shared multi-tenant SaaS. **An organization is the tenant.**
+
+- Every tenant-scoped table carries `organization_id`; **PostgreSQL row-level
+  security** is the backstop — a forgotten `WHERE` in Kysely code cannot leak
+  across tenants. `user_roles` and `files` are strict; `audit_logs`,
+  `notifications`, and the outbox allow `NULL` for account-level / system rows.
+- Two runtime roles: `auric_app` (no `BYPASSRLS`) for request work, `auric_system`
+  (`BYPASSRLS`) for signup, provider webhooks, and the outbox worker.
+  `pool.ts` keeps a pool per role; `unitOfWork.transaction` routes by
+  `ctx.system` and, on the app connection, runs `SET LOCAL app.organization_id /
+  app.user_id` so the policies resolve.
+- The tenant rides the **existing `RequestContext`** (`logging/context.ts`) — no
+  second `AsyncLocalStorage`. The auth hook sets it from the JWT `org` claim.
+  `kernel/tenant.ts` exposes `currentOrganizationId()` / `requireOrganizationId()`
+  and the `ITenantContext` contract.
+- Identity is **global** (one `users` row per person, email globally unique);
+  `organization_members` is the tenancy link. The access token carries a
+  nullable `org` claim + the perms *for that org*; `POST /auth/refresh
+  {organizationId}` switches tenant without re-login. Any authenticated user may
+  create an organization and becomes its `owner` + tenant-scoped `admin`.
+
 ## Data ownership (Plan §5)
 
 Identity owns `users`, tokens. Every other module stores only a `userId`
@@ -112,8 +135,9 @@ any dead-lettered message.
   `user_roles`. `can()` supports `*` wildcards. Seeds an `admin` role holding
   `*:*`. Permissions are contributed by each module's `permissions/` file and
   registered on boot.
-- **organizations** — org + members + JSON settings. Single-tenant: no
-  `tenant_id`, no RLS (Plan §7.3).
+- **organizations** — org + members + JSON settings. The organization is the
+  tenant (see Multi-tenancy above); `organization_members` is the tenancy link,
+  and both tables are RLS-scoped.
 - **audit** — append-only; `UPDATE`/`DELETE` blocked by a DB trigger.
 - **files** — `IFileStorage` (upload/getUrl/getContent/delete) + local-disk
   adapter; interface ready for an S3 adapter with no use-case change. HTTP
@@ -130,6 +154,8 @@ any dead-lettered message.
 
 ## Deliberately deferred (Plan §7, §8)
 
-multi-tenancy · workflow/approval engine · reporting skeleton · SMS/push ·
-2FA/OAuth · file thumbnails/virus-scan/versioning · metrics/alerting beyond
-the health endpoint. Each waits for a real project.
+workflow/approval engine · reporting skeleton · SMS/push · 2FA/OAuth · file
+thumbnails/virus-scan/versioning · metrics/alerting beyond the health endpoint ·
+per-tenant custom roles · tenant suspend/export/delete · org invitations (a
+non-member is added today via `POST /organizations/:id/members`) · DB-per-tenant.
+Each waits for a real project.

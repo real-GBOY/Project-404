@@ -37,8 +37,9 @@ interface it needs and calls it:
 | Interface | Get a user, check existence |
 |---|---|
 | `IUserProvider` | `getUser(id)`, `userExists(id)` |
-| `IOrganizationProvider` | `getOrganization(id)`, `isMember(orgId, userId)` |
-| `IPermissionProvider` | `can(userId, action, resource)`, `assignRole`, `permissionsFor` |
+| `IOrganizationProvider` | `getOrganization(id)`, `isMember(orgId, userId)`, `membershipsForUser(userId)` |
+| `ITenantContext` | `organizationId()` (throws if none), `organizationIdOrNull()` — the active tenant (docs/tenancy.md) |
+| `IPermissionProvider` | `can(userId, action, resource)`, `assignRole`, `permissionsFor` — resolved within the active tenant |
 | `INotificationProvider` | `send({ userId, templateKey?, channels })` |
 | `IFileStorage` | `upload`, `getUrl`, `getContent`, `delete` |
 | `IAuditLogger` | `record({ actorId, action, resourceType, before, after })` |

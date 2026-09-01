@@ -2,9 +2,11 @@ import { currentExecutor } from "../../kernel/db/db.js";
 import { newId } from "../../kernel/id.js";
 import type { AuditEntry } from "../../contracts/index.js";
 import { getContext } from "../../kernel/logging/context.js";
+import { currentOrganizationId } from "../../kernel/tenant.js";
 
 export interface AuditRecord {
   id: string;
+  organizationId: string | null;
   actorId: string | null;
   actorType: "user" | "system";
   action: string;
@@ -34,6 +36,7 @@ export class AuditRepository {
       .insertInto("audit_logs")
       .values({
         id: newId("aud"),
+        organization_id: currentOrganizationId(),
         actor_id: entry.actorId,
         actor_type: entry.actorType ?? (entry.actorId ? "user" : "system"),
         action: entry.action,
@@ -66,6 +69,7 @@ export class AuditRepository {
 
     return rows.map((r) => ({
       id: r.id,
+      organizationId: r.organization_id,
       actorId: r.actor_id,
       actorType: r.actor_type as "user" | "system",
       action: r.action,

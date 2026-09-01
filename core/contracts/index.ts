@@ -3,9 +3,11 @@
  * another module's tables or concrete classes. This is what keeps modules
  * forkable and the coupling loose.
  *
- * Single-tenant by default: there is deliberately no tenant context in these
- * contracts. If a multi-tenant product ever appears, introduce a separate
- * ITenantContext then (§7.3) — do not retrofit tenancy here.
+ * Multi-tenant (§ docs/tenancy.md): the active tenant is ambient, not a
+ * parameter on every contract. `ITenantContext` (below) is the one place it is
+ * named explicitly; everywhere else RLS scopes the data and the
+ * `organization_id` column carries it. `IOrganizationProvider` stays free of
+ * tenant context on purpose — an organization *is* the tenant.
  */
 export type { DomainEvent } from "./domain-event.js";
 export { defineEvent } from "./domain-event.js";
@@ -33,9 +35,34 @@ export interface Organization {
   settings: Record<string, unknown>;
 }
 
+export interface OrganizationMembership {
+  organizationId: string;
+  slug: string;
+  name: string;
+  membershipRole: string;
+}
+
 export interface IOrganizationProvider {
   getOrganization(orgId: string): Promise<Organization | null>;
   isMember(orgId: string, userId: string): Promise<boolean>;
+  /** Every organization the user belongs to. Used at login to resolve the
+   *  active tenant and populate the tenant switcher (§ docs/tenancy.md). */
+  membershipsForUser(userId: string): Promise<OrganizationMembership[]>;
+}
+
+// ─── Tenant context ──────────────────────────────────────────────────────────
+/**
+ * The active tenant for the current request (§ docs/tenancy.md). A separate
+ * contract, deliberately not folded into IOrganizationProvider. Most module
+ * code never needs this — RLS plus the `organization_id` column handle scoping.
+ * It exists for the paths that must name the tenant (per-tenant reports, cache
+ * keys, writing an `organization_id`).
+ */
+export interface ITenantContext {
+  /** The active tenant. Throws (401) if the request carries none. */
+  organizationId(): string;
+  /** The active tenant, or null for an orgless / pre-tenant / system request. */
+  organizationIdOrNull(): string | null;
 }
 
 // ─── RBAC ────────────────────────────────────────────────────────────────────

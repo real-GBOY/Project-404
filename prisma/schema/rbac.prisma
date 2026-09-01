@@ -42,15 +42,19 @@ model role_permissions {
 }
 
 model user_roles {
-  user_id    String
-  role_id    String
-  granted_at DateTime @default(now()) @db.Timestamptz(6)
-  granted_by String?
+  user_id         String
+  role_id         String
+  /// The tenant this grant applies in (§ docs/tenancy.md). A user can hold
+  /// different roles in different organizations. RLS-scoped.
+  organization_id String
+  granted_at      DateTime @default(now()) @db.Timestamptz(6)
+  granted_by      String?
 
-  roles roles @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  users users @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  roles         roles         @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users         users         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  organizations organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@id([user_id, role_id], map: "user_roles_pk")
-  @@index([user_id], map: "user_roles_user_idx")
+  @@id([user_id, role_id, organization_id], map: "user_roles_pk")
+  @@index([user_id, organization_id], map: "user_roles_user_org_idx")
   @@map("user_roles")
 }

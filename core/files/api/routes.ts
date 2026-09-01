@@ -4,6 +4,7 @@ import { z } from "zod";
 import { parseQuery } from "../../http/handler.js";
 import type { RouteContext } from "../../http/route-context.js";
 import { requireAuth, type Principal } from "../../identity/api/auth-middleware.js";
+import { readInTenant } from "../../kernel/db/db.js";
 import { Forbidden, ValidationError } from "../../kernel/errors.js";
 import type { IPermissionProvider } from "../../contracts/index.js";
 import type { FileStorageService } from "../infrastructure/file-storage.js";
@@ -62,7 +63,10 @@ export function fileRoutes(
     app.delete<{ Params: { id: string } }>("/files/:id", async (req, reply) => {
       const meta = await files.getMetadata(req.params.id);
       const principal = requireAuth(req);
-      if (meta.ownerId !== principal.userId && !(await permissions.can(principal.userId, "delete", "file"))) {
+      const canDelete =
+        meta.ownerId === principal.userId ||
+        (await readInTenant(() => permissions.can(principal.userId, "delete", "file")));
+      if (!canDelete) {
         throw Forbidden("files.forbidden", "You cannot delete this file.");
       }
       await files.delete({ id: req.params.id });
@@ -79,6 +83,6 @@ async function assertCanRead(
 ): Promise<void> {
   if (visibility === "public") return;
   if (ownerId === principal.userId) return;
-  if (await permissions.can(principal.userId, "read", "file")) return;
+  if (await readInTenant(() => permissions.can(principal.userId, "read", "file"))) return;
   throw Forbidden("files.forbidden", "You cannot access this file.");
 }

@@ -1,15 +1,28 @@
-import type { IOrganizationProvider, Organization } from "../../contracts/index.js";
+import type {
+  IOrganizationProvider,
+  Organization,
+  OrganizationMembership,
+} from "../../contracts/index.js";
+import { readInTenant } from "../../kernel/db/db.js";
 import type { OrganizationRepository } from "./organization-repository.js";
 
-/** IOrganizationProvider implementation (§4). No tenant context — single-tenant by default. */
+/**
+ * IOrganizationProvider implementation (§4). An organization *is* the tenant
+ * (§ docs/tenancy.md), so this contract carries no separate tenant context.
+ * Reads run through `readInTenant` so the RLS-scoped registry tables resolve.
+ */
 export class OrganizationProvider implements IOrganizationProvider {
   constructor(private readonly repo: OrganizationRepository) {}
 
   getOrganization(orgId: string): Promise<Organization | null> {
-    return this.repo.findById(orgId);
+    return readInTenant(() => this.repo.findById(orgId));
   }
 
   isMember(orgId: string, userId: string): Promise<boolean> {
-    return this.repo.isMember(orgId, userId);
+    return readInTenant(() => this.repo.isMember(orgId, userId));
+  }
+
+  membershipsForUser(userId: string): Promise<OrganizationMembership[]> {
+    return readInTenant(() => this.repo.membershipsForUser(userId));
   }
 }

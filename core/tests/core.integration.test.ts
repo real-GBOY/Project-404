@@ -2,17 +2,21 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { AuricCore } from "../index.js";
 import type { EmailChannel, EmailMessage } from "../notifications/infrastructure/email-channel.js";
 import { fixedClock } from "../kernel/clock.js";
-import { applyTestConfig, hasTestDb, resetSchema } from "./helpers.js";
+import { applyTestConfig, asSystem, asUser, hasTestDb, resetSchema } from "./helpers.js";
 
 /**
- * End-to-end exercise of AURIC Core v0.1 through its public surface:
- * migrations, RBAC seed, the full auth lifecycle, RBAC enforcement, the
- * in-process event bus, and the transactional outbox + worker delivering an
- * email side effect, including the dead-letter path.
+ * End-to-end exercise of AURIC Core through its public surface: migrations, RBAC
+ * seed, the full auth lifecycle, RBAC enforcement, the in-process event bus, and
+ * the transactional outbox + worker delivering an email side effect, including
+ * the dead-letter path.
+ *
+ * The Core runs as `auric_app` here (see helpers), so every RLS policy is live;
+ * direct service calls are wrapped in `asUser` / `asSystem` to stand in for the
+ * request context (§ docs/tenancy.md).
  */
 const suite = hasTestDb ? describe : describe.skip;
 
-suite("AURIC Core v0.1 — integration", () => {
+suite("AURIC Core — integration", () => {
   let core: AuricCore;
   const clock = fixedClock("2026-08-29T09:00:00.000Z");
   const sent: EmailMessage[] = [];
@@ -54,14 +58,17 @@ suite("AURIC Core v0.1 — integration", () => {
     });
     expect(user.status).toBe("pending");
 
-    const notes = await core.modules.notifications.service.listForUser(user.id, {});
+    // Account-level (NULL-org) notification, visible to the owner in any context.
+    const notes = await asUser(user.id, null, () =>
+      core.modules.notifications.service.listForUser(user.id, {}),
+    );
     expect(notes.some((n) => n.type === "welcome")).toBe(true);
   });
 
   it("delivers the verification email through the outbox, then login works", async () => {
     const email = `owner+${Date.now()}@example.com`;
     const password = "correct horse battery";
-    const user = await core.modules.identity.service.register({ email, password, locale: "en" });
+    await core.modules.identity.service.register({ email, password, locale: "en" });
 
     sent.length = 0;
     const processed = await core.worker.tick();
@@ -76,6 +83,9 @@ suite("AURIC Core v0.1 — integration", () => {
     const login = await core.modules.identity.service.login({ email, password });
     expect(login.user.status).toBe("active");
     expect(login.tokens.tokenType).toBe("Bearer");
+    // No org yet → orgless token, empty membership list.
+    expect(login.organizations).toEqual([]);
+    expect(core.modules.identity.jwt.verifyAccessToken(login.tokens.accessToken).org).toBeNull();
 
     // refresh rotates the refresh token...
     const rotated = await core.modules.identity.service.refresh(login.tokens.refreshToken);
@@ -86,15 +96,34 @@ suite("AURIC Core v0.1 — integration", () => {
     await expect(core.modules.identity.service.refresh(rotated.refreshToken)).rejects.toThrow();
   }, 30_000);
 
-  it("enforces RBAC and honours the admin wildcard", async () => {
-    const email = `rbac+${Date.now()}@example.com`;
-    const user = await core.modules.identity.service.register({ email, password: "correct horse battery" });
+  it("makes the organization creator a tenant-scoped admin, and honours the wildcard", async () => {
+    const user = await core.modules.identity.service.register({
+      email: `founder+${Date.now()}@example.com`,
+      password: "correct horse battery",
+    });
+    const org = await core.modules.organizations.service.createOrganization({
+      name: "Acme",
+      createdBy: user.id,
+    });
 
-    expect(await core.modules.rbac.permissionProvider.can(user.id, "manage", "role")).toBe(false);
-    await core.modules.rbac.service.assignRole(user.id, "admin");
-    expect(await core.modules.rbac.permissionProvider.can(user.id, "manage", "role")).toBe(true);
-    expect(await core.modules.rbac.permissionProvider.can(user.id, "whatever", "anything")).toBe(true);
-  });
+    // The `organization.created` subscriber granted `admin` in the new tenant.
+    expect(
+      await asUser(user.id, org.id, () =>
+        core.modules.rbac.permissionProvider.can(user.id, "manage", "role"),
+      ),
+    ).toBe(true);
+    expect(
+      await asUser(user.id, org.id, () =>
+        core.modules.rbac.permissionProvider.can(user.id, "whatever", "anything"),
+      ),
+    ).toBe(true);
+    // ...but not outside that tenant.
+    expect(
+      await asUser(user.id, null, () =>
+        core.modules.rbac.permissionProvider.can(user.id, "manage", "role"),
+      ),
+    ).toBe(false);
+  }, 30_000);
 
   it("dead-letters an external event whose handler never succeeds", async () => {
     core.registry.onExternal("test.always_fails", "test.boom", async () => {
@@ -111,14 +140,16 @@ suite("AURIC Core v0.1 — integration", () => {
       clock.advance(2 * 60 * 60 * 1000);
     }
 
-    const stats = await core.uow.transaction(() => core.outbox.stats());
+    const stats = await asSystem(() => core.uow.transaction(() => core.outbox.stats()));
     expect(stats.deadLettered).toBeGreaterThan(0);
     expect(stats.pending).toBe(0);
   }, 30_000);
 
   it("audit trail is append-only", async () => {
-    const rows = await core.uow.transaction(() =>
-      core.modules.audit.repository.query({ action: "user.registered", limit: 1 }),
+    const rows = await asSystem(() =>
+      core.uow.transaction(() =>
+        core.modules.audit.repository.query({ action: "user.registered", limit: 1 }),
+      ),
     );
     expect(rows.length).toBe(1);
   });

@@ -95,39 +95,57 @@ export class RbacRepository {
       .execute();
   }
 
-  async assignRoleToUser(userId: string, roleId: string, grantedBy?: string | null): Promise<void> {
+  async assignRoleToUser(
+    userId: string,
+    roleId: string,
+    organizationId: string,
+    grantedBy?: string | null,
+  ): Promise<void> {
     await currentExecutor()
       .insertInto("user_roles")
-      .values({ user_id: userId, role_id: roleId, granted_by: grantedBy ?? null })
+      .values({
+        user_id: userId,
+        role_id: roleId,
+        organization_id: organizationId,
+        granted_by: grantedBy ?? null,
+      })
       .onConflict((oc) => oc.doNothing())
       .execute();
   }
 
-  async removeRoleFromUser(userId: string, roleId: string): Promise<void> {
+  async removeRoleFromUser(userId: string, roleId: string, organizationId: string): Promise<void> {
     await currentExecutor()
       .deleteFrom("user_roles")
       .where("user_id", "=", userId)
       .where("role_id", "=", roleId)
+      .where("organization_id", "=", organizationId)
       .execute();
   }
 
-  async rolesForUser(userId: string): Promise<Role[]> {
+  /** Roles the user holds in the given tenant. */
+  async rolesForUser(userId: string, organizationId: string): Promise<Role[]> {
     const rows = await currentExecutor()
       .selectFrom("user_roles")
       .innerJoin("roles", "roles.id", "user_roles.role_id")
       .where("user_roles.user_id", "=", userId)
+      .where("user_roles.organization_id", "=", organizationId)
       .selectAll("roles")
       .execute();
     return rows.map((r) => this.toRole(r));
   }
 
-  /** Every permission key the user holds, via any of their roles. */
-  async permissionKeysForUser(userId: string): Promise<string[]> {
+  /**
+   * Every permission key the user holds in the given tenant, via any of their
+   * roles there. RLS also scopes `user_roles`; the explicit filter is defence
+   * in depth and keeps the query correct when run via the system role.
+   */
+  async permissionKeysForUser(userId: string, organizationId: string): Promise<string[]> {
     const rows = await currentExecutor()
       .selectFrom("user_roles")
       .innerJoin("role_permissions", "role_permissions.role_id", "user_roles.role_id")
       .innerJoin("permissions", "permissions.id", "role_permissions.permission_id")
       .where("user_roles.user_id", "=", userId)
+      .where("user_roles.organization_id", "=", organizationId)
       .select("permissions.key")
       .distinct()
       .execute();

@@ -10,6 +10,9 @@ import type { Clock } from "../../kernel/clock.js";
 export interface AccessTokenClaims {
   sub: string;
   email: string;
+  /** The active tenant (§ docs/tenancy.md), or null for an orgless token. */
+  org: string | null;
+  /** Permission keys the user holds *in `org`*. Empty for an orgless token. */
   perms: string[];
 }
 
@@ -31,12 +34,16 @@ export function createJwtService(params: {
 
   return {
     signAccessToken(claims) {
-      return jwt.sign({ email: claims.email, perms: claims.perms }, params.secret, {
-        subject: claims.sub,
-        issuer,
-        expiresIn: params.accessTtlSeconds,
-        algorithm: "HS256",
-      });
+      return jwt.sign(
+        { email: claims.email, org: claims.org, perms: claims.perms },
+        params.secret,
+        {
+          subject: claims.sub,
+          issuer,
+          expiresIn: params.accessTtlSeconds,
+          algorithm: "HS256",
+        },
+      );
     },
 
     verifyAccessToken(token) {
@@ -51,6 +58,7 @@ export function createJwtService(params: {
       return {
         sub: String(decoded.sub),
         email: typeof decoded.email === "string" ? decoded.email : "",
+        org: typeof decoded.org === "string" ? decoded.org : null,
         perms: Array.isArray(decoded.perms) ? (decoded.perms as string[]) : [],
       };
     },

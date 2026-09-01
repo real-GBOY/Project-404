@@ -2,6 +2,9 @@
 
 model files {
   id              String    @id
+  /// The tenant that owns this file (§ docs/tenancy.md). RLS-scoped. Plain
+  /// column, no FK — file metadata must outlive an organization's deletion.
+  organization_id String
   storage_key     String
   driver          String
   original_name   String
@@ -19,5 +22,6 @@ model files {
   deleted_at      DateTime? @db.Timestamptz(6)
 
   @@index([owner_id], map: "files_owner_idx")
+  @@index([organization_id], map: "files_org_idx")
   @@map("files")
 }

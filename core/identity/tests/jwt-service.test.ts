@@ -14,33 +14,44 @@ const make = (over: Partial<Parameters<typeof createJwtService>[0]> = {}) =>
 describe("JwtService — access tokens", () => {
   it("round-trips the claims", () => {
     const svc = make();
-    const token = svc.signAccessToken({ sub: "usr_1", email: "a@b.com", perms: ["read:file"] });
+    const token = svc.signAccessToken({
+      sub: "usr_1",
+      email: "a@b.com",
+      org: "org_1",
+      perms: ["read:file"],
+    });
     expect(svc.verifyAccessToken(token)).toEqual({
       sub: "usr_1",
       email: "a@b.com",
+      org: "org_1",
       perms: ["read:file"],
     });
   });
 
   it("rejects a token signed with a different secret", () => {
-    const token = make({ secret: "one" }).signAccessToken({ sub: "u", email: "", perms: [] });
+    const token = make({ secret: "one" }).signAccessToken({ sub: "u", email: "", org: null, perms: [] });
     expect(() => make({ secret: "two" }).verifyAccessToken(token)).toThrow();
   });
 
   it("rejects a token from a different issuer", () => {
-    const token = make({ issuer: "other-service" }).signAccessToken({ sub: "u", email: "", perms: [] });
+    const token = make({ issuer: "other-service" }).signAccessToken({
+      sub: "u",
+      email: "",
+      org: null,
+      perms: [],
+    });
     expect(() => make().verifyAccessToken(token)).toThrow();
   });
 
   it("rejects a tampered token", () => {
     const svc = make();
-    const token = svc.signAccessToken({ sub: "u", email: "", perms: [] });
+    const token = svc.signAccessToken({ sub: "u", email: "", org: null, perms: [] });
     const tampered = token.slice(0, -3) + "aaa";
     expect(() => svc.verifyAccessToken(tampered)).toThrow();
   });
 
   it("honours expiry against the injected clock", () => {
-    const token = make().signAccessToken({ sub: "u", email: "", perms: [] });
+    const token = make().signAccessToken({ sub: "u", email: "", org: null, perms: [] });
 
     // clock 20 minutes ahead — past the 15-minute TTL
     const later = fixedClock(new Date(Date.now() + 20 * 60 * 1000).toISOString());
@@ -59,7 +70,7 @@ describe("JwtService — access tokens", () => {
       issuer: "auric-core",
       algorithm: "HS256",
     });
-    expect(svc.verifyAccessToken(bare)).toEqual({ sub: "usr_9", email: "", perms: [] });
+    expect(svc.verifyAccessToken(bare)).toEqual({ sub: "usr_9", email: "", org: null, perms: [] });
   });
 
   it("rejects a token with no subject", () => {

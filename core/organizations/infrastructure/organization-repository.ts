@@ -88,6 +88,24 @@ export class OrganizationRepository {
     return row !== undefined;
   }
 
+  async membershipsForUser(
+    userId: string,
+  ): Promise<Array<{ organizationId: string; slug: string; name: string; membershipRole: string }>> {
+    const rows = await currentExecutor()
+      .selectFrom("organization_members")
+      .innerJoin("organizations", "organizations.id", "organization_members.organization_id")
+      .where("organization_members.user_id", "=", userId)
+      .select([
+        "organization_members.organization_id as organizationId",
+        "organizations.slug as slug",
+        "organizations.name as name",
+        "organization_members.membership_role as membershipRole",
+      ])
+      .orderBy("organizations.name", "asc")
+      .execute();
+    return rows;
+  }
+
   async listMembers(organizationId: string): Promise<OrganizationMember[]> {
     const rows = await currentExecutor()
       .selectFrom("organization_members")

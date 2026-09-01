@@ -5,6 +5,10 @@
 
 model audit_logs {
   id             String   @id
+  /// The tenant the audited action happened in (§ docs/tenancy.md). NULL for
+  /// system / cross-tenant actions (cron, the outbox worker, platform support).
+  /// Plain column, no FK — the trail must outlive an organization's deletion.
+  organization_id String?
   actor_id       String?
   /// @kyselyType('user' | 'system')
   actor_type     String   @default("user")
@@ -23,5 +27,6 @@ model audit_logs {
   @@index([actor_id], map: "audit_logs_actor_idx")
   @@index([created_at], map: "audit_logs_created_idx")
   @@index([resource_type, resource_id], map: "audit_logs_resource_idx")
+  @@index([organization_id, created_at], map: "audit_logs_org_idx")
   @@map("audit_logs")
 }

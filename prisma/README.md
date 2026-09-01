@@ -48,8 +48,14 @@ the DB object itself is in the migration:
 - the partial index `outbox_ready_idx` on `outbox_messages`
 - the `citext` extension (`CREATE EXTENSION` prepended to the baseline migration)
 
-Keep that migration in sync by hand when a `/// @kyselyType('a' | 'b')` union
-changes or a table gains/loses `updated_at`.
+The multi-tenancy row-level-security policies, the `auric_app` / `auric_system`
+roles, and their grants are likewise hand-written, in
+`migrations/20260901120100_multitenancy_rls/migration.sql` (§ docs/tenancy.md).
+A new tenant-scoped table needs its own `ENABLE`/`FORCE ROW LEVEL SECURITY` +
+policy added to its migration.
+
+Keep the constraints/triggers migration in sync by hand when a
+`/// @kyselyType('a' | 'b')` union changes or a table gains/loses `updated_at`.
 
 ## Baselining an existing database
 

@@ -36,6 +36,13 @@ Never call `new Date()` / `Date.now()` in Core logic. Take a `Clock` and call
   model, then `npm run db:generate`. Never hand-edit `schema.ts`.
 - Repositories are the only code that references tables. They call
   `currentExecutor()` — no executor argument in method signatures.
+- **Tenant scoping (docs/tenancy.md):** tenant-scoped tables are guarded by
+  row-level security. A read that reaches the raw pool sees nothing — so every
+  tenant-scoped query runs inside `unitOfWork.transaction` (which sets
+  `app.organization_id` / `app.user_id`); wrap a lone read in `readInTenant()`.
+  Write an `organization_id` from `currentOrganizationId()` (nullable columns) or
+  `requireOrganizationId()` (NOT NULL). Cross-tenant / pre-tenant work (signup,
+  webhooks, the outbox worker) runs in `runAsSystem()`.
 - Timestamps read/written as `Date`. `created_at` / `updated_at` are
   DB-defaulted (`Generated<Date>`); `updated_at` is bumped by the
   `auric_set_updated_at` trigger.
@@ -82,7 +89,9 @@ Never call `new Date()` / `Date.now()` in Core logic. Take a `Clock` and call
 
 - Unit tests next to the code (`*.test.ts`), no DB.
 - Integration tests in `core/tests/`, gated on `AURIC_TEST_DATABASE_URL`,
-  reset the schema and boot the real Core.
+  reset the schema (as owner) and boot the real Core (as `auric_app`, so RLS is
+  live). Wrap direct service calls in `asUser(userId, orgId, fn)` /
+  `asSystem(fn)` from `helpers.ts` to stand in for the request context.
 - Drive the outbox worker with `worker.tick()`; advance a `fixedClock` past
   backoff windows rather than sleeping.
 

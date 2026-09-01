@@ -17,10 +17,14 @@ export const registerSchema = z.object({
 export const loginSchema = z.object({
   email,
   password: z.string().min(1),
+  /** Tenant to sign in to (§ docs/tenancy.md); omit for the sole/none. */
+  organizationId: z.string().min(1).optional(),
 });
 
 export const refreshSchema = z.object({
   refreshToken: z.string().min(1),
+  /** Switch the active tenant on refresh. */
+  organizationId: z.string().min(1).optional(),
 });
 
 export const requestPasswordResetSchema = z.object({ email });

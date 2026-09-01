@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { parseQuery } from "../../http/handler.js";
+import { readInTenant } from "../../kernel/db/db.js";
 import type { RouteContext } from "../../http/route-context.js";
 import type { AuditRepository, AuditQuery } from "../infrastructure/audit-repository.js";
 
@@ -22,7 +23,8 @@ export function auditRoutes(repo: AuditRepository, ctx: RouteContext): FastifyPl
       { preHandler: [ctx.authenticate, ctx.guard("read", "audit_log")] },
       async (req) => {
         const q = parseQuery(querySchema, req.query) as AuditQuery;
-        const records = await repo.query(q);
+        // RLS scopes the trail to the caller's active tenant (§ docs/tenancy.md).
+        const records = await readInTenant(() => repo.query(q));
         const limit = q.limit ?? 50;
         const nextCursor =
           records.length === limit ? records[records.length - 1]?.id : undefined;

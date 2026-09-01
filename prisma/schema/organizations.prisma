@@ -10,6 +10,12 @@ model organizations {
   updated_at DateTime @default(now()) @db.Timestamptz(6)
 
   organization_members organization_members[]
+  user_roles           user_roles[]
+  notifications        notifications[]
+
+  // audit_logs.organization_id and files.organization_id are deliberately plain
+  // columns with no FK — like their (missing) user FK, the trail and file
+  // metadata must outlive an organization's deletion and never be cascaded.
 
   @@map("organizations")
 }

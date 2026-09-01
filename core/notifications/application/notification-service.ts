@@ -1,4 +1,5 @@
 import type { UnitOfWork } from "../../kernel/db/db.js";
+import { readInTenant } from "../../kernel/db/db.js";
 import type { Clock } from "../../kernel/clock.js";
 import { moduleLogger } from "../../kernel/logging/logger.js";
 import type {
@@ -153,10 +154,10 @@ export class NotificationService implements INotificationProvider {
   // ─── Read side ────────────────────────────────────────────────────────────
 
   listForUser(userId: string, opts: { unreadOnly?: boolean; limit?: number; cursor?: string }) {
-    return this.d.notifications.listForUser(userId, opts);
+    return readInTenant(() => this.d.notifications.listForUser(userId, opts));
   }
   unreadCount(userId: string): Promise<number> {
-    return this.d.notifications.unreadCount(userId);
+    return readInTenant(() => this.d.notifications.unreadCount(userId));
   }
   markRead(userId: string, id: string): Promise<void> {
     return this.d.uow.transaction(() => this.d.notifications.markRead(userId, id));

@@ -1,7 +1,7 @@
 import type { DomainEvent } from "../../contracts/domain-event.js";
 import type { Clock } from "../../kernel/clock.js";
 import { moduleLogger } from "../../kernel/logging/logger.js";
-import { runWithContext } from "../../kernel/logging/context.js";
+import { runWithContext, runAsSystem } from "../../kernel/logging/context.js";
 import { unitOfWork } from "../../kernel/db/db.js";
 import { newId } from "../../kernel/id.js";
 import type { EventRegistry } from "../registry.js";
@@ -66,19 +66,25 @@ export class OutboxWorker {
     this.ticking = true;
     let processed = 0;
     try {
-      const staleMs = this.opts.staleLockMs ?? 5 * 60 * 1000;
-      await unitOfWork.transaction(() => this.outbox.releaseStale(staleMs));
+      // The worker sweeps every tenant's rows — it runs on the `auric_system`
+      // connection (BYPASSRLS). Each message's handlers then run back in that
+      // message's own tenant context (§ docs/tenancy.md).
+      await runAsSystem(async () => {
+        const staleMs = this.opts.staleLockMs ?? 5 * 60 * 1000;
+        await unitOfWork.transaction(() => this.outbox.releaseStale(staleMs));
 
-      // Claim + process batches until the queue is drained for this tick.
-      for (;;) {
-        const batch = await unitOfWork.transaction(() => this.outbox.claimDue(this.opts.batchSize));
-        if (batch.length === 0) break;
-        for (const row of batch) {
-          await this.deliver(row);
-          processed++;
+        for (;;) {
+          const batch = await unitOfWork.transaction(() =>
+            this.outbox.claimDue(this.opts.batchSize),
+          );
+          if (batch.length === 0) break;
+          for (const row of batch) {
+            await this.deliver(row);
+            processed++;
+          }
+          if (batch.length < this.opts.batchSize) break;
         }
-        if (batch.length < this.opts.batchSize) break;
-      }
+      });
       this.lastError = undefined;
     } catch (err) {
       this.lastError = err instanceof Error ? err.message : String(err);
@@ -95,31 +101,41 @@ export class OutboxWorker {
       (typeof row.payload.__correlationId === "string" && row.payload.__correlationId) ||
       newId("evt");
 
-    await runWithContext({ correlationId }, async () => {
-      const handlers = this.registry.externalHandlers(row.event_name);
-      const event = this.rehydrate(row);
-      const attempt = row.attempts + 1;
+    const handlers = this.registry.externalHandlers(row.event_name);
+    const event = this.rehydrate(row);
+    const attempt = row.attempts + 1;
 
-      try {
-        for (const sub of handlers) {
-          await sub.handle(event);
-        }
-        await unitOfWork.transaction(() => this.outbox.markDelivered(row.id));
-        log.info({ event: row.event_name, id: row.id, attempt }, "outbox message delivered");
-      } catch (err) {
-        const message = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
-        if (attempt >= row.max_attempts) {
-          await unitOfWork.transaction(() => this.outbox.deadLetter(row, attempt, message));
-          log.error(
-            { event: row.event_name, id: row.id, attempt, err },
-            "outbox message dead-lettered after exhausting retries",
-          );
-        } else {
-          await unitOfWork.transaction(() => this.outbox.reschedule(row.id, attempt, message));
-          log.warn({ event: row.event_name, id: row.id, attempt, err }, "outbox message rescheduled");
-        }
+    // Handlers run in the message's own tenant context, so any tenant-scoped
+    // read/write they do lands in the right place (§ docs/tenancy.md). A
+    // NULL-org message (system event) stays in system context.
+    const runHandlers = () =>
+      row.organization_id
+        ? runWithContext({ correlationId, organizationId: row.organization_id }, async () => {
+            for (const sub of handlers) await sub.handle(event);
+          })
+        : runWithContext({ correlationId, system: true }, async () => {
+            for (const sub of handlers) await sub.handle(event);
+          });
+
+    // Claim-state transitions stay on the system connection (this method is
+    // called from inside `runAsSystem`).
+    try {
+      await runHandlers();
+      await unitOfWork.transaction(() => this.outbox.markDelivered(row.id));
+      log.info({ event: row.event_name, id: row.id, attempt }, "outbox message delivered");
+    } catch (err) {
+      const message = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+      if (attempt >= row.max_attempts) {
+        await unitOfWork.transaction(() => this.outbox.deadLetter(row, attempt, message));
+        log.error(
+          { event: row.event_name, id: row.id, attempt, err },
+          "outbox message dead-lettered after exhausting retries",
+        );
+      } else {
+        await unitOfWork.transaction(() => this.outbox.reschedule(row.id, attempt, message));
+        log.warn({ event: row.event_name, id: row.id, attempt, err }, "outbox message rescheduled");
       }
-    });
+    }
   }
 
   private rehydrate(row: OutboxRow): DomainEvent {

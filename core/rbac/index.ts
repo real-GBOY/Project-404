@@ -2,10 +2,12 @@ import type { FastifyPluginAsync } from "fastify";
 import type { UnitOfWork } from "../kernel/db/db.js";
 import type { IAuditLogger, IPermissionProvider } from "../contracts/index.js";
 import type { RouteContext } from "../http/route-context.js";
+import type { EventRegistry } from "../events/registry.js";
 import type { PermissionDefinition } from "./domain/permission.js";
 import { RbacRepository } from "./infrastructure/rbac-repository.js";
 import { RbacPermissionProvider } from "./infrastructure/permission-provider.js";
 import { RbacService } from "./application/rbac-service.js";
+import { registerRbacSubscribers } from "./events/subscribers.js";
 import { seedRbac } from "./application/seed.js";
 import { rbacRoutes } from "./api/routes.js";
 import { rbacPermissions } from "./permissions/permissions.js";
@@ -13,6 +15,7 @@ import { rbacPermissions } from "./permissions/permissions.js";
 export interface RbacModuleDeps {
   uow: UnitOfWork;
   audit: IAuditLogger;
+  registry: EventRegistry;
 }
 
 export interface RbacModule {
@@ -27,6 +30,8 @@ export function createRbacModule(deps: RbacModuleDeps): RbacModule {
   const repo = new RbacRepository();
   const permissionProvider = new RbacPermissionProvider(repo);
   const service = new RbacService({ repo, audit: deps.audit, uow: deps.uow });
+
+  registerRbacSubscribers(deps.registry, service);
 
   return {
     service,

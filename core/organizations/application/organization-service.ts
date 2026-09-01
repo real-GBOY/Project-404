@@ -1,5 +1,7 @@
 import type { UnitOfWork } from "../../kernel/db/db.js";
+import { readInTenant } from "../../kernel/db/db.js";
 import { Conflict, NotFound, ValidationError } from "../../kernel/errors.js";
+import { runAsSystem } from "../../kernel/logging/context.js";
 import type { IAuditLogger, IEventBus, IUserProvider } from "../../contracts/index.js";
 import { slugify, type Organization, type OrganizationMember } from "../domain/organization.js";
 import type { OrganizationRepository } from "../infrastructure/organization-repository.js";
@@ -25,40 +27,51 @@ export class OrganizationService {
   }): Promise<Organization> {
     const slug = (input.slug ? slugify(input.slug) : slugify(input.name)) || "org";
 
-    return this.d.uow.transaction(async () => {
-      if (await this.d.repo.findBySlug(slug)) {
-        throw Conflict("organizations.slug_taken", `The slug "${slug}" is already in use.`);
-      }
-      const org = await this.d.repo.create({ name: input.name, slug, settings: input.settings ?? {} });
-
-      if (input.createdBy) {
-        if (!(await this.d.users.userExists(input.createdBy))) {
-          throw ValidationError("organizations.unknown_user", "The creating user does not exist.");
+    // Creating a tenant precedes any tenant context, so it runs on the system
+    // connection (§ docs/tenancy.md): the new `organizations` row, the creator's
+    // `owner` membership, and (via the `organization.created` subscriber) their
+    // tenant-scoped `admin` role all land before RLS would have anything to
+    // scope to.
+    return runAsSystem(() =>
+      this.d.uow.transaction(async () => {
+        if (await this.d.repo.findBySlug(slug)) {
+          throw Conflict("organizations.slug_taken", `The slug "${slug}" is already in use.`);
         }
-        await this.d.repo.addMember({
-          organizationId: org.id,
-          userId: input.createdBy,
-          membershipRole: "owner",
-        });
-      }
+        const org = await this.d.repo.create({ name: input.name, slug, settings: input.settings ?? {} });
 
-      await this.d.audit.record({
-        actorId: input.createdBy ?? null,
-        actorType: input.createdBy ? "user" : "system",
-        action: "organization.created",
-        resourceType: "organization",
-        resourceId: org.id,
-        after: org,
-      });
-      await this.d.events.publish(
-        organizationCreated({ organizationId: org.id, slug: org.slug, createdBy: input.createdBy ?? null }),
-      );
-      return org;
-    });
+        if (input.createdBy) {
+          if (!(await this.d.users.userExists(input.createdBy))) {
+            throw ValidationError("organizations.unknown_user", "The creating user does not exist.");
+          }
+          await this.d.repo.addMember({
+            organizationId: org.id,
+            userId: input.createdBy,
+            membershipRole: "owner",
+          });
+        }
+
+        await this.d.audit.record({
+          actorId: input.createdBy ?? null,
+          actorType: input.createdBy ? "user" : "system",
+          action: "organization.created",
+          resourceType: "organization",
+          resourceId: org.id,
+          after: org,
+        });
+        await this.d.events.publish(
+          organizationCreated({
+            organizationId: org.id,
+            slug: org.slug,
+            createdBy: input.createdBy ?? null,
+          }),
+        );
+        return org;
+      }),
+    );
   }
 
   async getOrganization(id: string): Promise<Organization> {
-    const org = await this.d.repo.findById(id);
+    const org = await readInTenant(() => this.d.repo.findById(id));
     if (!org) throw NotFound("organizations.not_found", "Organization not found.");
     return org;
   }
@@ -139,6 +152,6 @@ export class OrganizationService {
   }
 
   async listMembers(organizationId: string): Promise<OrganizationMember[]> {
-    return this.d.repo.listMembers(organizationId);
+    return readInTenant(() => this.d.repo.listMembers(organizationId));
   }
 }

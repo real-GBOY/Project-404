@@ -1,10 +1,41 @@
 # AURIC Core — Multi-Tenancy (design)
 
-**Status: design, not yet built.** This document is the plan of record for turning
-AURIC Core from single-tenant into a shared multi-tenant SaaS. Nothing here is
-implemented yet; the schema, contracts, and comments still say "single-tenant by
-default". Build against this doc, then update `architecture.md`, `conventions.md`,
-`core/contracts/index.ts`, and `Plan.md` §7.3 to record what shipped.
+**Status: implemented (2026-09-01).** This is the design of record. `architecture.md`
+→ *Multi-tenancy*, `conventions.md` → *Database*, `core/contracts/index.ts`, and
+`Plan.md` §7.3 have been updated to match. The rollout section at the end is kept
+as the historical build order; the amendments block just below records the four
+points that changed during implementation.
+
+### Amendments settled during implementation (2026-09-01)
+
+Four points in the original design did not survive contact with the code; these
+resolutions supersede the conflicting text further down:
+
+1. **`notifications.organization_id` is `NULLABLE`, not `NOT NULL`.** Registration
+   writes a welcome notification for a user who belongs to no org yet.
+   Account-level notifications (welcome, security, invitations) carry `NULL` org
+   and are visible to the user in any tenant context. Policy:
+   `user_id = current_setting('app.user_id', true) AND (organization_id IS NULL
+   OR organization_id = current_setting('app.organization_id', true))`.
+2. **Login is additive.** `POST /auth/login` accepts an optional
+   `organizationId`; it resolves to that org (membership checked), else the sole
+   membership, else `null`. The access token's `org` claim is `string | null`; an
+   orgless token is valid only on non-tenant routes (`/me`, list orgs, create
+   org). `POST /auth/refresh` accepts an optional `organizationId` to switch
+   tenants. The login response gains `organizations: [{ id, slug, name,
+   membershipRole }]`. The `{ user, tokens }` shape is preserved.
+3. **`can()` / `guard()` reads run inside a tenant transaction.**
+   `RbacPermissionProvider` gains a `readInTenant` dependency and wraps its
+   `user_roles` reads, because Fastify `preHandler` guards otherwise query the
+   raw pool with no `app.organization_id`.
+4. **Any authenticated user may create an organization** and becomes its
+   `owner` + tenant-scoped `admin`. The `create:organization` RBAC guard is
+   removed from `POST /organizations` (self-service SaaS). In-org permissions
+   still gate normally.
+
+DB topology: **two pools** — `auric_app` (no `BYPASSRLS`, normal runtime) and
+`auric_system` (`BYPASSRLS`, for signup / webhooks / the outbox worker), plus
+`auric_owner` for migrations. `unitOfWork.transaction` routes by `ctx.system`.
 
 ## Why now (Plan §0, §7.3)
 

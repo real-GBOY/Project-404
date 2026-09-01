@@ -58,11 +58,13 @@ export class LocalDiskAdapter implements StorageAdapter {
 }
 
 /**
- * `2026/08/file-id` — keeps directories from growing unbounded. Always
- * forward-slash separated so the same key works for local disk and S3.
+ * `<org>/2026/08/file-id` — namespaced by tenant (§ docs/tenancy.md) so a
+ * leaked or guessed key still cannot cross tenants, then by month to keep
+ * directories bounded. Always forward-slash separated so the same key works
+ * for local disk and S3.
  */
-export function storageKeyFor(fileId: string, now: Date): string {
+export function storageKeyFor(organizationId: string, fileId: string, now: Date): string {
   const y = now.getUTCFullYear();
   const m = String(now.getUTCMonth() + 1).padStart(2, "0");
-  return `${y}/${m}/${fileId}`;
+  return `${organizationId}/${y}/${m}/${fileId}`;
 }

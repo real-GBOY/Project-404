@@ -16,6 +16,7 @@
     "serve": "tsx scripts/serve.ts",
     "migrate": "tsx scripts/migrate.ts up",
     "migrate:status": "tsx scripts/migrate.ts status",
+    "provision-db": "tsx scripts/provision-db.ts",
     "migrate:dev": "prisma migrate dev",
     "db:generate": "prisma generate",
     "db:pull": "prisma db pull",

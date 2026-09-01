@@ -2,6 +2,7 @@ import type { FastifyReply, FastifyRequest, preHandlerHookHandler } from "fastif
 import jwt from "jsonwebtoken";
 import { Forbidden, Unauthenticated } from "../../kernel/errors.js";
 import { patchContext } from "../../kernel/logging/context.js";
+import { readInTenant } from "../../kernel/db/db.js";
 import type { IPermissionProvider } from "../../contracts/index.js";
 import type { JwtService } from "../infrastructure/jwt-service.js";
 
@@ -13,7 +14,9 @@ import type { JwtService } from "../infrastructure/jwt-service.js";
 export interface Principal {
   userId: string;
   email: string;
-  /** Permission keys ("action:resource") baked into the token at login. */
+  /** The active tenant (§ docs/tenancy.md), or null for an orgless token. */
+  organizationId: string | null;
+  /** Permission keys ("action:resource") baked into the token, scoped to `organizationId`. */
   permissions: string[];
 }
 
@@ -29,8 +32,16 @@ export function createAuthenticate(jwtService: JwtService): preHandlerHookHandle
     if (!header?.startsWith("Bearer ")) throw Unauthenticated();
     try {
       const claims = jwtService.verifyAccessToken(header.slice("Bearer ".length));
-      req.principal = { userId: claims.sub, email: claims.email, permissions: claims.perms };
-      patchContext({ userId: claims.sub });
+      req.principal = {
+        userId: claims.sub,
+        email: claims.email,
+        organizationId: claims.org,
+        permissions: claims.perms,
+      };
+      // Push the principal into the ambient context: logs and audit rows pick up
+      // userId, and every tenant-scoped transaction gets `SET LOCAL
+      // app.organization_id` so RLS filters it (§ docs/tenancy.md).
+      patchContext({ userId: claims.sub, ...(claims.org ? { organizationId: claims.org } : {}) });
     } catch (err) {
       if (err instanceof jwt.TokenExpiredError) {
         throw Unauthenticated("auth.token_expired", "Your session has expired.");
@@ -58,7 +69,9 @@ export function requirePermission(
   return async function guard(req: FastifyRequest, _reply: FastifyReply): Promise<void> {
     const principal = req.principal;
     if (!principal) throw Unauthenticated();
-    const allowed = await permissions.can(principal.userId, action, resource);
+    // Wrap in a transaction so RLS on `user_roles` is scoped to the active
+    // tenant (§ docs/tenancy.md); the guard runs before any use-case tx.
+    const allowed = await readInTenant(() => permissions.can(principal.userId, action, resource));
     if (!allowed) throw Forbidden("auth.forbidden", `Missing permission: ${action}:${resource}`);
   };
 }

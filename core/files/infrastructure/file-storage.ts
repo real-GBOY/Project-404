@@ -1,7 +1,9 @@
 import type { UnitOfWork } from "../../kernel/db/db.js";
+import { readInTenant } from "../../kernel/db/db.js";
 import type { Clock } from "../../kernel/clock.js";
 import { newId } from "../../kernel/id.js";
 import { NotFound } from "../../kernel/errors.js";
+import { requireOrganizationId } from "../../kernel/tenant.js";
 import type { FileInput, FileRef, IFileStorage } from "../../contracts/index.js";
 import { FileRepository, type FileRow } from "./file-repository.js";
 import { sha256, storageKeyFor, type StorageAdapter } from "./storage-adapter.js";
@@ -21,7 +23,7 @@ export class FileStorageService implements IFileStorage {
 
   async upload(file: FileInput): Promise<FileRef> {
     const id = newId("file");
-    const key = storageKeyFor(id, this.clock.now());
+    const key = storageKeyFor(requireOrganizationId(), id, this.clock.now());
     const checksum = sha256(file.content);
 
     // Write bytes first; if the DB insert fails the orphan is harmless and
@@ -74,7 +76,9 @@ export class FileStorageService implements IFileStorage {
   }
 
   private async requireRow(id: string): Promise<FileRow> {
-    const row = await this.repo.findById(id);
+    // Read inside a transaction so RLS on `files` is in force (§ docs/tenancy.md):
+    // a file from another tenant simply does not exist here.
+    const row = await readInTenant(() => this.repo.findById(id));
     if (!row) throw NotFound("files.not_found", "File not found.");
     return row;
   }

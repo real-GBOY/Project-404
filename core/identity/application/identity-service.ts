@@ -1,9 +1,17 @@
 import type { UnitOfWork } from "../../kernel/db/db.js";
 import type { Clock } from "../../kernel/clock.js";
 import { newId } from "../../kernel/id.js";
-import { Conflict, Unauthenticated, ValidationError } from "../../kernel/errors.js";
+import { Conflict, Forbidden, Unauthenticated, ValidationError } from "../../kernel/errors.js";
 import { moduleLogger } from "../../kernel/logging/logger.js";
-import type { IAuditLogger, IEventBus, IPermissionProvider, User } from "../../contracts/index.js";
+import { withContext } from "../../kernel/logging/context.js";
+import type {
+  IAuditLogger,
+  IEventBus,
+  IOrganizationProvider,
+  IPermissionProvider,
+  OrganizationMembership,
+  User,
+} from "../../contracts/index.js";
 import { UserEntity } from "../domain/user.js";
 import type { UserRepository } from "../infrastructure/user-repository.js";
 import type { RefreshTokenRepository } from "../infrastructure/refresh-token-repository.js";
@@ -44,6 +52,8 @@ export interface IdentityServiceDeps {
   events: IEventBus;
   audit: IAuditLogger;
   permissions: IPermissionProvider;
+  /** Lazy — see IdentityModuleDeps.organizations (wiring-cycle break). */
+  organizations: () => IOrganizationProvider;
   uow: UnitOfWork;
   clock: Clock;
   options: IdentityServiceOptions;
@@ -115,51 +125,68 @@ export class IdentityService {
   async login(input: {
     email: string;
     password: string;
+    /** The tenant to sign in to. Omit to use the sole membership, or none. */
+    organizationId?: string;
     userAgent?: string;
-  }): Promise<{ user: User; tokens: TokenPair }> {
+  }): Promise<{ user: User; tokens: TokenPair; organizations: OrganizationMembership[] }> {
     const { d } = this;
     const genericError = Unauthenticated("identity.invalid_credentials", "Incorrect email or password.");
 
-    return d.uow.transaction(async () => {
-      const user = await d.users.findByEmail(input.email);
-      if (!user) {
-        // Spend time hashing anyway to blunt timing-based user enumeration.
-        await d.hasher.hash(input.password).catch(() => undefined);
-        throw genericError;
-      }
+    const user = await d.users.findByEmail(input.email);
+    if (!user) {
+      // Spend time hashing anyway to blunt timing-based user enumeration.
+      await d.hasher.hash(input.password).catch(() => undefined);
+      throw genericError;
+    }
 
-      const ok = await d.hasher.verify(user.passwordHash, input.password);
-      if (!ok) throw genericError;
+    const ok = await d.hasher.verify(user.passwordHash, input.password);
+    if (!ok) throw genericError;
 
-      if (!user.canLogIn) {
-        throw Unauthenticated(
-          "identity.account_not_active",
-          user.status === "pending"
-            ? "Please verify your email address before signing in."
-            : "This account has been disabled.",
-        );
-      }
+    if (!user.canLogIn) {
+      throw Unauthenticated(
+        "identity.account_not_active",
+        user.status === "pending"
+          ? "Please verify your email address before signing in."
+          : "This account has been disabled.",
+      );
+    }
 
-      if (d.hasher.needsRehash(user.passwordHash)) {
-        user.changePassword(await d.hasher.hash(input.password));
-        await d.users.update(user);
-      }
+    // Resolving the tenant precedes it — read memberships with just the user
+    // pinned so the `organization_members` RLS policy's user branch matches.
+    const memberships = await withContext({ userId: user.id }, () =>
+      d.organizations().membershipsForUser(user.id),
+    );
+    const activeOrg = this.resolveActiveOrg(input.organizationId, memberships);
 
-      const tokens = await this.issueTokens(user.id, user.email, input.userAgent ?? null);
+    return withContext({ userId: user.id, organizationId: activeOrg ?? undefined }, () =>
+      d.uow.transaction(async () => {
+        if (d.hasher.needsRehash(user.passwordHash)) {
+          user.changePassword(await d.hasher.hash(input.password));
+          await d.users.update(user);
+        }
 
-      await d.audit.record({
-        actorId: user.id,
-        actorType: "user",
-        action: "user.logged_in",
-        resourceType: "user",
-        resourceId: user.id,
-      });
+        const tokens = await this.issueTokens(user.id, user.email, activeOrg, input.userAgent ?? null);
 
-      return { user: user.toPublic(), tokens };
-    });
+        await d.audit.record({
+          actorId: user.id,
+          actorType: "user",
+          action: "user.logged_in",
+          resourceType: "user",
+          resourceId: user.id,
+          ...(activeOrg ? { after: { organizationId: activeOrg } } : {}),
+        });
+
+        return { user: user.toPublic(), tokens, organizations: memberships };
+      }),
+    );
   }
 
-  async refresh(refreshToken: string): Promise<TokenPair> {
+  /**
+   * Rotate the refresh token. Optionally switch the active tenant: pass
+   * `organizationId` to mint an access token for a different org the user
+   * belongs to (§ docs/tenancy.md) — no re-login needed.
+   */
+  async refresh(refreshToken: string, organizationId?: string): Promise<TokenPair> {
     const { d } = this;
     const invalid = Unauthenticated("identity.invalid_refresh_token", "Session expired. Please sign in again.");
 
@@ -177,14 +204,39 @@ export class IdentityService {
     }
     if (stored.expiresAt < d.clock.now()) throw invalid;
 
-    return d.uow.transaction(async () => {
-      const user = await d.users.findById(stored.userId);
-      if (!user || !user.canLogIn) throw invalid;
+    const user = await d.uow.transaction(() => d.users.findById(stored.userId));
+    if (!user || !user.canLogIn) throw invalid;
 
-      const tokens = await this.issueTokens(user.id, user.email, null);
-      await d.refreshTokens.revoke(stored.id, "rotated");
-      return tokens;
-    });
+    const memberships = await withContext({ userId: user.id }, () =>
+      d.organizations().membershipsForUser(user.id),
+    );
+    const activeOrg = this.resolveActiveOrg(organizationId, memberships);
+
+    return withContext({ userId: user.id, organizationId: activeOrg ?? undefined }, () =>
+      d.uow.transaction(async () => {
+        const tokens = await this.issueTokens(user.id, user.email, activeOrg, null);
+        await d.refreshTokens.revoke(stored.id, "rotated");
+        return tokens;
+      }),
+    );
+  }
+
+  /**
+   * Which tenant a session is for: the one asked for (must be a membership),
+   * else the sole membership, else none (an orgless token — valid only on
+   * non-tenant routes until the user picks or creates an org).
+   */
+  private resolveActiveOrg(
+    requested: string | undefined,
+    memberships: OrganizationMembership[],
+  ): string | null {
+    if (requested) {
+      if (!memberships.some((m) => m.organizationId === requested)) {
+        throw Forbidden("identity.not_a_member", "You are not a member of that organization.");
+      }
+      return requested;
+    }
+    return memberships.length === 1 ? memberships[0]!.organizationId : null;
   }
 
   async logout(refreshToken: string): Promise<void> {
@@ -289,10 +341,18 @@ export class IdentityService {
     });
   }
 
-  private async issueTokens(userId: string, email: string, userAgent: string | null): Promise<TokenPair> {
+  private async issueTokens(
+    userId: string,
+    email: string,
+    organizationId: string | null,
+    userAgent: string | null,
+  ): Promise<TokenPair> {
     const { d } = this;
-    const perms = await d.permissions.permissionsFor(userId);
-    const accessToken = d.jwt.signAccessToken({ sub: userId, email, perms });
+    // permissionsFor reads the active tenant from context; `withContext` in the
+    // caller has already pinned it, so this resolves the user's perms *in
+    // `organizationId`* (empty for an orgless session).
+    const perms = organizationId ? await d.permissions.permissionsFor(userId) : [];
+    const accessToken = d.jwt.signAccessToken({ sub: userId, email, org: organizationId, perms });
     const { token: refreshToken, hash } = d.jwt.newRefreshToken();
     await d.refreshTokens.create({
       userId,

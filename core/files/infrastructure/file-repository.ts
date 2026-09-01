@@ -1,7 +1,9 @@
 import { currentExecutor } from "../../kernel/db/db.js";
+import { requireOrganizationId } from "../../kernel/tenant.js";
 
 export interface FileRow {
   id: string;
+  organizationId: string;
   storageKey: string;
   driver: string;
   originalName: string;
@@ -16,11 +18,12 @@ export interface FileRow {
 }
 
 export class FileRepository {
-  async insert(input: Omit<FileRow, "createdAt" | "deletedAt">): Promise<void> {
+  async insert(input: Omit<FileRow, "createdAt" | "deletedAt" | "organizationId">): Promise<void> {
     await currentExecutor()
       .insertInto("files")
       .values({
         id: input.id,
+        organization_id: requireOrganizationId(),
         storage_key: input.storageKey,
         driver: input.driver,
         original_name: input.originalName,
@@ -62,6 +65,7 @@ export class FileRepository {
 
   private toRow(r: {
     id: string;
+    organization_id: string;
     storage_key: string;
     driver: string;
     original_name: string;
@@ -76,6 +80,7 @@ export class FileRepository {
   }): FileRow {
     return {
       id: r.id,
+      organizationId: r.organization_id,
       storageKey: r.storage_key,
       driver: r.driver,
       originalName: r.original_name,

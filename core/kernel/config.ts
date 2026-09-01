@@ -14,7 +14,15 @@ const schema = z.object({
     .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
     .default("info"),
 
+  // Migrations run as the schema owner (this URL). The runtime connects with
+  // two lower-privilege roles: `auric_app` (no BYPASSRLS — every tenant-scoped
+  // query is filtered by RLS) and `auric_system` (BYPASSRLS — signup, webhooks,
+  // the outbox worker). Both default to `databaseUrl` so a single-role dev DB
+  // still works; RLS is only actually enforced when they point at `auric_app` /
+  // `auric_system`. See docs/tenancy.md.
   databaseUrl: z.string().url().default("postgres://postgres:postgres@localhost:5432/auric"),
+  appDatabaseUrl: z.string().url().optional(),
+  systemDatabaseUrl: z.string().url().optional(),
 
   jwtSecret: z.string().min(1).default("dev-only-insecure-change-me"),
   accessTokenTtl: z.coerce.number().int().positive().default(900),
@@ -47,6 +55,8 @@ function readEnv(): AuricConfig {
     port: process.env.AURIC_PORT,
     logLevel: process.env.AURIC_LOG_LEVEL,
     databaseUrl: process.env.AURIC_DATABASE_URL,
+    appDatabaseUrl: process.env.AURIC_APP_DATABASE_URL,
+    systemDatabaseUrl: process.env.AURIC_SYSTEM_DATABASE_URL,
     jwtSecret: process.env.AURIC_JWT_SECRET,
     accessTokenTtl: process.env.AURIC_ACCESS_TOKEN_TTL,
     refreshTokenTtl: process.env.AURIC_REFRESH_TOKEN_TTL,
@@ -74,6 +84,9 @@ function readEnv(): AuricConfig {
   if (cfg.nodeEnv === "production" && cfg.jwtSecret === "dev-only-insecure-change-me") {
     throw new Error("AURIC_JWT_SECRET must be set to a real secret in production.");
   }
+  // Fall back to the owner URL so a single-role dev/test DB still runs.
+  cfg.appDatabaseUrl ??= cfg.databaseUrl;
+  cfg.systemDatabaseUrl ??= cfg.databaseUrl;
   return cfg;
 }
 

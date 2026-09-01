@@ -343,6 +343,8 @@ This is a **menu of what Core capabilities can grow into**, not a build list. Ea
 
 ### 7.3 Tenancy
 
+> **Built (2026-09-01).** A real shared-SaaS product pulled multi-tenancy in, so it now ships in Core exactly as prescribed below: an organization *is* the tenant, shared schema + `organization_id` + PostgreSQL RLS, global identity, tenant context per request on a restricted `auric_app` connection with `auric_system` (BYPASSRLS) for signup/webhooks/the worker. Design and rationale: [`docs/tenancy.md`](docs/tenancy.md); shape: `docs/architecture.md` → *Multi-tenancy*. The rest of this section is the original guidance, kept for the record.
+
 **Default: single-tenant. One deployable, one client, one database.** Because AURIC's default is a dedicated deployment per client, there is usually no second tenant to isolate from, and cross-tenant leakage is impossible by design. Do not build multi-tenancy machinery for a system that serves one organization. This is the most common piece of speculative infrastructure to avoid.
 
 **Add multi-tenancy only when a specific product actually serves many organizations from one instance** (for example, if AURIC ever runs a shared SaaS product rather than a per-client deployment). When that real need appears, the AURIC approach is:

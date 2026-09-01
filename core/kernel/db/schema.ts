@@ -7,6 +7,12 @@ export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
 export type audit_logs = {
     id: string;
+    /**
+     * The tenant the audited action happened in (§ docs/tenancy.md). NULL for
+     * system / cross-tenant actions (cron, the outbox worker, platform support).
+     * Plain column, no FK — the trail must outlive an organization's deletion.
+     */
+    organization_id: string | null;
     actor_id: string | null;
     /**
      * @kyselyType('user' | 'system')
@@ -32,6 +38,7 @@ export type audit_logs = {
 };
 export type dead_letter_messages = {
     id: string;
+    organization_id: string | null;
     outbox_id: string;
     event_name: string;
     /**
@@ -49,6 +56,11 @@ export type dead_letter_messages = {
 };
 export type files = {
     id: string;
+    /**
+     * The tenant that owns this file (§ docs/tenancy.md). RLS-scoped. Plain
+     * column, no FK — file metadata must outlive an organization's deletion.
+     */
+    organization_id: string;
     storage_key: string;
     driver: string;
     original_name: string;
@@ -87,6 +99,12 @@ export type notification_templates = {
 export type notifications = {
     id: string;
     user_id: string;
+    /**
+     * The tenant this notification belongs to (§ docs/tenancy.md). NULL for
+     * account-level notifications (welcome, security, invitations) that are not
+     * scoped to one organization — those stay visible to the user in any tenant.
+     */
+    organization_id: string | null;
     type: string;
     title: string;
     body: string;
@@ -121,6 +139,12 @@ export type organizations = {
 };
 export type outbox_messages = {
     id: string;
+    /**
+     * The tenant the originating action belonged to (§ docs/tenancy.md). The
+     * worker runs system-context and re-sets `app.organization_id` from this
+     * value before invoking each message's handlers. NULL for system events.
+     */
+    organization_id: string | null;
     event_name: string;
     /**
      * @kyselyType(Json<Record<string, unknown>>)
@@ -178,6 +202,11 @@ export type roles = {
 export type user_roles = {
     user_id: string;
     role_id: string;
+    /**
+     * The tenant this grant applies in (§ docs/tenancy.md). A user can hold
+     * different roles in different organizations. RLS-scoped.
+     */
+    organization_id: string;
     granted_at: Generated<Timestamp>;
     granted_by: string | null;
 };
