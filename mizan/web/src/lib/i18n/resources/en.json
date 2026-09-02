@@ -109,7 +109,9 @@
         "upcoming_hearings": "What hearings are coming up this week?",
         "overdue_tasks": "Which of my tasks are overdue?",
         "outstanding_invoices": "How much is outstanding across all clients?"
-      }
+      },
+      "new_chat": "New chat",
+      "empty_title": "Ask Mizan anything"
     }
   },
   "auth": {

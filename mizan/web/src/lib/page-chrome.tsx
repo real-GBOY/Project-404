@@ -37,20 +37,24 @@ export function usePageChrome(): PageChrome | null {
 /**
  * Declare this page's top-bar title / count / breadcrumb. Cleared on unmount so
  * the next route falls back to its nav-derived default.
+ *
+ * Depends only on the (stable) `setChrome` — never on the store object, whose
+ * identity changes on every update.
  */
 export function useSetPageChrome(chrome: PageChrome) {
-  const store = useContext(Ctx);
-  const { title, count, parent } = chrome;
-  const parentLabel = parent?.label ?? null;
-  const parentTo = parent?.to ?? null;
+  const set = useContext(Ctx)?.set;
+  const { title } = chrome;
+  const count = chrome.count ?? null;
+  const parentLabel = chrome.parent?.label ?? null;
+  const parentTo = chrome.parent?.to ?? null;
 
   useEffect(() => {
-    if (!store) return;
-    store.set({
+    if (!set) return;
+    set({
       title,
-      count: count ?? null,
+      count,
       parent: parentLabel && parentTo ? { label: parentLabel, to: parentTo } : null,
     });
-    return () => store.set(null);
-  }, [store, title, count, parentLabel, parentTo]);
+    return () => set(null);
+  }, [set, title, count, parentLabel, parentTo]);
 }
