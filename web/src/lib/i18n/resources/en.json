@@ -83,5 +83,74 @@
         "outstanding_invoices": "How much is outstanding across all clients?"
       }
     }
+  },
+  "auth": {
+    "common_back_to_login": "Back to sign in",
+    "fields": {
+      "email": "Email",
+      "password": "Password",
+      "new_password": "New password",
+      "confirm_password": "Confirm password",
+      "password_hint": "At least 10 characters."
+    },
+    "password": {
+      "show": "Show password",
+      "hide": "Hide password"
+    },
+    "errors": {
+      "email_required": "Enter your email address.",
+      "email_invalid": "Enter a valid email address.",
+      "password_required": "Enter your password.",
+      "password_short": "Use at least 10 characters.",
+      "password_long": "That password is too long.",
+      "confirm_required": "Re-enter the password.",
+      "password_mismatch": "The passwords don't match."
+    },
+    "login": {
+      "title": "Sign in to Mizan",
+      "subtitle": "Tawfik & Partners case management",
+      "submit": "Sign in",
+      "forgot_link": "Forgot your password?",
+      "errors": {
+        "invalid_credentials": "Incorrect email or password.",
+        "generic": "Couldn't sign you in. Try again in a moment."
+      }
+    },
+    "org_select": {
+      "title": "Choose an organization",
+      "subtitle": "You belong to more than one. Pick which to work in.",
+      "none_title": "No organization yet",
+      "none_subtitle": "Your account isn't a member of any organization. Ask a firm administrator to add you.",
+      "back_to_login": "Sign out",
+      "error": "Couldn't switch organization. Try again."
+    },
+    "forgot": {
+      "title": "Reset your password",
+      "subtitle": "We'll email you a link to set a new one.",
+      "submit": "Send reset link",
+      "sent_title": "Check your email",
+      "sent_subtitle": "If that address is registered, a reset link is on its way."
+    },
+    "reset": {
+      "title": "Set a new password",
+      "subtitle": "Choose a password you don't use anywhere else.",
+      "submit": "Update password",
+      "success_toast": "Password updated — sign in with it.",
+      "expired": "This reset link is invalid or has expired.",
+      "generic_error": "Couldn't update your password. Try again.",
+      "invalid_title": "Link not valid",
+      "invalid_subtitle": "This reset link is missing or malformed.",
+      "request_new": "Request a new link"
+    },
+    "verify": {
+      "checking": "Verifying your email…",
+      "success_title": "Email verified",
+      "success_subtitle": "Your account is ready. You can sign in now.",
+      "continue_to_login": "Continue to sign in",
+      "error_title": "Couldn't verify",
+      "error_subtitle": "This link is invalid or has expired. Request a new one below.",
+      "resend": "Send a new link",
+      "resent": "If that account needs verification, a new link is on its way."
+    }
   }
 }

@@ -1,20 +1,25 @@
 import { http, HttpResponse } from "msw";
-import type { MeResponse } from "@/types/auth";
+import type { LoginResponse, MeResponse } from "@/types/auth";
 import type { NotificationList } from "@/features/notifications/types/notification";
 import {
-  DEV_PERMS,
   DEV_ORGS,
+  DEV_PERMS,
   DEV_REFRESH_TOKEN,
   DEV_USER,
   makeDevAccessToken,
 } from "../dev-session";
 
 /**
- * Dev-only session + notifications handlers (F2). These endpoints are real on
+ * Dev-only session + notifications handlers (F2/F3). These endpoints are real on
  * the backend; this file is a local shim, removed once a backend is reachable.
+ * Sign in with any email + any 10+ character password.
  */
 
-let activeOrg = DEV_ORGS[0].organizationId;
+let activeOrg: string | null = DEV_ORGS[0].organizationId;
+
+function appError(status: number, code: string, message: string) {
+  return HttpResponse.json({ code, message }, { status });
+}
 
 const NOTIFICATIONS: NotificationList = {
   unreadCount: 3,
@@ -48,23 +53,82 @@ const NOTIFICATIONS: NotificationList = {
 };
 
 export const sessionHandlers = [
-  http.get("/api/me", () =>
-    HttpResponse.json<MeResponse>({
+  http.post("/api/auth/login", async ({ request }) => {
+    const body = (await request.json().catch(() => ({}))) as {
+      email?: string;
+      password?: string;
+      organizationId?: string;
+    };
+    if (!body.email || !body.password) {
+      return appError(400, "request.invalid_body", "The request body is invalid.");
+    }
+    if (body.password.length < 10) {
+      return appError(401, "identity.invalid_credentials", "Incorrect email or password.");
+    }
+    activeOrg = body.organizationId ?? DEV_ORGS[0].organizationId;
+    return HttpResponse.json<LoginResponse>({
+      user: DEV_USER,
+      tokens: {
+        accessToken: makeDevAccessToken(activeOrg),
+        refreshToken: DEV_REFRESH_TOKEN,
+        expiresIn: 900,
+        tokenType: "Bearer",
+      },
+      organizations: DEV_ORGS,
+    });
+  }),
+
+  http.get("/api/me", () => {
+    if (!activeOrg) return appError(401, "auth.unauthenticated", "Authentication required.");
+    return HttpResponse.json<MeResponse>({
       user: DEV_USER,
       organizationId: activeOrg,
       permissions: DEV_PERMS,
-    }),
-  ),
+    });
+  }),
 
   http.post("/api/auth/refresh", async ({ request }) => {
     const body = (await request.json().catch(() => ({}))) as { organizationId?: string };
     if (body.organizationId) activeOrg = body.organizationId;
+    activeOrg ??= DEV_ORGS[0].organizationId;
     return HttpResponse.json({
-      tokens: { accessToken: makeDevAccessToken(activeOrg), refreshToken: DEV_REFRESH_TOKEN },
+      tokens: {
+        accessToken: makeDevAccessToken(activeOrg),
+        refreshToken: DEV_REFRESH_TOKEN,
+        expiresIn: 900,
+        tokenType: "Bearer",
+      },
     });
   }),
 
-  http.post("/api/auth/logout", () => new HttpResponse(null, { status: 204 })),
+  http.post("/api/auth/logout", () => {
+    activeOrg = null;
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  http.post("/api/auth/password/forgot", () =>
+    HttpResponse.json({ message: "If that email is registered, a reset link is on its way." }, { status: 202 }),
+  ),
+
+  http.post("/api/auth/password/reset", async ({ request }) => {
+    const body = (await request.json().catch(() => ({}))) as { token?: string };
+    if (body.token === "expired") {
+      return appError(400, "identity.invalid_reset_token", "This reset link is invalid or has expired.");
+    }
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  http.post("/api/auth/email/verify", async ({ request }) => {
+    const body = (await request.json().catch(() => ({}))) as { token?: string };
+    if (body.token === "bad") {
+      return appError(400, "identity.invalid_verification_token", "This verification link is invalid or has expired.");
+    }
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  http.post("/api/auth/email/resend", () =>
+    HttpResponse.json({ message: "If that account needs verification, a new link is on its way." }, { status: 202 }),
+  ),
 
   http.get("/api/notifications", ({ request }) => {
     const unreadOnly = new URL(request.url).searchParams.get("unread") === "true";

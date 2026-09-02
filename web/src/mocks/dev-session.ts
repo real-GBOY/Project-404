@@ -1,11 +1,9 @@
-import { tokenStore } from "@/lib/auth/token-store";
 import type { AuthUser, OrganizationMembership } from "@/types/auth";
 
 /**
- * Local dev session shim (F2). Auth + `/me` are real backend endpoints (PLAN §5)
- * — this only exists so the shell is usable before F3's login UI and while no
- * backend is running locally. It is inert when `VITE_API_MOCKS=off`. Delete the
- * seeding call once the real login flow + a reachable backend are in place.
+ * Fixture data for the dev-only session shim (`mocks/handlers/session.ts`).
+ * Auth + `/me` are real backend endpoints (PLAN §5); this exists only so the app
+ * runs locally without a backend. Inert when `VITE_API_MOCKS=off`.
  */
 
 export const DEV_USER: AuthUser = {
@@ -47,14 +45,16 @@ function base64Url(json: unknown): string {
 }
 
 /** A structurally-valid (unsigned) access token `tokenStore.getClaims()` can decode. */
-export function makeDevAccessToken(organizationId = DEV_ORGS[0].organizationId): string {
+export function makeDevAccessToken(
+  organizationId: string | null = DEV_ORGS[0].organizationId,
+): string {
   const now = Math.floor(Date.now() / 1000);
   const header = base64Url({ alg: "none", typ: "JWT" });
   const payload = base64Url({
     sub: DEV_USER.id,
     email: DEV_USER.email,
     org: organizationId,
-    perms: DEV_PERMS,
+    perms: organizationId ? DEV_PERMS : [],
     iat: now,
     exp: now + 60 * 60,
   });
@@ -62,9 +62,3 @@ export function makeDevAccessToken(organizationId = DEV_ORGS[0].organizationId):
 }
 
 export const DEV_REFRESH_TOKEN = "dev-refresh-token";
-
-/** Put a dev session into the token store so `AuthProvider` bootstraps as authed. */
-export function seedDevSession(): void {
-  if (tokenStore.getRefresh()) return; // respect an existing session
-  tokenStore.set(makeDevAccessToken(), DEV_REFRESH_TOKEN);
-}

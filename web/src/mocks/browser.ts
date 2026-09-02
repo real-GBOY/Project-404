@@ -1,10 +1,13 @@
 import { setupWorker } from "msw/browser";
 import { handlers } from "./handlers";
-import { seedDevSession } from "./dev-session";
 
 export const worker = setupWorker(...handlers);
 
-/** Start MSW unless VITE_API_MOCKS=off. Called from main.tsx before render. */
+/**
+ * Start MSW unless VITE_API_MOCKS=off. Called from main.tsx before render.
+ * The app boots at `/login`; sign in with any email + any 10+ char password
+ * (see mocks/handlers/session.ts — a dev shim until a backend is reachable).
+ */
 export async function enableMocks(): Promise<void> {
   if (import.meta.env.VITE_API_MOCKS === "off") return;
   await worker.start({
@@ -12,6 +15,4 @@ export async function enableMocks(): Promise<void> {
     quiet: true,
     serviceWorker: { url: `${import.meta.env.BASE_URL}mockServiceWorker.js` },
   });
-  // Dev shim — see dev-session.ts. Superseded by F3's real login flow.
-  seedDevSession();
 }

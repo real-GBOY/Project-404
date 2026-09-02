@@ -29,7 +29,7 @@ export async function initI18n(): Promise<typeof i18n> {
       fallbackLng: DEFAULT_LOCALE,
       supportedLngs: SUPPORTED_LOCALES as unknown as string[],
       defaultNS: "common",
-      ns: ["common"],
+      ns: ["common", "auth"],
       interpolation: { escapeValue: false },
       detection: {
         order: ["localStorage", "navigator", "htmlTag"],

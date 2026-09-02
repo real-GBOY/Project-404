@@ -3,6 +3,8 @@ import { afterAll, afterEach, beforeAll, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
 import { server } from "@/mocks/server";
 import { initI18n } from "@/lib/i18n";
+import { tokenStore } from "@/lib/auth/token-store";
+import { sessionCache } from "@/lib/auth/session-cache";
 
 /*
  * Neutralise @floating-ui/react-dom (Radix Popper: Popover, DropdownMenu, Select,
@@ -90,5 +92,12 @@ beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 afterEach(() => {
   cleanup();
   server.resetHandlers();
+  tokenStore.clear();
+  sessionCache.clear();
+  try {
+    localStorage.clear();
+  } catch {
+    /* ignore */
+  }
 });
 afterAll(() => server.close());

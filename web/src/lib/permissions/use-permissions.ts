@@ -11,12 +11,13 @@ export interface Permissions {
 }
 
 export function usePermissions(): Permissions {
-  // Re-derive whenever auth status changes (login / refresh / org switch).
-  const { status } = useAuth();
+  // Re-derive on every token change (login / silent refresh / org switch).
+  const { status, sessionVersion } = useAuth();
 
   return useMemo<Permissions>(() => {
     void status;
+    void sessionVersion;
     const keys = tokenStore.getClaims()?.perms ?? [];
     return { can: createCan(keys), keys };
-  }, [status]);
+  }, [status, sessionVersion]);
 }
