@@ -130,19 +130,19 @@ export const sessionHandlers = [
     HttpResponse.json({ message: "If that account needs verification, a new link is on its way." }, { status: 202 }),
   ),
 
-  http.get("/api/notifications", ({ request }) => {
+  http.get("/api/lawfirm/notifications", ({ request }) => {
     const unreadOnly = new URL(request.url).searchParams.get("unread") === "true";
     const items = unreadOnly ? NOTIFICATIONS.items.filter((n) => !n.readAt) : NOTIFICATIONS.items;
     return HttpResponse.json<NotificationList>({ items, unreadCount: NOTIFICATIONS.unreadCount });
   }),
 
-  http.post("/api/notifications/read-all", () => {
+  http.post("/api/lawfirm/notifications/read-all", () => {
     NOTIFICATIONS.items.forEach((n) => (n.readAt ??= new Date().toISOString()));
     NOTIFICATIONS.unreadCount = 0;
     return new HttpResponse(null, { status: 204 });
   }),
 
-  http.post("/api/notifications/:id/read", ({ params }) => {
+  http.post("/api/lawfirm/notifications/:id/read", ({ params }) => {
     const hit = NOTIFICATIONS.items.find((n) => n.id === params.id);
     if (hit && !hit.readAt) {
       hit.readAt = new Date().toISOString();

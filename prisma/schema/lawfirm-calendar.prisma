@@ -1,0 +1,43 @@
+// mizan/backend/app/lawfirm — court hearings + firm calendar events. The
+// Calendar screen aggregates hearings, these events, and due-dated tasks.
+
+model lawfirm_hearings {
+  id              String    @id
+  organization_id String
+  matter_id       String
+  court           String
+  scheduled_at    DateTime  @db.Timestamptz(6)
+  /// @kyselyType('scheduled' | 'adjourned' | 'decided')
+  status          String    @default("scheduled")
+  purpose         String
+  outcome         String?
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @default(now()) @db.Timestamptz(6)
+
+  lawfirm_matters lawfirm_matters @relation(fields: [organization_id, matter_id], references: [organization_id, id], onDelete: Cascade, onUpdate: NoAction, map: "lawfirm_hearings_matter_fk")
+
+  @@index([organization_id], map: "lawfirm_hearings_org_idx")
+  @@index([organization_id, matter_id], map: "lawfirm_hearings_matter_idx")
+  @@index([organization_id, scheduled_at], map: "lawfirm_hearings_scheduled_idx")
+  @@map("lawfirm_hearings")
+}
+
+model lawfirm_calendar_events {
+  id              String    @id
+  organization_id String
+  title           String
+  /// @kyselyType('meeting' | 'reminder' | 'court_filing' | 'other')
+  kind            String    @default("meeting")
+  start_at        DateTime  @db.Timestamptz(6)
+  end_at          DateTime? @db.Timestamptz(6)
+  matter_id       String?
+  owner_id        String
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @default(now()) @db.Timestamptz(6)
+
+  lawfirm_matters lawfirm_matters? @relation(fields: [organization_id, matter_id], references: [organization_id, id], onDelete: NoAction, onUpdate: NoAction, map: "lawfirm_calendar_events_matter_fk")
+
+  @@index([organization_id], map: "lawfirm_calendar_events_org_idx")
+  @@index([organization_id, start_at], map: "lawfirm_calendar_events_start_idx")
+  @@map("lawfirm_calendar_events")
+}

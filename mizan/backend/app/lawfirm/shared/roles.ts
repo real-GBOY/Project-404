@@ -83,6 +83,10 @@ export const LAWFIRM_ROLES: RoleSeed[] = [
       "read:staff",
       "read:dashboard",
       "read:lawfirm_setting",
+      "read:calendar",
+      "create:event",
+      "update:event",
+      "delete:event",
     ),
   },
   {
@@ -109,6 +113,9 @@ export const LAWFIRM_ROLES: RoleSeed[] = [
       "record:expense",
       "read:dashboard",
       "read:lawfirm_setting",
+      "read:calendar",
+      "create:event",
+      "update:event",
     ),
   },
   {
@@ -135,6 +142,7 @@ export const LAWFIRM_ROLES: RoleSeed[] = [
         "read:staff",
         "read:dashboard",
         "read:lawfirm_setting",
+        "read:calendar",
       ),
       "read:audit_log",
     ],

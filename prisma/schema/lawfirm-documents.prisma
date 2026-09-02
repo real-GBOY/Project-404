@@ -1,0 +1,28 @@
+// mizan/backend/app/lawfirm/documents — case-document metadata. The bytes are
+// owned by Core `IFileStorage` (core/files); `file_id` is a plain reference
+// with no FK, mirroring how Core keeps file metadata decoupled.
+
+model lawfirm_documents {
+  id              String   @id
+  organization_id String
+  name            String
+  matter_id       String?
+  category        String   @default("Other")
+  /// @kyselyType('draft' | 'final' | 'filed' | 'signed')
+  status          String   @default("draft")
+  file_id         String
+  /// @kyselyType(number)
+  size_bytes      BigInt   @default(0)
+  mime_type       String   @default("application/octet-stream")
+  uploaded_by_id  String
+  uploaded_at     DateTime @default(now()) @db.Timestamptz(6)
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  lawfirm_matters lawfirm_matters? @relation(fields: [organization_id, matter_id], references: [organization_id, id], onDelete: NoAction, onUpdate: NoAction, map: "lawfirm_documents_matter_fk")
+
+  @@index([organization_id], map: "lawfirm_documents_org_idx")
+  @@index([organization_id, matter_id], map: "lawfirm_documents_matter_idx")
+  @@index([organization_id, status], map: "lawfirm_documents_status_idx")
+  @@map("lawfirm_documents")
+}

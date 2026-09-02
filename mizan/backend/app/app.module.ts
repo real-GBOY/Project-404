@@ -16,6 +16,7 @@ import { AppExceptionFilter } from "../../../core/http/app-exception.filter.js";
 import { RequestContextMiddleware } from "../../../core/http/request-context.middleware.js";
 import { HealthController } from "../../../core/observability/health.controller.js";
 import { LawfirmModule } from "./lawfirm/lawfirm.module.js";
+import { DemoModule } from "./lawfirm/demo/demo.module.js";
 import { AppSeedService } from "./seed.js";
 
 /**
@@ -41,6 +42,7 @@ import { AppSeedService } from "./seed.js";
     FilesModule,
     SecurityModule,
     LawfirmModule,
+    DemoModule,
   ],
   controllers: [HealthController],
   providers: [

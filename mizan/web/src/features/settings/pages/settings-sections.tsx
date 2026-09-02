@@ -56,7 +56,7 @@ export function FirmProfileSection() {
   const query = useSettings();
   const save = useSettingsMutation();
   const [form, setForm] = useState({ firmName: "", registrationNumber: "", address: "" });
-  const editable = can("update:lawfirm_setting");
+  const editable = can("manage:lawfirm_setting");
 
   useEffect(() => {
     if (query.data)
@@ -156,7 +156,7 @@ export function PracticeSection() {
   const { can } = usePermissions();
   const query = useSettings();
   const save = useSettingsMutation();
-  const editable = can("update:lawfirm_setting");
+  const editable = can("manage:lawfirm_setting");
 
   return (
     <Section title={t("sections.practice")}>
@@ -242,7 +242,7 @@ export function AssistantSection() {
             </div>
             <Switch
               checked={s.aiAssistantEnabled}
-              disabled={!can("update:lawfirm_setting")}
+              disabled={!can("manage:lawfirm_setting")}
               onCheckedChange={(v) => save.mutate({ aiAssistantEnabled: v })}
               aria-label={t("assistant.enable")}
             />

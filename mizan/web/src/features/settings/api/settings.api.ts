@@ -48,13 +48,13 @@ export const patchSettings = (body: Partial<LawFirmSettings>) =>
   httpClient<LawFirmSettings>("/lawfirm/settings", { method: "PATCH", body });
 
 export const getRoles = (signal?: AbortSignal) =>
-  httpClient<{ items: RbacRole[] }>("/rbac/roles", { signal });
+  httpClient<{ items: RbacRole[] }>("/lawfirm/rbac/roles", { signal });
 
 export const getMembers = (signal?: AbortSignal) =>
-  httpClient<{ items: RbacMember[] }>("/rbac/members", { signal });
+  httpClient<{ items: RbacMember[] }>("/lawfirm/rbac/members", { signal });
 
 export const assignRole = (userId: string, role: string) =>
-  httpClient<unknown>("/rbac/assignments", { method: "POST", body: { userId, role } });
+  httpClient<unknown>("/lawfirm/rbac/assignments", { method: "POST", body: { userId, role } });
 
 export const getAuditLogs = (q: string, signal?: AbortSignal) =>
-  httpClient<{ items: AuditEntry[]; total: number }>("/audit-logs", { query: { q: q || undefined }, signal });
+  httpClient<{ items: AuditEntry[]; total: number }>("/lawfirm/audit-logs", { query: { q: q || undefined }, signal });

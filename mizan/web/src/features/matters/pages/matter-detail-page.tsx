@@ -97,8 +97,15 @@ export function MatterDetailPage() {
                     </div>
                     <div className="mt-1 text-[12.5px] font-medium text-muted">
                       {t("detail.opened", { date: formatDate(matter.openedAt) })} ·{" "}
-                      {matter.practiceArea} ·{" "}
-                      {t("detail.claim_value", { value: formatMoneyList(matter.value).join(" · ") })}
+                      {matter.practiceArea}
+                      {matter.value.length > 0 && (
+                        <>
+                          {" · "}
+                          {t("detail.claim_value", {
+                            value: formatMoneyList(matter.value).join(" · "),
+                          })}
+                        </>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">

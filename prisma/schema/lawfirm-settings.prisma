@@ -1,0 +1,22 @@
+// mizan/backend/app/lawfirm/settings — one row per organization. Lazily
+// created with defaults on first read.
+
+model lawfirm_settings {
+  organization_id      String   @id
+  firm_name            String   @default("")
+  registration_number  String   @default("")
+  address              String   @default("")
+  /// @kyselyType('EGP' | 'AED' | 'USD' | 'SAR')
+  default_currency     String   @default("EGP")
+  /// @kyselyType(string)
+  vat_rate             Decimal  @default(0) @db.Decimal(6, 4)
+  matter_types         String[] @default([])
+  courts               String[] @default([])
+  /// @kyselyType(Json<Array<{ role: string; hourlyRate: number; currency: string }>>)
+  standard_rates       Json     @default("[]")
+  ai_assistant_enabled Boolean  @default(true)
+  created_at           DateTime @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("lawfirm_settings")
+}

@@ -1,0 +1,35 @@
+// mizan/backend/app/lawfirm — the product activity feed (distinct from Core's
+// audit_logs, which stays the tamper-evident compliance trail). This feed is
+// the human-readable "what happened on this matter/client" timeline the UI
+// renders. Reminders are a lightweight due-date list for the calendar.
+
+model lawfirm_activity_entries {
+  id              String   @id
+  organization_id String
+  actor_id        String?
+  action          String
+  target_type     String
+  target_id       String
+  target_label    String
+  at              DateTime @default(now()) @db.Timestamptz(6)
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([organization_id, at], map: "lawfirm_activity_entries_at_idx")
+  @@index([organization_id, target_type, target_id], map: "lawfirm_activity_entries_target_idx")
+  @@map("lawfirm_activity_entries")
+}
+
+model lawfirm_reminders {
+  id              String    @id
+  organization_id String
+  matter_id       String?
+  title           String
+  due_at          DateTime  @db.Timestamptz(6)
+  done_at         DateTime? @db.Timestamptz(6)
+  owner_id        String
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([organization_id, due_at], map: "lawfirm_reminders_due_idx")
+  @@map("lawfirm_reminders")
+}

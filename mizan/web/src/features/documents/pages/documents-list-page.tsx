@@ -70,7 +70,7 @@ export function DocumentsListPage() {
   const [uploading, setUploading] = useState(false);
   const [editing, setEditing] = useState<DocRow | null>(null);
   const [deleting, setDeleting] = useState<DocRow | null>(null);
-  const canManage = can("create:document");
+  const canManage = can("upload:document");
 
   useSetPageChrome({ title: t("title"), count: summary.data?.total ?? null });
 

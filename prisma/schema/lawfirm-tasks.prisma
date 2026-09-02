@@ -1,0 +1,25 @@
+// mizan/backend/app/lawfirm/tasks — work items, optionally tied to a matter.
+
+model lawfirm_tasks {
+  id              String    @id
+  organization_id String
+  title           String
+  matter_id       String?
+  assignee_id     String?
+  /// @kyselyType('todo' | 'in_progress' | 'done')
+  status          String    @default("todo")
+  /// @kyselyType('low' | 'normal' | 'high')
+  priority        String    @default("normal")
+  due_at          DateTime? @db.Timestamptz(6)
+  completed_at    DateTime? @db.Timestamptz(6)
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @default(now()) @db.Timestamptz(6)
+
+  lawfirm_matters lawfirm_matters? @relation(fields: [organization_id, matter_id], references: [organization_id, id], onDelete: NoAction, onUpdate: NoAction, map: "lawfirm_tasks_matter_fk")
+
+  @@index([organization_id], map: "lawfirm_tasks_org_idx")
+  @@index([organization_id, matter_id], map: "lawfirm_tasks_matter_idx")
+  @@index([organization_id, assignee_id], map: "lawfirm_tasks_assignee_idx")
+  @@index([organization_id, status], map: "lawfirm_tasks_status_idx")
+  @@map("lawfirm_tasks")
+}

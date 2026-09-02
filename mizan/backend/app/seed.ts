@@ -6,8 +6,11 @@ import { runAsSystem } from "../../../core/kernel/logging/context.js";
 import { moduleLogger } from "../../../core/kernel/logging/logger.js";
 import { parsePermissionKey } from "../../../core/rbac/domain/permission.js";
 import { RbacRepository } from "../../../core/rbac/infrastructure/rbac-repository.js";
+import { CLOCK } from "../../../core/kernel/tokens.js";
+import type { Clock } from "../../../core/kernel/clock.js";
 import { LAWFIRM_PERMISSIONS } from "./lawfirm/permissions.js";
 import { LAWFIRM_ROLES } from "./lawfirm/shared/roles.js";
+import { DemoSeeder } from "./lawfirm/demo/demo-seeder.js";
 
 const log = moduleLogger("app-seed");
 
@@ -26,6 +29,8 @@ export class AppSeedService {
   constructor(
     private readonly coreSeed: SeedService,
     private readonly rbac: RbacRepository,
+    private readonly demo: DemoSeeder,
+    @Inject(CLOCK) private readonly clock: Clock,
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
 
@@ -61,5 +66,9 @@ export class AppSeedService {
       { permissions: LAWFIRM_PERMISSIONS.length, roles: LAWFIRM_ROLES.map((r) => r.key) },
       "law-firm RBAC seeded",
     );
+
+    if (process.env.MIZAN_SEED_DEMO === "true") {
+      await this.demo.seed(this.clock);
+    }
   }
 }

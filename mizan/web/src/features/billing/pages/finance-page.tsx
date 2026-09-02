@@ -313,7 +313,7 @@ function ExpensesTab() {
                 ))}
               </SelectContent>
             </Select>
-            {can("create:expense") && (
+            {can("record:expense") && (
               <Button size="sm" icon="add" onClick={() => setRecording(true)}>
                 {t("actions.record_expense")}
               </Button>

@@ -111,7 +111,7 @@ export function HearingsListPage({ embedded: _embedded = false }: { embedded?: b
             <ToolbarButton icon="calendar_month" onClick={() => navigate("/calendar")}>
               {t("calendar_view")}
             </ToolbarButton>
-            {can("create:hearing") && (
+            {can("schedule:hearing") && (
               <Button size="sm" icon="add" onClick={() => setScheduling(true)}>
                 {t("actions.schedule")}
               </Button>

@@ -1,0 +1,23 @@
+// mizan/backend/app/lawfirm/staff — a staff member is a Core user + an org
+// membership + this profile row (title, department, capacity, bar admission).
+// RBAC role management stays in Core; the law-firm role assignment is read
+// from Core `user_roles` and surfaced by the RBAC adapter.
+
+model lawfirm_staff_profiles {
+  id                    String   @id
+  organization_id       String
+  user_id               String
+  title                 String   @default("Associate")
+  phone                 String?
+  practice_areas        String[] @default([])
+  /// @kyselyType('active' | 'inactive')
+  status                String   @default("active")
+  weekly_capacity_hours Int      @default(40)
+  bar_admission         String?
+  created_at            DateTime @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, user_id], map: "lawfirm_staff_profiles_user_uq")
+  @@index([organization_id], map: "lawfirm_staff_profiles_org_idx")
+  @@map("lawfirm_staff_profiles")
+}

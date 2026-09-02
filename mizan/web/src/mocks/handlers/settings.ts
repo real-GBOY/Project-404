@@ -29,9 +29,9 @@ export const settingsHandlers = [
     return HttpResponse.json(db.settings);
   }),
 
-  http.get("/api/rbac/roles", () => HttpResponse.json({ items: ROLES })),
+  http.get("/api/lawfirm/rbac/roles", () => HttpResponse.json({ items: ROLES })),
 
-  http.get("/api/rbac/members", () =>
+  http.get("/api/lawfirm/rbac/members", () =>
     HttpResponse.json({
       items: db.team.map((u) => ({
         id: u.id,
@@ -43,14 +43,14 @@ export const settingsHandlers = [
     }),
   ),
 
-  http.post("/api/rbac/assignments", async ({ request }) => {
+  http.post("/api/lawfirm/rbac/assignments", async ({ request }) => {
     const b = (await request.json()) as { userId: string; role: string };
     const u = db.team.find((x) => x.id === b.userId);
     if (u) u.role = b.role;
     return HttpResponse.json({ ok: true });
   }),
 
-  http.get("/api/audit-logs", ({ request }) => {
+  http.get("/api/lawfirm/audit-logs", ({ request }) => {
     const q = (new URL(request.url).searchParams.get("q") ?? "").toLowerCase();
     const rows = q
       ? AUDIT.filter((a) => `${a.actor} ${a.action} ${a.resource}`.toLowerCase().includes(q))

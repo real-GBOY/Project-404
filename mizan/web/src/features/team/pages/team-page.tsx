@@ -196,7 +196,7 @@ export function TeamPage() {
               onChange={(v) => params.set({ view: v })}
               labels={{ table: t("common:table.view_table"), grid: t("common:table.view_grid") }}
             />
-            {can("update:staff") && (
+            {can("manage:staff") && (
               <Button size="sm" icon="person_add">
                 {t("actions.add")}
               </Button>
@@ -293,7 +293,7 @@ export function TeamPage() {
                       <Pill tone={u.status === "active" ? "green" : "amber"}>
                         {t(`status.${u.status}`)}
                       </Pill>
-                      {can("update:staff") && u.status === "active" && (
+                      {can("manage:staff") && u.status === "active" && (
                         <button
                           type="button"
                           onClick={(e) => {

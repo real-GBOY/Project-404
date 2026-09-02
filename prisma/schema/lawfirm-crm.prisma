@@ -1,0 +1,46 @@
+// mizan/backend/app/lawfirm/clients — clients and their contacts.
+// Product domain (not Core). Every row is tenant-scoped: organization_id
+// NOT NULL + tenant_isolation RLS (see the lawfirm migration).
+
+model lawfirm_clients {
+  id              String   @id
+  organization_id String
+  name            String
+  /// @kyselyType('company' | 'individual')
+  type            String
+  /// @kyselyType('active' | 'archived')
+  status          String   @default("active")
+  email           String?
+  phone           String?
+  tax_id          String?
+  address         String?
+  notes           String?
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  lawfirm_contacts lawfirm_contacts[]
+  lawfirm_matters  lawfirm_matters[]
+  lawfirm_invoices lawfirm_invoices[]
+
+  @@unique([organization_id, id], map: "lawfirm_clients_org_id_uq")
+  @@index([organization_id], map: "lawfirm_clients_org_idx")
+  @@map("lawfirm_clients")
+}
+
+model lawfirm_contacts {
+  id              String   @id
+  organization_id String
+  client_id       String
+  name            String
+  role            String?
+  email           String?
+  phone           String?
+  is_primary      Boolean  @default(false)
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  lawfirm_clients lawfirm_clients @relation(fields: [organization_id, client_id], references: [organization_id, id], onDelete: Cascade, onUpdate: NoAction, map: "lawfirm_contacts_client_fk")
+
+  @@index([organization_id, client_id], map: "lawfirm_contacts_client_idx")
+  @@map("lawfirm_contacts")
+}
