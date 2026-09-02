@@ -4,8 +4,9 @@ import { Icon } from "./icon";
 export interface SegmentedOption<T extends string> {
   value: T;
   label?: string;
-  /** icon-only segment — provide `aria-label` via `label` */
   icon?: string;
+  /** accessible name for an icon-only segment */
+  ariaLabel?: string;
 }
 
 interface SegmentedControlProps<T extends string> {
@@ -44,8 +45,8 @@ export function SegmentedControl<T extends string>({
             type="button"
             role="radio"
             aria-checked={active}
-            aria-label={opt.icon && !opt.label ? opt.value : undefined}
-            title={opt.icon ? opt.label : undefined}
+            aria-label={opt.ariaLabel ?? (opt.icon && !opt.label ? opt.value : undefined)}
+            title={opt.ariaLabel ?? (opt.icon ? opt.label : undefined)}
             onClick={() => onValueChange(opt.value)}
             className={cn(
               "inline-flex items-center justify-center gap-1.5 rounded-[7px] font-semibold transition-colors",

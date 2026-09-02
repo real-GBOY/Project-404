@@ -67,6 +67,21 @@ async function refreshTokens(): Promise<boolean> {
   return refreshInFlight;
 }
 
+/**
+ * Only forward an `AbortSignal` the runtime's `fetch` will accept. Always true in
+ * a real browser; under Vitest+jsdom the DOM's `AbortSignal` fails Node fetch's
+ * brand check, so we drop it rather than throw.
+ */
+function usableSignal(signal: AbortSignal | undefined): AbortSignal | undefined {
+  if (!signal) return undefined;
+  try {
+    new Request("http://localhost/", { signal });
+    return signal;
+  } catch {
+    return undefined;
+  }
+}
+
 async function raw(path: string, opts: RequestOptions): Promise<Response> {
   const headers: Record<string, string> = {};
   if (!opts.anonymous) {
@@ -84,7 +99,7 @@ async function raw(path: string, opts: RequestOptions): Promise<Response> {
     method: opts.method ?? "GET",
     headers,
     body,
-    signal: opts.signal,
+    signal: usableSignal(opts.signal),
   });
 }
 

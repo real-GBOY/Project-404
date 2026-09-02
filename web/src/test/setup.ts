@@ -5,6 +5,7 @@ import { server } from "@/mocks/server";
 import { initI18n } from "@/lib/i18n";
 import { tokenStore } from "@/lib/auth/token-store";
 import { sessionCache } from "@/lib/auth/session-cache";
+import { resetDb } from "@/mocks/fixtures/db";
 
 /*
  * Neutralise @floating-ui/react-dom (Radix Popper: Popover, DropdownMenu, Select,
@@ -92,6 +93,7 @@ beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 afterEach(() => {
   cleanup();
   server.resetHandlers();
+  resetDb();
   tokenStore.clear();
   sessionCache.clear();
   try {

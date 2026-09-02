@@ -20,24 +20,21 @@ export const DEV_ORGS: OrganizationMembership[] = [
   { organizationId: "org_demo", slug: "demo", name: "Demo Firm", membershipRole: "partner" },
 ];
 
-/** Broad set — edit to exercise permission gating in the shell. */
+/** Broad set — trim it to exercise permission gating in the shell. */
 export const DEV_PERMS: string[] = [
   "read:dashboard",
-  "read:client",
-  "read:matter",
-  "read:hearing",
-  "read:document",
-  "read:invoice",
-  "read:payment",
-  "read:expense",
-  "read:staff",
-  "read:lawfirm_setting",
-  "read:role",
+  "read:client", "create:client", "update:client", "archive:client",
+  "read:matter", "create:matter", "update:matter", "close:matter",
+  "read:hearing", "create:hearing", "update:hearing",
+  "read:task", "create:task", "update:task",
+  "read:document", "create:document", "update:document", "delete:document",
+  "read:invoice", "create:invoice", "issue:invoice", "send:invoice", "void:invoice",
+  "read:payment", "record:payment",
+  "read:expense", "create:expense", "approve:expense",
+  "read:staff", "update:staff",
+  "read:lawfirm_setting", "update:lawfirm_setting",
+  "read:role", "assign:role",
   "read:audit_log",
-  "create:client",
-  "create:matter",
-  "record:payment",
-  "void:invoice",
 ];
 
 function base64Url(json: unknown): string {

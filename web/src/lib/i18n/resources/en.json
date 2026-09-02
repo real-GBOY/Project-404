@@ -1,15 +1,38 @@
 {
   "common": {
     "app_name": "Mizan",
+    "none": "—",
+    "all": "All",
     "actions": {
       "retry": "Try again",
       "cancel": "Cancel",
       "save": "Save",
+      "save_changes": "Save changes",
       "create": "Create",
+      "add": "Add",
+      "edit": "Edit",
+      "delete": "Delete",
       "search": "Search",
       "export": "Export",
       "filter": "Filter",
-      "back": "Back"
+      "clear": "Clear",
+      "back": "Back",
+      "confirm": "Confirm",
+      "view": "View",
+      "download": "Download",
+      "upload": "Upload"
+    },
+    "table": {
+      "of_total": "{{from}}–{{to}} of {{total}}",
+      "view_table": "Table view",
+      "view_grid": "Grid view",
+      "rows_selected": "{{count}} selected"
+    },
+    "time": {
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "overdue": "Overdue",
+      "no_date": "No date"
     },
     "states": {
       "loading": "Loading…",
@@ -152,5 +175,307 @@
       "resend": "Send a new link",
       "resent": "If that account needs verification, a new link is on its way."
     }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "greeting": "Good to see you, {{name}}",
+    "subtitle": "What needs your attention across the firm today.",
+    "view_all": "View all",
+    "kpi": {
+      "active_matters": "Active matters",
+      "open_tasks": "Open tasks",
+      "hearings_week": "Hearings this week",
+      "outstanding": "Outstanding",
+      "collected_month": "Collected this month"
+    },
+    "panels": {
+      "upcoming_hearings": "Upcoming hearings",
+      "no_hearings": "No hearings scheduled",
+      "urgent_deadlines": "Urgent deadlines",
+      "no_deadlines": "Nothing due soon",
+      "my_tasks": "My tasks",
+      "no_tasks": "You're all caught up",
+      "no_matter": "No matter",
+      "review_documents": "Documents to review",
+      "no_documents": "Nothing waiting for review",
+      "recent_activity": "Recent activity",
+      "no_activity": "No activity yet",
+      "practice_areas": "Matters by practice area",
+      "no_matters": "No open matters",
+      "billing_vs_collections": "Billed vs collected ({{currency}})",
+      "billed": "Billed",
+      "collected": "Collected",
+      "collection_rate": "{{rate}}% collected"
+    },
+    "activity": {
+      "matter.opened": "opened",
+      "matter.update_added": "added an update to",
+      "document.uploaded": "uploaded",
+      "hearing.scheduled": "scheduled",
+      "payment.recorded": "recorded a payment —",
+      "task.completed": "completed"
+    }
+  },
+  "clients": {
+    "title": "Clients",
+    "subtitle": "Every organisation and individual the firm acts for.",
+    "search_placeholder": "Search clients…",
+    "client_since": "Client since {{date}}",
+    "actions": { "new": "New client", "archive": "Archive client", "more": "More actions" },
+    "columns": {
+      "name": "Name",
+      "type": "Type",
+      "status": "Status",
+      "open_matters": "Open matters",
+      "outstanding": "Outstanding",
+      "client_since": "Client since"
+    },
+    "type": { "all": "All types", "company": "Company", "individual": "Individual" },
+    "status": { "active": "Active", "archived": "Archived" },
+    "stats": { "open_matters": "Open matters", "documents": "Documents", "outstanding": "Outstanding" },
+    "fields": {
+      "type": "Client type",
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone",
+      "tax_id": "Tax registration no.",
+      "national_id": "National ID",
+      "address": "Address",
+      "notes": "Notes",
+      "contact_role": "Role",
+      "primary_contact": "Primary contact"
+    },
+    "form": {
+      "new_title": "New client",
+      "edit_title": "Edit client",
+      "subtitle": "Basic details — you can add matters and contacts afterwards.",
+      "create": "Create client"
+    },
+    "tabs": {
+      "overview": "Overview",
+      "matters": "Matters",
+      "documents": "Documents",
+      "communications": "Contacts",
+      "billing": "Billing",
+      "activity": "Activity",
+      "details": "Details",
+      "key_contact": "Key contact",
+      "contacts": "Contacts",
+      "add_contact": "Add contact",
+      "primary": "Primary",
+      "not_issued": "Not yet issued",
+      "balance": "Balance {{amount}}",
+      "no_matters": "No matters for this client yet",
+      "no_documents": "No documents yet",
+      "no_invoices": "No invoices yet",
+      "no_activity": "No activity yet",
+      "no_contacts": "No contacts recorded"
+    },
+    "archive": {
+      "title": "Archive {{name}}?",
+      "body": "Archived clients are hidden from the default list. Their matters and history are kept."
+    },
+    "empty": {
+      "title": "No clients yet",
+      "body": "Add the first client the firm acts for.",
+      "no_results": "No clients match",
+      "no_results_body": "Try a different search or clear the filters."
+    },
+    "toasts": {
+      "created": "{{name}} added",
+      "updated": "Client updated",
+      "archived": "Client archived",
+      "contact_added": "Contact added",
+      "save_failed": "Couldn't save. Try again."
+    },
+    "errors": {
+      "name_required": "Enter a name.",
+      "email_invalid": "Enter a valid email address."
+    }
+  },
+  "matters": {
+    "title": "Matters",
+    "subtitle": "Every open and closed engagement.",
+    "search_placeholder": "Search matters…",
+    "all_areas": "All practice areas",
+    "case_work": {
+      "title": "Case Work",
+      "subtitle": "Matters, hearings and tasks across the firm.",
+      "matters": "Matters",
+      "hearings": "Hearings",
+      "tasks": "Tasks"
+    },
+    "actions": { "new": "New matter", "more": "More actions", "close": "Close matter" },
+    "columns": {
+      "matter": "Matter",
+      "status": "Status",
+      "practice_area": "Practice area",
+      "lead": "Lead",
+      "next_hearing": "Next hearing",
+      "tasks": "Open tasks"
+    },
+    "status": { "open": "Open", "on_hold": "On hold", "closed": "Closed" },
+    "fields": {
+      "title": "Matter title",
+      "client": "Client",
+      "client_placeholder": "Select a client",
+      "practice_area": "Practice area",
+      "court": "Court",
+      "court_none": "No court",
+      "description": "Description / scope",
+      "select": "Select…"
+    },
+    "form": { "new_title": "Open a new matter", "edit_title": "Edit matter", "create": "Open matter" },
+    "tabs": {
+      "overview": "Overview",
+      "hearings": "Hearings",
+      "tasks": "Tasks",
+      "documents": "Documents",
+      "notes": "Notes",
+      "financials": "Financials",
+      "activity": "Activity",
+      "no_hearings": "No hearings scheduled",
+      "no_tasks": "No tasks on this matter",
+      "no_documents": "No documents on this matter",
+      "no_notes": "No notes yet",
+      "no_updates": "No updates yet",
+      "no_invoices": "No invoices raised",
+      "no_activity": "No activity yet",
+      "unassigned": "Unassigned"
+    },
+    "overview": {
+      "summary": "Scope",
+      "team": "Matter team",
+      "opened": "Opened",
+      "lead": "Lead lawyer",
+      "hearings": "Hearings",
+      "documents": "Documents"
+    },
+    "timeline": { "placeholder": "Add an update to the matter timeline…", "add": "Add update" },
+    "notes": {
+      "placeholder": "Add a private working note…",
+      "add": "Add note",
+      "delete_title": "Delete this note?"
+    },
+    "financials": {
+      "billed": "Billed",
+      "collected": "Collected",
+      "outstanding": "Outstanding",
+      "expenses": "Expenses"
+    },
+    "close": {
+      "title": "Close this matter?",
+      "body": "A closed matter is read-only. You can still view its history."
+    },
+    "empty": {
+      "title": "No matters yet",
+      "body": "Open the first matter for a client.",
+      "no_results": "No matters match",
+      "no_results_body": "Try a different search or filter."
+    },
+    "toasts": {
+      "created": "Matter opened",
+      "updated": "Matter updated",
+      "closed": "Matter closed",
+      "update_added": "Update added",
+      "note_added": "Note added",
+      "note_deleted": "Note deleted",
+      "save_failed": "Couldn't save. Try again."
+    },
+    "errors": {
+      "title_required": "Give the matter a title.",
+      "client_required": "Choose a client.",
+      "practice_required": "Choose a practice area.",
+      "note_required": "Write something first.",
+      "update_required": "Write something first."
+    }
+  },
+  "hearings": {
+    "title": "Hearings",
+    "subtitle": "Every scheduled and past court session.",
+    "scope": { "label": "Timeframe", "upcoming": "Upcoming", "past": "Past" },
+    "status": { "scheduled": "Scheduled", "adjourned": "Adjourned", "decided": "Decided" },
+    "actions": { "schedule": "Schedule hearing", "adjourn": "Adjourn", "record_outcome": "Record outcome" },
+    "fields": {
+      "matter": "Matter",
+      "matter_placeholder": "Select a matter",
+      "date": "Date",
+      "time": "Time",
+      "purpose": "Purpose",
+      "court": "Court"
+    },
+    "schedule": { "title": "Schedule a hearing", "submit": "Schedule" },
+    "adjourn": {
+      "title": "Adjourn hearing",
+      "new_date": "New date",
+      "reason": "Reason (optional)",
+      "submit": "Adjourn & reschedule"
+    },
+    "outcome": { "title": "Record the outcome", "label": "What did the court decide?", "submit": "Record" },
+    "empty": { "upcoming": "No upcoming hearings", "past": "No past hearings" },
+    "toasts": {
+      "scheduled": "Hearing scheduled",
+      "adjourned": "Hearing adjourned and rescheduled",
+      "outcome_recorded": "Outcome recorded",
+      "failed": "Couldn't save. Try again."
+    },
+    "errors": {
+      "matter_required": "Choose a matter.",
+      "date_required": "Pick a date.",
+      "time_required": "Pick a time.",
+      "purpose_required": "Add a purpose.",
+      "outcome_required": "Describe the outcome."
+    }
+  },
+  "tasks": {
+    "title": "Tasks",
+    "subtitle": "Everything the firm needs to get done.",
+    "range": { "label": "Range", "today": "Today", "week": "This week", "overdue": "Overdue", "all": "All" },
+    "scope": { "label": "Owner", "mine": "Mine", "everyone": "Everyone" },
+    "priority": { "low": "Low", "normal": "Normal", "high": "High" },
+    "actions": { "new": "New task", "toggle_complete": "Toggle complete" },
+    "fields": {
+      "title": "What needs doing?",
+      "matter": "Matter",
+      "matter_none": "No matter",
+      "priority": "Priority",
+      "due": "Due date"
+    },
+    "dialog": { "title": "New task" },
+    "empty": { "title": "Nothing to do here", "body": "Add a task to track work on a matter." },
+    "toasts": { "created": "Task added", "failed": "Couldn't save. Try again." },
+    "errors": { "title_required": "Describe the task." }
+  },
+  "documents": {
+    "title": "Documents",
+    "subtitle": "Every file across the firm's matters.",
+    "search_placeholder": "Search files…",
+    "all_categories": "All categories",
+    "actions": { "upload": "Upload" },
+    "fields": { "name": "File name", "matter": "Matter", "matter_none": "No matter", "category": "Category", "status": "Status" },
+    "status": { "draft": "Draft", "final": "Final", "filed": "Filed", "signed": "Signed" },
+    "upload": { "title": "Upload a document", "pick": "Choose a file to upload" },
+    "edit": { "title": "Edit document" },
+    "delete": { "title": "Delete “{{name}}”?" },
+    "empty": { "title": "No documents yet", "body": "Upload the first file for a matter." },
+    "toasts": {
+      "uploaded": "Document uploaded",
+      "updated": "Document updated",
+      "deleted": "Document deleted",
+      "failed": "Couldn't save. Try again."
+    }
+  },
+  "calendar": {
+    "title": "Calendar",
+    "prev_month": "Previous month",
+    "next_month": "Next month",
+    "filter_lawyer": "Filter by lawyer",
+    "all_lawyers": "All lawyers",
+    "more": "+{{count}} more",
+    "actions": { "new_event": "New event" },
+    "fields": { "title": "Title", "date": "Date", "time": "Time", "matter": "Matter", "matter_none": "No matter" },
+    "new_event": { "title": "New calendar event" },
+    "toasts": { "created": "Event added", "failed": "Couldn't save. Try again." },
+    "errors": { "title_required": "Give the event a title.", "date_required": "Pick a date." }
   }
 }

@@ -9,6 +9,12 @@ import {
   ResetPasswordPage,
   VerifyEmailPage,
 } from "@/features/auth";
+import { DashboardPage } from "@/features/dashboard";
+import { ClientsListPage, ClientDetailPage } from "@/features/clients";
+import { MatterDetailPage } from "@/features/matters";
+import { DocumentsListPage } from "@/features/documents";
+import { CalendarPage } from "@/features/calendar";
+import { CaseWorkPage } from "./case-work-page";
 import { ProtectedRoute } from "./protected-route";
 import { RedirectIfAuthed } from "./redirect-if-authed";
 import { RequireOrganization } from "./require-organization";
@@ -48,26 +54,26 @@ export function AppRouter() {
               index
               element={
                 <RequirePermission perm="read:dashboard">
-                  <PlaceholderPage titleKey="dashboard" phase="F4" icon="dashboard" />
+                  <DashboardPage />
                 </RequirePermission>
               }
             />
 
             <Route path="clients" element={<RequirePermission perm="read:client" />}>
-              <Route index element={<PlaceholderPage titleKey="clients" phase="F5" icon="groups" />} />
-              <Route path=":id" element={<PlaceholderPage titleKey="clients" phase="F5" icon="groups" />} />
+              <Route index element={<ClientsListPage />} />
+              <Route path=":id" element={<ClientDetailPage />} />
             </Route>
 
             <Route path="matters" element={<RequirePermission perm="read:matter" />}>
-              <Route index element={<PlaceholderPage titleKey="matters" phase="F6" icon="gavel" />} />
-              <Route path=":id" element={<PlaceholderPage titleKey="matters" phase="F6" icon="gavel" />} />
+              <Route index element={<CaseWorkPage />} />
+              <Route path=":id" element={<MatterDetailPage />} />
             </Route>
 
             <Route
               path="calendar"
               element={
                 <RequirePermission perm="read:hearing">
-                  <PlaceholderPage titleKey="calendar" phase="F10" icon="calendar_month" />
+                  <CalendarPage />
                 </RequirePermission>
               }
             />
@@ -76,7 +82,7 @@ export function AppRouter() {
               path="documents"
               element={
                 <RequirePermission perm="read:document">
-                  <PlaceholderPage titleKey="documents" phase="F9" icon="folder_open" />
+                  <DocumentsListPage />
                 </RequirePermission>
               }
             />
