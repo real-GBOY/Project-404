@@ -1,19 +1,19 @@
 import pg from "pg";
 import { Test, type TestingModule } from "@nestjs/testing";
-import { AppModule } from "../app.module.js";
-import { setConfigForTests } from "../kernel/config.js";
-import type { Clock } from "../kernel/clock.js";
-import { unitOfWork } from "../kernel/db/db.js";
-import { runAsSystem, withContext } from "../kernel/logging/context.js";
+import { AppModule } from "@core/app.module.js";
+import { setConfigForTests } from "@core/kernel/config.js";
+import type { Clock } from "@core/kernel/clock.js";
+import { unitOfWork } from "@core/kernel/db/db.js";
+import { runAsSystem, withContext } from "@core/kernel/logging/context.js";
 import {
   CLOCK,
   EMAIL_CHANNEL,
   REQUIRE_EMAIL_VERIFICATION,
   WORKER_AUTOSTART,
-} from "../kernel/tokens.js";
-import type { EmailChannel } from "../notifications/infrastructure/email-channel.js";
-import { migrateToLatest } from "../kernel/db/migrate.js";
-import { SeedService } from "../bootstrap/seed.service.js";
+} from "@core/kernel/tokens.js";
+import type { EmailChannel } from "@core/notifications/infrastructure/email-channel.js";
+import { migrateToLatest } from "@core/kernel/db/migrate.js";
+import { SeedService } from "@core/bootstrap/seed.service.js";
 
 /**
  * Integration tests run against a real Postgres (the modular monolith owns

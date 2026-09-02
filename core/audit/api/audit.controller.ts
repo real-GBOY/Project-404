@@ -1,11 +1,11 @@
 import { Controller, Get, Query, UseGuards } from "@nestjs/common";
 import { z } from "zod";
-import { readInTenant } from "../../kernel/db/db.js";
-import { JwtAuthGuard } from "../../http/jwt-auth.guard.js";
-import { PermissionGuard } from "../../http/permission.guard.js";
-import { RequirePermission } from "../../http/decorators.js";
-import { ZodQuery } from "../../http/zod.pipe.js";
-import { AuditRepository, type AuditQuery } from "../infrastructure/audit-repository.js";
+import { readInTenant } from "@core/kernel/db/db.js";
+import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
+import { PermissionGuard } from "@core/http/permission.guard.js";
+import { RequirePermission } from "@core/http/decorators.js";
+import { ZodQuery } from "@core/http/zod.pipe.js";
+import { AuditRepository, type AuditQuery } from "@core/audit/infrastructure/audit-repository.js";
 
 const querySchema = z.object({
   actorId: z.string().optional(),

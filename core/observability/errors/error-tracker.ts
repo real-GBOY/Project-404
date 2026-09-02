@@ -1,6 +1,6 @@
-import { rootLogger } from "../../kernel/logging/logger.js";
-import { getContext } from "../../kernel/logging/context.js";
-import { AppError } from "../../kernel/errors.js";
+import { rootLogger } from "@core/kernel/logging/logger.js";
+import { getContext } from "@core/kernel/logging/context.js";
+import { AppError } from "@core/kernel/errors.js";
 
 const log = rootLogger.child({ module: "errors" });
 

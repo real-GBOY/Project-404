@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cityOf, registrationLabel } from "../client.domain.js";
+import { cityOf, registrationLabel } from "@app/lawfirm/clients/client.domain.js";
 
 describe("cityOf", () => {
   it("returns the last comma-separated segment", () => {

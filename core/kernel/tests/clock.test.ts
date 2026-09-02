@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fixedClock, systemClock } from "../clock.js";
+import { fixedClock, systemClock } from "@core/kernel/clock.js";
 
 describe("systemClock", () => {
   it("returns roughly the wall clock", () => {

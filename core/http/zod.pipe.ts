@@ -1,6 +1,6 @@
 import { type PipeTransform } from "@nestjs/common";
 import type { ZodTypeAny, infer as ZodInfer } from "zod";
-import { ValidationError } from "../kernel/errors.js";
+import { ValidationError } from "@core/kernel/errors.js";
 
 /**
  * Validates a request part against a Zod schema (§3.4: controllers validate,

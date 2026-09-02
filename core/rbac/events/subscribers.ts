@@ -1,7 +1,7 @@
-import type { EventRegistry } from "../../events/registry.js";
-import { OrganizationEvents } from "../../organizations/events/events.js";
-import type { RbacService } from "../application/rbac-service.js";
-import { SYSTEM_ROLES } from "../domain/role.js";
+import type { EventRegistry } from "@core/events/registry.js";
+import { OrganizationEvents } from "@core/organizations/events/events.js";
+import type { RbacService } from "@core/rbac/application/rbac-service.js";
+import { SYSTEM_ROLES } from "@core/rbac/domain/role.js";
 
 /**
  * RBAC's reactions to other modules' events (§3.3 "clear workflows").

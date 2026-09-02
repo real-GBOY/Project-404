@@ -1,4 +1,4 @@
-import type { User as PublicUser } from "../../contracts/index.js";
+import type { User as PublicUser } from "@core/contracts/index.js";
 
 /**
  * The Employee-vs-Order lifecycle in the plan (§3.4) applies here too: the

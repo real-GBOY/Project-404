@@ -1,9 +1,9 @@
 import { type CanActivate, type ExecutionContext, Inject, Injectable } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import { Forbidden, Unauthenticated } from "../kernel/errors.js";
-import { readInTenant } from "../kernel/db/db.js";
-import { PERMISSION_PROVIDER } from "../kernel/tokens.js";
-import type { IPermissionProvider } from "../contracts/index.js";
+import { Forbidden, Unauthenticated } from "@core/kernel/errors.js";
+import { readInTenant } from "@core/kernel/db/db.js";
+import { PERMISSION_PROVIDER } from "@core/kernel/tokens.js";
+import type { IPermissionProvider } from "@core/contracts/index.js";
 import type { RequestWithPrincipal } from "./principal.js";
 import { PERMISSION_KEY } from "./decorators.js";
 

@@ -1,10 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { TestingModule } from "@nestjs/testing";
-import { fixedClock } from "../../../../../../core/kernel/clock.js";
-import { asUser, createMizanTestApp, get, hasTestDb, seedFirm, type SeededFirm } from "../../tests/helpers.js";
-import { ClientsService } from "../../clients/clients-service.js";
-import { BillingService } from "../billing-service.js";
-import { invoiceTotals } from "../invoice.domain.js";
+import { fixedClock } from "@core/kernel/clock.js";
+import { asUser, createMizanTestApp, get, hasTestDb, seedFirm, type SeededFirm } from "@app/lawfirm/tests/helpers.js";
+import { ClientsService } from "@app/lawfirm/clients/clients-service.js";
+import { BillingService } from "@app/lawfirm/billing/billing-service.js";
+import { invoiceTotals } from "@app/lawfirm/billing/invoice.domain.js";
 
 const suite = hasTestDb ? describe : describe.skip;
 

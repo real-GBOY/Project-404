@@ -1,9 +1,9 @@
 import crypto from "node:crypto";
 import { Inject, Injectable } from "@nestjs/common";
-import { currentExecutor } from "../../kernel/db/db.js";
-import { newId } from "../../kernel/id.js";
-import type { Clock } from "../../kernel/clock.js";
-import { CLOCK } from "../../kernel/tokens.js";
+import { currentExecutor } from "@core/kernel/db/db.js";
+import { newId } from "@core/kernel/id.js";
+import type { Clock } from "@core/kernel/clock.js";
+import { CLOCK } from "@core/kernel/tokens.js";
 
 export type VerificationPurpose = "email_verification" | "password_reset";
 

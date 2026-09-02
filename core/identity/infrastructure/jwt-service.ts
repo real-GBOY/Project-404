@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import jwt from "jsonwebtoken";
-import type { Clock } from "../../kernel/clock.js";
+import type { Clock } from "@core/kernel/clock.js";
 
 /**
  * Access tokens are short-lived JWTs (§2). Refresh tokens are opaque random

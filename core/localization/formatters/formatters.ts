@@ -1,4 +1,4 @@
-import { languageOf } from "../domain/locale.js";
+import { languageOf } from "@core/localization/domain/locale.js";
 
 /**
  * Locale-aware formatting (§7.10 / §12A). Egypt-first defaults: `ar-EG` /

@@ -1,9 +1,9 @@
 import { Global, Injectable, Module, type OnApplicationShutdown } from "@nestjs/common";
 import { getConfig } from "./config.js";
 import { systemClock } from "./clock.js";
-import { closeDb, unitOfWork } from "./db/db.js";
-import { closePool } from "./db/pool.js";
-import { loggingErrorTracker } from "../observability/errors/error-tracker.js";
+import { closeDb, unitOfWork } from "@core/kernel/db/db.js";
+import { closePool } from "@core/kernel/db/pool.js";
+import { loggingErrorTracker } from "@core/observability/errors/error-tracker.js";
 import { tenantContext } from "./tenant.js";
 import { CLOCK, CONFIG, ERROR_TRACKER, TENANT_CONTEXT, UNIT_OF_WORK } from "./tokens.js";
 

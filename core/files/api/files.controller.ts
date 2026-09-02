@@ -13,16 +13,16 @@ import {
 } from "@nestjs/common";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { Forbidden, ValidationError } from "../../kernel/errors.js";
-import { readInTenant } from "../../kernel/db/db.js";
-import { PERMISSION_PROVIDER } from "../../kernel/tokens.js";
-import { CurrentUser, RequirePermission } from "../../http/decorators.js";
-import { JwtAuthGuard } from "../../http/jwt-auth.guard.js";
-import { PermissionGuard } from "../../http/permission.guard.js";
-import { ZodQuery } from "../../http/zod.pipe.js";
-import type { Principal } from "../../http/principal.js";
-import type { IPermissionProvider } from "../../contracts/index.js";
-import { FileStorageService } from "../infrastructure/file-storage.js";
+import { Forbidden, ValidationError } from "@core/kernel/errors.js";
+import { readInTenant } from "@core/kernel/db/db.js";
+import { PERMISSION_PROVIDER } from "@core/kernel/tokens.js";
+import { CurrentUser, RequirePermission } from "@core/http/decorators.js";
+import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
+import { PermissionGuard } from "@core/http/permission.guard.js";
+import { ZodQuery } from "@core/http/zod.pipe.js";
+import type { Principal } from "@core/http/principal.js";
+import type { IPermissionProvider } from "@core/contracts/index.js";
+import { FileStorageService } from "@core/files/infrastructure/file-storage.js";
 
 const uploadQuery = z.object({ visibility: z.enum(["private", "public"]).optional() });
 

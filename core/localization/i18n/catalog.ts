@@ -1,6 +1,6 @@
 import ar from "./ar.json";
 import en from "./en.json";
-import { languageOf } from "../domain/locale.js";
+import { languageOf } from "@core/localization/domain/locale.js";
 
 type Bundle = Record<string, unknown>;
 

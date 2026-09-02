@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import type { IUserProvider, User } from "../../contracts/index.js";
+import type { IUserProvider, User } from "@core/contracts/index.js";
 import { UserRepository } from "./user-repository.js";
 
 /**

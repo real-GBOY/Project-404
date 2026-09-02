@@ -1,9 +1,9 @@
 import { Body, Controller, Get, Param, Patch, UseGuards } from "@nestjs/common";
 import { z } from "zod";
-import { RequirePermission } from "../../../../../core/http/decorators.js";
-import { JwtAuthGuard } from "../../../../../core/http/jwt-auth.guard.js";
-import { PermissionGuard } from "../../../../../core/http/permission.guard.js";
-import { ZodBody } from "../../../../../core/http/zod.pipe.js";
+import { RequirePermission } from "@core/http/decorators.js";
+import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
+import { PermissionGuard } from "@core/http/permission.guard.js";
+import { ZodBody } from "@core/http/zod.pipe.js";
 import { TeamService } from "./team-service.js";
 
 const updateSchema = z.object({

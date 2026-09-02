@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
-import { currentExecutor } from "../../kernel/db/db.js";
-import { requireOrganizationId } from "../../kernel/tenant.js";
+import { currentExecutor } from "@core/kernel/db/db.js";
+import { requireOrganizationId } from "@core/kernel/tenant.js";
 
 export interface FileRow {
   id: string;

@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
-import { currentExecutor } from "../../kernel/db/db.js";
-import { newId } from "../../kernel/id.js";
-import type { Organization, OrganizationMember } from "../domain/organization.js";
+import { currentExecutor } from "@core/kernel/db/db.js";
+import { newId } from "@core/kernel/id.js";
+import type { Organization, OrganizationMember } from "@core/organizations/domain/organization.js";
 
 @Injectable()
 export class OrganizationRepository {

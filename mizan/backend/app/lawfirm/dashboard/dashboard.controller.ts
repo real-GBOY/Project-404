@@ -1,7 +1,7 @@
 import { Controller, Get, UseGuards } from "@nestjs/common";
-import { RequirePermission } from "../../../../../core/http/decorators.js";
-import { JwtAuthGuard } from "../../../../../core/http/jwt-auth.guard.js";
-import { PermissionGuard } from "../../../../../core/http/permission.guard.js";
+import { RequirePermission } from "@core/http/decorators.js";
+import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
+import { PermissionGuard } from "@core/http/permission.guard.js";
 import { DashboardService } from "./dashboard-service.js";
 
 @Controller("dashboard")

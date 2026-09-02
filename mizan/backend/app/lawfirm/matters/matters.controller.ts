@@ -10,11 +10,11 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common";
-import { CurrentUser, RequirePermission } from "../../../../../core/http/decorators.js";
-import { JwtAuthGuard } from "../../../../../core/http/jwt-auth.guard.js";
-import { PermissionGuard } from "../../../../../core/http/permission.guard.js";
-import { ZodBody, ZodQuery } from "../../../../../core/http/zod.pipe.js";
-import type { Principal } from "../../../../../core/http/principal.js";
+import { CurrentUser, RequirePermission } from "@core/http/decorators.js";
+import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
+import { PermissionGuard } from "@core/http/permission.guard.js";
+import { ZodBody, ZodQuery } from "@core/http/zod.pipe.js";
+import type { Principal } from "@core/http/principal.js";
 import { MattersService } from "./matters-service.js";
 import {
   addParticipantSchema,

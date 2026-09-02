@@ -1,6 +1,6 @@
 import { forwardRef, Module } from "@nestjs/common";
-import type { AuricConfig } from "../kernel/config.js";
-import type { Clock } from "../kernel/clock.js";
+import type { AuricConfig } from "@core/kernel/config.js";
+import type { Clock } from "@core/kernel/clock.js";
 import {
   CLOCK,
   CONFIG,
@@ -8,19 +8,19 @@ import {
   PASSWORD_HASHER,
   REQUIRE_EMAIL_VERIFICATION,
   USER_PROVIDER,
-} from "../kernel/tokens.js";
-import { AuditModule } from "../audit/audit.module.js";
-import { EventsModule } from "../events/events.module.js";
-import { RbacModule } from "../rbac/rbac.module.js";
-import { OrganizationsModule } from "../organizations/organizations.module.js";
-import { UserRepository } from "./infrastructure/user-repository.js";
-import { RefreshTokenRepository } from "./infrastructure/refresh-token-repository.js";
-import { VerificationTokenRepository } from "./infrastructure/verification-token-repository.js";
-import { argon2Hasher } from "./infrastructure/password-hasher.js";
-import { createJwtService } from "./infrastructure/jwt-service.js";
-import { IdentityUserProvider } from "./infrastructure/user-provider.js";
-import { IdentityService } from "./application/identity-service.js";
-import { AuthController, MeController } from "./api/auth.controller.js";
+} from "@core/kernel/tokens.js";
+import { AuditModule } from "@core/audit/audit.module.js";
+import { EventsModule } from "@core/events/events.module.js";
+import { RbacModule } from "@core/rbac/rbac.module.js";
+import { OrganizationsModule } from "@core/organizations/organizations.module.js";
+import { UserRepository } from "@core/identity/infrastructure/user-repository.js";
+import { RefreshTokenRepository } from "@core/identity/infrastructure/refresh-token-repository.js";
+import { VerificationTokenRepository } from "@core/identity/infrastructure/verification-token-repository.js";
+import { argon2Hasher } from "@core/identity/infrastructure/password-hasher.js";
+import { createJwtService } from "@core/identity/infrastructure/jwt-service.js";
+import { IdentityUserProvider } from "@core/identity/infrastructure/user-provider.js";
+import { IdentityService } from "@core/identity/application/identity-service.js";
+import { AuthController, MeController } from "@core/identity/api/auth.controller.js";
 
 /**
  * Identity & Authentication (§7.1). `USER_PROVIDER` is the `IUserProvider` other

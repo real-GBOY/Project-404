@@ -1,12 +1,12 @@
 import { forwardRef, Module } from "@nestjs/common";
-import { ORGANIZATION_PROVIDER } from "../kernel/tokens.js";
-import { AuditModule } from "../audit/audit.module.js";
-import { EventsModule } from "../events/events.module.js";
-import { IdentityModule } from "../identity/identity.module.js";
-import { OrganizationRepository } from "./infrastructure/organization-repository.js";
-import { OrganizationProvider } from "./infrastructure/organization-provider.js";
-import { OrganizationService } from "./application/organization-service.js";
-import { OrganizationsController } from "./api/organizations.controller.js";
+import { ORGANIZATION_PROVIDER } from "@core/kernel/tokens.js";
+import { AuditModule } from "@core/audit/audit.module.js";
+import { EventsModule } from "@core/events/events.module.js";
+import { IdentityModule } from "@core/identity/identity.module.js";
+import { OrganizationRepository } from "@core/organizations/infrastructure/organization-repository.js";
+import { OrganizationProvider } from "@core/organizations/infrastructure/organization-provider.js";
+import { OrganizationService } from "@core/organizations/application/organization-service.js";
+import { OrganizationsController } from "@core/organizations/api/organizations.controller.js";
 
 /**
  * Organizations & Users (§7.4). An organization *is* the tenant

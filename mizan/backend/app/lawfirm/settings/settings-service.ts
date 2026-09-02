@@ -1,9 +1,9 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { UnitOfWork } from "../../../../../core/kernel/db/db.js";
-import { readInTenant } from "../../../../../core/kernel/db/db.js";
-import { AUDIT_LOGGER, ORGANIZATION_PROVIDER, UNIT_OF_WORK } from "../../../../../core/kernel/tokens.js";
-import { requireOrganizationId } from "../../../../../core/kernel/tenant.js";
-import type { IAuditLogger, IOrganizationProvider } from "../../../../../core/contracts/index.js";
+import type { UnitOfWork } from "@core/kernel/db/db.js";
+import { readInTenant } from "@core/kernel/db/db.js";
+import { AUDIT_LOGGER, ORGANIZATION_PROVIDER, UNIT_OF_WORK } from "@core/kernel/tokens.js";
+import { requireOrganizationId } from "@core/kernel/tenant.js";
+import type { IAuditLogger, IOrganizationProvider } from "@core/contracts/index.js";
 import { SettingsRepository, type LawFirmSettings } from "./settings-repository.js";
 
 /**

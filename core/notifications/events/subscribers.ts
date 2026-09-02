@@ -1,6 +1,6 @@
-import type { EventRegistry } from "../../events/registry.js";
-import { IdentityEvents } from "../../identity/events/events.js";
-import { NotificationService, NotificationEvents } from "../application/notification-service.js";
+import type { EventRegistry } from "@core/events/registry.js";
+import { IdentityEvents } from "@core/identity/events/events.js";
+import { NotificationService, NotificationEvents } from "@core/notifications/application/notification-service.js";
 
 /**
  * Wires the Notifications module's reactions to events from other modules.

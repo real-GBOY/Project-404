@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
-import { currentExecutor } from "../../../../../core/kernel/db/db.js";
-import { requireOrganizationId } from "../../../../../core/kernel/tenant.js";
+import { currentExecutor } from "@core/kernel/db/db.js";
+import { requireOrganizationId } from "@core/kernel/tenant.js";
 
 const LAWFIRM_ROLE_KEYS = ["firm_admin", "partner", "lawyer", "paralegal", "finance", "read_only"];
 

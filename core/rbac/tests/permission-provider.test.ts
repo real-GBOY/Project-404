@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import { RbacPermissionProvider } from "../infrastructure/permission-provider.js";
-import type { RbacRepository } from "../infrastructure/rbac-repository.js";
-import { withContext } from "../../kernel/logging/context.js";
+import { RbacPermissionProvider } from "@core/rbac/infrastructure/permission-provider.js";
+import type { RbacRepository } from "@core/rbac/infrastructure/rbac-repository.js";
+import { withContext } from "@core/kernel/logging/context.js";
 
 /** A stub repository — `can()` is the only logic under test here. */
 function providerHolding(keys: string[]) {

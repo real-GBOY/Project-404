@@ -1,8 +1,8 @@
-import type { UnitOfWork } from "../../kernel/db/db.js";
-import { moduleLogger } from "../../kernel/logging/logger.js";
-import { SYSTEM_ROLES } from "../domain/role.js";
-import type { PermissionDefinition } from "../domain/permission.js";
-import type { RbacRepository } from "../infrastructure/rbac-repository.js";
+import type { UnitOfWork } from "@core/kernel/db/db.js";
+import { moduleLogger } from "@core/kernel/logging/logger.js";
+import { SYSTEM_ROLES } from "@core/rbac/domain/role.js";
+import type { PermissionDefinition } from "@core/rbac/domain/permission.js";
+import type { RbacRepository } from "@core/rbac/infrastructure/rbac-repository.js";
 
 const log = moduleLogger("rbac");
 

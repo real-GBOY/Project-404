@@ -1,12 +1,12 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { readInTenant } from "../../../../../core/kernel/db/db.js";
-import { ValidationError } from "../../../../../core/kernel/errors.js";
-import { RbacRepository } from "../../../../../core/rbac/infrastructure/rbac-repository.js";
-import { RbacService } from "../../../../../core/rbac/application/rbac-service.js";
-import { AuditRepository } from "../../../../../core/audit/infrastructure/audit-repository.js";
-import { LawfirmDirectory } from "../shared/directory.js";
-import { UNIT_OF_WORK } from "../../../../../core/kernel/tokens.js";
-import type { UnitOfWork } from "../../../../../core/kernel/db/db.js";
+import { readInTenant } from "@core/kernel/db/db.js";
+import { ValidationError } from "@core/kernel/errors.js";
+import { RbacRepository } from "@core/rbac/infrastructure/rbac-repository.js";
+import { RbacService } from "@core/rbac/application/rbac-service.js";
+import { AuditRepository } from "@core/audit/infrastructure/audit-repository.js";
+import { LawfirmDirectory } from "@app/lawfirm/shared/directory.js";
+import { UNIT_OF_WORK } from "@core/kernel/tokens.js";
+import type { UnitOfWork } from "@core/kernel/db/db.js";
 import { AdminRepository } from "./admin-repository.js";
 
 /** Best-effort deep-link for an in-app notification, from its `data` payload. */

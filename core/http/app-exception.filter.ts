@@ -6,11 +6,11 @@ import {
   Injectable,
 } from "@nestjs/common";
 import type { FastifyReply } from "fastify";
-import { AppError, httpStatusForError } from "../kernel/errors.js";
-import { getContext } from "../kernel/logging/context.js";
-import { rootLogger } from "../kernel/logging/logger.js";
-import { ERROR_TRACKER } from "../kernel/tokens.js";
-import type { ErrorTracker } from "../observability/errors/error-tracker.js";
+import { AppError, httpStatusForError } from "@core/kernel/errors.js";
+import { getContext } from "@core/kernel/logging/context.js";
+import { rootLogger } from "@core/kernel/logging/logger.js";
+import { ERROR_TRACKER } from "@core/kernel/tokens.js";
+import type { ErrorTracker } from "@core/observability/errors/error-tracker.js";
 
 /**
  * The single place errors become responses (§3.4). Domain/application code

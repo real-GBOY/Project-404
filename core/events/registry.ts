@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import type { DomainEvent } from "../contracts/domain-event.js";
+import type { DomainEvent } from "@core/contracts/domain-event.js";
 
 /**
  * Event subscription registry (§6.1).

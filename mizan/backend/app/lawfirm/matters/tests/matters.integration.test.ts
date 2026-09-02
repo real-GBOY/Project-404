@@ -1,9 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { TestingModule } from "@nestjs/testing";
-import { fixedClock } from "../../../../../../core/kernel/clock.js";
-import { asUser, createMizanTestApp, get, hasTestDb, seedFirm, type SeededFirm } from "../../tests/helpers.js";
-import { ClientsService } from "../../clients/clients-service.js";
-import { MattersService } from "../matters-service.js";
+import { fixedClock } from "@core/kernel/clock.js";
+import { asUser, createMizanTestApp, get, hasTestDb, seedFirm, type SeededFirm } from "@app/lawfirm/tests/helpers.js";
+import { ClientsService } from "@app/lawfirm/clients/clients-service.js";
+import { MattersService } from "@app/lawfirm/matters/matters-service.js";
 
 const suite = hasTestDb ? describe : describe.skip;
 

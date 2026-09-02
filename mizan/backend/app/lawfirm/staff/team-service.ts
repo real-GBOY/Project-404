@@ -1,12 +1,12 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { UnitOfWork } from "../../../../../core/kernel/db/db.js";
-import { readInTenant } from "../../../../../core/kernel/db/db.js";
-import { NotFound } from "../../../../../core/kernel/errors.js";
-import { CLOCK, UNIT_OF_WORK, USER_PROVIDER } from "../../../../../core/kernel/tokens.js";
-import type { Clock } from "../../../../../core/kernel/clock.js";
-import type { IUserProvider } from "../../../../../core/contracts/index.js";
-import { AdminService } from "../admin/admin-service.js";
-import { LawfirmQueries } from "../shared/lawfirm-queries.js";
+import type { UnitOfWork } from "@core/kernel/db/db.js";
+import { readInTenant } from "@core/kernel/db/db.js";
+import { NotFound } from "@core/kernel/errors.js";
+import { CLOCK, UNIT_OF_WORK, USER_PROVIDER } from "@core/kernel/tokens.js";
+import type { Clock } from "@core/kernel/clock.js";
+import type { IUserProvider } from "@core/contracts/index.js";
+import { AdminService } from "@app/lawfirm/admin/admin-service.js";
+import { LawfirmQueries } from "@app/lawfirm/shared/lawfirm-queries.js";
 import { StaffRepository, type StaffProfileRow } from "./staff-repository.js";
 
 const FEE_ROLES = new Set(["firm_admin", "partner", "lawyer"]);

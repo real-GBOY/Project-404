@@ -1,4 +1,4 @@
-import type { PermissionDefinition } from "../shared/rbac.js";
+import type { PermissionDefinition } from "@app/lawfirm/shared/rbac.js";
 
 /** Permissions the Tasks module contributes to RBAC (§3.2). Tasks include court/statutory deadlines. */
 export const taskPermissions: PermissionDefinition[] = [

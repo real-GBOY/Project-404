@@ -1,15 +1,15 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { UnitOfWork } from "../../../../../core/kernel/db/db.js";
-import { currentExecutor, readInTenant } from "../../../../../core/kernel/db/db.js";
-import { NotFound, ValidationError } from "../../../../../core/kernel/errors.js";
-import { AUDIT_LOGGER, CLOCK, EVENT_BUS, UNIT_OF_WORK } from "../../../../../core/kernel/tokens.js";
-import type { Clock } from "../../../../../core/kernel/clock.js";
-import type { IAuditLogger, IEventBus } from "../../../../../core/contracts/index.js";
-import { ActivityService } from "../activity/activity-service.js";
-import { LawfirmDirectory } from "../shared/directory.js";
-import { LawfirmQueries } from "../shared/lawfirm-queries.js";
-import { moneyList } from "../shared/money.js";
-import { SettingsService } from "../settings/settings-service.js";
+import type { UnitOfWork } from "@core/kernel/db/db.js";
+import { currentExecutor, readInTenant } from "@core/kernel/db/db.js";
+import { NotFound, ValidationError } from "@core/kernel/errors.js";
+import { AUDIT_LOGGER, CLOCK, EVENT_BUS, UNIT_OF_WORK } from "@core/kernel/tokens.js";
+import type { Clock } from "@core/kernel/clock.js";
+import type { IAuditLogger, IEventBus } from "@core/contracts/index.js";
+import { ActivityService } from "@app/lawfirm/activity/activity-service.js";
+import { LawfirmDirectory } from "@app/lawfirm/shared/directory.js";
+import { LawfirmQueries } from "@app/lawfirm/shared/lawfirm-queries.js";
+import { moneyList } from "@app/lawfirm/shared/money.js";
+import { SettingsService } from "@app/lawfirm/settings/settings-service.js";
 import { matterAssigned, matterClosed, matterOpened } from "./matter.events.js";
 import { MattersRepository, type MatterRow } from "./matters-repository.js";
 

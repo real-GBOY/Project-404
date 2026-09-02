@@ -1,14 +1,14 @@
-import type { PermissionDefinition } from "./shared/rbac.js";
-import { clientPermissions } from "./clients/permissions.js";
-import { matterPermissions } from "./matters/permissions.js";
-import { hearingPermissions } from "./hearings/permissions.js";
-import { taskPermissions } from "./tasks/permissions.js";
-import { documentPermissions } from "./documents/permissions.js";
-import { billingPermissions } from "./billing/permissions.js";
-import { staffPermissions } from "./staff/permissions.js";
-import { settingsPermissions } from "./settings/permissions.js";
-import { dashboardPermissions } from "./dashboard/permissions.js";
-import { calendarPermissions } from "./calendar/permissions.js";
+import type { PermissionDefinition } from "@app/lawfirm/shared/rbac.js";
+import { clientPermissions } from "@app/lawfirm/clients/permissions.js";
+import { matterPermissions } from "@app/lawfirm/matters/permissions.js";
+import { hearingPermissions } from "@app/lawfirm/hearings/permissions.js";
+import { taskPermissions } from "@app/lawfirm/tasks/permissions.js";
+import { documentPermissions } from "@app/lawfirm/documents/permissions.js";
+import { billingPermissions } from "@app/lawfirm/billing/permissions.js";
+import { staffPermissions } from "@app/lawfirm/staff/permissions.js";
+import { settingsPermissions } from "@app/lawfirm/settings/permissions.js";
+import { dashboardPermissions } from "@app/lawfirm/dashboard/permissions.js";
+import { calendarPermissions } from "@app/lawfirm/calendar/permissions.js";
 
 /**
  * Every permission the law-firm domain contributes to Core RBAC. Seeded by

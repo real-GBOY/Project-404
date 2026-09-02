@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { slugify } from "../domain/organization.js";
+import { slugify } from "@core/organizations/domain/organization.js";
 
 describe("slugify", () => {
   it("lower-cases and hyphenates whitespace", () => {

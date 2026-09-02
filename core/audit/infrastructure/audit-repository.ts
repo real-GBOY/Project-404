@@ -1,9 +1,9 @@
 import { Injectable } from "@nestjs/common";
-import { currentExecutor } from "../../kernel/db/db.js";
-import { newId } from "../../kernel/id.js";
-import type { AuditEntry } from "../../contracts/index.js";
-import { getContext } from "../../kernel/logging/context.js";
-import { currentOrganizationId } from "../../kernel/tenant.js";
+import { currentExecutor } from "@core/kernel/db/db.js";
+import { newId } from "@core/kernel/id.js";
+import type { AuditEntry } from "@core/contracts/index.js";
+import { getContext } from "@core/kernel/logging/context.js";
+import { currentOrganizationId } from "@core/kernel/tenant.js";
 
 export interface AuditRecord {
   id: string;

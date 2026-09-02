@@ -1,5 +1,5 @@
 import { createParamDecorator, SetMetadata, type ExecutionContext } from "@nestjs/common";
-import { Unauthenticated } from "../kernel/errors.js";
+import { Unauthenticated } from "@core/kernel/errors.js";
 import type { Principal, RequestWithPrincipal } from "./principal.js";
 
 /** The authenticated caller (set by `JwtAuthGuard`). Throws 401 if absent. */

@@ -1,8 +1,8 @@
 import { Injectable } from "@nestjs/common";
-import { currentExecutor } from "../../kernel/db/db.js";
-import { newId } from "../../kernel/id.js";
-import type { Role } from "../domain/role.js";
-import { permissionKey, type PermissionDefinition } from "../domain/permission.js";
+import { currentExecutor } from "@core/kernel/db/db.js";
+import { newId } from "@core/kernel/id.js";
+import type { Role } from "@core/rbac/domain/role.js";
+import { permissionKey, type PermissionDefinition } from "@core/rbac/domain/permission.js";
 
 /**
  * Storage for roles, permissions, and their assignments. One place knows the

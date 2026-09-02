@@ -1,5 +1,5 @@
 import pg from "pg";
-import { getConfig } from "../config.js";
+import { getConfig } from "@core/kernel/config.js";
 
 /**
  * Connection pools for the process. Everything DB goes through Kysely (db.ts);

@@ -1,6 +1,6 @@
 import type { RoleSeed } from "./rbac.js";
 import { permKey } from "./rbac.js";
-import { LAWFIRM_PERMISSIONS } from "../permissions.js";
+import { LAWFIRM_PERMISSIONS } from "@app/lawfirm/permissions.js";
 
 /**
  * Global roles the client app seeds into Core RBAC (docs/tenancy.md: roles are

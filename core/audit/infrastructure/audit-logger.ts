@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
-import type { IAuditLogger, AuditEntry } from "../../contracts/index.js";
-import { moduleLogger } from "../../kernel/logging/logger.js";
+import type { IAuditLogger, AuditEntry } from "@core/contracts/index.js";
+import { moduleLogger } from "@core/kernel/logging/logger.js";
 import { AuditRepository } from "./audit-repository.js";
 
 const log = moduleLogger("audit");

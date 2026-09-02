@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
-import type { IPermissionProvider } from "../../contracts/index.js";
-import { currentOrganizationId, requireOrganizationId } from "../../kernel/tenant.js";
-import { permissionMatches } from "../domain/permission.js";
+import type { IPermissionProvider } from "@core/contracts/index.js";
+import { currentOrganizationId, requireOrganizationId } from "@core/kernel/tenant.js";
+import { permissionMatches } from "@core/rbac/domain/permission.js";
 import { RbacRepository } from "./rbac-repository.js";
 
 /**

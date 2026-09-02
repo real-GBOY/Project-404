@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { RbacModule } from "../../../../../core/index.js";
+import { RbacModule } from "@core/index.js";
 import { DemoSeeder } from "./demo-seeder.js";
 
 /**

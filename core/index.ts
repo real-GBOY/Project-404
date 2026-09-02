@@ -6,23 +6,23 @@
 export { AppModule } from "./app.module.js";
 export { CORE_VERSION } from "./version.js";
 
-export { KernelModule } from "./kernel/kernel.module.js";
-export { EventsModule } from "./events/events.module.js";
-export { AuditModule } from "./audit/audit.module.js";
-export { RbacModule } from "./rbac/rbac.module.js";
-export { IdentityModule } from "./identity/identity.module.js";
-export { OrganizationsModule } from "./organizations/organizations.module.js";
-export { NotificationsModule } from "./notifications/notifications.module.js";
-export { FilesModule } from "./files/files.module.js";
-export { SecurityModule } from "./http/security.module.js";
-export { SeedService } from "./bootstrap/seed.service.js";
-export { migrateToLatest, migrationStatus } from "./kernel/db/migrate.js";
+export { KernelModule } from "@core/kernel/kernel.module.js";
+export { EventsModule } from "@core/events/events.module.js";
+export { AuditModule } from "@core/audit/audit.module.js";
+export { RbacModule } from "@core/rbac/rbac.module.js";
+export { IdentityModule } from "@core/identity/identity.module.js";
+export { OrganizationsModule } from "@core/organizations/organizations.module.js";
+export { NotificationsModule } from "@core/notifications/notifications.module.js";
+export { FilesModule } from "@core/files/files.module.js";
+export { SecurityModule } from "@core/http/security.module.js";
+export { SeedService } from "@core/bootstrap/seed.service.js";
+export { migrateToLatest, migrationStatus } from "@core/kernel/db/migrate.js";
 
-export * from "./kernel/tokens.js";
-export type * from "./contracts/index.js";
+export * from "@core/kernel/tokens.js";
+export type * from "@core/contracts/index.js";
 export {
   currentOrganizationId,
   requireOrganizationId,
   isSystemContext,
   tenantContext,
-} from "./kernel/tenant.js";
+} from "@core/kernel/tenant.js";

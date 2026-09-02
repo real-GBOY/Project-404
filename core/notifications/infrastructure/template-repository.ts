@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
-import { currentExecutor } from "../../kernel/db/db.js";
-import { newId } from "../../kernel/id.js";
-import { languageOf } from "../../localization/domain/locale.js";
+import { currentExecutor } from "@core/kernel/db/db.js";
+import { newId } from "@core/kernel/id.js";
+import { languageOf } from "@core/localization/domain/locale.js";
 
 export interface RenderedTemplate {
   subject: string | null;

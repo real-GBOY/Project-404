@@ -1,17 +1,17 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { TestingModule } from "@nestjs/testing";
-import { fixedClock } from "../kernel/clock.js";
-import { currentExecutor, unitOfWork } from "../kernel/db/db.js";
-import { currentOrganizationId } from "../kernel/tenant.js";
-import { EVENT_BUS, JWT_SERVICE, USER_PROVIDER } from "../kernel/tokens.js";
-import type { IEventBus, IUserProvider } from "../contracts/index.js";
-import { EventRegistry } from "../events/registry.js";
-import { OutboxWorker } from "../events/outbox/outbox-worker.js";
-import { IdentityService } from "../identity/application/identity-service.js";
-import type { JwtService } from "../identity/infrastructure/jwt-service.js";
-import { RbacService } from "../rbac/application/rbac-service.js";
-import { RbacPermissionProvider } from "../rbac/infrastructure/permission-provider.js";
-import { OrganizationService } from "../organizations/application/organization-service.js";
+import { fixedClock } from "@core/kernel/clock.js";
+import { currentExecutor, unitOfWork } from "@core/kernel/db/db.js";
+import { currentOrganizationId } from "@core/kernel/tenant.js";
+import { EVENT_BUS, JWT_SERVICE, USER_PROVIDER } from "@core/kernel/tokens.js";
+import type { IEventBus, IUserProvider } from "@core/contracts/index.js";
+import { EventRegistry } from "@core/events/registry.js";
+import { OutboxWorker } from "@core/events/outbox/outbox-worker.js";
+import { IdentityService } from "@core/identity/application/identity-service.js";
+import type { JwtService } from "@core/identity/infrastructure/jwt-service.js";
+import { RbacService } from "@core/rbac/application/rbac-service.js";
+import { RbacPermissionProvider } from "@core/rbac/infrastructure/permission-provider.js";
+import { OrganizationService } from "@core/organizations/application/organization-service.js";
 import { asSystem, asUser, createTestCore, get, hasTestDb } from "./helpers.js";
 
 /**

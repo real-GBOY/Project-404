@@ -13,12 +13,12 @@ import {
 } from "@nestjs/common";
 import type { FastifyRequest } from "fastify";
 import { z } from "zod";
-import { ValidationError } from "../../../../../core/kernel/errors.js";
-import { CurrentUser, RequirePermission } from "../../../../../core/http/decorators.js";
-import { JwtAuthGuard } from "../../../../../core/http/jwt-auth.guard.js";
-import { PermissionGuard } from "../../../../../core/http/permission.guard.js";
-import { ZodBody, ZodQuery } from "../../../../../core/http/zod.pipe.js";
-import type { Principal } from "../../../../../core/http/principal.js";
+import { ValidationError } from "@core/kernel/errors.js";
+import { CurrentUser, RequirePermission } from "@core/http/decorators.js";
+import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
+import { PermissionGuard } from "@core/http/permission.guard.js";
+import { ZodBody, ZodQuery } from "@core/http/zod.pipe.js";
+import type { Principal } from "@core/http/principal.js";
 import { DocumentsService } from "./documents-service.js";
 
 const listQuery = z.object({

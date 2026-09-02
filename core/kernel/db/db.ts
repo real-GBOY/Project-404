@@ -1,7 +1,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { Kysely, PostgresDialect, sql, type Transaction } from "kysely";
 import { getPool, type PoolKind } from "./pool.js";
-import { getContext } from "../logging/context.js";
+import { getContext } from "@core/kernel/logging/context.js";
 import type { Database } from "./schema.js";
 
 /**

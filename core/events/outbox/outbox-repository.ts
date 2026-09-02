@@ -1,11 +1,11 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { currentExecutor } from "../../kernel/db/db.js";
-import { newId } from "../../kernel/id.js";
-import type { DomainEvent } from "../../contracts/domain-event.js";
-import type { Clock } from "../../kernel/clock.js";
-import type { AuricConfig } from "../../kernel/config.js";
-import { CLOCK, CONFIG } from "../../kernel/tokens.js";
-import { currentOrganizationId } from "../../kernel/tenant.js";
+import { currentExecutor } from "@core/kernel/db/db.js";
+import { newId } from "@core/kernel/id.js";
+import type { DomainEvent } from "@core/contracts/domain-event.js";
+import type { Clock } from "@core/kernel/clock.js";
+import type { AuricConfig } from "@core/kernel/config.js";
+import { CLOCK, CONFIG } from "@core/kernel/tokens.js";
+import { currentOrganizationId } from "@core/kernel/tenant.js";
 
 export interface OutboxRow {
   id: string;

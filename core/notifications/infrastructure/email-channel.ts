@@ -1,5 +1,5 @@
 import nodemailer, { type Transporter } from "nodemailer";
-import { moduleLogger } from "../../kernel/logging/logger.js";
+import { moduleLogger } from "@core/kernel/logging/logger.js";
 
 const log = moduleLogger("email");
 

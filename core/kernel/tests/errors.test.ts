@@ -8,7 +8,7 @@ import {
   Unauthenticated,
   ValidationError,
   httpStatusForError,
-} from "../errors.js";
+} from "@core/kernel/errors.js";
 
 describe("error factories", () => {
   it("ValidationError carries code, kind and details", () => {

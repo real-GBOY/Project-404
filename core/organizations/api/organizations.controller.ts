@@ -10,18 +10,18 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import type { z } from "zod";
-import { Forbidden } from "../../kernel/errors.js";
-import { CurrentUser, RequirePermission } from "../../http/decorators.js";
-import { JwtAuthGuard } from "../../http/jwt-auth.guard.js";
-import { PermissionGuard } from "../../http/permission.guard.js";
-import { ZodBody } from "../../http/zod.pipe.js";
-import type { Principal } from "../../http/principal.js";
-import { OrganizationService } from "../application/organization-service.js";
+import { Forbidden } from "@core/kernel/errors.js";
+import { CurrentUser, RequirePermission } from "@core/http/decorators.js";
+import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
+import { PermissionGuard } from "@core/http/permission.guard.js";
+import { ZodBody } from "@core/http/zod.pipe.js";
+import type { Principal } from "@core/http/principal.js";
+import { OrganizationService } from "@core/organizations/application/organization-service.js";
 import {
   addMemberSchema,
   createOrganizationSchema,
   updateSettingsSchema,
-} from "../validation/schemas.js";
+} from "@core/organizations/validation/schemas.js";
 
 /**
  * Organizations & membership (§7.4). The organization **is** the tenant

@@ -1,6 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { USER_PROVIDER } from "../../../../../core/kernel/tokens.js";
-import type { IUserProvider } from "../../../../../core/contracts/index.js";
+import { USER_PROVIDER } from "@core/kernel/tokens.js";
+import type { IUserProvider } from "@core/contracts/index.js";
 
 /**
  * Resolves Core user ids to display names for the denormalised fields the web

@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
-import { currentExecutor } from "../../../../../core/kernel/db/db.js";
-import { requireOrganizationId } from "../../../../../core/kernel/tenant.js";
-import { lawfirmId } from "../shared/ids.js";
+import { currentExecutor } from "@core/kernel/db/db.js";
+import { requireOrganizationId } from "@core/kernel/tenant.js";
+import { lawfirmId } from "@app/lawfirm/shared/ids.js";
 
 export type DocumentStatus = "draft" | "final" | "filed" | "signed";
 

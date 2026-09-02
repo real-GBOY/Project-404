@@ -1,9 +1,9 @@
 import { type CanActivate, type ExecutionContext, Inject, Injectable } from "@nestjs/common";
 import jwt from "jsonwebtoken";
-import { Unauthenticated } from "../kernel/errors.js";
-import { patchContext } from "../kernel/logging/context.js";
-import { JWT_SERVICE } from "../kernel/tokens.js";
-import type { JwtService } from "../identity/infrastructure/jwt-service.js";
+import { Unauthenticated } from "@core/kernel/errors.js";
+import { patchContext } from "@core/kernel/logging/context.js";
+import { JWT_SERVICE } from "@core/kernel/tokens.js";
+import type { JwtService } from "@core/identity/infrastructure/jwt-service.js";
 import type { RequestWithPrincipal } from "./principal.js";
 
 /**

@@ -1,4 +1,4 @@
-import type { PermissionDefinition } from "../shared/rbac.js";
+import type { PermissionDefinition } from "@app/lawfirm/shared/rbac.js";
 
 /**
  * Permissions the Billing module contributes to RBAC (§3.2). Covers invoices

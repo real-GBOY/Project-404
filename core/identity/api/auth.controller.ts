@@ -10,14 +10,14 @@ import {
 	UseGuards,
 } from "@nestjs/common";
 import type { z } from "zod";
-import { CurrentUser } from "../../http/decorators.js";
-import { JwtAuthGuard } from "../../http/jwt-auth.guard.js";
-import { ZodBody } from "../../http/zod.pipe.js";
-import type { Principal } from "../../http/principal.js";
-import { USER_PROVIDER } from "../../kernel/tokens.js";
+import { CurrentUser } from "@core/http/decorators.js";
+import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
+import { ZodBody } from "@core/http/zod.pipe.js";
+import type { Principal } from "@core/http/principal.js";
+import { USER_PROVIDER } from "@core/kernel/tokens.js";
 import { Inject } from "@nestjs/common";
-import type { IUserProvider } from "../../contracts/index.js";
-import { IdentityService } from "../application/identity-service.js";
+import type { IUserProvider } from "@core/contracts/index.js";
+import { IdentityService } from "@core/identity/application/identity-service.js";
 import {
 	loginSchema,
 	refreshSchema,
@@ -26,7 +26,7 @@ import {
 	requestPasswordResetSchema,
 	resetPasswordSchema,
 	verifyEmailSchema,
-} from "../validation/schemas.js";
+} from "@core/identity/validation/schemas.js";
 
 @Controller("auth")
 export class AuthController {

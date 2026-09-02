@@ -1,4 +1,4 @@
-import type { PermissionDefinition } from "../domain/permission.js";
+import type { PermissionDefinition } from "@core/rbac/domain/permission.js";
 
 /** Permissions governing RBAC administration itself. */
 export const rbacPermissions: PermissionDefinition[] = [

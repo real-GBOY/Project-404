@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common";
-import { IdentityModule } from "../../../../../core/index.js";
-import { ActivityRepository } from "../activity/activity-repository.js";
-import { ActivityService } from "../activity/activity-service.js";
+import { IdentityModule } from "@core/index.js";
+import { ActivityRepository } from "@app/lawfirm/activity/activity-repository.js";
+import { ActivityService } from "@app/lawfirm/activity/activity-service.js";
 import { LawfirmDirectory } from "./directory.js";
 import { LawfirmQueries } from "./lawfirm-queries.js";
 

@@ -1,8 +1,8 @@
 import { Module } from "@nestjs/common";
-import { AUDIT_LOGGER } from "../kernel/tokens.js";
-import { AuditRepository } from "./infrastructure/audit-repository.js";
-import { AuditLogger } from "./infrastructure/audit-logger.js";
-import { AuditController } from "./api/audit.controller.js";
+import { AUDIT_LOGGER } from "@core/kernel/tokens.js";
+import { AuditRepository } from "@core/audit/infrastructure/audit-repository.js";
+import { AuditLogger } from "@core/audit/infrastructure/audit-logger.js";
+import { AuditController } from "@core/audit/api/audit.controller.js";
 
 /**
  * Audit (§7.7) — append-only trail. `AUDIT_LOGGER` is the `IAuditLogger` every

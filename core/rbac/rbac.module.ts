@@ -1,13 +1,13 @@
 import { Module, type OnModuleInit } from "@nestjs/common";
-import { PERMISSION_PROVIDER } from "../kernel/tokens.js";
-import { AuditModule } from "../audit/audit.module.js";
-import { EventsModule } from "../events/events.module.js";
-import { EventRegistry } from "../events/registry.js";
-import { RbacRepository } from "./infrastructure/rbac-repository.js";
-import { RbacPermissionProvider } from "./infrastructure/permission-provider.js";
-import { RbacService } from "./application/rbac-service.js";
-import { RbacController } from "./api/rbac.controller.js";
-import { registerRbacSubscribers } from "./events/subscribers.js";
+import { PERMISSION_PROVIDER } from "@core/kernel/tokens.js";
+import { AuditModule } from "@core/audit/audit.module.js";
+import { EventsModule } from "@core/events/events.module.js";
+import { EventRegistry } from "@core/events/registry.js";
+import { RbacRepository } from "@core/rbac/infrastructure/rbac-repository.js";
+import { RbacPermissionProvider } from "@core/rbac/infrastructure/permission-provider.js";
+import { RbacService } from "@core/rbac/application/rbac-service.js";
+import { RbacController } from "@core/rbac/api/rbac.controller.js";
+import { registerRbacSubscribers } from "@core/rbac/events/subscribers.js";
 
 /**
  * RBAC (§7.2). `PERMISSION_PROVIDER` is the `IPermissionProvider` the HTTP

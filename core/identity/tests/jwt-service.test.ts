@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import jwt from "jsonwebtoken";
-import { createJwtService } from "../infrastructure/jwt-service.js";
-import { fixedClock } from "../../kernel/clock.js";
+import { createJwtService } from "@core/identity/infrastructure/jwt-service.js";
+import { fixedClock } from "@core/kernel/clock.js";
 
 const make = (over: Partial<Parameters<typeof createJwtService>[0]> = {}) =>
   createJwtService({

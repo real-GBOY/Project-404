@@ -1,13 +1,13 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { UnitOfWork } from "../../../../../core/kernel/db/db.js";
-import { readInTenant } from "../../../../../core/kernel/db/db.js";
-import { NotFound } from "../../../../../core/kernel/errors.js";
-import { CLOCK, FILE_STORAGE, UNIT_OF_WORK } from "../../../../../core/kernel/tokens.js";
-import type { Clock } from "../../../../../core/kernel/clock.js";
-import type { IFileStorage } from "../../../../../core/contracts/index.js";
-import { lawfirmId } from "../shared/ids.js";
-import { ActivityService } from "../activity/activity-service.js";
-import { LawfirmDirectory } from "../shared/directory.js";
+import type { UnitOfWork } from "@core/kernel/db/db.js";
+import { readInTenant } from "@core/kernel/db/db.js";
+import { NotFound } from "@core/kernel/errors.js";
+import { CLOCK, FILE_STORAGE, UNIT_OF_WORK } from "@core/kernel/tokens.js";
+import type { Clock } from "@core/kernel/clock.js";
+import type { IFileStorage } from "@core/contracts/index.js";
+import { lawfirmId } from "@app/lawfirm/shared/ids.js";
+import { ActivityService } from "@app/lawfirm/activity/activity-service.js";
+import { LawfirmDirectory } from "@app/lawfirm/shared/directory.js";
 import { DocumentsRepository, type DocumentRow, type DocumentStatus } from "./documents-repository.js";
 
 const DAY = 86_400_000;

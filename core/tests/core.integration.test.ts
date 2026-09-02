@@ -1,20 +1,20 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { TestingModule } from "@nestjs/testing";
-import { fixedClock } from "../kernel/clock.js";
-import { unitOfWork } from "../kernel/db/db.js";
-import { EVENT_BUS, JWT_SERVICE } from "../kernel/tokens.js";
-import type { IEventBus } from "../contracts/index.js";
-import { EventRegistry } from "../events/registry.js";
-import { OutboxRepository } from "../events/outbox/outbox-repository.js";
-import { OutboxWorker } from "../events/outbox/outbox-worker.js";
-import { IdentityService } from "../identity/application/identity-service.js";
-import type { JwtService } from "../identity/infrastructure/jwt-service.js";
-import { RbacService } from "../rbac/application/rbac-service.js";
-import { RbacPermissionProvider } from "../rbac/infrastructure/permission-provider.js";
-import { OrganizationService } from "../organizations/application/organization-service.js";
-import { NotificationService } from "../notifications/application/notification-service.js";
-import { AuditRepository } from "../audit/infrastructure/audit-repository.js";
-import type { EmailChannel, EmailMessage } from "../notifications/infrastructure/email-channel.js";
+import { fixedClock } from "@core/kernel/clock.js";
+import { unitOfWork } from "@core/kernel/db/db.js";
+import { EVENT_BUS, JWT_SERVICE } from "@core/kernel/tokens.js";
+import type { IEventBus } from "@core/contracts/index.js";
+import { EventRegistry } from "@core/events/registry.js";
+import { OutboxRepository } from "@core/events/outbox/outbox-repository.js";
+import { OutboxWorker } from "@core/events/outbox/outbox-worker.js";
+import { IdentityService } from "@core/identity/application/identity-service.js";
+import type { JwtService } from "@core/identity/infrastructure/jwt-service.js";
+import { RbacService } from "@core/rbac/application/rbac-service.js";
+import { RbacPermissionProvider } from "@core/rbac/infrastructure/permission-provider.js";
+import { OrganizationService } from "@core/organizations/application/organization-service.js";
+import { NotificationService } from "@core/notifications/application/notification-service.js";
+import { AuditRepository } from "@core/audit/infrastructure/audit-repository.js";
+import type { EmailChannel, EmailMessage } from "@core/notifications/infrastructure/email-channel.js";
 import { asSystem, asUser, createTestCore, get, hasTestDb } from "./helpers.js";
 
 /**

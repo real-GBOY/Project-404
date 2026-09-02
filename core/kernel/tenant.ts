@@ -1,6 +1,6 @@
-import type { ITenantContext } from "../contracts/index.js";
+import type { ITenantContext } from "@core/contracts/index.js";
 import { Unauthenticated } from "./errors.js";
-import { getContext } from "./logging/context.js";
+import { getContext } from "@core/kernel/logging/context.js";
 
 /**
  * Reading the active tenant off the ambient request context (§ docs/tenancy.md).

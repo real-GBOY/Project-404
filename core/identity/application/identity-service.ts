@@ -1,11 +1,11 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { UnitOfWork } from "../../kernel/db/db.js";
-import type { Clock } from "../../kernel/clock.js";
-import type { AuricConfig } from "../../kernel/config.js";
-import { newId } from "../../kernel/id.js";
-import { Conflict, Forbidden, Unauthenticated, ValidationError } from "../../kernel/errors.js";
-import { moduleLogger } from "../../kernel/logging/logger.js";
-import { withContext } from "../../kernel/logging/context.js";
+import type { UnitOfWork } from "@core/kernel/db/db.js";
+import type { Clock } from "@core/kernel/clock.js";
+import type { AuricConfig } from "@core/kernel/config.js";
+import { newId } from "@core/kernel/id.js";
+import { Conflict, Forbidden, Unauthenticated, ValidationError } from "@core/kernel/errors.js";
+import { moduleLogger } from "@core/kernel/logging/logger.js";
+import { withContext } from "@core/kernel/logging/context.js";
 import {
   AUDIT_LOGGER,
   CLOCK,
@@ -17,7 +17,7 @@ import {
   PERMISSION_PROVIDER,
   REQUIRE_EMAIL_VERIFICATION,
   UNIT_OF_WORK,
-} from "../../kernel/tokens.js";
+} from "@core/kernel/tokens.js";
 import type {
   IAuditLogger,
   IEventBus,
@@ -25,20 +25,20 @@ import type {
   IPermissionProvider,
   OrganizationMembership,
   User,
-} from "../../contracts/index.js";
-import { UserEntity } from "../domain/user.js";
-import { UserRepository } from "../infrastructure/user-repository.js";
-import { RefreshTokenRepository } from "../infrastructure/refresh-token-repository.js";
-import { VerificationTokenRepository } from "../infrastructure/verification-token-repository.js";
-import type { PasswordHasher } from "../infrastructure/password-hasher.js";
-import type { JwtService } from "../infrastructure/jwt-service.js";
+} from "@core/contracts/index.js";
+import { UserEntity } from "@core/identity/domain/user.js";
+import { UserRepository } from "@core/identity/infrastructure/user-repository.js";
+import { RefreshTokenRepository } from "@core/identity/infrastructure/refresh-token-repository.js";
+import { VerificationTokenRepository } from "@core/identity/infrastructure/verification-token-repository.js";
+import type { PasswordHasher } from "@core/identity/infrastructure/password-hasher.js";
+import type { JwtService } from "@core/identity/infrastructure/jwt-service.js";
 import {
   emailVerificationRequested,
   passwordResetRequested,
   userEmailVerified,
   userPasswordReset,
   userRegistered,
-} from "../events/events.js";
+} from "@core/identity/events/events.js";
 
 const log = moduleLogger("identity");
 

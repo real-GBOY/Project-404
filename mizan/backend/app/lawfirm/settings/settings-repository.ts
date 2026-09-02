@@ -1,8 +1,8 @@
 import { Injectable } from "@nestjs/common";
 import { sql } from "kysely";
-import { currentExecutor } from "../../../../../core/kernel/db/db.js";
-import { requireOrganizationId } from "../../../../../core/kernel/tenant.js";
-import { decimal } from "../shared/money.js";
+import { currentExecutor } from "@core/kernel/db/db.js";
+import { requireOrganizationId } from "@core/kernel/tenant.js";
+import { decimal } from "@app/lawfirm/shared/money.js";
 
 export interface StandardRate {
   role: string;

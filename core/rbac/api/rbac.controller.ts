@@ -8,17 +8,17 @@ import {
   Post,
   UseGuards,
 } from "@nestjs/common";
-import { JwtAuthGuard } from "../../http/jwt-auth.guard.js";
-import { PermissionGuard } from "../../http/permission.guard.js";
-import { RequirePermission, CurrentUser } from "../../http/decorators.js";
-import { ZodBody } from "../../http/zod.pipe.js";
-import type { Principal } from "../../http/principal.js";
-import { RbacService } from "../application/rbac-service.js";
+import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
+import { PermissionGuard } from "@core/http/permission.guard.js";
+import { RequirePermission, CurrentUser } from "@core/http/decorators.js";
+import { ZodBody } from "@core/http/zod.pipe.js";
+import type { Principal } from "@core/http/principal.js";
+import { RbacService } from "@core/rbac/application/rbac-service.js";
 import {
   assignRoleSchema,
   createRoleSchema,
   grantPermissionSchema,
-} from "../validation/schemas.js";
+} from "@core/rbac/validation/schemas.js";
 import type { z } from "zod";
 
 /**

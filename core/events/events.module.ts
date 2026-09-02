@@ -1,9 +1,9 @@
 import { Module } from "@nestjs/common";
-import { EVENT_BUS, WORKER_AUTOSTART } from "../kernel/tokens.js";
+import { EVENT_BUS, WORKER_AUTOSTART } from "@core/kernel/tokens.js";
 import { EventRegistry } from "./registry.js";
 import { EventBus } from "./event-bus.js";
-import { OutboxRepository } from "./outbox/outbox-repository.js";
-import { OutboxWorker } from "./outbox/outbox-worker.js";
+import { OutboxRepository } from "@core/events/outbox/outbox-repository.js";
+import { OutboxWorker } from "@core/events/outbox/outbox-worker.js";
 
 /**
  * The event system (§6): the in-process bus for DB-only handlers and the

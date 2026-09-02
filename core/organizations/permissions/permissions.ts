@@ -1,4 +1,4 @@
-import type { PermissionDefinition } from "../../rbac/domain/permission.js";
+import type { PermissionDefinition } from "@core/rbac/domain/permission.js";
 
 export const organizationPermissions: PermissionDefinition[] = [
   { action: "read", resource: "organization", description: "View organizations" },

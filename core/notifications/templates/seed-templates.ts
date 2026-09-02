@@ -1,4 +1,4 @@
-import type { TemplateSeed } from "../infrastructure/template-repository.js";
+import type { TemplateSeed } from "@core/notifications/infrastructure/template-repository.js";
 
 /**
  * Default bilingual templates seeded on startup (§7.5 "templated (bilingual)").

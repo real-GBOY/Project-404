@@ -1,11 +1,11 @@
 import { Controller, Get, Res } from "@nestjs/common";
 import type { FastifyReply } from "fastify";
 import { sql } from "kysely";
-import { getDb, unitOfWork } from "../kernel/db/db.js";
-import { runAsSystem } from "../kernel/logging/context.js";
-import { CORE_VERSION } from "../version.js";
-import { OutboxRepository } from "../events/outbox/outbox-repository.js";
-import { OutboxWorker } from "../events/outbox/outbox-worker.js";
+import { getDb, unitOfWork } from "@core/kernel/db/db.js";
+import { runAsSystem } from "@core/kernel/logging/context.js";
+import { CORE_VERSION } from "@core/version.js";
+import { OutboxRepository } from "@core/events/outbox/outbox-repository.js";
+import { OutboxWorker } from "@core/events/outbox/outbox-worker.js";
 
 /**
  * Health + outbox-worker monitoring (§7.12, §6.2) — the worker "can fail

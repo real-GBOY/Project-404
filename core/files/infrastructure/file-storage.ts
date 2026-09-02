@@ -1,12 +1,12 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { UnitOfWork } from "../../kernel/db/db.js";
-import { readInTenant } from "../../kernel/db/db.js";
-import type { Clock } from "../../kernel/clock.js";
-import { newId } from "../../kernel/id.js";
-import { NotFound } from "../../kernel/errors.js";
-import { requireOrganizationId } from "../../kernel/tenant.js";
-import { CLOCK, STORAGE_ADAPTER, UNIT_OF_WORK } from "../../kernel/tokens.js";
-import type { FileInput, FileRef, IFileStorage } from "../../contracts/index.js";
+import type { UnitOfWork } from "@core/kernel/db/db.js";
+import { readInTenant } from "@core/kernel/db/db.js";
+import type { Clock } from "@core/kernel/clock.js";
+import { newId } from "@core/kernel/id.js";
+import { NotFound } from "@core/kernel/errors.js";
+import { requireOrganizationId } from "@core/kernel/tenant.js";
+import { CLOCK, STORAGE_ADAPTER, UNIT_OF_WORK } from "@core/kernel/tokens.js";
+import type { FileInput, FileRef, IFileStorage } from "@core/contracts/index.js";
 import { FileRepository, type FileRow } from "./file-repository.js";
 import { sha256, storageKeyFor, type StorageAdapter } from "./storage-adapter.js";
 

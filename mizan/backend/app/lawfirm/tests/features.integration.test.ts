@@ -1,17 +1,17 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { TestingModule } from "@nestjs/testing";
-import { fixedClock } from "../../../../../core/kernel/clock.js";
+import { fixedClock } from "@core/kernel/clock.js";
 import { asUser, createMizanTestApp, get, hasTestDb, seedFirm, seedMember, type SeededFirm } from "./helpers.js";
-import { ClientsService } from "../clients/clients-service.js";
-import { MattersService } from "../matters/matters-service.js";
-import { HearingsService } from "../hearings/hearings-service.js";
-import { TasksService } from "../tasks/tasks-service.js";
-import { DocumentsService } from "../documents/documents-service.js";
-import { CalendarService } from "../calendar/calendar-service.js";
-import { TeamService } from "../staff/team-service.js";
-import { DashboardService } from "../dashboard/dashboard-service.js";
-import { AdminService } from "../admin/admin-service.js";
-import { StaffRepository } from "../staff/staff-repository.js";
+import { ClientsService } from "@app/lawfirm/clients/clients-service.js";
+import { MattersService } from "@app/lawfirm/matters/matters-service.js";
+import { HearingsService } from "@app/lawfirm/hearings/hearings-service.js";
+import { TasksService } from "@app/lawfirm/tasks/tasks-service.js";
+import { DocumentsService } from "@app/lawfirm/documents/documents-service.js";
+import { CalendarService } from "@app/lawfirm/calendar/calendar-service.js";
+import { TeamService } from "@app/lawfirm/staff/team-service.js";
+import { DashboardService } from "@app/lawfirm/dashboard/dashboard-service.js";
+import { AdminService } from "@app/lawfirm/admin/admin-service.js";
+import { StaffRepository } from "@app/lawfirm/staff/staff-repository.js";
 
 const suite = hasTestDb ? describe : describe.skip;
 
@@ -143,7 +143,7 @@ suite("lawfirm feature areas", () => {
   it("notifications adapter: reshapes Core notifications to { items, unreadCount, readAt, href }", async () => {
     // seed one directly into the Core table for the admin
     await asUser(firm.adminId, firm.orgId, async () => {
-      const { currentExecutor } = await import("../../../../../core/kernel/db/db.js");
+      const { currentExecutor } = await import("@core/kernel/db/db.js");
       await currentExecutor()
         .insertInto("notifications")
         .values({

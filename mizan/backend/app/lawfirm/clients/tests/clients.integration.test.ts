@@ -1,9 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { TestingModule } from "@nestjs/testing";
-import { asUser, createMizanTestApp, get, hasTestDb, seedFirm, seedMember, type SeededFirm } from "../../tests/helpers.js";
-import { PERMISSION_PROVIDER } from "../../../../../../core/kernel/tokens.js";
-import type { IPermissionProvider } from "../../../../../../core/contracts/index.js";
-import { ClientsService } from "../clients-service.js";
+import { asUser, createMizanTestApp, get, hasTestDb, seedFirm, seedMember, type SeededFirm } from "@app/lawfirm/tests/helpers.js";
+import { PERMISSION_PROVIDER } from "@core/kernel/tokens.js";
+import type { IPermissionProvider } from "@core/contracts/index.js";
+import { ClientsService } from "@app/lawfirm/clients/clients-service.js";
 
 const suite = hasTestDb ? describe : describe.skip;
 

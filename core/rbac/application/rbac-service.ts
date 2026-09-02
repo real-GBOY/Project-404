@@ -1,13 +1,13 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { UnitOfWork } from "../../kernel/db/db.js";
-import { readInTenant } from "../../kernel/db/db.js";
-import { Conflict, NotFound } from "../../kernel/errors.js";
-import { requireOrganizationId } from "../../kernel/tenant.js";
-import { AUDIT_LOGGER, UNIT_OF_WORK } from "../../kernel/tokens.js";
-import type { IAuditLogger } from "../../contracts/index.js";
-import type { Role } from "../domain/role.js";
-import { parsePermissionKey, permissionKey } from "../domain/permission.js";
-import { RbacRepository } from "../infrastructure/rbac-repository.js";
+import type { UnitOfWork } from "@core/kernel/db/db.js";
+import { readInTenant } from "@core/kernel/db/db.js";
+import { Conflict, NotFound } from "@core/kernel/errors.js";
+import { requireOrganizationId } from "@core/kernel/tenant.js";
+import { AUDIT_LOGGER, UNIT_OF_WORK } from "@core/kernel/tokens.js";
+import type { IAuditLogger } from "@core/contracts/index.js";
+import type { Role } from "@core/rbac/domain/role.js";
+import { parsePermissionKey, permissionKey } from "@core/rbac/domain/permission.js";
+import { RbacRepository } from "@core/rbac/infrastructure/rbac-repository.js";
 
 /** RBAC use cases (§7.2 start-here: User, Role, Permission, mappings, can()). */
 @Injectable()

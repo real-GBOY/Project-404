@@ -1,5 +1,5 @@
 import pino from "pino";
-import { getConfig } from "../config.js";
+import { getConfig } from "@core/kernel/config.js";
 import { getContext } from "./context.js";
 
 /**

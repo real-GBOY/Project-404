@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hasPrefix, newId } from "../id.js";
+import { hasPrefix, newId } from "@core/kernel/id.js";
 
 describe("newId", () => {
   it("formats as <prefix>_<21 url-safe chars>", () => {

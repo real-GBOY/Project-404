@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
-import { readInTenant } from "../../../../../core/kernel/db/db.js";
-import { LawfirmDirectory } from "../shared/directory.js";
+import { readInTenant } from "@core/kernel/db/db.js";
+import { LawfirmDirectory } from "@app/lawfirm/shared/directory.js";
 import {
   ActivityRepository,
   type ActivityEntry,

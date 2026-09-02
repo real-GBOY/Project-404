@@ -1,12 +1,12 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { UnitOfWork } from "../../../../../core/kernel/db/db.js";
-import { readInTenant } from "../../../../../core/kernel/db/db.js";
-import { NotFound, ValidationError } from "../../../../../core/kernel/errors.js";
-import { AUDIT_LOGGER, CLOCK, EVENT_BUS, UNIT_OF_WORK } from "../../../../../core/kernel/tokens.js";
-import type { Clock } from "../../../../../core/kernel/clock.js";
-import type { IAuditLogger, IEventBus } from "../../../../../core/contracts/index.js";
-import { ActivityService } from "../activity/activity-service.js";
-import { LawfirmDirectory } from "../shared/directory.js";
+import type { UnitOfWork } from "@core/kernel/db/db.js";
+import { readInTenant } from "@core/kernel/db/db.js";
+import { NotFound, ValidationError } from "@core/kernel/errors.js";
+import { AUDIT_LOGGER, CLOCK, EVENT_BUS, UNIT_OF_WORK } from "@core/kernel/tokens.js";
+import type { Clock } from "@core/kernel/clock.js";
+import type { IAuditLogger, IEventBus } from "@core/contracts/index.js";
+import { ActivityService } from "@app/lawfirm/activity/activity-service.js";
+import { LawfirmDirectory } from "@app/lawfirm/shared/directory.js";
 import { HearingsRepository, type HearingRow, type HearingStatus } from "./hearings-repository.js";
 
 const DAY = 86_400_000;

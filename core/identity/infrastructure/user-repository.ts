@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
-import { currentExecutor } from "../../kernel/db/db.js";
-import { UserEntity } from "../domain/user.js";
+import { currentExecutor } from "@core/kernel/db/db.js";
+import { UserEntity } from "@core/identity/domain/user.js";
 
 /** The only place that knows how a user is stored (§3.4). */
 @Injectable()

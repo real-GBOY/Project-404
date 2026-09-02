@@ -1,13 +1,13 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { UnitOfWork } from "../../../../../core/kernel/db/db.js";
-import { currentExecutor, readInTenant } from "../../../../../core/kernel/db/db.js";
-import { NotFound } from "../../../../../core/kernel/errors.js";
-import { requireOrganizationId } from "../../../../../core/kernel/tenant.js";
-import { CLOCK, UNIT_OF_WORK } from "../../../../../core/kernel/tokens.js";
-import type { Clock } from "../../../../../core/kernel/clock.js";
-import { LawfirmDirectory } from "../shared/directory.js";
-import { HearingsRepository } from "../hearings/hearings-repository.js";
-import { TasksRepository } from "../tasks/tasks-repository.js";
+import type { UnitOfWork } from "@core/kernel/db/db.js";
+import { currentExecutor, readInTenant } from "@core/kernel/db/db.js";
+import { NotFound } from "@core/kernel/errors.js";
+import { requireOrganizationId } from "@core/kernel/tenant.js";
+import { CLOCK, UNIT_OF_WORK } from "@core/kernel/tokens.js";
+import type { Clock } from "@core/kernel/clock.js";
+import { LawfirmDirectory } from "@app/lawfirm/shared/directory.js";
+import { HearingsRepository } from "@app/lawfirm/hearings/hearings-repository.js";
+import { TasksRepository } from "@app/lawfirm/tasks/tasks-repository.js";
 import { CalendarRepository, type EventKind } from "./calendar-repository.js";
 
 export interface CalendarItem {

@@ -1,16 +1,16 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { SeedService } from "../../../core/bootstrap/seed.service.js";
-import { UNIT_OF_WORK } from "../../../core/kernel/tokens.js";
-import type { UnitOfWork } from "../../../core/kernel/db/db.js";
-import { runAsSystem } from "../../../core/kernel/logging/context.js";
-import { moduleLogger } from "../../../core/kernel/logging/logger.js";
-import { parsePermissionKey } from "../../../core/rbac/domain/permission.js";
-import { RbacRepository } from "../../../core/rbac/infrastructure/rbac-repository.js";
-import { CLOCK } from "../../../core/kernel/tokens.js";
-import type { Clock } from "../../../core/kernel/clock.js";
-import { LAWFIRM_PERMISSIONS } from "./lawfirm/permissions.js";
-import { LAWFIRM_ROLES } from "./lawfirm/shared/roles.js";
-import { DemoSeeder } from "./lawfirm/demo/demo-seeder.js";
+import { SeedService } from "@core/bootstrap/seed.service.js";
+import { UNIT_OF_WORK } from "@core/kernel/tokens.js";
+import type { UnitOfWork } from "@core/kernel/db/db.js";
+import { runAsSystem } from "@core/kernel/logging/context.js";
+import { moduleLogger } from "@core/kernel/logging/logger.js";
+import { parsePermissionKey } from "@core/rbac/domain/permission.js";
+import { RbacRepository } from "@core/rbac/infrastructure/rbac-repository.js";
+import { CLOCK } from "@core/kernel/tokens.js";
+import type { Clock } from "@core/kernel/clock.js";
+import { LAWFIRM_PERMISSIONS } from "@app/lawfirm/permissions.js";
+import { LAWFIRM_ROLES } from "@app/lawfirm/shared/roles.js";
+import { DemoSeeder } from "@app/lawfirm/demo/demo-seeder.js";
 
 const log = moduleLogger("app-seed");
 

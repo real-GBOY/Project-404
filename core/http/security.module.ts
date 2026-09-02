@@ -1,6 +1,6 @@
 import { Global, Module } from "@nestjs/common";
-import { IdentityModule } from "../identity/identity.module.js";
-import { RbacModule } from "../rbac/rbac.module.js";
+import { IdentityModule } from "@core/identity/identity.module.js";
+import { RbacModule } from "@core/rbac/rbac.module.js";
 import { JwtAuthGuard } from "./jwt-auth.guard.js";
 import { PermissionGuard } from "./permission.guard.js";
 

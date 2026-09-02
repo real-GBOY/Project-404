@@ -1,13 +1,13 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { DomainEvent } from "../contracts/domain-event.js";
-import type { IEventBus } from "../contracts/index.js";
-import type { Clock } from "../kernel/clock.js";
-import { CLOCK } from "../kernel/tokens.js";
-import { moduleLogger } from "../kernel/logging/logger.js";
-import { getContext } from "../kernel/logging/context.js";
-import { inTransaction } from "../kernel/db/db.js";
+import type { DomainEvent } from "@core/contracts/domain-event.js";
+import type { IEventBus } from "@core/contracts/index.js";
+import type { Clock } from "@core/kernel/clock.js";
+import { CLOCK } from "@core/kernel/tokens.js";
+import { moduleLogger } from "@core/kernel/logging/logger.js";
+import { getContext } from "@core/kernel/logging/context.js";
+import { inTransaction } from "@core/kernel/db/db.js";
 import { EventRegistry } from "./registry.js";
-import { OutboxRepository } from "./outbox/outbox-repository.js";
+import { OutboxRepository } from "@core/events/outbox/outbox-repository.js";
 
 const log = moduleLogger("events");
 

@@ -1,10 +1,20 @@
+import { fileURLToPath } from "node:url";
 import swc from "unplugin-swc";
 import { defineConfig } from "vitest/config";
+
+const root = fileURLToPath(new URL(".", import.meta.url));
 
 export default defineConfig({
   // SWC transforms decorators + emits `design:*` metadata (esbuild does not),
   // which Nest's DI container needs for constructor injection.
   plugins: [swc.vite()],
+  resolve: {
+    // Same aliases as tsconfig.json / .swcrc so tests import `@core/*` / `@app/*`.
+    alias: {
+      "@core": `${root}core`,
+      "@app": `${root}mizan/backend/app`,
+    },
+  },
   test: {
     include: ["core/**/*.test.ts", "mizan/backend/app/**/*.test.ts"],
     environment: "node",

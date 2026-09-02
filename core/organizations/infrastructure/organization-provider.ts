@@ -3,8 +3,8 @@ import type {
   IOrganizationProvider,
   Organization,
   OrganizationMembership,
-} from "../../contracts/index.js";
-import { readInTenant } from "../../kernel/db/db.js";
+} from "@core/contracts/index.js";
+import { readInTenant } from "@core/kernel/db/db.js";
 import { OrganizationRepository } from "./organization-repository.js";
 
 /**

@@ -11,7 +11,11 @@
       "decoratorMetadata": true
     },
     "keepClassNames": true,
-    "baseUrl": "."
+    "baseUrl": ".",
+    "paths": {
+      "@core/*": ["core/*"],
+      "@app/*": ["mizan/backend/app/*"]
+    }
   },
   "module": {
     "type": "es6"

@@ -4,15 +4,15 @@ import {
   type OnApplicationBootstrap,
   type OnApplicationShutdown,
 } from "@nestjs/common";
-import type { DomainEvent } from "../../contracts/domain-event.js";
-import type { Clock } from "../../kernel/clock.js";
-import type { AuricConfig } from "../../kernel/config.js";
-import { CLOCK, CONFIG, WORKER_AUTOSTART } from "../../kernel/tokens.js";
-import { moduleLogger } from "../../kernel/logging/logger.js";
-import { runWithContext, runAsSystem } from "../../kernel/logging/context.js";
-import { unitOfWork } from "../../kernel/db/db.js";
-import { newId } from "../../kernel/id.js";
-import { EventRegistry } from "../registry.js";
+import type { DomainEvent } from "@core/contracts/domain-event.js";
+import type { Clock } from "@core/kernel/clock.js";
+import type { AuricConfig } from "@core/kernel/config.js";
+import { CLOCK, CONFIG, WORKER_AUTOSTART } from "@core/kernel/tokens.js";
+import { moduleLogger } from "@core/kernel/logging/logger.js";
+import { runWithContext, runAsSystem } from "@core/kernel/logging/context.js";
+import { unitOfWork } from "@core/kernel/db/db.js";
+import { newId } from "@core/kernel/id.js";
+import { EventRegistry } from "@core/events/registry.js";
 import { OutboxRepository, type OutboxRow } from "./outbox-repository.js";
 
 const log = moduleLogger("outbox-worker");

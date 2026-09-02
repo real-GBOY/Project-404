@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import argon2 from "argon2";
-import { argon2Hasher } from "../infrastructure/password-hasher.js";
+import { argon2Hasher } from "@core/identity/infrastructure/password-hasher.js";
 
 describe("argon2Hasher", () => {
   it("produces an argon2id PHC string", async () => {

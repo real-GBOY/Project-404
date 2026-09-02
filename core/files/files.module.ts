@@ -1,11 +1,11 @@
 import { Module } from "@nestjs/common";
-import type { AuricConfig } from "../kernel/config.js";
-import { CONFIG, FILE_STORAGE, STORAGE_ADAPTER } from "../kernel/tokens.js";
-import { RbacModule } from "../rbac/rbac.module.js";
-import { FileRepository } from "./infrastructure/file-repository.js";
-import { LocalDiskAdapter } from "./infrastructure/storage-adapter.js";
-import { FileStorageService } from "./infrastructure/file-storage.js";
-import { FilesController } from "./api/files.controller.js";
+import type { AuricConfig } from "@core/kernel/config.js";
+import { CONFIG, FILE_STORAGE, STORAGE_ADAPTER } from "@core/kernel/tokens.js";
+import { RbacModule } from "@core/rbac/rbac.module.js";
+import { FileRepository } from "@core/files/infrastructure/file-repository.js";
+import { LocalDiskAdapter } from "@core/files/infrastructure/storage-adapter.js";
+import { FileStorageService } from "@core/files/infrastructure/file-storage.js";
+import { FilesController } from "@core/files/api/files.controller.js";
 
 /**
  * File storage (§7.6). `FILE_STORAGE` is the `IFileStorage` domain modules

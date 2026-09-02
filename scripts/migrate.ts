@@ -1,5 +1,5 @@
-import { migrateToLatest, migrationStatus } from "../core/kernel/db/migrate.js";
-import { getConfig } from "../core/kernel/config.js";
+import { migrateToLatest, migrationStatus } from "@core/kernel/db/migrate.js";
+import { getConfig } from "@core/kernel/config.js";
 
 /**
  * Migrations are owned by Prisma (Plan §2). This is a thin wrapper over

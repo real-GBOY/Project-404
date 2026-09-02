@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { UserEntity } from "../domain/user.js";
+import { UserEntity } from "@core/identity/domain/user.js";
 
 describe("UserEntity", () => {
   it("starts PENDING when verification is required", () => {

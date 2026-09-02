@@ -1,6 +1,6 @@
 /** @format */
 
-import type { PermissionDefinition } from "../../rbac/domain/permission.js";
+import type { PermissionDefinition } from "@core/rbac/domain/permission.js";
 
 export const filePermissions: PermissionDefinition[] = [
 	{ action: "upload", resource: "file", description: "Upload files" },

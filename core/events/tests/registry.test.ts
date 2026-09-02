@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { EventRegistry } from "../registry.js";
+import { EventRegistry } from "@core/events/registry.js";
 
 const noop = async () => {};
 

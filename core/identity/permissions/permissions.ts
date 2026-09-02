@@ -1,4 +1,4 @@
-import type { PermissionDefinition } from "../../rbac/domain/permission.js";
+import type { PermissionDefinition } from "@core/rbac/domain/permission.js";
 
 /**
  * Permissions this module contributes to the RBAC registry (§3.2). Seeded on

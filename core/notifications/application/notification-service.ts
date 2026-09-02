@@ -1,20 +1,20 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { UnitOfWork } from "../../kernel/db/db.js";
-import { readInTenant } from "../../kernel/db/db.js";
-import type { AuricConfig } from "../../kernel/config.js";
-import { moduleLogger } from "../../kernel/logging/logger.js";
-import { CONFIG, EMAIL_CHANNEL, EVENT_BUS, UNIT_OF_WORK, USER_PROVIDER } from "../../kernel/tokens.js";
+import type { UnitOfWork } from "@core/kernel/db/db.js";
+import { readInTenant } from "@core/kernel/db/db.js";
+import type { AuricConfig } from "@core/kernel/config.js";
+import { moduleLogger } from "@core/kernel/logging/logger.js";
+import { CONFIG, EMAIL_CHANNEL, EVENT_BUS, UNIT_OF_WORK, USER_PROVIDER } from "@core/kernel/tokens.js";
 import type {
   INotificationProvider,
   IUserProvider,
   IEventBus,
   NotificationPayload,
-} from "../../contracts/index.js";
-import type { DomainEvent } from "../../contracts/domain-event.js";
-import { t } from "../../localization/i18n/catalog.js";
-import { NotificationRepository, type NotificationRow } from "../infrastructure/notification-repository.js";
-import { TemplateRepository } from "../infrastructure/template-repository.js";
-import type { EmailChannel } from "../infrastructure/email-channel.js";
+} from "@core/contracts/index.js";
+import type { DomainEvent } from "@core/contracts/domain-event.js";
+import { t } from "@core/localization/i18n/catalog.js";
+import { NotificationRepository, type NotificationRow } from "@core/notifications/infrastructure/notification-repository.js";
+import { TemplateRepository } from "@core/notifications/infrastructure/template-repository.js";
+import type { EmailChannel } from "@core/notifications/infrastructure/email-channel.js";
 
 const log = moduleLogger("notifications");
 

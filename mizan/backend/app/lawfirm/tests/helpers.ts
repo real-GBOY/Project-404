@@ -1,9 +1,9 @@
 import { Test, type TestingModule } from "@nestjs/testing";
-import { AppModule } from "../../app.module.js";
-import { AppSeedService } from "../../seed.js";
-import { migrateToLatest } from "../../../../../core/kernel/db/migrate.js";
-import { CLOCK, REQUIRE_EMAIL_VERIFICATION, WORKER_AUTOSTART } from "../../../../../core/kernel/tokens.js";
-import type { Clock } from "../../../../../core/kernel/clock.js";
+import { AppModule } from "@app/app.module.js";
+import { AppSeedService } from "@app/seed.js";
+import { migrateToLatest } from "@core/kernel/db/migrate.js";
+import { CLOCK, REQUIRE_EMAIL_VERIFICATION, WORKER_AUTOSTART } from "@core/kernel/tokens.js";
+import type { Clock } from "@core/kernel/clock.js";
 import {
   applyTestConfig,
   asSystem,
@@ -12,10 +12,10 @@ import {
   hasTestDb,
   resetSchema,
   TEST_DATABASE_URL,
-} from "../../../../../core/tests/helpers.js";
-import { IdentityService } from "../../../../../core/identity/application/identity-service.js";
-import { OrganizationService } from "../../../../../core/organizations/application/organization-service.js";
-import { RbacService } from "../../../../../core/rbac/application/rbac-service.js";
+} from "@core/tests/helpers.js";
+import { IdentityService } from "@core/identity/application/identity-service.js";
+import { OrganizationService } from "@core/organizations/application/organization-service.js";
+import { RbacService } from "@core/rbac/application/rbac-service.js";
 
 export { asSystem, asUser, get, hasTestDb };
 

@@ -1,4 +1,4 @@
-import type { DomainEvent } from "../../../../../core/contracts/index.js";
+import type { DomainEvent } from "@core/contracts/index.js";
 
 export const ClientEvents = {
   Created: "lawfirm.client.created",

@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { Inject, Injectable, type NestMiddleware } from "@nestjs/common";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { enterContext, patchContext } from "../kernel/logging/context.js";
-import { CONFIG } from "../kernel/tokens.js";
-import type { AuricConfig } from "../kernel/config.js";
-import { directionOf, negotiateLocale } from "../localization/domain/locale.js";
+import { enterContext, patchContext } from "@core/kernel/logging/context.js";
+import { CONFIG } from "@core/kernel/tokens.js";
+import type { AuricConfig } from "@core/kernel/config.js";
+import { directionOf, negotiateLocale } from "@core/localization/domain/locale.js";
 
 const CORRELATION_HEADER = "x-correlation-id";
 

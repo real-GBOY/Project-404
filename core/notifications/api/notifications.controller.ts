@@ -1,10 +1,10 @@
 import { Controller, Get, HttpCode, Param, Post, Query, UseGuards } from "@nestjs/common";
 import { z } from "zod";
-import { CurrentUser } from "../../http/decorators.js";
-import { JwtAuthGuard } from "../../http/jwt-auth.guard.js";
-import { ZodQuery } from "../../http/zod.pipe.js";
-import type { Principal } from "../../http/principal.js";
-import { NotificationService } from "../application/notification-service.js";
+import { CurrentUser } from "@core/http/decorators.js";
+import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
+import { ZodQuery } from "@core/http/zod.pipe.js";
+import type { Principal } from "@core/http/principal.js";
+import { NotificationService } from "@core/notifications/application/notification-service.js";
 
 const listQuery = z.object({
   unreadOnly: z

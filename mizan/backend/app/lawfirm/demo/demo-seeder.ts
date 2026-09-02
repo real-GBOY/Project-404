@@ -1,13 +1,13 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { sql } from "kysely";
-import { currentExecutor, unitOfWork, type UnitOfWork } from "../../../../../core/kernel/db/db.js";
-import { newId } from "../../../../../core/kernel/id.js";
-import { runAsSystem, withContext } from "../../../../../core/kernel/logging/context.js";
-import { moduleLogger } from "../../../../../core/kernel/logging/logger.js";
-import { UNIT_OF_WORK } from "../../../../../core/kernel/tokens.js";
-import { argon2Hasher } from "../../../../../core/identity/infrastructure/password-hasher.js";
-import { RbacService } from "../../../../../core/rbac/application/rbac-service.js";
-import { lawfirmId } from "../shared/ids.js";
+import { currentExecutor, unitOfWork, type UnitOfWork } from "@core/kernel/db/db.js";
+import { newId } from "@core/kernel/id.js";
+import { runAsSystem, withContext } from "@core/kernel/logging/context.js";
+import { moduleLogger } from "@core/kernel/logging/logger.js";
+import { UNIT_OF_WORK } from "@core/kernel/tokens.js";
+import { argon2Hasher } from "@core/identity/infrastructure/password-hasher.js";
+import { RbacService } from "@core/rbac/application/rbac-service.js";
+import { lawfirmId } from "@app/lawfirm/shared/ids.js";
 import {
   DEMO_ACTIVITY,
   DEMO_CLIENTS,

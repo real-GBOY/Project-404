@@ -1,5 +1,5 @@
 import pg from "pg";
-import { getConfig } from "../core/kernel/config.js";
+import { getConfig } from "@core/kernel/config.js";
 
 /**
  * One-time (idempotent) database bootstrap for the multi-tenancy RLS backstop

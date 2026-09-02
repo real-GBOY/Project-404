@@ -1,17 +1,17 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { readInTenant } from "../../../../../core/kernel/db/db.js";
-import { CLOCK } from "../../../../../core/kernel/tokens.js";
-import type { Clock } from "../../../../../core/kernel/clock.js";
-import { ActivityService } from "../activity/activity-service.js";
-import { BillingRepository } from "../billing/billing-repository.js";
-import { invoiceTotals } from "../billing/invoice.domain.js";
-import { CalendarRepository } from "../calendar/calendar-repository.js";
-import { DocumentsRepository } from "../documents/documents-repository.js";
-import { HearingsRepository } from "../hearings/hearings-repository.js";
-import { MattersRepository } from "../matters/matters-repository.js";
-import { LawfirmDirectory } from "../shared/directory.js";
-import { moneyList, type Money } from "../shared/money.js";
-import { TasksRepository } from "../tasks/tasks-repository.js";
+import { readInTenant } from "@core/kernel/db/db.js";
+import { CLOCK } from "@core/kernel/tokens.js";
+import type { Clock } from "@core/kernel/clock.js";
+import { ActivityService } from "@app/lawfirm/activity/activity-service.js";
+import { BillingRepository } from "@app/lawfirm/billing/billing-repository.js";
+import { invoiceTotals } from "@app/lawfirm/billing/invoice.domain.js";
+import { CalendarRepository } from "@app/lawfirm/calendar/calendar-repository.js";
+import { DocumentsRepository } from "@app/lawfirm/documents/documents-repository.js";
+import { HearingsRepository } from "@app/lawfirm/hearings/hearings-repository.js";
+import { MattersRepository } from "@app/lawfirm/matters/matters-repository.js";
+import { LawfirmDirectory } from "@app/lawfirm/shared/directory.js";
+import { moneyList, type Money } from "@app/lawfirm/shared/money.js";
+import { TasksRepository } from "@app/lawfirm/tasks/tasks-repository.js";
 
 const DAY = 86_400_000;
 

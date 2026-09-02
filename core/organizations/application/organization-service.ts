@@ -1,13 +1,13 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { UnitOfWork } from "../../kernel/db/db.js";
-import { readInTenant } from "../../kernel/db/db.js";
-import { Conflict, NotFound, ValidationError } from "../../kernel/errors.js";
-import { runAsSystem } from "../../kernel/logging/context.js";
-import { AUDIT_LOGGER, EVENT_BUS, UNIT_OF_WORK, USER_PROVIDER } from "../../kernel/tokens.js";
-import type { IAuditLogger, IEventBus, IUserProvider } from "../../contracts/index.js";
-import { slugify, type Organization, type OrganizationMember } from "../domain/organization.js";
-import { OrganizationRepository } from "../infrastructure/organization-repository.js";
-import { memberAdded, memberRemoved, organizationCreated } from "../events/events.js";
+import type { UnitOfWork } from "@core/kernel/db/db.js";
+import { readInTenant } from "@core/kernel/db/db.js";
+import { Conflict, NotFound, ValidationError } from "@core/kernel/errors.js";
+import { runAsSystem } from "@core/kernel/logging/context.js";
+import { AUDIT_LOGGER, EVENT_BUS, UNIT_OF_WORK, USER_PROVIDER } from "@core/kernel/tokens.js";
+import type { IAuditLogger, IEventBus, IUserProvider } from "@core/contracts/index.js";
+import { slugify, type Organization, type OrganizationMember } from "@core/organizations/domain/organization.js";
+import { OrganizationRepository } from "@core/organizations/infrastructure/organization-repository.js";
+import { memberAdded, memberRemoved, organizationCreated } from "@core/organizations/events/events.js";
 
 /** Organizations & Users use cases (§7.4 start-here). */
 @Injectable()

@@ -3,7 +3,7 @@ import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import { rootLogger } from "../logging/logger.js";
+import { rootLogger } from "@core/kernel/logging/logger.js";
 
 /**
  * Migration runner. Plan §2: **Prisma owns the migration history**. The schema
