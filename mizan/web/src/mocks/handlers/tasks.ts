@@ -26,6 +26,24 @@ function view(k: TaskRow) {
 }
 
 export const taskHandlers = [
+  http.get("/api/tasks/summary", () => {
+    const now = Date.now();
+    const week = now + 7 * 86_400_000;
+    const monthAgo = now - 30 * 86_400_000;
+    return HttpResponse.json({
+      open: db.tasks.filter((k) => k.status !== "done").length,
+      dueThisWeek: db.tasks.filter(
+        (k) => k.status !== "done" && k.dueAt && new Date(k.dueAt).getTime() <= week,
+      ).length,
+      overdue: db.tasks.filter(
+        (k) => k.status !== "done" && k.dueAt && new Date(k.dueAt).getTime() < now,
+      ).length,
+      completed30d: db.tasks.filter(
+        (k) => k.completedAt && new Date(k.completedAt).getTime() >= monthAgo,
+      ).length,
+    });
+  }),
+
   http.get("/api/tasks", ({ request }) => {
     const url = new URL(request.url);
     const mine = url.searchParams.get("mine") === "true";

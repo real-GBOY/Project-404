@@ -22,6 +22,13 @@ function nextHearing(matterId: string): string | null {
   );
 }
 
+/** Deterministic synthetic claim value (the fixture has no matter value). */
+function matterValue(m: MatterRow): number {
+  let h = 0;
+  for (let i = 0; i < m.id.length; i++) h = (h * 31 + m.id.charCodeAt(i)) >>> 0;
+  return (0.5 + (h % 250) / 10) * 1_000_000; // EGP 0.5M – 25.5M
+}
+
 const listItem = (m: MatterRow) => ({
   id: m.id,
   reference: m.reference,
@@ -29,11 +36,13 @@ const listItem = (m: MatterRow) => ({
   clientId: m.clientId,
   clientName: clientName(m.clientId),
   practiceArea: m.practiceArea,
+  court: m.court,
   status: m.status,
   leadLawyer: userName(m.leadLawyerId) ?? "—",
   openedAt: m.openedAt,
   nextHearingAt: nextHearing(m.id),
   openTasks: db.tasks.filter((k) => k.matterId === m.id && k.status !== "done").length,
+  value: [{ currency: "EGP", amount: String(Math.round(matterValue(m))) }] as Money[],
 });
 
 function detail(m: MatterRow) {
@@ -51,6 +60,7 @@ function detail(m: MatterRow) {
     leadLawyer: { id: m.leadLawyerId, name: userName(m.leadLawyerId) ?? "—" },
     openedAt: m.openedAt,
     closedAt: m.closedAt,
+    value: [{ currency: "EGP", amount: String(Math.round(matterValue(m))) }] as Money[],
     participants: parts.map((p) => ({ id: p.id, userId: p.userId, name: userName(p.userId) ?? "—", role: p.role })),
     counts: {
       hearings: db.hearings.filter((h) => h.matterId === m.id).length,
@@ -75,6 +85,14 @@ function logActivity(action: string, targetId: string, label: string) {
 }
 
 export const matterHandlers = [
+  http.get("/api/casework/summary", () =>
+    HttpResponse.json({
+      matters: db.matters.filter((m) => m.status !== "closed").length,
+      hearings: db.hearings.filter((h) => h.status === "scheduled").length,
+      tasks: db.tasks.filter((k) => k.status !== "done").length,
+    }),
+  ),
+
   http.get("/api/matters/form-options", () =>
     HttpResponse.json({
       clients: db.clients
@@ -113,7 +131,34 @@ export const matterHandlers = [
 
     const total = rows.length;
     const items = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map(listItem);
-    return HttpResponse.json<Paginated<ReturnType<typeof listItem>>>({ items, total });
+
+    const yearStart = new Date(new Date().getFullYear(), 0, 1).getTime();
+    const summary = {
+      total: db.matters.length,
+      active: db.matters.filter((m) => m.status === "open").length,
+      onHold: db.matters.filter((m) => m.status === "on_hold").length,
+      closedThisYear: db.matters.filter(
+        (m) => m.closedAt && new Date(m.closedAt).getTime() >= yearStart,
+      ).length,
+      aggregateValue: [
+        {
+          currency: "EGP",
+          amount: String(
+            Math.round(
+              db.matters
+                .filter((m) => m.status !== "closed")
+                .reduce((s, m) => s + matterValue(m), 0),
+            ),
+          ),
+        },
+      ] as Money[],
+    };
+
+    return HttpResponse.json<Paginated<ReturnType<typeof listItem>> & { summary: typeof summary }>({
+      items,
+      total,
+      summary,
+    });
   }),
 
   http.post("/api/matters", async ({ request }) => {

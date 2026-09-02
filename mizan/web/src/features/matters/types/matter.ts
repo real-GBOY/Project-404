@@ -9,11 +9,21 @@ export interface MatterListItem {
   clientId: string;
   clientName: string;
   practiceArea: string;
+  court: string | null;
   status: MatterStatus;
   leadLawyer: string;
   openedAt: string;
   nextHearingAt: string | null;
   openTasks: number;
+  value: Money[];
+}
+
+export interface MattersSummary {
+  total: number;
+  active: number;
+  onHold: number;
+  closedThisYear: number;
+  aggregateValue: Money[];
 }
 
 export interface MatterParticipant {
@@ -61,6 +71,7 @@ export interface Matter {
   leadLawyer: { id: string; name: string };
   openedAt: string;
   closedAt: string | null;
+  value: Money[];
   participants: MatterParticipant[];
   counts: { hearings: number; tasks: number; openTasks: number; documents: number; notes: number };
 }
@@ -73,7 +84,7 @@ export interface MatterActivityRow {
   at: string;
 }
 
-export type MatterList = Paginated<MatterListItem>;
+export type MatterList = Paginated<MatterListItem> & { summary: MattersSummary };
 
 export interface MatterListParams {
   q?: string;

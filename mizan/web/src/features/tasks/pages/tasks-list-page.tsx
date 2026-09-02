@@ -1,18 +1,28 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { usePermissions } from "@/lib/permissions/use-permissions";
 import { useUrlParams } from "@/hooks/use-url-params";
-import { formatRelative } from "@/lib/format";
-import { PageContainer } from "@/components/ui/page-container";
-import { PageHeader } from "@/components/ui/page-header";
+import { httpClient } from "@/lib/api/http-client";
+import { formatDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { StatCard } from "@/components/ui/stat-card";
+import { Pill, type PillTone } from "@/components/ui/badge";
+import { MatterChip } from "@/components/ui/matter-chip";
 import { SegmentedControl } from "@/components/ui/segmented-control";
+import {
+  Cell,
+  ColumnHeader,
+  ListCard,
+  ListRow,
+  ListToolbar,
+  ViewToggle,
+} from "@/components/tables/list-card";
 import { Input } from "@/components/ui/input";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Combobox } from "@/components/ui/combobox";
@@ -133,8 +143,15 @@ function TaskDialog({
   );
 }
 
+const PRIORITY_TONE: Record<TaskPriority, PillTone> = { high: "red", normal: "amber", low: "gray" };
+const STATUS_TONE: Record<string, PillTone> = {
+  todo: "gray",
+  in_progress: "blue",
+  done: "green",
+};
+
 export function TasksListPage({
-  embedded = false,
+  embedded: _embedded = false,
   matterId,
 }: {
   embedded?: boolean;
@@ -142,133 +159,203 @@ export function TasksListPage({
 }) {
   const { t } = useTranslation("tasks");
   const { can } = usePermissions();
-  const params = useUrlParams<"range" | "mine">({ range: matterId ? "all" : "week" });
+  const navigate = useNavigate();
+  const params = useUrlParams<"range" | "mine" | "view">({
+    range: matterId ? "all" : "today",
+    view: "table",
+  });
   const range = (RANGES as readonly string[]).includes(params.get("range") ?? "")
     ? (params.get("range") as (typeof RANGES)[number])
-    : "week";
+    : "today";
   const mine = params.get("mine") !== "everyone";
+  const view = (params.get("view") ?? "table") as "table" | "grid";
 
-  const listParams: TaskListParams = matterId
-    ? { matterId, status: "all" }
-    : { range, mine };
+  const listParams: TaskListParams = matterId ? { matterId, status: "all" } : { range, mine };
   const query = useTaskList(listParams);
   const { complete } = useTaskMutations(matterId);
   const [creating, setCreating] = useState(false);
   const canManage = can("update:task");
 
-  const body = (
-    <>
+  const summary = useQuery({
+    queryKey: ["tasks", "summary"],
+    queryFn: ({ signal }) =>
+      httpClient<{ open: number; dueThisWeek: number; overdue: number; completed30d: number }>(
+        "/tasks/summary",
+        { signal },
+      ),
+    enabled: !matterId,
+  });
+
+  const columns = [
+    { key: "task", label: t("columns.task"), flex: 1 },
+    { key: "matter", label: t("columns.matter"), width: 110 },
+    { key: "assignee", label: t("columns.assignee"), width: 140 },
+    { key: "due", label: t("columns.due"), width: 110 },
+    { key: "priority", label: t("columns.priority"), width: 90 },
+    { key: "status", label: t("columns.status"), width: 110 },
+  ] as const;
+
+  const s = summary.data;
+  const addBtn = can("create:task") && (
+    <Button size="sm" icon="add" onClick={() => setCreating(true)}>
+      {t("actions.add")}
+    </Button>
+  );
+
+  return (
+    <div className="flex flex-col gap-4">
       {!matterId && (
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <SegmentedControl
-            aria-label={t("range.label")}
-            value={range}
-            onValueChange={(v) => params.set({ range: v })}
-            options={RANGES.map((r) => ({ value: r, label: t(`range.${r}`) }))}
-          />
-          <div className="flex items-center gap-2">
-            <SegmentedControl
-              aria-label={t("scope.label")}
-              size="sm"
-              value={mine ? "mine" : "everyone"}
-              onValueChange={(v) => params.set({ mine: v === "mine" ? undefined : "everyone" })}
-              options={[
-                { value: "mine", label: t("scope.mine") },
-                { value: "everyone", label: t("scope.everyone") },
-              ]}
-            />
-            {!embedded && can("create:task") && (
-              <Button icon="add" onClick={() => setCreating(true)}>
-                {t("actions.new")}
-              </Button>
-            )}
-          </div>
+        <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
+          <StatCard label={t("kpi.open")} value={s?.open ?? "—"} />
+          <StatCard label={t("kpi.due_week")} value={s?.dueThisWeek ?? "—"} valueTone="brand" />
+          <StatCard label={t("kpi.overdue")} value={s?.overdue ?? "—"} valueTone="danger" />
+          <StatCard label={t("kpi.completed")} value={s?.completed30d ?? "—"} valueTone="success" />
         </div>
       )}
 
-      <QueryBoundary
-        query={query}
-        loading={<RowsSkeleton rows={6} />}
-        isEmpty={(d) => d.items.length === 0}
-        empty={
-          <EmptyState
-            icon="task_alt"
-            title={t("empty.title")}
-            description={t("empty.body")}
-            action={
-              can("create:task") ? (
-                <Button icon="add" onClick={() => setCreating(true)}>
-                  {t("actions.new")}
-                </Button>
-              ) : undefined
-            }
-          />
-        }
-      >
-        {(data) => (
-          <ul className="divide-y divide-divider rounded-lg border border-border bg-surface">
-            {data.items.map((k) => (
-              <li key={k.id} className="flex items-start gap-3 px-4 py-3">
-                <Checkbox
-                  className="mt-0.5"
-                  checked={k.status === "done"}
-                  disabled={!canManage}
-                  onCheckedChange={() => complete.mutate(k.id)}
-                  aria-label={t("actions.toggle_complete")}
-                />
-                <div className="min-w-0 flex-1">
-                  <div
-                    className={`text-[12.5px] font-semibold ${
-                      k.status === "done" ? "text-muted line-through" : "text-foreground"
-                    }`}
-                  >
-                    {k.title}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-x-2 text-[11.5px] text-muted">
-                    {k.matterId && (
-                      <Link to={`/matters/${k.matterId}?tab=tasks`} className="text-link hover:underline">
-                        {k.matterReference}
-                      </Link>
-                    )}
-                    {k.assignee && <span>{k.assignee}</span>}
-                    {k.dueAt && (
-                      <span className={k.overdue ? "font-semibold text-danger" : ""}>
-                        {formatRelative(k.dueAt)}
-                      </span>
-                    )}
-                  </div>
+      <ListCard>
+        <ListToolbar>
+          {!matterId && (
+            <SegmentedControl
+              aria-label={t("range.label")}
+              size="sm"
+              value={range}
+              onValueChange={(v) => params.set({ range: v })}
+              options={RANGES.map((r) => ({ value: r, label: t(`range.${r}`) }))}
+            />
+          )}
+          <div className="ms-auto flex flex-wrap items-center gap-2">
+            {!matterId && (
+              <SegmentedControl
+                aria-label={t("scope.label")}
+                size="sm"
+                value={mine ? "mine" : "everyone"}
+                onValueChange={(v) => params.set({ mine: v === "mine" ? undefined : "everyone" })}
+                options={[
+                  { value: "mine", label: t("scope.mine") },
+                  { value: "everyone", label: t("scope.everyone") },
+                ]}
+              />
+            )}
+            <ViewToggle
+              value={view}
+              onChange={(v) => params.set({ view: v })}
+              labels={{ table: t("common:table.view_table"), grid: t("common:table.view_grid") }}
+            />
+            {addBtn}
+          </div>
+        </ListToolbar>
+
+        <QueryBoundary
+          query={query}
+          loading={<RowsSkeleton rows={6} />}
+          isEmpty={(d) => d.items.length === 0}
+          empty={
+            <EmptyState
+              icon="task_alt"
+              title={t("empty.title")}
+              description={t("empty.body")}
+              action={addBtn || undefined}
+            />
+          }
+        >
+          {(data) => {
+            if (view === "grid") {
+              return (
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(290px,1fr))] gap-3.5 px-[18px] py-4">
+                  {data.items.map((k) => (
+                    <div
+                      key={k.id}
+                      className="rounded-card border border-border bg-surface p-4 hover:border-border-accent"
+                    >
+                      <div className="flex items-start gap-[11px]">
+                        <Checkbox
+                          className="mt-px"
+                          checked={k.status === "done"}
+                          disabled={!canManage}
+                          onCheckedChange={() => complete.mutate(k.id)}
+                          aria-label={t("actions.toggle_complete")}
+                        />
+                        <div
+                          className={`min-w-0 flex-1 text-[13px] font-bold leading-[1.4] ${
+                            k.status === "done" ? "text-muted line-through" : "text-foreground"
+                          }`}
+                        >
+                          {k.title}
+                        </div>
+                      </div>
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        {k.matterReference && <MatterChip>{k.matterReference}</MatterChip>}
+                        <Pill tone={PRIORITY_TONE[k.priority]}>{t(`priority.${k.priority}`)}</Pill>
+                        <Pill tone={STATUS_TONE[k.status]}>{t(`status.${k.status}`)}</Pill>
+                      </div>
+                      <div className="mt-3 flex items-center gap-2.5 border-t border-divider pt-3">
+                        <span className="text-[11.5px] font-semibold text-secondary">
+                          {k.assignee ?? "—"}
+                        </span>
+                        {k.dueAt && (
+                          <span className="ms-auto text-[11.5px] font-bold">
+                            {t("due_prefix", {
+                              date: formatDate(k.dueAt, { day: "numeric", month: "short" }),
+                            })}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                {k.priority === "high" && k.status !== "done" && (
-                  <Badge tone="danger" size="sm">
-                    {t("priority.high")}
-                  </Badge>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </QueryBoundary>
+              );
+            }
+
+            return (
+              <>
+                <ColumnHeader columns={[...columns]} />
+                {data.items.map((k) => (
+                  <ListRow key={k.id}>
+                    <Cell col={columns[0]} className="flex items-center gap-[11px]">
+                      <Checkbox
+                        checked={k.status === "done"}
+                        disabled={!canManage}
+                        onCheckedChange={() => complete.mutate(k.id)}
+                        aria-label={t("actions.toggle_complete")}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => k.matterId && navigate(`/matters/${k.matterId}?tab=tasks`)}
+                        className={`truncate text-start text-[13px] font-bold ${
+                          k.status === "done" ? "text-muted line-through" : "text-foreground"
+                        }`}
+                      >
+                        {k.title}
+                      </button>
+                    </Cell>
+                    <Cell col={columns[1]}>
+                      {k.matterReference ? <MatterChip>{k.matterReference}</MatterChip> : "—"}
+                    </Cell>
+                    <Cell col={columns[2]} className="truncate">
+                      {k.assignee ?? "—"}
+                    </Cell>
+                    <Cell
+                      col={columns[3]}
+                      className={k.overdue ? "font-bold text-danger" : ""}
+                    >
+                      {k.dueAt ? formatDate(k.dueAt, { day: "numeric", month: "short" }) : "—"}
+                    </Cell>
+                    <Cell col={columns[4]}>
+                      <Pill tone={PRIORITY_TONE[k.priority]}>{t(`priority.${k.priority}`)}</Pill>
+                    </Cell>
+                    <Cell col={columns[5]}>
+                      <Pill tone={STATUS_TONE[k.status]}>{t(`status.${k.status}`)}</Pill>
+                    </Cell>
+                  </ListRow>
+                ))}
+              </>
+            );
+          }}
+        </QueryBoundary>
+      </ListCard>
 
       <TaskDialog open={creating} onOpenChange={setCreating} matterId={matterId} />
-    </>
-  );
-
-  if (embedded || matterId) return <div className="flex flex-col gap-4">{body}</div>;
-
-  return (
-    <PageContainer>
-      <PageHeader
-        title={t("title")}
-        description={t("subtitle")}
-        actions={
-          can("create:task") ? (
-            <Button icon="add" onClick={() => setCreating(true)}>
-              {t("actions.new")}
-            </Button>
-          ) : undefined
-        }
-      />
-      {body}
-    </PageContainer>
+    </div>
   );
 }

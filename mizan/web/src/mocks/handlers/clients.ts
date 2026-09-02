@@ -15,7 +15,22 @@ function outstandingFor(clientId: string): Money[] {
   return [...map.entries()].map(([currency, amount]) => ({ currency, amount: String(amount) }));
 }
 
+function cityOf(address: string | null): string | null {
+  if (!address) return null;
+  const parts = address.split(",").map((p) => p.trim());
+  return parts[parts.length - 1] || null;
+}
+
+function relationshipPartner(clientId: string): string | null {
+  const matters = db.matters.filter((m) => m.clientId === clientId);
+  const counts = new Map<string, number>();
+  for (const m of matters) counts.set(m.leadLawyerId, (counts.get(m.leadLawyerId) ?? 0) + 1);
+  const top = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
+  return top ? userName(top[0]) : null;
+}
+
 function listItem(c: ClientRow) {
+  const matters = db.matters.filter((m) => m.clientId === c.id);
   return {
     id: c.id,
     name: c.name,
@@ -23,7 +38,11 @@ function listItem(c: ClientRow) {
     status: c.status,
     email: c.email,
     phone: c.phone,
-    openMatters: db.matters.filter((m) => m.clientId === c.id && m.status !== "closed").length,
+    city: cityOf(c.address),
+    contactName: primaryContact(c.id)?.name ?? null,
+    partner: relationshipPartner(c.id),
+    openMatters: matters.filter((m) => m.status !== "closed").length,
+    totalMatters: matters.length,
     outstanding: outstandingFor(c.id),
     createdAt: c.createdAt,
   };
@@ -36,8 +55,31 @@ function primaryContact(clientId: string) {
     : null;
 }
 
+function moneyList(entries: { currency: string; amount: number }[]) {
+  const map = new Map<string, number>();
+  for (const e of entries) map.set(e.currency, (map.get(e.currency) ?? 0) + e.amount);
+  return [...map.entries()]
+    .filter(([, a]) => a !== 0)
+    .map(([currency, amount]) => ({ currency, amount: String(Math.round(amount)) }));
+}
+
 function detail(c: ClientRow) {
   const matters = db.matters.filter((m) => m.clientId === c.id);
+  const invoices = db.invoices.filter((i) => i.clientId === c.id);
+  const billedToDate = moneyList(
+    invoices
+      .filter((i) => i.status !== "draft" && i.status !== "void")
+      .map((i) => ({ currency: i.currency, amount: invoiceTotals(i).total })),
+  );
+  const collected = moneyList(
+    db.payments
+      .filter((p) => invoices.some((i) => i.id === p.invoiceId))
+      .map((p) => ({ currency: p.currency, amount: p.amount })),
+  );
+  const openTasks = db.tasks.filter(
+    (task) => task.status !== "done" && matters.some((m) => m.id === task.matterId),
+  ).length;
+
   return {
     id: c.id,
     name: c.name,
@@ -47,13 +89,20 @@ function detail(c: ClientRow) {
     phone: c.phone,
     taxId: c.taxId,
     address: c.address,
+    city: cityOf(c.address),
     notes: c.notes,
     createdAt: c.createdAt,
+    partner: relationshipPartner(c.id),
+    registration:
+      c.taxId ?? (c.type === "individual" ? "National ID on file" : "Registration on file"),
     stats: {
       openMatters: matters.filter((m) => m.status !== "closed").length,
       totalMatters: matters.length,
       documents: db.documents.filter((d) => matters.some((m) => m.id === d.matterId)).length,
       outstanding: outstandingFor(c.id),
+      billedToDate,
+      collected,
+      unbilledHours: Math.round(openTasks * 6.2 * 10) / 10,
     },
     primaryContact: primaryContact(c.id),
   };
@@ -90,7 +139,28 @@ export const clientHandlers = [
     const total = rows.length;
     const start = (page - 1) * PAGE_SIZE;
     const items = rows.slice(start, start + PAGE_SIZE).map(listItem);
-    return HttpResponse.json<Paginated<ReturnType<typeof listItem>>>({ items, total });
+
+    const outMap = new Map<string, number>();
+    for (const c of db.clients) {
+      for (const m of outstandingFor(c.id)) {
+        outMap.set(m.currency, (outMap.get(m.currency) ?? 0) + Number(m.amount));
+      }
+    }
+    const summary = {
+      total: db.clients.length,
+      companies: db.clients.filter((c) => c.type === "company").length,
+      individuals: db.clients.filter((c) => c.type === "individual").length,
+      outstanding: [...outMap.entries()].map(([currency, amount]) => ({
+        currency,
+        amount: String(Math.round(amount)),
+      })),
+    };
+
+    return HttpResponse.json<Paginated<ReturnType<typeof listItem>> & { summary: typeof summary }>({
+      items,
+      total,
+      summary,
+    });
   }),
 
   http.post("/api/clients", async ({ request }) => {
@@ -180,14 +250,27 @@ export const clientHandlers = [
     HttpResponse.json(
       db.matters
         .filter((m) => m.clientId === params.id)
-        .map((m) => ({
-          id: m.id,
-          reference: m.reference,
-          title: m.title,
-          practiceArea: m.practiceArea,
-          status: m.status,
-          openedAt: m.openedAt,
-        })),
+        .map((m) => {
+          const next = db.hearings
+            .filter(
+              (h) =>
+                h.matterId === m.id &&
+                h.status === "scheduled" &&
+                new Date(h.scheduledAt).getTime() >= Date.now(),
+            )
+            .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt))[0];
+          return {
+            id: m.id,
+            reference: m.reference,
+            title: m.title,
+            practiceArea: m.practiceArea,
+            court: m.court,
+            leadLawyer: userName(m.leadLawyerId) ?? "—",
+            status: m.status,
+            openedAt: m.openedAt,
+            nextHearing: next?.scheduledAt ?? null,
+          };
+        }),
     ),
   ),
 

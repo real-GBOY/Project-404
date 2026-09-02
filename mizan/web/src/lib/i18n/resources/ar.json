@@ -277,12 +277,13 @@
   "clients": {
     "title": "العملاء",
     "subtitle": "كل مؤسسة وفرد يمثّلهم المكتب.",
-    "search_placeholder": "ابحث في العملاء…",
+    "search_placeholder": "ابحث بالاسم أو جهة الاتصال أو المدينة…",
     "client_since": "عميل منذ {{date}}",
     "actions": {
       "new": "عميل جديد",
       "archive": "أرشفة العميل",
-      "more": "إجراءات أخرى"
+      "more": "إجراءات أخرى",
+      "add": "إضافة عميل"
     },
     "columns": {
       "name": "الاسم",
@@ -290,7 +291,11 @@
       "status": "الحالة",
       "open_matters": "قضايا مفتوحة",
       "outstanding": "المستحقات",
-      "client_since": "عميل منذ"
+      "client_since": "عميل منذ",
+      "client": "العميل",
+      "primary_contact": "جهة الاتصال",
+      "matters": "القضايا",
+      "partner": "الشريك"
     },
     "type": {
       "all": "كل الأنواع",
@@ -328,7 +333,7 @@
       "overview": "نظرة عامة",
       "matters": "القضايا",
       "documents": "المستندات",
-      "communications": "جهات الاتصال",
+      "communications": "المراسلات",
       "billing": "الفوترة",
       "activity": "النشاط",
       "details": "التفاصيل",
@@ -364,24 +369,83 @@
     "errors": {
       "name_required": "أدخل اسمًا.",
       "email_invalid": "أدخل بريدًا إلكترونيًا صحيحًا."
+    },
+    "kpi": {
+      "total": "إجمالي العملاء",
+      "corporate": "شركات",
+      "individuals": "أفراد",
+      "outstanding": "إجمالي المستحقات"
+    },
+    "open_of": "مفتوحة من {{total}}",
+    "showing": "عرض {{from}}–{{to}} من {{total}} عميل",
+    "filter": "تصفية",
+    "sort_by": "ترتيب",
+    "detail": {
+      "send_message": "إرسال رسالة",
+      "new_matter": "قضية جديدة",
+      "relationship_partner": "الشريك المسؤول",
+      "open_matters": "قضايا مفتوحة",
+      "billed_to_date": "المُفوتر حتى الآن",
+      "outstanding": "المستحقات",
+      "location": "الموقع",
+      "client_information": "معلومات العميل",
+      "primary_contact": "جهة الاتصال الرئيسية",
+      "email": "البريد",
+      "telephone": "الهاتف",
+      "registration": "التسجيل",
+      "all_matters": "كل القضايا",
+      "next_hearing": "الجلسة القادمة",
+      "open_of": "مفتوحة من {{total}}",
+      "billing_summary": "ملخص الفوترة",
+      "collected": "المُحصّل",
+      "unbilled_time": "وقت غير مُفوتر",
+      "hrs": "ساعة",
+      "view_invoices": "عرض الفواتير",
+      "collected_pct": "تم تحصيل {{pct}}% من قيمة الفوترة",
+      "activity_history": "سجل النشاط",
+      "full_activity": "سجل النشاط الكامل",
+      "client_documents": "مستندات العميل",
+      "add_documents": "إضافة مستندات",
+      "download": "تنزيل",
+      "communication_log": "سجل المراسلات",
+      "log_communication": "تسجيل مراسلة",
+      "col_date": "التاريخ",
+      "col_channel": "القناة",
+      "col_subject": "الموضوع",
+      "col_handled": "بواسطة",
+      "col_matter": "القضية",
+      "col_no": "رقم القضية",
+      "col_title": "العنوان",
+      "col_type": "النوع",
+      "col_lead": "المسؤول",
+      "col_status": "الحالة"
+    },
+    "mstatus": {
+      "open": "نشطة",
+      "on_hold": "معلقة",
+      "closed": "مغلقة"
     }
   },
   "matters": {
     "title": "القضايا",
     "subtitle": "جميع القضايا المفتوحة والمغلقة.",
-    "search_placeholder": "ابحث في القضايا…",
+    "search_placeholder": "ابحث برقم القضية أو العنوان أو العميل أو المحكمة…",
     "all_areas": "كل مجالات الممارسة",
     "case_work": {
       "title": "أعمال القضايا",
       "subtitle": "القضايا والجلسات والمهام عبر المكتب.",
       "matters": "القضايا",
       "hearings": "الجلسات",
-      "tasks": "المهام"
+      "tasks": "المهام",
+      "matters_hint": "كل القضايا المفتوحة والمغلقة في المكتب.",
+      "hearings_hint": "جلسات المحاكم المرتبطة بهذه القضايا.",
+      "tasks_hint": "المهام والمواعيد المرتبطة بهذه القضايا."
     },
     "actions": {
       "new": "قضية جديدة",
       "more": "إجراءات أخرى",
-      "close": "إغلاق القضية"
+      "close": "إغلاق القضية",
+      "add": "إضافة قضية"
     },
     "columns": {
       "matter": "القضية",
@@ -389,7 +453,13 @@
       "practice_area": "مجال الممارسة",
       "lead": "المسؤول",
       "next_hearing": "الجلسة القادمة",
-      "tasks": "مهام مفتوحة"
+      "tasks": "مهام مفتوحة",
+      "matter_no": "رقم القضية",
+      "title_court": "العنوان والمحكمة",
+      "client": "العميل",
+      "type": "النوع",
+      "lead_lawyer": "المحامي المسؤول",
+      "value": "القيمة"
     },
     "status": {
       "open": "مفتوحة",
@@ -476,6 +546,35 @@
       "practice_required": "اختر مجال ممارسة.",
       "note_required": "اكتب شيئًا أولًا.",
       "update_required": "اكتب شيئًا أولًا."
+    },
+    "kpi": {
+      "total": "إجمالي القضايا",
+      "active": "نشطة",
+      "on_hold": "معلقة",
+      "closed_year": "أُغلقت هذا العام",
+      "aggregate": "القيمة الإجمالية"
+    },
+    "showing": "صفحة {{page}} من {{pages}}",
+    "detail": {
+      "opened": "فُتحت {{date}}",
+      "claim_value": "قيمة المطالبة {{value}}",
+      "export_file": "تصدير الملف",
+      "summarize": "تلخيص",
+      "close_matter": "إغلاق القضية",
+      "matter_type": "نوع القضية",
+      "matter_no": "رقم القضية / السنة",
+      "court": "المحكمة",
+      "lead_lawyer": "المحامي المسؤول",
+      "client": "العميل",
+      "case_summary": "ملخص القضية",
+      "key_points": "النقاط الرئيسية",
+      "timeline": "الجدول الزمني والمواعيد",
+      "upcoming_deadlines": "المواعيد القادمة",
+      "case_history": "تاريخ القضية",
+      "assigned_team": "الفريق المكلف",
+      "assign": "تكليف",
+      "financial_summary": "الملخص المالي",
+      "open_billing": "فتح الفوترة"
     }
   },
   "hearings": {
@@ -535,7 +634,26 @@
       "time_required": "اختر وقتًا.",
       "purpose_required": "أضف غرضًا.",
       "outcome_required": "صف النتيجة."
-    }
+    },
+    "kpi": {
+      "scheduled": "الجلسات المجدولة",
+      "next7": "خلال 7 أيام",
+      "awaiting": "بانتظار موعد المحكمة",
+      "adjourned_q": "مؤجلة (هذا الربع)"
+    },
+    "columns": {
+      "date": "التاريخ",
+      "time": "الوقت",
+      "matter": "القضية",
+      "case": "القضية",
+      "court": "المحكمة",
+      "type": "النوع",
+      "attending": "الحضور",
+      "status": "الحالة"
+    },
+    "search_placeholder": "ابحث بالقضية أو المحكمة أو المحامي…",
+    "calendar_view": "عرض التقويم",
+    "filter": "تصفية"
   },
   "tasks": {
     "title": "المهام",
@@ -554,12 +672,13 @@
     },
     "priority": {
       "low": "منخفضة",
-      "normal": "عادية",
+      "normal": "متوسطة",
       "high": "عالية"
     },
     "actions": {
       "new": "مهمة جديدة",
-      "toggle_complete": "تبديل الإكمال"
+      "toggle_complete": "تبديل الإكمال",
+      "add": "إضافة مهمة"
     },
     "fields": {
       "title": "ما الذي يجب فعله؟",
@@ -581,7 +700,28 @@
     },
     "errors": {
       "title_required": "صف المهمة."
-    }
+    },
+    "kpi": {
+      "open": "المهام المفتوحة",
+      "due_week": "مستحقة هذا الأسبوع",
+      "overdue": "متأخرة",
+      "completed": "مكتملة (30 يوم)"
+    },
+    "status": {
+      "todo": "مفتوحة",
+      "in_progress": "قيد التنفيذ",
+      "done": "مكتملة"
+    },
+    "columns": {
+      "task": "المهمة",
+      "matter": "القضية",
+      "assignee": "المسؤول",
+      "due": "الاستحقاق",
+      "priority": "الأولوية",
+      "status": "الحالة"
+    },
+    "assignee_filter": "المسؤول",
+    "due_prefix": "الاستحقاق {{date}}"
   },
   "documents": {
     "title": "المستندات",

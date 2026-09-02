@@ -8,11 +8,19 @@ export interface HearingRow {
   matterTitle: string;
   matterReference: string;
   clientName: string;
+  leadLawyer: string;
   court: string;
   scheduledAt: string;
   status: HearingStatus;
   purpose: string;
   outcome: string | null;
+}
+
+export interface HearingsSummary {
+  scheduled: number;
+  next7: number;
+  awaitingDate: number;
+  adjournedQuarter: number;
 }
 
 export interface HearingListParams {

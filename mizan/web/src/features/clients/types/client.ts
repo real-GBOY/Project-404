@@ -10,9 +10,20 @@ export interface ClientListItem {
   status: ClientStatus;
   email: string | null;
   phone: string | null;
+  city: string | null;
+  contactName: string | null;
+  partner: string | null;
   openMatters: number;
+  totalMatters: number;
   outstanding: Money[];
   createdAt: string;
+}
+
+export interface ClientsSummary {
+  total: number;
+  companies: number;
+  individuals: number;
+  outstanding: Money[];
 }
 
 export interface Client {
@@ -24,13 +35,21 @@ export interface Client {
   phone: string | null;
   taxId: string | null;
   address: string | null;
+  city: string | null;
   notes: string | null;
   createdAt: string;
+  /** relationship partner */
+  partner: string | null;
+  /** "CR 118-4402 · Tax ID 204-118-993" or "National ID on file" */
+  registration: string;
   stats: {
     openMatters: number;
     totalMatters: number;
     documents: number;
     outstanding: Money[];
+    billedToDate: Money[];
+    collected: Money[];
+    unbilledHours: number;
   };
   primaryContact: ClientContact | null;
 }
@@ -49,8 +68,11 @@ export interface ClientMatterRow {
   reference: string;
   title: string;
   practiceArea: string;
+  court: string | null;
+  leadLawyer: string;
   status: "open" | "on_hold" | "closed";
   openedAt: string;
+  nextHearing: string | null;
 }
 
 export interface ClientDocumentRow {
@@ -80,7 +102,7 @@ export interface ClientActivityRow {
   at: string;
 }
 
-export type ClientList = Paginated<ClientListItem>;
+export type ClientList = Paginated<ClientListItem> & { summary: ClientsSummary };
 
 export interface ClientListParams {
   q?: string;

@@ -6,13 +6,24 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { httpClient } from "@/lib/api/http-client";
 import { formatDate, formatRelative } from "@/lib/format";
-import { Avatar } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
+import { Pill, type PillTone } from "@/components/ui/badge";
+import { Card, CardBody } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { MoneyLines } from "@/components/ui/money-lines";
+import { MatterChip } from "@/components/ui/matter-chip";
+import { DocThumb } from "@/components/ui/doc-thumb";
+import { StatCard } from "@/components/ui/stat-card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import {
+  Cell,
+  ColumnHeader,
+  ListCard,
+  ListRow,
+  PanelHeader,
+  PanelLink,
+} from "@/components/tables/list-card";
 import { EmptyState } from "@/components/feedback/empty-state";
 import { QueryBoundary } from "@/components/feedback/query-boundary";
 import { RowsSkeleton } from "@/components/feedback/skeleton";
@@ -24,11 +35,13 @@ import {
   useMatterNotes,
   useMatterUpdates,
 } from "../hooks/use-matters";
-import { noteSchema, updateSchema, type NoteFormValues, type UpdateFormValues } from "../schemas/matter.schema";
+import {
+  noteSchema,
+  updateSchema,
+  type NoteFormValues,
+  type UpdateFormValues,
+} from "../schemas/matter.schema";
 import type { Matter } from "../types/matter";
-
-const listWrap = "divide-y divide-divider rounded-lg border border-border bg-surface";
-const row = "flex items-center gap-3 px-4 py-3";
 
 interface ScopedRow {
   id: string;
@@ -39,57 +52,187 @@ function useMatterScoped<T extends ScopedRow>(matterId: string, resource: string
   return useQuery({
     queryKey: matterKeys.tab(matterId, resource),
     queryFn: ({ signal }) =>
-      httpClient<{ items: T[] }>(`/${resource}`, { query: { matterId }, signal }).then((r) => r.items),
+      httpClient<{ items: T[] }>(`/${resource}`, { query: { matterId }, signal }).then(
+        (r) => r.items,
+      ),
   });
 }
 
-/* ── Hearings ── */
+const HEARING_TONE: Record<string, PillTone> = {
+  scheduled: "green",
+  adjourned: "gray",
+  decided: "blue",
+};
+const TASK_TONE: Record<string, PillTone> = { todo: "gray", in_progress: "blue", done: "green" };
+const PRIORITY_TONE: Record<string, PillTone> = { high: "red", normal: "amber", low: "gray" };
+
+/* ── Overview ─────────────────────────────────────────────────────────────── */
+
+export function MatterOverview({ matter, canWrite }: { matter: Matter; canWrite: boolean }) {
+  const { t } = useTranslation("matters");
+  const fin = useMatterFinancials(matter.id);
+
+  return (
+    <div className="grid items-start gap-3.5 lg:grid-cols-[1.3fr_1fr]">
+      <div className="flex flex-col gap-3.5">
+        <Card>
+          <CardBody>
+            <div className="mb-3 flex items-center">
+              <span className="flex-1 text-[14px] font-extrabold text-foreground">
+                {t("detail.case_summary")}
+              </span>
+              {canWrite && (
+                <span className="flex items-center gap-1.5 text-[12px] font-bold text-link">
+                  <Icon name="edit" size={16} />
+                  {t("common:actions.edit")}
+                </span>
+              )}
+            </div>
+            <p className="text-[13px] font-medium leading-[1.72] text-foreground-body text-pretty">
+              {matter.description ?? "—"}
+            </p>
+          </CardBody>
+        </Card>
+
+        <MatterTimelineTab id={matter.id} canWrite={canWrite} />
+      </div>
+
+      <div className="flex flex-col gap-3.5">
+        <Card>
+          <PanelHeader
+            title={t("detail.assigned_team")}
+            action={
+              canWrite && (
+                <span className="flex items-center gap-1.5 text-[12px] font-bold text-link">
+                  <Icon name="person_add" size={16} />
+                  {t("detail.assign")}
+                </span>
+              )
+            }
+          />
+          <CardBody className="flex flex-col gap-3.5">
+            {matter.participants.map((p) => (
+              <div key={p.id} className="flex items-center gap-[11px]">
+                <span className="grid size-[34px] flex-none place-items-center rounded-full bg-border-warm text-[12px] font-extrabold text-primary-deep">
+                  {p.name
+                    .split(/\s+/)
+                    .slice(0, 2)
+                    .map((w) => w[0])
+                    .join("")
+                    .toUpperCase()}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[12.5px] font-bold text-foreground">{p.name}</div>
+                  <div className="text-[11px] font-medium text-muted">{p.role}</div>
+                </div>
+              </div>
+            ))}
+          </CardBody>
+        </Card>
+
+        <Card>
+          <PanelHeader title={t("detail.financial_summary")} />
+          <CardBody>
+            <QueryBoundary query={fin} loading={<RowsSkeleton rows={3} />}>
+              {(f) => (
+                <div className="flex flex-col gap-[11px]">
+                  {(
+                    [
+                      ["financials.billed", f.billed, false],
+                      ["financials.collected", f.collected, false],
+                      ["financials.outstanding", f.outstanding, true],
+                      ["financials.expenses", f.expenses, false],
+                    ] as const
+                  ).map(([key, amounts, danger]) => (
+                    <div key={key} className="flex items-center justify-between">
+                      <span className="text-[12.5px] font-semibold text-secondary">{t(key)}</span>
+                      <MoneyLines
+                        amounts={amounts}
+                        align="end"
+                        className={
+                          danger
+                            ? "text-[13px] font-extrabold text-danger"
+                            : "text-[13px] font-extrabold text-foreground"
+                        }
+                      />
+                    </div>
+                  ))}
+                  <Link
+                    to="?tab=financials"
+                    className="mt-3.5 flex h-[34px] items-center justify-center rounded-md border border-border-control text-[12.5px] font-bold text-foreground hover:bg-surface-subtle"
+                  >
+                    {t("detail.open_billing")}
+                  </Link>
+                </div>
+              )}
+            </QueryBoundary>
+          </CardBody>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+/* ── Hearings ─────────────────────────────────────────────────────────────── */
+
 export function MatterHearingsTab({ id }: { id: string }) {
   const { t } = useTranslation("matters");
   const q = useMatterScoped<ScopedRow>(id, "hearings");
+  const columns = [
+    { key: "date", label: t("hearings:columns.date"), width: 120 },
+    { key: "court", label: t("hearings:columns.court"), flex: 1 },
+    { key: "type", label: t("hearings:columns.type"), width: 130 },
+    { key: "status", label: t("hearings:columns.status"), width: 120 },
+  ] as const;
+
   return (
     <QueryBoundary
       query={q}
       loading={<RowsSkeleton rows={3} />}
       isEmpty={(d) => d.length === 0}
-      empty={<EmptyState icon="event" title={t("tabs.no_hearings")} />}
+      empty={<EmptyState icon="balance" title={t("tabs.no_hearings")} />}
     >
       {(rows) => (
-        <div className={listWrap}>
+        <ListCard>
+          <PanelHeader title={t("tabs.hearings")} />
+          <ColumnHeader columns={[...columns]} />
           {rows.map((h) => (
-            <div key={h.id} className={row}>
-              <div className="flex w-11 flex-none flex-col items-center rounded-md bg-surface-sand py-1 text-link">
-                <span className="text-[14px] font-extrabold leading-none">
-                  {formatDate(String(h.scheduledAt), { day: "2-digit" })}
-                </span>
-                <span className="text-[9px] font-bold uppercase">
-                  {formatDate(String(h.scheduledAt), { month: "short" })}
-                </span>
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-[12.5px] font-semibold text-foreground">{String(h.purpose)}</div>
-                <div className="text-[11.5px] text-muted">
-                  {String(h.court)} · {formatDate(String(h.scheduledAt), { hour: "2-digit", minute: "2-digit" })}
-                </div>
-              </div>
-              <Badge
-                tone={h.status === "scheduled" ? "info" : h.status === "decided" ? "success" : "neutral"}
-                size="sm"
-              >
-                {t(`hearings:status.${h.status}`, { defaultValue: String(h.status) })}
-              </Badge>
-            </div>
+            <ListRow key={h.id}>
+              <Cell col={columns[0]} className="font-extrabold text-foreground">
+                {formatDate(String(h.scheduledAt), { day: "numeric", month: "short", year: "numeric" })}
+              </Cell>
+              <Cell col={columns[1]} className="truncate">
+                {String(h.court)}
+              </Cell>
+              <Cell col={columns[2]} className="truncate">
+                {String(h.purpose)}
+              </Cell>
+              <Cell col={columns[3]}>
+                <Pill tone={HEARING_TONE[String(h.status)] ?? "gray"}>
+                  {t(`hearings:status.${h.status}`, { defaultValue: String(h.status) })}
+                </Pill>
+              </Cell>
+            </ListRow>
           ))}
-        </div>
+        </ListCard>
       )}
     </QueryBoundary>
   );
 }
 
-/* ── Tasks ── */
+/* ── Tasks ────────────────────────────────────────────────────────────────── */
+
 export function MatterTasksTab({ id }: { id: string }) {
   const { t } = useTranslation("matters");
   const q = useMatterScoped<ScopedRow>(id, "tasks");
+  const columns = [
+    { key: "task", label: t("tasks:columns.task"), flex: 1 },
+    { key: "assignee", label: t("tasks:columns.assignee"), width: 140 },
+    { key: "due", label: t("tasks:columns.due"), width: 110 },
+    { key: "priority", label: t("tasks:columns.priority"), width: 90 },
+    { key: "status", label: t("tasks:columns.status"), width: 110 },
+  ] as const;
+
   return (
     <QueryBoundary
       query={q}
@@ -98,36 +241,48 @@ export function MatterTasksTab({ id }: { id: string }) {
       empty={<EmptyState icon="task_alt" title={t("tabs.no_tasks")} />}
     >
       {(rows) => (
-        <div className={listWrap}>
+        <ListCard>
+          <PanelHeader title={t("tabs.tasks")} />
+          <ColumnHeader columns={[...columns]} />
           {rows.map((k) => (
-            <div key={k.id} className={row}>
-              <Icon
-                name={k.status === "done" ? "check_circle" : "radio_button_unchecked"}
-                size={16}
-                className={k.status === "done" ? "text-success" : "text-subtle"}
-              />
-              <div className="min-w-0 flex-1">
-                <div
-                  className={`text-[12.5px] font-semibold ${k.status === "done" ? "text-muted line-through" : "text-foreground"}`}
+            <ListRow key={k.id}>
+              <Cell col={columns[0]} className="flex items-center gap-[11px]">
+                <span className="size-[17px] flex-none rounded-xs border-[1.6px] border-checkbox" />
+                <span
+                  className={`truncate text-[13px] font-bold ${
+                    k.status === "done" ? "text-muted line-through" : "text-foreground"
+                  }`}
                 >
                   {String(k.title)}
-                </div>
-                <div className="text-[11.5px] text-muted">
-                  {k.assignee ? String(k.assignee) : t("tabs.unassigned")}
-                  {k.dueAt ? ` · ${formatRelative(String(k.dueAt))}` : ""}
-                </div>
-              </div>
-              {k.overdue ? <Badge tone="danger" size="sm">{t("common:time.overdue")}</Badge> : null}
-            </div>
+                </span>
+              </Cell>
+              <Cell col={columns[1]} className="truncate">
+                {k.assignee ? String(k.assignee) : t("tabs.unassigned")}
+              </Cell>
+              <Cell col={columns[2]} className={k.overdue ? "font-bold text-danger" : ""}>
+                {k.dueAt ? formatDate(String(k.dueAt), { day: "numeric", month: "short" }) : "—"}
+              </Cell>
+              <Cell col={columns[3]}>
+                <Pill tone={PRIORITY_TONE[String(k.priority)] ?? "gray"}>
+                  {t(`tasks:priority.${k.priority}`, { defaultValue: String(k.priority) })}
+                </Pill>
+              </Cell>
+              <Cell col={columns[4]}>
+                <Pill tone={TASK_TONE[String(k.status)] ?? "gray"}>
+                  {t(`tasks:status.${k.status}`, { defaultValue: String(k.status) })}
+                </Pill>
+              </Cell>
+            </ListRow>
           ))}
-        </div>
+        </ListCard>
       )}
     </QueryBoundary>
   );
 }
 
-/* ── Documents ── */
-export function MatterDocumentsTab({ id }: { id: string }) {
+/* ── Documents ────────────────────────────────────────────────────────────── */
+
+export function MatterDocumentsTab({ id, count }: { id: string; count?: number }) {
   const { t } = useTranslation("matters");
   const q = useMatterScoped<ScopedRow>(id, "documents");
   return (
@@ -138,28 +293,32 @@ export function MatterDocumentsTab({ id }: { id: string }) {
       empty={<EmptyState icon="folder_open" title={t("tabs.no_documents")} />}
     >
       {(rows) => (
-        <div className={listWrap}>
-          {rows.map((d) => (
-            <div key={d.id} className={row}>
-              <Icon name="description" size={16} className="flex-none text-muted" />
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-[12.5px] font-semibold text-foreground">{String(d.name)}</div>
-                <div className="text-[11.5px] text-muted">
-                  {String(d.category)} · {formatRelative(String(d.uploadedAt))}
-                </div>
-              </div>
-              <Badge tone="neutral" size="sm">
-                {String(d.status)}
-              </Badge>
+        <Card>
+          <CardBody>
+            <div className="mb-4 flex items-center gap-2.5">
+              <span className="flex-1 text-[14px] font-extrabold text-foreground">
+                {t("tabs.documents")}{" "}
+                <span className="font-bold text-muted">{count ?? rows.length}</span>
+              </span>
             </div>
-          ))}
-        </div>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3.5">
+              {rows.map((d) => (
+                <DocThumb
+                  key={d.id}
+                  name={String(d.name)}
+                  meta={`${String(d.category)} · ${formatRelative(String(d.uploadedAt))}`}
+                />
+              ))}
+            </div>
+          </CardBody>
+        </Card>
       )}
     </QueryBoundary>
   );
 }
 
-/* ── Timeline (updates) ── */
+/* ── Timeline (updates) ───────────────────────────────────────────────────── */
+
 export function MatterTimelineTab({ id, canWrite }: { id: string; canWrite: boolean }) {
   const { t } = useTranslation("matters");
   const q = useMatterUpdates(id);
@@ -172,70 +331,86 @@ export function MatterTimelineTab({ id, canWrite }: { id: string; canWrite: bool
   } = useForm<UpdateFormValues>({ resolver: zodResolver(updateSchema) });
 
   return (
-    <div className="flex flex-col gap-4">
-      {canWrite && (
-        <form
-          onSubmit={handleSubmit(async (v) => {
-            await addUpdate.mutateAsync({ body: v.body });
-            reset();
-          })}
-          noValidate
-          className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-3"
-        >
-          <Textarea
-            rows={2}
-            placeholder={t("timeline.placeholder")}
-            invalid={!!errors.body}
-            {...register("body")}
-          />
-          <div className="flex justify-end">
-            <Button type="submit" size="sm" icon="add_comment" loading={isSubmitting}>
+    <Card>
+      <PanelHeader
+        title={t("detail.timeline")}
+        action={
+          canWrite && (
+            <span className="flex items-center gap-1.5 text-[12px] font-bold text-link">
+              <Icon name="add" size={16} />
               {t("timeline.add")}
-            </Button>
-          </div>
-        </form>
-      )}
-
-      <QueryBoundary
-        query={q}
-        loading={<RowsSkeleton rows={3} />}
-        isEmpty={(d) => d.length === 0}
-        empty={<EmptyState icon="timeline" title={t("tabs.no_updates")} />}
-      >
-        {(updates) => (
-          <ol className="relative flex flex-col gap-4 border-s border-divider ps-5">
-            {updates.map((u) => (
-              <li key={u.id} className="relative">
-                <span className="absolute -start-[1.6rem] top-1 flex size-3 items-center justify-center rounded-full border-2 border-surface bg-border-accent" />
-                <div className="flex items-center gap-2 text-[11.5px] text-muted">
-                  <span className="font-semibold text-foreground-body">{u.author}</span>
-                  <span>{formatRelative(u.createdAt)}</span>
-                </div>
-                <p className="mt-0.5 whitespace-pre-wrap text-[12.5px] text-foreground-body">{u.body}</p>
-                {u.documents.length > 0 && (
-                  <div className="mt-1.5 flex flex-wrap gap-1.5">
-                    {u.documents.map((d) => (
-                      <Link
-                        key={d.id}
-                        to="/documents"
-                        className="inline-flex items-center gap-1 rounded-md bg-surface-subtle px-2 py-0.5 text-[11px] font-medium text-link"
-                      >
-                        <Icon name="attach_file" size={12} />
-                        {d.name}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </li>
-            ))}
-          </ol>
+            </span>
+          )
+        }
+      />
+      <CardBody className="flex flex-col gap-3.5">
+        {canWrite && (
+          <form
+            onSubmit={handleSubmit(async (v) => {
+              await addUpdate.mutateAsync({ body: v.body });
+              reset();
+            })}
+            noValidate
+            className="flex flex-col gap-2 rounded-panel border border-border-control p-3"
+          >
+            <Textarea
+              rows={2}
+              placeholder={t("timeline.placeholder")}
+              invalid={!!errors.body}
+              {...register("body")}
+            />
+            <div className="flex justify-end">
+              <Button type="submit" size="sm" loading={isSubmitting}>
+                {t("timeline.add")}
+              </Button>
+            </div>
+          </form>
         )}
-      </QueryBoundary>
-    </div>
+
+        <QueryBoundary
+          query={q}
+          loading={<RowsSkeleton rows={3} />}
+          isEmpty={(d) => d.length === 0}
+          empty={<EmptyState icon="timeline" title={t("tabs.no_updates")} />}
+        >
+          {(updates) => (
+            <div className="flex flex-col gap-3">
+              {updates.map((u) => (
+                <div key={u.id} className="rounded-panel border border-border-nested p-[15px]">
+                  <div className="text-[13px] font-extrabold text-foreground">
+                    {u.body.split("\n")[0].slice(0, 80)}
+                  </div>
+                  <div className="mt-1.5 text-[12.5px] font-medium leading-[1.65] text-foreground-body-2">
+                    {u.body}
+                  </div>
+                  <div className="mt-2.5 text-[11px] font-semibold text-muted">
+                    {u.author} · {formatDate(u.createdAt)}
+                  </div>
+                  {u.documents.length > 0 && (
+                    <div className="mt-2.5 flex flex-wrap gap-2">
+                      {u.documents.map((d) => (
+                        <span
+                          key={d.id}
+                          className="flex items-center gap-1.5 rounded-md border border-border bg-surface-subtle px-2.5 py-1.5 text-[11.5px] font-bold"
+                        >
+                          <Icon name="attach_file" size={15} className="text-muted" />
+                          {d.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </QueryBoundary>
+      </CardBody>
+    </Card>
   );
 }
 
-/* ── Notes ── */
+/* ── Notes ────────────────────────────────────────────────────────────────── */
+
 export function MatterNotesTab({ id, canWrite }: { id: string; canWrite: boolean }) {
   const { t } = useTranslation("matters");
   const q = useMatterNotes(id);
@@ -249,56 +424,71 @@ export function MatterNotesTab({ id, canWrite }: { id: string; canWrite: boolean
   } = useForm<NoteFormValues>({ resolver: zodResolver(noteSchema) });
 
   return (
-    <div className="flex flex-col gap-4">
-      {canWrite && (
-        <form
-          onSubmit={handleSubmit(async (v) => {
-            await addNote.mutateAsync({ body: v.body });
-            reset();
-          })}
-          noValidate
-          className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-3"
-        >
-          <Textarea rows={2} placeholder={t("notes.placeholder")} invalid={!!errors.body} {...register("body")} />
-          <div className="flex justify-end">
-            <Button type="submit" size="sm" icon="add" loading={isSubmitting}>
-              {t("notes.add")}
-            </Button>
-          </div>
-        </form>
-      )}
-      <QueryBoundary
-        query={q}
-        loading={<RowsSkeleton rows={2} />}
-        isEmpty={(d) => d.length === 0}
-        empty={<EmptyState icon="sticky_note_2" title={t("tabs.no_notes")} />}
-      >
-        {(notes) => (
-          <div className="flex flex-col gap-2">
-            {notes.map((n) => (
-              <div key={n.id} className="rounded-lg border border-border bg-surface-warm p-3">
-                <div className="flex items-center justify-between text-[11.5px] text-muted">
-                  <span>
-                    <span className="font-semibold text-foreground-body">{n.author}</span> ·{" "}
-                    {formatRelative(n.createdAt)}
-                  </span>
-                  {canWrite && (
-                    <button
-                      type="button"
-                      onClick={() => setDeleting(n.id)}
-                      aria-label={t("common:actions.delete")}
-                      className="text-muted hover:text-danger"
-                    >
-                      <Icon name="delete" size={14} />
-                    </button>
-                  )}
-                </div>
-                <p className="mt-1 whitespace-pre-wrap text-[12.5px] text-foreground-body">{n.body}</p>
+    <div className="grid items-start gap-3.5 lg:grid-cols-[1.4fr_1fr]">
+      <Card>
+        <CardBody>
+          <div className="mb-3.5 text-[14px] font-extrabold text-foreground">{t("tabs.notes")}</div>
+          {canWrite && (
+            <form
+              onSubmit={handleSubmit(async (v) => {
+                await addNote.mutateAsync({ body: v.body });
+                reset();
+              })}
+              noValidate
+              className="mb-4 flex flex-col gap-2 rounded-panel border border-border-control p-3"
+            >
+              <Textarea
+                rows={2}
+                placeholder={t("notes.placeholder")}
+                invalid={!!errors.body}
+                {...register("body")}
+              />
+              <div className="flex justify-end">
+                <Button type="submit" size="sm" loading={isSubmitting}>
+                  {t("notes.add")}
+                </Button>
               </div>
-            ))}
-          </div>
-        )}
-      </QueryBoundary>
+            </form>
+          )}
+          <QueryBoundary
+            query={q}
+            loading={<RowsSkeleton rows={2} />}
+            isEmpty={(d) => d.length === 0}
+            empty={<EmptyState icon="sticky_note_2" title={t("tabs.no_notes")} />}
+          >
+            {(notes) => (
+              <div className="flex flex-col gap-3">
+                {notes.map((n) => (
+                  <div
+                    key={n.id}
+                    className="rounded-panel border border-border-nested bg-surface-subtle-2 p-[15px]"
+                  >
+                    <p className="whitespace-pre-wrap text-[12.5px] font-medium leading-[1.65] text-foreground-body">
+                      {n.body}
+                    </p>
+                    <div className="mt-2 flex items-center justify-between text-[11px] font-semibold text-muted">
+                      <span>
+                        {n.author} · {formatDate(n.createdAt)}
+                      </span>
+                      {canWrite && (
+                        <button
+                          type="button"
+                          onClick={() => setDeleting(n.id)}
+                          aria-label={t("common:actions.delete")}
+                          className="text-muted hover:text-danger"
+                        >
+                          <Icon name="delete" size={14} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </QueryBoundary>
+        </CardBody>
+      </Card>
+
       <ConfirmDialog
         open={!!deleting}
         onOpenChange={(o) => !o && setDeleting(null)}
@@ -314,47 +504,49 @@ export function MatterNotesTab({ id, canWrite }: { id: string; canWrite: boolean
   );
 }
 
-/* ── Financials ── */
+/* ── Financials ───────────────────────────────────────────────────────────── */
+
 export function MatterFinancialsTab({ id }: { id: string }) {
   const { t } = useTranslation("matters");
   const q = useMatterFinancials(id);
   return (
     <QueryBoundary query={q} loading={<RowsSkeleton rows={3} />}>
       {(fin) => (
-        <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            {(
-              [
-                ["billed", fin.billed],
-                ["collected", fin.collected],
-                ["outstanding", fin.outstanding],
-                ["expenses", fin.expenses],
-              ] as const
-            ).map(([key, amounts]) => (
-              <div key={key} className="rounded-lg border border-border bg-surface p-3">
-                <div className="text-[11px] font-semibold text-muted">{t(`financials.${key}`)}</div>
-                <MoneyLines amounts={amounts} className="mt-1 text-[13.5px] font-bold" />
-              </div>
-            ))}
+        <div className="flex flex-col gap-3.5">
+          <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
+            <StatCard label={t("financials.billed")} value={fin.billed.length ? fin.billed.map((m) => `${m.currency} ${m.amount}`) : ["—"]} />
+            <StatCard label={t("financials.collected")} value={fin.collected.length ? fin.collected.map((m) => `${m.currency} ${m.amount}`) : ["—"]} />
+            <StatCard
+              label={t("financials.outstanding")}
+              value={fin.outstanding.length ? fin.outstanding.map((m) => `${m.currency} ${m.amount}`) : ["—"]}
+              valueTone="danger"
+            />
+            <StatCard label={t("financials.expenses")} value={fin.expenses.length ? fin.expenses.map((m) => `${m.currency} ${m.amount}`) : ["—"]} />
           </div>
           {fin.invoices.length > 0 ? (
-            <div className={listWrap}>
+            <ListCard>
+              <PanelHeader
+                title={t("tabs.financials")}
+                action={<PanelLink to="/billing">{t("detail.open_billing")}</PanelLink>}
+              />
               {fin.invoices.map((inv) => (
-                <Link
-                  key={inv.id}
-                  to={`/billing/invoices/${inv.id}`}
-                  className={`${row} hover:bg-surface-subtle`}
-                >
-                  <Icon name="receipt_long" size={16} className="flex-none text-muted" />
-                  <div className="flex-1 text-[12.5px] font-semibold text-foreground">{inv.number}</div>
-                  <Badge tone="neutral" size="sm">
-                    {inv.status}
-                  </Badge>
-                </Link>
+                <ListRow key={inv.id}>
+                  <div className="min-w-0 flex-1">
+                    <Link
+                      to={`/billing/invoices/${inv.id}`}
+                      className="text-[13px] font-extrabold text-link"
+                    >
+                      {inv.number}
+                    </Link>
+                  </div>
+                  <Pill tone={inv.status === "paid" ? "green" : inv.status === "void" ? "gray" : "blue"}>
+                    {t(`billing:status.${inv.status}`, { defaultValue: inv.status })}
+                  </Pill>
+                </ListRow>
               ))}
-            </div>
+            </ListCard>
           ) : (
-            <EmptyState icon="request_quote" title={t("tabs.no_invoices")} />
+            <EmptyState icon="receipt_long" title={t("tabs.no_invoices")} />
           )}
         </div>
       )}
@@ -362,7 +554,8 @@ export function MatterFinancialsTab({ id }: { id: string }) {
   );
 }
 
-/* ── Activity ── */
+/* ── Activity ─────────────────────────────────────────────────────────────── */
+
 export function MatterActivityTab({ id }: { id: string }) {
   const { t } = useTranslation("matters");
   const q = useMatterActivity(id);
@@ -374,53 +567,39 @@ export function MatterActivityTab({ id }: { id: string }) {
       empty={<EmptyState icon="history" title={t("tabs.no_activity")} />}
     >
       {(entries) => (
-        <ul className="flex flex-col gap-3">
-          {entries.map((e) => (
-            <li key={e.id} className="flex items-start gap-3">
-              <Avatar name={e.actor} size="xs" className="mt-0.5" />
-              <div>
-                <p className="text-[12.5px] text-foreground-body">
-                  <span className="font-semibold text-foreground">{e.actor}</span>{" "}
-                  {e.action.replace(/[._]/g, " ")} <span className="font-medium">{e.target}</span>
-                </p>
-                <p className="text-[11px] text-muted">{formatRelative(e.at)}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
+        <Card>
+          <CardBody className="p-5">
+            <div className="mb-4 text-[14px] font-extrabold text-foreground">{t("tabs.activity")}</div>
+            <div className="flex flex-col">
+              {entries.map((e, i) => (
+                <div key={e.id} className="flex gap-3.5">
+                  <div className="flex flex-none flex-col items-center gap-1.5">
+                    <span className="grid size-8 flex-none place-items-center rounded-full bg-surface-warm-2 text-link">
+                      <Icon name="history" size={17} />
+                    </span>
+                    {i < entries.length - 1 && <span className="w-px flex-1 bg-divider-row" />}
+                  </div>
+                  <div className="min-w-0 flex-1 pb-4">
+                    <div className="text-[13px] font-bold text-foreground">
+                      {t(`dashboard:activity.${e.action}`, {
+                        defaultValue: e.action.replace(/[._]/g, " "),
+                      })}
+                      {" — "}
+                      <span className="font-semibold text-foreground-body">{e.target}</span>
+                    </div>
+                    <div className="mt-0.5 text-[11.5px] font-medium text-muted">
+                      {e.actor} · {formatRelative(e.at)}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardBody>
+        </Card>
       )}
     </QueryBoundary>
   );
 }
 
-/* ── Overview: participants ── */
-export function MatterParticipants({ matter, canWrite }: { matter: Matter; canWrite: boolean }) {
-  const { t } = useTranslation("matters");
-  const { removeParticipant } = useMatterMutations(matter.id);
-  return (
-    <div className="rounded-lg border border-border bg-surface p-4">
-      <div className="mb-2 text-[11.5px] font-semibold text-muted">{t("overview.team")}</div>
-      <ul className="flex flex-col gap-2">
-        {matter.participants.map((p) => (
-          <li key={p.id} className="flex items-center gap-2.5">
-            <Avatar name={p.name} size="sm" />
-            <div className="min-w-0 flex-1">
-              <div className="text-[12.5px] font-semibold text-foreground">{p.name}</div>
-              <div className="text-[11px] text-muted">{p.role}</div>
-            </div>
-            {canWrite && p.role !== "Lead" && (
-              <button
-                type="button"
-                onClick={() => removeParticipant.mutate(p.id)}
-                aria-label={t("common:actions.delete")}
-                className="text-muted hover:text-danger"
-              >
-                <Icon name="close" size={14} />
-              </button>
-            )}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
+/* MatterChip is re-exported for tabs that show a matter number inline. */
+export { MatterChip };

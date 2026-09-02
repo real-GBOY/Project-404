@@ -193,3 +193,154 @@ export function ListFooter({ className, ...props }: React.HTMLAttributes<HTMLDiv
     />
   );
 }
+
+/** The prototype's list search box — sand fill, `#EDEDF2` border, leading glyph. */
+export function ListSearch({
+  value,
+  onChange,
+  placeholder,
+  className,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex min-w-[280px] items-center gap-2 rounded-btn border border-border-input bg-[#f7f7fa] px-[11px] py-2",
+        className,
+      )}
+    >
+      <Icon name="search" size={18} className="flex-none text-subtle" />
+      <input
+        type="search"
+        value={value}
+        aria-label={placeholder}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full bg-transparent text-[12.5px] font-medium text-foreground outline-none placeholder:text-subtle [&::-webkit-search-cancel-button]:hidden"
+      />
+    </div>
+  );
+}
+
+/** Plain toolbar button — `h-9; border; rounded-btn; 12.5/700` + optional icon / count. */
+export function ToolbarButton({
+  icon,
+  count,
+  children,
+  className,
+  ...props
+}: { icon?: string; count?: number | string } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button
+      type="button"
+      className={cn(
+        "flex h-9 items-center gap-[7px] rounded-btn border border-border-control px-[13px] text-[12.5px] font-bold text-foreground transition-colors hover:bg-surface-subtle",
+        className,
+      )}
+      {...props}
+    >
+      {icon && <Icon name={icon} size={17} className="text-muted" />}
+      {children}
+      {count != null && (
+        <span className="rounded-pill bg-surface-sand px-[7px] py-px text-[11px] text-link">
+          {count}
+        </span>
+      )}
+    </button>
+  );
+}
+
+/** Table / grid icon toggle — `#F1E8D9` on the active side. */
+export function ViewToggle({
+  value,
+  onChange,
+  labels,
+}: {
+  value: "table" | "grid";
+  onChange: (v: "table" | "grid") => void;
+  labels: { table: string; grid: string };
+}) {
+  return (
+    <div className="flex h-9 overflow-hidden rounded-btn border border-border-control">
+      {(["table", "grid"] as const).map((v, i) => (
+        <button
+          key={v}
+          type="button"
+          aria-label={labels[v]}
+          aria-pressed={value === v}
+          onClick={() => onChange(v)}
+          className={cn(
+            "flex w-[38px] items-center justify-center transition-colors",
+            i === 1 && "border-s border-border-control",
+            value === v ? "bg-surface-sand text-link" : "text-muted hover:bg-surface-subtle",
+          )}
+        >
+          <Icon name={v === "table" ? "table_rows" : "grid_view"} size={18} />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Prototype pagination — 30px squares, active espresso. Renders nothing for ≤1 page. */
+export function ListPagination({
+  page,
+  pageCount,
+  onPageChange,
+}: {
+  page: number;
+  pageCount: number;
+  onPageChange: (p: number) => void;
+}) {
+  if (pageCount <= 1) return null;
+  const cell =
+    "flex size-[30px] items-center justify-center rounded-lg text-[12.5px] font-bold transition-colors";
+  const nums: number[] = [];
+  for (let p = 1; p <= pageCount; p++) {
+    if (p === 1 || p === pageCount || Math.abs(p - page) <= 1) nums.push(p);
+  }
+  return (
+    <nav className="flex items-center gap-1.5" aria-label="Pagination">
+      <button
+        type="button"
+        disabled={page <= 1}
+        onClick={() => onPageChange(page - 1)}
+        aria-label="Previous"
+        className={cn(cell, "border border-border-tab text-faint disabled:opacity-40")}
+      >
+        <Icon name="chevron_left" size={17} className="rtl:rotate-180" />
+      </button>
+      {nums.map((p, i) => (
+        <span key={p} className="flex items-center gap-1.5">
+          {i > 0 && p - nums[i - 1] > 1 && <span className="text-[12px] text-faint">…</span>}
+          <button
+            type="button"
+            onClick={() => onPageChange(p)}
+            aria-current={p === page ? "page" : undefined}
+            className={cn(
+              cell,
+              p === page
+                ? "bg-primary text-primary-foreground"
+                : "border border-border-tab text-secondary hover:bg-surface-subtle",
+            )}
+          >
+            {p}
+          </button>
+        </span>
+      ))}
+      <button
+        type="button"
+        disabled={page >= pageCount}
+        onClick={() => onPageChange(page + 1)}
+        aria-label="Next"
+        className={cn(cell, "border border-border-tab text-secondary disabled:opacity-40")}
+      >
+        <Icon name="chevron_right" size={17} className="rtl:rotate-180" />
+      </button>
+    </nav>
+  );
+}

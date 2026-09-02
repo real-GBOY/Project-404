@@ -277,12 +277,13 @@
   "clients": {
     "title": "Clients",
     "subtitle": "Every organisation and individual the firm acts for.",
-    "search_placeholder": "Search clients…",
+    "search_placeholder": "Search by client name, contact, city…",
     "client_since": "Client since {{date}}",
     "actions": {
       "new": "New client",
       "archive": "Archive client",
-      "more": "More actions"
+      "more": "More actions",
+      "add": "Add Client"
     },
     "columns": {
       "name": "Name",
@@ -290,7 +291,11 @@
       "status": "Status",
       "open_matters": "Open matters",
       "outstanding": "Outstanding",
-      "client_since": "Client since"
+      "client_since": "Client since",
+      "client": "Client",
+      "primary_contact": "Primary contact",
+      "matters": "Matters",
+      "partner": "Partner"
     },
     "type": {
       "all": "All types",
@@ -328,7 +333,7 @@
       "overview": "Overview",
       "matters": "Matters",
       "documents": "Documents",
-      "communications": "Contacts",
+      "communications": "Communications",
       "billing": "Billing",
       "activity": "Activity",
       "details": "Details",
@@ -364,24 +369,83 @@
     "errors": {
       "name_required": "Enter a name.",
       "email_invalid": "Enter a valid email address."
+    },
+    "kpi": {
+      "total": "Total clients",
+      "corporate": "Corporate",
+      "individuals": "Individuals",
+      "outstanding": "Total outstanding"
+    },
+    "open_of": "open of {{total}}",
+    "showing": "Showing {{from}}–{{to}} of {{total}} clients",
+    "filter": "Filter",
+    "sort_by": "Sort by",
+    "detail": {
+      "send_message": "Send message",
+      "new_matter": "New matter",
+      "relationship_partner": "Relationship partner",
+      "open_matters": "Open matters",
+      "billed_to_date": "Billed to date",
+      "outstanding": "Outstanding",
+      "location": "Location",
+      "client_information": "Client information",
+      "primary_contact": "Primary contact",
+      "email": "Email",
+      "telephone": "Telephone",
+      "registration": "Registration",
+      "all_matters": "All matters",
+      "next_hearing": "next hearing",
+      "open_of": "open of {{total}}",
+      "billing_summary": "Billing summary",
+      "collected": "Collected",
+      "unbilled_time": "Unbilled time",
+      "hrs": "hrs",
+      "view_invoices": "View invoices",
+      "collected_pct": "{{pct}}% of billed value collected",
+      "activity_history": "Activity history",
+      "full_activity": "Full activity history",
+      "client_documents": "Client documents",
+      "add_documents": "Add documents",
+      "download": "Download",
+      "communication_log": "Communication log",
+      "log_communication": "Log communication",
+      "col_date": "Date",
+      "col_channel": "Channel",
+      "col_subject": "Subject",
+      "col_handled": "Handled by",
+      "col_matter": "Matter",
+      "col_no": "Matter no.",
+      "col_title": "Title",
+      "col_type": "Type",
+      "col_lead": "Lead",
+      "col_status": "Status"
+    },
+    "mstatus": {
+      "open": "Active",
+      "on_hold": "On hold",
+      "closed": "Closed"
     }
   },
   "matters": {
     "title": "Matters",
     "subtitle": "Every open and closed engagement.",
-    "search_placeholder": "Search matters…",
+    "search_placeholder": "Search by matter number, title, client or court…",
     "all_areas": "All practice areas",
     "case_work": {
       "title": "Case Work",
       "subtitle": "Matters, hearings and tasks across the firm.",
       "matters": "Matters",
       "hearings": "Hearings",
-      "tasks": "Tasks"
+      "tasks": "Tasks",
+      "matters_hint": "All open and closed matters across the firm.",
+      "hearings_hint": "Court sessions linked to these matters.",
+      "tasks_hint": "Work items and deadlines linked to these matters."
     },
     "actions": {
       "new": "New matter",
       "more": "More actions",
-      "close": "Close matter"
+      "close": "Close matter",
+      "add": "Add Matter"
     },
     "columns": {
       "matter": "Matter",
@@ -389,7 +453,13 @@
       "practice_area": "Practice area",
       "lead": "Lead",
       "next_hearing": "Next hearing",
-      "tasks": "Open tasks"
+      "tasks": "Open tasks",
+      "matter_no": "Matter no.",
+      "title_court": "Title & court",
+      "client": "Client",
+      "type": "Type",
+      "lead_lawyer": "Lead lawyer",
+      "value": "Value"
     },
     "status": {
       "open": "Open",
@@ -476,6 +546,35 @@
       "practice_required": "Choose a practice area.",
       "note_required": "Write something first.",
       "update_required": "Write something first."
+    },
+    "kpi": {
+      "total": "Total matters",
+      "active": "Active",
+      "on_hold": "On hold",
+      "closed_year": "Closed this year",
+      "aggregate": "Aggregate value"
+    },
+    "showing": "Page {{page}} of {{pages}}",
+    "detail": {
+      "opened": "Opened {{date}}",
+      "claim_value": "claim value {{value}}",
+      "export_file": "Export file",
+      "summarize": "Summarize",
+      "close_matter": "Close matter",
+      "matter_type": "Matter type",
+      "matter_no": "Matter number / year",
+      "court": "Court",
+      "lead_lawyer": "Lead lawyer",
+      "client": "Client",
+      "case_summary": "Case summary",
+      "key_points": "Key points",
+      "timeline": "Timeline & key dates",
+      "upcoming_deadlines": "Upcoming deadlines",
+      "case_history": "Case history",
+      "assigned_team": "Assigned team",
+      "assign": "Assign",
+      "financial_summary": "Financial summary",
+      "open_billing": "Open billing"
     }
   },
   "hearings": {
@@ -535,7 +634,26 @@
       "time_required": "Pick a time.",
       "purpose_required": "Add a purpose.",
       "outcome_required": "Describe the outcome."
-    }
+    },
+    "kpi": {
+      "scheduled": "Scheduled hearings",
+      "next7": "Next 7 days",
+      "awaiting": "Awaiting court date",
+      "adjourned_q": "Adjourned (this quarter)"
+    },
+    "columns": {
+      "date": "Date",
+      "time": "Time",
+      "matter": "Matter",
+      "case": "Case",
+      "court": "Court",
+      "type": "Type",
+      "attending": "Attending",
+      "status": "Status"
+    },
+    "search_placeholder": "Search by matter, court or lawyer…",
+    "calendar_view": "Calendar view",
+    "filter": "Filter"
   },
   "tasks": {
     "title": "Tasks",
@@ -554,12 +672,13 @@
     },
     "priority": {
       "low": "Low",
-      "normal": "Normal",
+      "normal": "Medium",
       "high": "High"
     },
     "actions": {
       "new": "New task",
-      "toggle_complete": "Toggle complete"
+      "toggle_complete": "Toggle complete",
+      "add": "Add task"
     },
     "fields": {
       "title": "What needs doing?",
@@ -581,7 +700,28 @@
     },
     "errors": {
       "title_required": "Describe the task."
-    }
+    },
+    "kpi": {
+      "open": "Open tasks",
+      "due_week": "Due this week",
+      "overdue": "Overdue",
+      "completed": "Completed (30 days)"
+    },
+    "status": {
+      "todo": "Open",
+      "in_progress": "In progress",
+      "done": "Done"
+    },
+    "columns": {
+      "task": "Task",
+      "matter": "Matter",
+      "assignee": "Assignee",
+      "due": "Due",
+      "priority": "Priority",
+      "status": "Status"
+    },
+    "assignee_filter": "Assignee",
+    "due_prefix": "Due {{date}}"
   },
   "documents": {
     "title": "Documents",

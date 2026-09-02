@@ -4,6 +4,7 @@ import {
   clientName,
   db,
   nextId,
+  userName,
   type HearingRow,
 } from "../fixtures/db";
 
@@ -19,6 +20,7 @@ function view(h: HearingRow) {
     matterTitle: m?.title ?? "—",
     matterReference: m?.reference ?? "—",
     clientName: m ? clientName(m.clientId) : "—",
+    leadLawyer: m ? (userName(m.leadLawyerId) ?? "—") : "—",
     court: h.court,
     scheduledAt: h.scheduledAt,
     status: h.status,
@@ -40,6 +42,27 @@ function log(action: string, id: string, label: string) {
 }
 
 export const hearingHandlers = [
+  http.get("/api/hearings/summary", () => {
+    const now = Date.now();
+    const week = now + 7 * 86_400_000;
+    const quarterAgo = now - 90 * 86_400_000;
+    return HttpResponse.json({
+      scheduled: db.hearings.filter((h) => h.status === "scheduled").length,
+      next7: db.hearings.filter(
+        (h) =>
+          h.status === "scheduled" &&
+          new Date(h.scheduledAt).getTime() >= now &&
+          new Date(h.scheduledAt).getTime() <= week,
+      ).length,
+      awaitingDate: db.hearings.filter(
+        (h) => h.status === "scheduled" && !h.court,
+      ).length,
+      adjournedQuarter: db.hearings.filter(
+        (h) => h.status === "adjourned" && new Date(h.scheduledAt).getTime() >= quarterAgo,
+      ).length,
+    });
+  }),
+
   http.get("/api/hearings", ({ request }) => {
     const url = new URL(request.url);
     const matterId = url.searchParams.get("matterId");
