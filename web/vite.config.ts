@@ -10,6 +10,28 @@ export default defineConfig({
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Split the vendor deps so they cache independently of app code.
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+          // Let the mock layer code-split naturally (dynamic import in enableMocks).
+          if (id.includes("/msw/") || id.includes("@mswjs") || id.includes("@bundled-es-modules"))
+            return;
+          if (id.includes("react-dom") || id.includes("/react/") || id.includes("scheduler"))
+            return "react";
+          if (id.includes("@radix-ui") || id.includes("@floating-ui") || id.includes("aria-hidden"))
+            return "radix";
+          if (id.includes("@tanstack")) return "query";
+          if (id.includes("i18next")) return "i18n";
+          if (id.includes("zod") || id.includes("hookform") || id.includes("react-hook-form"))
+            return "forms";
+          return "vendor";
+        },
+      },
+    },
+  },
   server: {
     port: 4300,
     proxy: {

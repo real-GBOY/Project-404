@@ -35,6 +35,15 @@ within web/:
 
 ---
 
+## 0.1 Progress
+
+**F0–F16 built** (2026-09). Every screen in §8 is live against the MSW mock layer
+(`src/mocks/` — one shared dataset in `fixtures/db.ts`; auth/notifications/rbac/
+audit wired to the same shim). Real backend cutover = delete the feature's
+handler file. Gate on every phase: `typecheck` + `lint` + `build` + `test` green
+(~78 tests). Feature routes are code-split. Tests run on Vitest `forks` pool;
+Radix-Popper overlays are driven synchronously (see `src/test/`).
+
 ## 1. Current state (inspected)
 
 - **No frontend exists.** Backend-only repo (NestJS/Fastify, ESM). Greenfield —

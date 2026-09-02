@@ -97,8 +97,12 @@
     "assistant": {
       "name": "Ask Mizan",
       "open": "Open Ask Mizan",
+      "send": "Send",
       "demo_badge": "Preview",
       "demo_note": "A preview of the assistant. It can't take actions or read live data yet.",
+      "demo_action_title": "Demonstration only",
+      "demo_action_body": "“{{action}}” isn't available in the preview — the assistant can't change your data yet.",
+      "input_placeholder": "Ask about hearings, tasks or billing…",
       "try": "Try asking",
       "prompts": {
         "upcoming_hearings": "What hearings are coming up this week?",
@@ -477,5 +481,152 @@
     "new_event": { "title": "New calendar event" },
     "toasts": { "created": "Event added", "failed": "Couldn't save. Try again." },
     "errors": { "title_required": "Give the event a title.", "date_required": "Pick a date." }
+  },
+  "billing": {
+    "title": "Finance",
+    "subtitle": "Invoices, payments and expenses.",
+    "tabs": { "invoices": "Invoices", "payments": "Payments", "expenses": "Expenses" },
+    "columns": {
+      "invoice": "Invoice",
+      "status": "Status",
+      "issued": "Issued",
+      "total": "Total",
+      "balance": "Balance",
+      "method": "Method",
+      "received": "Received",
+      "amount": "Amount"
+    },
+    "invoice_status": { "draft": "Draft", "issued": "Issued", "sent": "Sent", "paid": "Paid", "void": "Void" },
+    "expense_status": { "pending": "Pending", "approved": "Approved", "rejected": "Rejected" },
+    "method": { "bank_transfer": "Bank transfer", "cheque": "Cheque", "cash": "Cash", "card": "Card" },
+    "line_kind": { "fee": "Fee", "disbursement": "Disbursement" },
+    "actions": {
+      "new_invoice": "New invoice",
+      "issue": "Issue",
+      "send": "Send to client",
+      "void": "Void",
+      "record_payment": "Record payment",
+      "record_expense": "Record expense",
+      "approve": "Approve"
+    },
+    "empty": {
+      "invoices": "No invoices yet",
+      "payments": "No payments recorded",
+      "expenses": "No expenses recorded"
+    },
+    "issued_on": "Issued {{date}}",
+    "due_on": "Due {{date}}",
+    "draft_not_issued": "Draft — not yet issued",
+    "payments_received": "Payments received",
+    "totals": {
+      "fees": "Professional fees",
+      "disbursements": "Disbursements",
+      "vat": "VAT ({{rate}}%)",
+      "total": "Total",
+      "received": "Received",
+      "balance": "Balance due"
+    },
+    "confirm": {
+      "issue_title": "Issue this invoice?",
+      "issue_body": "It gets an invoice date and a 30-day due date, and can no longer be edited.",
+      "send_title": "Mark as sent to the client?",
+      "send_body": "Records that the invoice has been delivered.",
+      "void_title": "Void this invoice?",
+      "void_body": "A voided invoice is kept for the record but is no longer collectable."
+    },
+    "payment": {
+      "title": "Record a payment",
+      "invoice": "Invoice",
+      "pick_invoice": "Choose an invoice",
+      "balance": "Outstanding balance: {{amount}}",
+      "amount": "Amount",
+      "currency": "Currency",
+      "method": "Method",
+      "reference": "Reference",
+      "submit": "Record payment"
+    },
+    "expense": {
+      "title": "Record an expense",
+      "description": "Description",
+      "category": "Category",
+      "matter": "Matter",
+      "matter_none": "No matter",
+      "amount": "Amount"
+    },
+    "toasts": {
+      "issue": "Invoice issued",
+      "send": "Invoice marked as sent",
+      "void": "Invoice voided",
+      "payment_recorded": "Payment recorded",
+      "expense_recorded": "Expense recorded",
+      "expense_approved": "Expense approved",
+      "failed": "Couldn't save. Try again."
+    }
+  },
+  "team": {
+    "title": "Team",
+    "subtitle": "The firm's lawyers and staff, and how loaded they are.",
+    "utilization": "Utilisation",
+    "matters": "matters",
+    "tasks": "tasks",
+    "hearings": "hearings",
+    "active_matters": "Active matters",
+    "status": { "inactive": "Inactive" },
+    "fields": { "title": "Job title", "phone": "Phone", "capacity": "Weekly capacity (hours)" },
+    "edit": { "title": "Edit profile" },
+    "toasts": { "updated": "Profile updated", "failed": "Couldn't save. Try again." }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "mark_all_read": "Mark all read",
+    "filter": { "label": "Filter", "all": "All", "unread": "Unread" },
+    "empty": { "title": "You're all caught up", "body": "New notifications will show up here." }
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Firm configuration, people and security.",
+    "sections": {
+      "firm": "Firm profile",
+      "practice": "Matter types & courts",
+      "billing": "Billing & rates",
+      "assistant": "AI assistant",
+      "users": "Users & roles",
+      "audit": "Security & audit log",
+      "locale": "Language & region"
+    },
+    "firm": { "name": "Firm name", "registration": "Registration number", "address": "Address" },
+    "practice": {
+      "matter_types": "Practice areas",
+      "courts": "Courts",
+      "add_type": "Add area…",
+      "add_court": "Add court…"
+    },
+    "billing": {
+      "vat_rate": "VAT rate",
+      "default_currency": "Default currency",
+      "standard_rates": "Standard hourly rates",
+      "hour": "hr"
+    },
+    "assistant": {
+      "enable": "Enable “Ask Mizan” for the firm",
+      "note": "A preview assistant over your demo data. No AI actions are taken."
+    },
+    "users": { "permissions": "{{count}} permissions", "role": "Role" },
+    "audit": {
+      "search": "Search the log…",
+      "when": "When",
+      "actor": "Actor",
+      "action": "Action",
+      "ip": "IP address"
+    },
+    "locale": {
+      "note": "Changes the interface language and text direction for you.",
+      "region": "Region"
+    },
+    "toasts": {
+      "saved": "Settings saved",
+      "role_changed": "Role updated",
+      "failed": "Couldn't save. Try again."
+    }
   }
 }

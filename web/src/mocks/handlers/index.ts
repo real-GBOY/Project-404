@@ -7,6 +7,9 @@ import { hearingHandlers } from "./hearings";
 import { taskHandlers } from "./tasks";
 import { documentHandlers } from "./documents";
 import { calendarHandlers } from "./calendar";
+import { billingHandlers } from "./billing";
+import { teamHandlers } from "./team";
+import { settingsHandlers } from "./settings";
 
 /**
  * MSW request handlers, one module per feature. As each backend phase ships,
@@ -25,4 +28,7 @@ export const handlers: RequestHandler[] = [
   ...taskHandlers,
   ...documentHandlers,
   ...calendarHandlers,
+  ...billingHandlers,
+  ...teamHandlers,
+  ...settingsHandlers,
 ];
