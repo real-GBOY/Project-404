@@ -1,0 +1,40 @@
+{
+  "common": {
+    "app_name": "Mizan",
+    "actions": {
+      "retry": "Try again",
+      "cancel": "Cancel",
+      "save": "Save",
+      "create": "Create",
+      "search": "Search",
+      "export": "Export",
+      "filter": "Filter",
+      "back": "Back"
+    },
+    "states": {
+      "loading": "Loading…",
+      "error_title": "Something went wrong",
+      "error_body": "We couldn't load this. Try again in a moment.",
+      "empty_title": "Nothing here yet",
+      "forbidden_title": "You don't have access",
+      "forbidden_body": "You don't have permission to view this. Ask a firm administrator if you need it.",
+      "not_found_title": "Not found",
+      "not_found_body": "That page or record doesn't exist."
+    },
+    "nav": {
+      "dashboard": "Dashboard",
+      "clients": "Clients",
+      "matters": "Matters",
+      "calendar": "Calendar",
+      "documents": "Documents",
+      "finance": "Finance",
+      "team": "Team",
+      "notifications": "Notifications",
+      "settings": "Settings"
+    },
+    "language": {
+      "ar": "العربية",
+      "en": "English"
+    }
+  }
+}

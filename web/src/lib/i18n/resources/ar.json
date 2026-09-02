@@ -1,0 +1,40 @@
+{
+  "common": {
+    "app_name": "ميزان",
+    "actions": {
+      "retry": "إعادة المحاولة",
+      "cancel": "إلغاء",
+      "save": "حفظ",
+      "create": "إنشاء",
+      "search": "بحث",
+      "export": "تصدير",
+      "filter": "تصفية",
+      "back": "رجوع"
+    },
+    "states": {
+      "loading": "جارٍ التحميل…",
+      "error_title": "حدث خطأ ما",
+      "error_body": "تعذّر تحميل هذا المحتوى. حاول مرة أخرى بعد قليل.",
+      "empty_title": "لا يوجد شيء هنا بعد",
+      "forbidden_title": "ليس لديك صلاحية الوصول",
+      "forbidden_body": "ليس لديك إذن لعرض هذه الصفحة. تواصل مع مدير المكتب إذا كنت بحاجة إليها.",
+      "not_found_title": "غير موجود",
+      "not_found_body": "هذه الصفحة أو السجل غير موجود."
+    },
+    "nav": {
+      "dashboard": "لوحة المعلومات",
+      "clients": "العملاء",
+      "matters": "القضايا",
+      "calendar": "التقويم",
+      "documents": "المستندات",
+      "finance": "المالية",
+      "team": "الفريق",
+      "notifications": "الإشعارات",
+      "settings": "الإعدادات"
+    },
+    "language": {
+      "ar": "العربية",
+      "en": "English"
+    }
+  }
+}

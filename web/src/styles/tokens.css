@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+/**
+ * Mizan design tokens — extracted from the Claude Design prototype.
+ * Tailwind v4 `@theme`: `--color-x` → `bg-x` / `text-x` / `border-x`,
+ * `--radius-x` → `rounded-x`, `--shadow-x` → `shadow-x`, `--spacing-x` → `w-x`.
+ * Light-only (no dark mode in the design); structured so a dark set can be added.
+ */
+@theme {
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  --spacing-sidebar: 246px;
+  --spacing-topbar: 64px;
+  --spacing-content: 1180px;
+
+  /* surfaces */
+  --color-canvas: #f6f6f8;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #fafafc;
+  --color-surface-sand: #f1e8d9;
+  --color-surface-sand-hover: #ede3db;
+  --color-surface-warm: #fcfaf6;
+
+  /* text */
+  --color-foreground: #16161d;
+  --color-foreground-body: #33333f;
+  --color-muted: #8a8aa0;
+  --color-subtle: #9a9ab0;
+  --color-muted-warm: #a08e80;
+
+  /* brand */
+  --color-primary: #3b2418;
+  --color-primary-hover: #2e1a12;
+  --color-primary-deep: #24140e;
+  --color-primary-foreground: #ffffff;
+  --color-link: #4a2d1f;
+
+  /* borders */
+  --color-border: #ececf1;
+  --color-border-control: #e5e5ec;
+  --color-divider: #f2f2f6;
+  --color-border-accent: #d1bba8;
+
+  /* accent / chart ramp */
+  --color-accent-1: #a67c52;
+  --color-accent-2: #be9a6b;
+  --color-accent-3: #c9a87c;
+  --color-accent-4: #d1bba8;
+  --color-accent-5: #d4b98f;
+  --color-accent-6: #ede3db;
+
+  /* tone pairs (fg + surface) */
+  --color-success: #067647;
+  --color-success-surface: #e7f7ef;
+  --color-warning: #b54708;
+  --color-warning-surface: #fef4e4;
+  --color-danger: #b42318;
+  --color-danger-surface: #feeceb;
+  --color-danger-solid: #f04438;
+  --color-info: #175cd3;
+  --color-info-surface: #e8f1ff;
+  --color-neutral: #4a4a5c;
+  --color-neutral-surface: #f2f3f5;
+  --color-brandtone: #4a2d1f;
+  --color-brandtone-surface: #f1e8d9;
+  --color-teal: #0e6e6e;
+  --color-teal-surface: #e4f6f6;
+
+  --shadow-pop: 0 1px 2px rgba(22, 22, 29, 0.08);
+  --shadow-card: 0 1px 3px rgba(22, 22, 29, 0.06);
+  --shadow-menu: 0 8px 28px rgba(22, 22, 29, 0.14);
+  --shadow-sheet: 0 24px 60px rgba(22, 22, 29, 0.24);
+}
