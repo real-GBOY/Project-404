@@ -15,11 +15,22 @@ const listQuery = z.object({
   cursor: z.string().optional(),
 });
 
+/**
+ * In-app notification inbox (§7.5). Every route acts on the **caller's own**
+ * notifications — the id in the token, not a path param — so no RBAC permission
+ * is needed, just a valid session. A person's notifications are visible in any
+ * tenant context (account-level rows have a NULL `organization_id`).
+ */
 @Controller("notifications")
 @UseGuards(JwtAuthGuard)
 export class NotificationsController {
   constructor(private readonly service: NotificationService) {}
 
+  /**
+   * GET /api/notifications — the caller's notifications, newest first.
+   * `?unreadOnly=true`, `?limit=`, `?cursor=` (keyset). Returns the page plus
+   * `unreadCount` and `nextCursor`.
+   */
   @Get()
   async list(
     @Query(ZodQuery(listQuery)) q: z.infer<typeof listQuery>,
@@ -33,12 +44,14 @@ export class NotificationsController {
     };
   }
 
+  /** POST /api/notifications/:id/read — mark one of the caller's notifications read (204, idempotent). */
   @Post(":id/read")
   @HttpCode(204)
   async markRead(@Param("id") id: string, @CurrentUser() user: Principal) {
     await this.service.markRead(user.userId, id);
   }
 
+  /** POST /api/notifications/read-all — mark all of the caller's unread notifications read (204). */
   @Post("read-all")
   @HttpCode(204)
   async markAllRead(@CurrentUser() user: Principal) {

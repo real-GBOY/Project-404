@@ -39,6 +39,11 @@ export class FilesController {
     @Inject(PERMISSION_PROVIDER) private readonly permissions: IPermissionProvider,
   ) {}
 
+  /**
+   * POST /api/files — multipart upload, one file. `?visibility=private|public`
+   * (default private). 201 `{ file }`. Needs `upload:file`. The row is tagged
+   * with the active tenant and the bytes stored under `org_/…` (§ docs/tenancy.md).
+   */
   @Post()
   @HttpCode(201)
   @RequirePermission("upload", "file")
@@ -62,6 +67,7 @@ export class FilesController {
     return { file: ref };
   }
 
+  /** GET /api/files/:id/metadata — the file row (no bytes). Public file, or owner, or `read:file`. */
   @Get(":id/metadata")
   async metadata(@Param("id") id: string, @CurrentUser() user: Principal) {
     const meta = await this.files.getMetadata(id);
@@ -69,6 +75,7 @@ export class FilesController {
     return { file: meta };
   }
 
+  /** GET /api/files/:id — download the bytes as an attachment. Same access rule as metadata. */
   @Get(":id")
   async download(
     @Param("id") id: string,
@@ -84,6 +91,7 @@ export class FilesController {
       .send(content);
   }
 
+  /** DELETE /api/files/:id — soft-delete + remove the bytes (204). Owner, or `delete:file`. */
   @Delete(":id")
   @HttpCode(204)
   async remove(@Param("id") id: string, @CurrentUser() user: Principal) {
@@ -95,6 +103,7 @@ export class FilesController {
     await this.files.delete({ id });
   }
 
+  /** Public → allowed; owner → allowed; otherwise needs `read:file` in the active tenant. */
   private async assertCanRead(
     user: Principal,
     ownerId: string | null,

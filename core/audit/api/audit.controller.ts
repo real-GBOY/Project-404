@@ -18,15 +18,25 @@ const querySchema = z.object({
   cursor: z.string().optional(),
 });
 
+/**
+ * Read access to the append-only audit trail (§7.7). Needs `read:audit_log`.
+ * Row-level security scopes results to the caller's active tenant — NULL-org
+ * (system) rows are only visible to the system role, never here.
+ */
 @Controller("audit-logs")
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class AuditController {
   constructor(private readonly repo: AuditRepository) {}
 
+  /**
+   * GET /api/audit-logs — filter by `actorId` / `resourceType` / `resourceId` /
+   * `action` / `from` / `to`; paginate with `limit` (≤200) + `cursor` (keyset on
+   * id). Returns `{ records, nextCursor }`.
+   */
   @Get()
   @RequirePermission("read", "audit_log")
   async list(@Query(ZodQuery(querySchema)) q: AuditQuery) {
-    // RLS scopes the trail to the caller's active tenant (§ docs/tenancy.md).
+    // Wrapped in a transaction so the RLS `SET LOCAL` applies (§ docs/tenancy.md).
     const records = await readInTenant(() => this.repo.query(q));
     const limit = q.limit ?? 50;
     const nextCursor = records.length === limit ? records[records.length - 1]?.id : undefined;

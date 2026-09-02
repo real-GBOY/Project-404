@@ -21,23 +21,32 @@ import {
 } from "../validation/schemas.js";
 import type { z } from "zod";
 
+/**
+ * RBAC administration (§7.2). `roles` and `permissions` are global (system-wide);
+ * only *assignments* (`user_roles`) are tenant-scoped, so `assign` / `unassign` /
+ * the user lookup act on the caller's **active tenant** (§ docs/tenancy.md).
+ * Every route needs an authenticated caller plus the stated permission.
+ */
 @Controller("rbac")
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class RbacController {
   constructor(private readonly service: RbacService) {}
 
+  /** GET /api/rbac/roles — every role and its permission set. */
   @Get("roles")
   @RequirePermission("read", "role")
   async listRoles() {
     return { roles: await this.service.listRoles() };
   }
 
+  /** POST /api/rbac/roles — create a global role. 409 if the key exists. */
   @Post("roles")
   @RequirePermission("manage", "role")
   async createRole(@Body(ZodBody(createRoleSchema)) input: z.infer<typeof createRoleSchema>) {
     return { role: await this.service.createRole(input) };
   }
 
+  /** POST /api/rbac/roles/:roleKey/permissions — grant `{action}:{resource}` to a role (204). */
   @Post("roles/:roleKey/permissions")
   @HttpCode(204)
   @RequirePermission("manage", "role")
@@ -48,6 +57,7 @@ export class RbacController {
     await this.service.grantPermission(roleKey, body.action, body.resource);
   }
 
+  /** DELETE /api/rbac/roles/:roleKey/permissions/:permissionKey — revoke one permission (204). */
   @Delete("roles/:roleKey/permissions/:permissionKey")
   @HttpCode(204)
   @RequirePermission("manage", "role")
@@ -58,6 +68,10 @@ export class RbacController {
     await this.service.revokePermission(roleKey, permissionKey);
   }
 
+  /**
+   * POST /api/rbac/assignments — give a user a role **in the caller's active
+   * tenant** (204). The acting user is recorded as `granted_by`.
+   */
   @Post("assignments")
   @HttpCode(204)
   @RequirePermission("assign", "role")
@@ -68,6 +82,7 @@ export class RbacController {
     await this.service.assignRole(input.userId, input.roleKey, actor.userId);
   }
 
+  /** DELETE /api/rbac/assignments/:userId/:roleKey — remove a role in the active tenant (204). */
   @Delete("assignments/:userId/:roleKey")
   @HttpCode(204)
   @RequirePermission("assign", "role")
@@ -75,6 +90,7 @@ export class RbacController {
     await this.service.removeRole(userId, roleKey);
   }
 
+  /** GET /api/rbac/users/:userId — that user's roles + effective permission keys, in the active tenant. */
   @Get("users/:userId")
   @RequirePermission("read", "role")
   async userRoles(@Param("userId") userId: string) {
