@@ -94,7 +94,7 @@ use `getDb()` from kernel.
 ## 9. Dependencies & direction
 
 Depends only on `core/contracts` and third-party libs (pg, kysely, pino, zod).
-**Every other Core module and all of `app/` depend on kernel.** Kernel depends on
+**Every other Core module and all of `mizan/backend/app/` depend on kernel.** Kernel depends on
 nothing in Core above it.
 
 ## 10. Invariants

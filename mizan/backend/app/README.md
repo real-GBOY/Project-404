@@ -1,4 +1,4 @@
-# `app/` — Mizan (Project #1), the client application
+# `mizan/backend/app/` — Mizan (Project #1) backend
 
 This directory is the **actual product** built on the AURIC Foundation:
 **Mizan** (codename *Project 404*), a law-firm management system for
@@ -7,18 +7,22 @@ Tawfik & Partners. It is Project #1 in AURIC's build → use → extract loop
 
 The running deployable is **Mizan**, *powered by* AURIC Core — it is not "Core".
 Mizan is **one product with (currently) two parts**: this backend domain
-(`app/lawfirm/`) and the web client (`web/`); a mobile client is Phase 2. All
-parts speak to the same API.
+(`mizan/backend/app/lawfirm/`) and the web client (`mizan/web/`); a mobile
+client (`mizan/mobile/`) is Phase 2. All parts speak to the same API.
+
+> **Canonical:** the Core ↔ Mizan boundary and the physical repository layout
+> (`core/` at the root, everything Mizan-specific under `mizan/`; no `modules/`,
+> no `client-00N/`) are documented once in **`docs/mizan-project-one.md`**.
 
 ```
                  REPOSITORY
                      │
-         ┌───────────┴────────────┐
-         │                        │
-   AURIC FOUNDATION         CLIENT APPLICATION  (Mizan)
-      core/                 ┌───────┴────────┐
-   platform, reused,        app/lawfirm/     web/  (mobile/ later)
-   versioned, generic       law-firm domain  law-firm UI
+         ┌───────────┴────────────────┐
+         │                            │
+   AURIC FOUNDATION           CLIENT APPLICATION  (Mizan)
+      core/                   mizan/ ┌────────┴─────────┐
+   platform, reused,          backend/app/lawfirm/  web/  (mobile/ later)
+   versioned, generic         law-firm domain       law-firm UI
 ```
 
 ---
@@ -73,8 +77,8 @@ copy and UX.
 
 - Anything in `core/` — identity, RBAC evaluation, organizations/tenancy, files
   (bytes), the audit trail, the notification pipeline, the event/outbox system.
-- The `web/` design-system primitives (those are Mizan's *web* concern, in
-  `web/`, but still "infrastructure the product is built from").
+- The `mizan/web/` design-system primitives (those are Mizan's *web* concern, in
+  `mizan/web/`, but still "infrastructure the product is built from").
 - Reusable modules. A `lawfirm/<area>/` folder being a clean, fully-anatomised
   module does **not** make it an AURIC module — it is Client #1's domain, built
   properly (see §13).
@@ -82,8 +86,8 @@ copy and UX.
 ## 7. Public interfaces Mizan consumes (the Core ↔ Mizan boundary)
 
 ```
-core/  ──X──▶  app/        Core MUST NOT import from app/.  (verified: grep is empty)
-app/   ─────▶  core/       Only through Core's public contracts / DI tokens.
+core/  ──X──▶  mizan/        Core MUST NOT import from mizan/.  (verified: grep is empty)
+mizan/ ─────▶  core/         Only through Core's public contracts / DI tokens.
 ```
 
 Domain code reaches Core **by token, typed as the interface** — never a Core
@@ -105,9 +109,9 @@ table or concrete class:
 Matter, Hearing, Lawyer, Client, or Invoice is, and must not contain law-firm
 permissions or roles.
 
-**The one sanctioned exception:** `app/seed.ts` imports `RbacRepository` and
-`parsePermissionKey` from `core/rbac` to write the law-firm permissions/roles at
-boot. Seeding is inherently a Core-internals operation and belongs to the
+**The one sanctioned exception:** `mizan/backend/app/seed.ts` imports
+`RbacRepository` and `parsePermissionKey` from `core/rbac` to write the law-firm
+permissions/roles at boot. Seeding is inherently a Core-internals operation and belongs to the
 composition root; `RbacRepository` is on `RbacModule`'s public exports. No
 *domain module* reaches past `core/contracts`.
 
@@ -125,7 +129,8 @@ AppModule
 ```
 
 `core/app.module.ts` is retained **only** as the fixture for Core's own
-integration tests. The running composition root is `app/app.module.ts`.
+integration tests. The running composition root is
+`mizan/backend/app/app.module.ts` (booted by `main.ts` at the repo root).
 
 ### Two seed layers (not one)
 
@@ -142,15 +147,15 @@ So the platform has *N* permissions and Mizan adds *M* — never "AURIC has N+M"
 ## 9. Dependencies & direction
 
 ```
-AURIC CORE  ◀──  MIZAN (app/lawfirm)  ◀──  { web/, mobile/ }
+AURIC CORE  ◀──  MIZAN (mizan/backend/app/lawfirm)  ◀──  { mizan/web/, mizan/mobile/ }
 ```
 
-Mizan depends on Core (through contracts). `web/`/`mobile/` depend on Mizan's
-API. Nothing flows the other way.
+Mizan depends on Core (through contracts). `mizan/web/` / `mizan/mobile/` depend
+on Mizan's API. Nothing flows the other way.
 
 ## 10. Invariants
 
-1. Mizan lives in `app/lawfirm/` (Plan §47 rule 3).
+1. Mizan's backend domain lives in `mizan/backend/app/lawfirm/` (Plan §47 rule 3).
 2. Domain code consumes Core only via `core/contracts` + tokens.
 3. Controllers are thin; logic is in domain/application.
 4. Backend authorization is authoritative; every write is permission-gated.
@@ -182,7 +187,7 @@ async close(actorId: string, matterId: string) {
 
 ## 12. Testing expectations
 
-Per feature phase (Plan / `web/PLAN.md` §18): domain unit + use-case +
+Per feature phase (Plan / `mizan/web/PLAN.md` §18): domain unit + use-case +
 repo/integration + API + authz + **tenant-isolation** + event/outbox tests.
 Critical assertions: unauthorized action blocked, permission change takes effect,
 RLS cannot be bypassed, Tenant A cannot see Tenant B, financial rules hold

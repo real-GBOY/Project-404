@@ -35,7 +35,7 @@ role definition.
 ## 6. What it explicitly does NOT own
 
 - **Product permissions and roles.** Mizan's `AppSeedService`
-  (`app/seed.ts`) runs the Core seed **first**, then adds `create:matter`,
+  (`mizan/backend/app/seed.ts`) runs the Core seed **first**, then adds `create:matter`,
   `record:payment`, `void:invoice`, … and the roles `firm_admin`, `partner`,
   `lawyer`, `paralegal`, `finance`, `read_only`.
   > So the platform has *N* permissions and Mizan adds *M* — never "AURIC has
@@ -53,7 +53,7 @@ role definition.
 ## 8. How to use
 
 ```ts
-// app/seed.ts — the product's seed orchestrator
+// mizan/backend/app/seed.ts — the product's seed orchestrator
 @Injectable()
 export class AppSeedService {
   constructor(private readonly coreSeed: SeedService, private readonly rbac: RbacRepository) {}
@@ -65,14 +65,14 @@ export class AppSeedService {
 }
 ```
 
-`app/seed.ts` is the **one sanctioned place** `app/` reaches past `core/contracts`
+`mizan/backend/app/seed.ts` is the **one sanctioned place** `mizan/backend/` reaches past `core/contracts`
 into `core/rbac` internals (`RbacRepository`, `parsePermissionKey`) — seeding is
 inherently a Core-internals operation and belongs to the composition root.
 
 ## 9. Dependencies & direction
 
 Depends on `core/rbac` and `core/notifications`. Called by the composition root
-(`app/app.module.ts` bootstrap). Nothing depends on it.
+(`mizan/backend/app/app.module.ts` bootstrap). Nothing depends on it.
 
 ## 10. Invariants
 

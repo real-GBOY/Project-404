@@ -66,7 +66,7 @@ token format and TTLs.
 `login` response: `{ user, tokens: { accessToken, refreshToken, expiresIn,
 tokenType }, organizations: OrganizationMembership[] }`. One membership → token is
 tenant-scoped; zero or many → `org: null`, client picks (see `docs/tenancy.md`
-and `web/`'s org selector).
+and `mizan/web/`'s org selector).
 
 ## 8. How to use
 

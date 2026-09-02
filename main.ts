@@ -5,9 +5,9 @@ import {
   FastifyAdapter,
   type NestFastifyApplication,
 } from "@nestjs/platform-fastify";
-import { AppModule } from "./app/app.module.js";
-import { AppSeedService } from "./app/seed.js";
-import { APP_CODENAME, APP_NAME, APP_VERSION } from "./app/version.js";
+import { AppModule } from "./mizan/backend/app/app.module.js";
+import { AppSeedService } from "./mizan/backend/app/seed.js";
+import { APP_CODENAME, APP_NAME, APP_VERSION } from "./mizan/backend/app/version.js";
 import { getConfig } from "./core/kernel/config.js";
 import { migrateToLatest } from "./core/kernel/db/migrate.js";
 import { rootLogger } from "./core/kernel/logging/logger.js";

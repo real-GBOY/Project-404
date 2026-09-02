@@ -11,10 +11,10 @@ import {
   FilesModule,
   SecurityModule,
   SeedService,
-} from "../core/index.js";
-import { AppExceptionFilter } from "../core/http/app-exception.filter.js";
-import { RequestContextMiddleware } from "../core/http/request-context.middleware.js";
-import { HealthController } from "../core/observability/health.controller.js";
+} from "../../../core/index.js";
+import { AppExceptionFilter } from "../../../core/http/app-exception.filter.js";
+import { RequestContextMiddleware } from "../../../core/http/request-context.middleware.js";
+import { HealthController } from "../../../core/observability/health.controller.js";
 import { LawfirmModule } from "./lawfirm/lawfirm.module.js";
 import { AppSeedService } from "./seed.js";
 

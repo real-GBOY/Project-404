@@ -32,7 +32,7 @@ types/   shared API contract types — no imports
   never `lib/api`.
 - `lib/` imports nothing from `features/` or `components/`.
 - **Only `lib/api/*` and `mocks/*` know URLs or call `fetch`.** Nothing else.
-- `web/` imports **nothing** from the repo (`core/`, `app/`) — HTTP API only.
+- `mizan/web/` imports **nothing** from the repo (`core/`, `mizan/backend/`) — HTTP API only.
 - No circular deps between features (enforced by review; ESLint `import/no-cycle`
   can be added if it recurs).
 

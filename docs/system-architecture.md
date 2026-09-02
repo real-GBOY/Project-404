@@ -7,8 +7,8 @@
 > - `Plan.md` — the AURIC constitution / governing rules
 > - `docs/architecture.md` — what Core v0.1 *actually* is today
 > - `docs/tenancy.md` — the multi-tenancy design
-> - `app/README.md` — the Core ↔ Mizan boundary
-> - `web/PLAN.md` / `web/ARCHITECTURE.md` — the Mizan web build
+> - `mizan/backend/app/README.md` — the Core ↔ Mizan boundary
+> - `mizan/web/PLAN.md` / `mizan/web/ARCHITECTURE.md` — the Mizan web build
 >
 > Where this document and an "as-built" doc disagree, this is the *intended*
 > direction and the as-built doc is *current reality*. Build incrementally
@@ -73,23 +73,46 @@ INFRASTRUCTURE    PostgreSQL · Redis · Object Storage · Email · Push
 
 ## 2. Repository Architecture
 
-The first project stays **one coherent repository**.
+The first project stays **one coherent repository**, with an explicit top-level
+boundary between the reusable foundation and Project #1.
 
 ```
 auric/
-├── core/            AURIC Foundation
-├── app/lawfirm/     Mizan backend domain
-├── web/             Mizan web client
-├── mobile/          Mizan mobile client (Phase 2)
-├── packages/        contracts/ ui/ config/ utils/   ← only when reuse is proven
-├── prisma/          schema + migrations
-├── docs/  tests/  scripts/
-└── package.json  tsconfig.json  vitest.config.ts  README.md
+├── core/                    AURIC Foundation  (reusable, versioned, generic)
+├── mizan/                   Project #1 — the Mizan law-firm application
+│   ├── backend/app/         composition root + layered seed + law-firm domain (lawfirm/)
+│   ├── web/                 Mizan web client — standalone package (mizan-web)
+│   └── mobile/              Mizan mobile client — Phase 2 (placeholder)
+├── prisma/                  schema + migrations (Core + lawfirm tables)
+├── scripts/  http/  docs/  storage/
+└── main.ts  package.json  tsconfig.json  vitest.config.ts  README.md
 ```
+
+### Physical layout vs. logical architecture
+
+`core/` is the foundation and stays at the repository root. Everything
+Mizan-specific lives under `mizan/` — `mizan/backend/app/lawfirm/` (backend
+domain), `mizan/web/` (web client), `mizan/mobile/` (Phase 2). `core/` is **not**
+Mizan. See **`docs/mizan-project-one.md`** for the authoritative Core ↔ Mizan
+boundary and the details of the relocation.
+
+`main.ts` stays at the repo root: it composes Core + the Mizan backend into one
+process, and the backend npm package (`@auric/core`) is still rooted where
+`core/` is. `mizan/web/` is a standalone package (`mizan-web`, its own
+tsconfig/Vite config) that imports no repo code.
+
+### What is NOT in this repo, and why
+
+| Not here | Rule |
+|---|---|
+| `modules/` (extracted reusable domain modules) | Rule of Three — nothing is extracted until a capability is proven across **three** real client builds (§40, §47.4/5/20). There is exactly one client. The `mizan/` folder is Project #1, not a module library. |
+| `client-002/`, `client-003/`, … | Each future client is its **own repository**, consuming AURIC Core as a **versioned pinned package** (`Plan.md` §10.3). This does not become a monorepo of future clients. |
+| `packages/contracts/ui/config/utils/` | Introduced only when cross-client reuse is proven — not on day one. |
 
 **Do not create every package immediately.** If something is only used by Mizan
 today, keep it close to Mizan until reuse is proven. Logical architecture matters
-more than forcing every layer into a package on day one.
+more than forcing every layer into a package on day one. No speculative
+abstraction to "prepare for future clients" (§47 rules 17–19).
 
 ---
 
@@ -97,13 +120,14 @@ more than forcing every layer into a package on day one.
 
 NestJS **modular monolith on Fastify**. Not microservices.
 
-Two conceptual layers: **AURIC Core** + **Mizan Application** (`app/lawfirm/`).
+Two conceptual layers: **AURIC Core** (`core/`) + **Mizan Application**
+(`mizan/backend/app/lawfirm/`).
 
 - **Core** (`core/`): kernel · identity · rbac · organizations · tenancy · files ·
   audit · notifications · localization · observability · events · contracts · http.
   Provides infrastructure and capabilities. **Must not know** `Matter`, `Lawyer`,
   `Hearing`, `Invoice`, `Case`, `Client`.
-- **Mizan** (`app/lawfirm/`): one bounded module per feature — clients, matters,
+- **Mizan** (`mizan/backend/app/lawfirm/`): one bounded module per feature — clients, matters,
   hearings, tasks, documents, billing, staff, settings, dashboard. Each mature
   module: `domain/ application/ infrastructure/ api/ events/ permissions/
   validation/ tests/ feature.module.ts`.
@@ -178,16 +202,17 @@ main.ts → NestFactory → AppModule
 ```
 
 `core/app.module.ts` is **not** the production composition root (it is the Core
-test fixture). The running root is `app/app.module.ts`.
+test fixture). The running root is `mizan/backend/app/app.module.ts`, booted by
+`main.ts` at the repo root.
 
 ---
 
 ## 18–21. Web Frontend
 
-`web/` — React + TypeScript + Vite.
+`mizan/web/` — React + TypeScript + Vite.
 
 ```
-web/src/
+mizan/web/src/
 ├── app/         router/ providers/ layouts/
 ├── features/    auth/ dashboard/ clients/ matters/ hearings/ tasks/
 │                documents/ billing/ staff/ settings/
@@ -212,7 +237,7 @@ web/src/
 
 ## 22–24. Mobile (Phase 2)
 
-`mobile/` — React Native + TypeScript + Expo. Separate client of the **same
+`mizan/mobile/` — React Native + TypeScript + Expo. Separate client of the **same
 backend**, no backend of its own.
 
 ```
@@ -286,10 +311,10 @@ matter/client lookup, document access, approvals, field use.
 ## 39. Data Ownership (critical rule)
 
 ```
-core/         owns platform concepts: User, Organization, Role, Permission,
-              File, AuditEntry, Notification
-app/lawfirm/  owns law-firm concepts: Client, Matter, Hearing, Task, Invoice,
-              Payment, Expense
+core/                      owns platform concepts: User, Organization, Role,
+                           Permission, File, AuditEntry, Notification
+mizan/backend/app/lawfirm/  owns law-firm concepts: Client, Matter, Hearing, Task,
+                           Invoice, Payment, Expense
 ```
 
 Core must never become a dumping ground for application entities.
@@ -304,8 +329,8 @@ Core must never become a dumping ground for application entities.
 - Eventual module candidates (candidates, not promises): Documents, Tasks,
   CRM/Clients, Billing, Approvals, Inventory, Scheduling, HR, Projects, Reporting.
 - Stays client-specific for Mizan: Matters, Hearings, law-firm workflows, legal
-  terminology and rules, court/lawyer workflows — in `app/lawfirm/` unless future
-  real projects prove otherwise.
+  terminology and rules, court/lawyer workflows — in `mizan/backend/app/lawfirm/`
+  unless future real projects prove otherwise.
 - **Frontend reuse has a lower threshold**: reuse obvious primitives (Button,
   Input, Modal, Table, Form, Toast, Navigation) immediately. But no
   `GenericERPClientPage`, `UniversalBusinessDashboard`. Reuse patterns, not
@@ -339,7 +364,7 @@ Keep them explicit.
 
 1. AURIC Core must remain domain-agnostic.
 2. Mizan is the first real product, not a generic ERP template.
-3. Mizan lives in `app/lawfirm/`.
+3. Mizan lives in `mizan/` (backend domain in `mizan/backend/app/lawfirm/`).
 4. Do not create a reusable module library prematurely.
 5. Rule of Three before extracting domain modules.
 6. Backend is a modular monolith, not microservices.

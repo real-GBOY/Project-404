@@ -1,11 +1,13 @@
 # AURIC Core
 
 > The reusable, domain-agnostic foundation. **Core knows nothing about law
-> firms.** Everything client-specific lives in `app/` (Mizan) and `web/`.
+> firms.** Everything client-specific lives under `mizan/` — `mizan/backend/app/`
+> (Mizan backend) and `mizan/web/` (Mizan web).
 
 This README is the **architectural contract for `core/` as a whole**. Every
 reusable module under `core/` carries its own `README.md` documenting *its*
-contract to the same shape.
+contract to the same shape. The Core ↔ Mizan boundary is documented from the
+product side in `docs/mizan-project-one.md`.
 
 ---
 
@@ -63,11 +65,11 @@ OutboxMessage**. Schema for these lives in `prisma/schema/<module>.prisma`.
 - Law-firm permissions or roles. Core seeds only *platform* permissions
   (`read:organization`, `manage:role`, …) and the wildcard `admin` role; Mizan
   seeds `create:matter`, `firm_admin`, etc. (see `core/bootstrap/README.md` and
-  `app/README.md`).
+  `mizan/backend/app/README.md`).
 - The production composition root. `core/app.module.ts` exists **only** as the
   fixture for Core's own integration tests. The running root is
-  `app/app.module.ts`.
-- Frontend code. Core has no knowledge of `web/`.
+  `mizan/backend/app/app.module.ts`.
+- Frontend code. Core has no knowledge of `mizan/web/`.
 - Vendor lock-in: no direct S3/Cloudinary/Elasticsearch/Redis calls — always
   behind an adapter/interface, added only when a real requirement appears.
 
@@ -97,7 +99,7 @@ HTTP surface (mounted under `/api` by the composition root): `auth/*`, `me`,
 ## 8. How a client application uses Core
 
 ```ts
-// app/app.module.ts (the running composition root)
+// mizan/backend/app/app.module.ts (the running composition root)
 import {
   KernelModule, EventsModule, IdentityModule, RbacModule,
   OrganizationsModule, AuditModule, NotificationsModule, FilesModule,
@@ -130,13 +132,13 @@ See `docs/integration-guide.md`.
 ## 9. Dependencies & allowed direction
 
 ```
-AURIC CORE  ◀──  MIZAN (app/lawfirm)  ◀──  { web/, mobile/ }
+AURIC CORE  ◀──  MIZAN (mizan/backend/app/lawfirm)  ◀──  { mizan/web, mizan/mobile }
 ```
 
-- **Core → app/**: forbidden. Verified: `grep -rn "app/lawfirm" core/` is empty.
-- **Core → web/**: forbidden.
-- **app/ → Core**: allowed, through `core/contracts` interfaces and the exported
-  `@Module`s / tokens. Reaching into `core/<module>/domain|application|
+- **Core → mizan/**: forbidden. Verified: `grep -rn "mizan/" core/` is empty.
+- **Core → mizan/web/**: forbidden.
+- **mizan/backend/ → Core**: allowed, through `core/contracts` interfaces and the
+  exported `@Module`s / tokens. Reaching into `core/<module>/domain|application|
   infrastructure` from domain code is forbidden (the one sanctioned exception is
   the seed script — see `core/bootstrap/README.md`).
 - **Inside Core**: modules depend on `kernel` + `contracts` + `events` + `audit`
@@ -173,7 +175,7 @@ AURIC CORE  ◀──  MIZAN (app/lawfirm)  ◀──  { web/, mobile/ }
 
 ## 12. When NOT to extend Core
 
-- To host anything Mizan-specific — that goes in `app/lawfirm/`.
+- To host anything Mizan-specific — that goes in `mizan/backend/app/lawfirm/`.
 - To pre-build a capability "for the next client" — wait for the requirement.
 - To extract a Mizan module (Documents, Tasks, Billing, …) after **one**
   project. The bar is **three** real client builds with a stable shared shape

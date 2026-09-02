@@ -28,7 +28,7 @@ checks through the code is how authorization bugs happen.
 - `RbacService` use cases: create role, grant/revoke a permission on a role,
   assign/unassign a role to a user — each audited.
 - `permissionMatches(held, action, resource)` — the wildcard-aware matcher
-  (mirrored verbatim in `web/src/lib/permissions/can.ts`).
+  (mirrored verbatim in `mizan/web/src/lib/permissions/can.ts`).
 - React to identity events (e.g. a newly registered/first user) via subscribers
   registered in `OnModuleInit`.
 
@@ -42,7 +42,7 @@ semantics.
 
 - **Which** permissions exist for a product. Core's seed adds only *platform*
   permissions; Mizan's `AppSeedService` adds `create:matter`, `void:invoice`, …
-  (see `core/bootstrap/README.md`, `app/README.md`).
+  (see `core/bootstrap/README.md`, `mizan/backend/app/README.md`).
 - **User accounts** (`core/identity`) — RBAC keys assignments by `userId` but
   does not own the user.
 - **Enforcement placement** — modules and `core/http`'s `PermissionGuard`

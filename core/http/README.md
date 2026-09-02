@@ -89,7 +89,7 @@ The tenant context is already set by the middleware — the use case reads it vi
 
 Imports `IdentityModule` (`JWT_SERVICE`), `RbacModule` (`PERMISSION_PROVIDER`),
 `kernel` (`TENANT_CONTEXT`, `ERROR_TRACKER`, logging). Consumed by every
-controller in Core and `app/`. Nothing depends on `core/http` internals.
+controller in Core and `mizan/backend/app/`. Nothing depends on `core/http` internals.
 
 ## 10. Invariants
 
@@ -114,7 +114,7 @@ ZodBody failure
           "details": { "fields": [{ "path": "email", "message": "A valid email is required." }] } }
 ```
 
-The web client's `ApiError` (`web/src/lib/api/api-error.ts`) parses exactly this
+The web client's `ApiError` (`mizan/web/src/lib/api/api-error.ts`) parses exactly this
 shape.
 
 ## 12. Testing expectations

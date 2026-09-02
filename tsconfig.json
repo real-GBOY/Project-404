@@ -20,6 +20,6 @@
     "declaration": true,
     "sourceMap": true
   },
-  "include": ["core", "app", "scripts", "main.ts", "vitest.config.ts", "prisma.config.ts"],
+  "include": ["core", "mizan/backend/app", "scripts", "main.ts", "vitest.config.ts", "prisma.config.ts"],
   "exclude": ["node_modules", "dist"]
 }

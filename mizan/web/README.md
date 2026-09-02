@@ -1,20 +1,24 @@
-# `web/` — Mizan Web
+# `mizan/web/` — Mizan Web
 
 > The web client of **Mizan** (Project #1), the law-firm application built on
 > AURIC Core. This is **product code**, not platform code. It talks to the
 > backend over HTTP only.
+>
+> Mizan lives under the top-level `mizan/` folder: `mizan/backend/app/lawfirm/`
+> (backend) + `mizan/web/` (this) + `mizan/mobile/` (future). Canonical
+> boundary: **`docs/mizan-project-one.md`**.
 
 `PLAN.md` is *what to build and in what order*. `ARCHITECTURE.md` is *how the
-code is organised*. This README is the **architectural contract**: what `web/`
-is, what it may and may not depend on, and where the Core ↔ Mizan boundary sits
-on the frontend.
+code is organised*. This README is the **architectural contract**: what
+`mizan/web/` is, what it may and may not depend on, and where the Core ↔ Mizan
+boundary sits on the frontend.
 
 ---
 
 ## 1. What it is
 
 A standalone Vite + React 19 + TypeScript SPA (its own `package.json`, sibling to
-`core/` and `app/`, **not** an npm workspace). Tailwind v4 semantic tokens,
+`mizan/backend/`, **not** an npm workspace). Tailwind v4 semantic tokens,
 Radix primitives restyled to the Mizan design language, TanStack Query for server
 state, React Router v7, react-hook-form + Zod, i18next (AR default + RTL), MSW
 for the mock layer.
@@ -55,9 +59,9 @@ its own UX — so it lives with the product, not in Core.
 
 ## 6. What it explicitly does NOT own / must not do
 
-- **Import any repo code.** `web/` never imports from `core/` or `app/` —
-  `grep -rn "\.\./\.\./core" web/src` is empty. It consumes the **HTTP API
-  only**. (It re-implements the permission matcher and the `ar-EG` formatters to
+- **Import any repo code.** `mizan/web/` never imports from `core/` or
+  `mizan/backend/` — `grep -rn "\.\./\.\./core" mizan/web/src` is empty. It
+  consumes the **HTTP API only**. (It re-implements the permission matcher and the `ar-EG` formatters to
   match Core's — it does not import them.)
 - **Security.** Frontend `can()` and hidden buttons are UX. The backend is the
   authority (Plan §47 rule 11). A hidden button is not a protected endpoint.
@@ -70,7 +74,7 @@ its own UX — so it lives with the product, not in Core.
 
 ## 7. Public interfaces it consumes (the boundary)
 
-`web/` depends on the **Mizan/AURIC HTTP API** and nothing else:
+`mizan/web/` depends on the **Mizan/AURIC HTTP API** and nothing else:
 
 | Concern | Endpoints (real) |
 |---|---|
@@ -89,7 +93,7 @@ another feature. See `ARCHITECTURE.md`.
 ## 8. How it is used / run
 
 ```bash
-cd web
+cd mizan/web
 npm install
 npm run dev            # http://localhost:4300, MSW on
 # sign in: any email + any password ≥ 10 characters
@@ -103,15 +107,15 @@ real route.
 ## 9. Dependencies & direction
 
 ```
-AURIC Core  ◀──  Mizan backend (app/lawfirm)  ◀──  web/  (this)   [◀── mobile/ later]
+AURIC Core  ◀──  Mizan backend (mizan/backend/app/lawfirm)  ◀──  mizan/web/  (this)   [◀── mizan/mobile/ later]
 ```
 
-`web/` is downstream of everything. Nothing depends on `web/`. It reaches the
+`mizan/web/` is downstream of everything. Nothing depends on it. It reaches the
 system only through the application API.
 
 ## 10. Invariants
 
-1. No import from `core/` or `app/` — HTTP API only.
+1. No import from `core/` or `mizan/backend/` — HTTP API only.
 2. Permission keys are exactly what `/api/me` returns (`action:resource`).
 3. Frontend authz is UX; the backend enforces.
 4. Money is `{ currency, amount }[]`, rendered as stacked lines, never summed; no
@@ -145,8 +149,8 @@ later addition. Test-infra notes live in `src/test/` and the project memory.
 
 ## 13. When this should NOT be reused or extended
 
-- Do **not** extract `web/src/features/*` into a shared "AURIC web" package. It
-  is Mizan's product UI. Reuse across real future clients is a rule-of-three
+- Do **not** extract `mizan/web/src/features/*` into a shared "AURIC web"
+  package. It is Mizan's product UI. Reuse across real future clients is a rule-of-three
   concern (Plan §40–43), and even then only *primitives* and *patterns* move,
   never DOM components shared with React Native.
 - Do not add a plugin system, a module marketplace, or a generic workflow/form

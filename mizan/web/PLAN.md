@@ -25,8 +25,8 @@ within web/:
    dependencies flow toward stable primitives; no circular deps between features
 ```
 
-- `web/` depends on **nothing** in the repo — only the backend HTTP API. It
-  never imports `core/` or `app/` code (mirrors `core/ ──X──▶ app/`).
+- `mizan/web/` depends on **nothing** in the repo — only the backend HTTP API. It
+  never imports `core/` or `mizan/backend/` code (mirrors `core/ ──X──▶ mizan/`).
 - Mizan-specific domain logic stays inside its `features/` module.
 - A UI pattern becomes a shared `components/` primitive **because it is actually
   reused**, not speculatively. No `GenericERPTable`, no `IndustryDashboard`.
@@ -88,9 +88,9 @@ Radix-Popper overlays are driven synchronously (see `src/test/`).
 **No** Redux/Zustand (§25). Server state → Query; auth/org/permissions → React
 context; UI/form state → `useState` / RHF.
 
-`web/` is a **standalone package** (its own `package.json`), sibling to `core/`
-and `app/`. Not an npm workspace — the root `package.json` stays Core's.
-`cd web && npm run dev`.
+`mizan/web/` is a **standalone package** (its own `package.json`), sibling to
+`mizan/backend/`. Not an npm workspace — the root `package.json` stays Core's.
+`cd mizan/web && npm run dev`.
 
 ---
 
@@ -131,8 +131,9 @@ web/
     └── test/                    setup.ts
 ```
 
-`web/src/app/` (routing/composition) is distinct from the repo's `app/`
-(backend domain) — different roots, no collision. `web/` imports no repo code.
+`mizan/web/src/app/` (routing/composition) is distinct from
+`mizan/backend/app/` (backend domain) — different roots, no collision.
+`mizan/web/` imports no repo code.
 
 ---
 
@@ -344,7 +345,7 @@ patterns). Each area still gets its own `features/` module.
 | Permission key order: `action:resource` (backend) vs `resource:action` (some doc examples) | Follow the backend — the keys `/api/me` returns. |
 | English design vs AR-first mandate | Ship AR + EN + RTL now. |
 | No auth / form / state / 404 screens in the prototype | Build in Mizan language; minimal; field-faithful to the entity models. |
-| `web/src/app/` vs repo `app/` | Different roots; frontend imports no repo code. |
+| `mizan/web/src/app/` vs `mizan/backend/app/` | Different roots; frontend imports no repo code. |
 | Week / Agenda calendar views | Prototype leaves them unbuilt — ship month view faithfully, Week/Agenda lightweight. Do not build a large calendar system (§17). |
 
 ---

@@ -19,7 +19,7 @@ them, and RTL is expensive to retrofit.
   does money/date format in Egypt".
 - Core-owned strings (error messages, notification templates) rendered in the
   right language.
-- A formatter contract the frontend mirrors (`web/src/lib/format` follows the
+- A formatter contract the frontend mirrors (`mizan/web/src/lib/format` follows the
   same `ar-EG` / `Africa/Cairo` rules).
 
 ## 4. Responsibilities
@@ -39,7 +39,7 @@ and Core's string catalog.
 
 ## 6. What it explicitly does NOT own
 
-- **Product copy.** Mizan's strings (`web/src/lib/i18n/resources/*.json`,
+- **Product copy.** Mizan's strings (`mizan/web/src/lib/i18n/resources/*.json`,
   backend domain messages) are the product's, not Core's.
 - **Translation of user-entered data** — client names, matter titles, notes are
   shown as entered, never machine-translated.
@@ -62,8 +62,8 @@ outstanding: formatMoneyList([{ currency: "EGP", amount: "4360000" }, { currency
 // → ["EGP 4,360,000", "AED 24,000"]   — two lines, never one sum
 ```
 
-Frontend consumes the *same rules* via `web/src/lib/format` (it re-implements,
-not imports — `web/` takes no backend code).
+Frontend consumes the *same rules* via `mizan/web/src/lib/format` (it re-implements,
+not imports — `mizan/web/` takes no backend code).
 
 ## 9. Dependencies & direction
 

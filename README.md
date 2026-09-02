@@ -97,7 +97,7 @@ Locally they default to `…/auric_test` if that env var is unset.
 ## Layout
 
 ```
-core/
+core/                       AURIC Foundation — reusable, versioned, domain-agnostic
 ├── kernel/         config, db (pools + Kysely + unit-of-work + prisma migrate runner), logging, ids, clock, errors, tenant, DI tokens, KernelModule
 ├── contracts/      the provider interfaces every module depends on (Plan §4)
 ├── events/         in-process bus + outbox + worker + DLQ (Plan §6), EventsModule
@@ -106,16 +106,26 @@ core/
 ├── observability/  error tracker + HealthController
 ├── http/           Zod pipe, guards (JwtAuth + Permission), exception filter, request-context middleware, SecurityModule
 ├── bootstrap/      SeedService (RBAC + template seed)
-├── app.module.ts   the composition root — imports every feature @Module
+├── app.module.ts   Core's own test-fixture composition root (NOT the running one)
 └── index.ts        public surface (re-exports the modules, tokens, contracts)
 
-main.ts             entrypoint — migrate, NestFactory.create on the Fastify adapter, seed, listen
+mizan/                      Project #1 — the Mizan law-firm application
+├── backend/app/    composition root (app.module.ts), layered seed, law-firm domain (lawfirm/)
+├── web/            Mizan web client — standalone Vite package (mizan-web), HTTP API only
+└── mobile/         Mizan mobile client — Phase 2 (placeholder)
+
+main.ts             entrypoint (repo root) — migrate, NestFactory.create on the Fastify adapter, seed, listen
+prisma/             schema + migrations (Core + lawfirm tables)
 ```
 
 Every module follows the same anatomy (`domain/ application/ infrastructure/
 api/ events/ permissions/ validation/ tests/`) so any AURIC developer can
 navigate any module — Plan §3.2. Schema for a module's tables lives in
 `prisma/schema/<module>.prisma`, not in the module folder.
+
+`core/` is the reusable foundation; everything Mizan-specific lives under
+`mizan/`. The Core ↔ Mizan boundary is documented in `docs/mizan-project-one.md`.
+The web client is run from `mizan/web/` (`cd mizan/web && npm run dev`).
 
 ## Architectural contracts (per-module READMEs)
 
@@ -131,8 +141,10 @@ code:
 | `core/identity/` · `core/rbac/` · `core/organizations/` | auth & access |
 | `core/files/` · `core/audit/` · `core/notifications/` | capabilities |
 | `core/localization/` · `core/observability/` · `core/http/` · `core/bootstrap/` | cross-cutting |
-| `app/README.md` | **Mizan** (Project #1) backend — the Core ↔ Mizan boundary |
-| `web/README.md` | **Mizan** web client — API-only, imports no repo code |
+| `mizan/backend/app/README.md` | **Mizan** (Project #1) backend — the Core ↔ Mizan boundary |
+| `mizan/web/README.md` | **Mizan** web client — API-only, imports no repo code |
+| `docs/mizan-project-one.md` | **Mizan = Project #1** — physical layout vs. logical architecture; the authoritative Core ↔ Mizan boundary; why there is no `modules/` / `client-00N/` yet |
 
 `docs/` has the higher-level architecture, integration guide, tenancy design,
-and conventions. `docs/system-architecture.md` is the canonical vision.
+and conventions. `docs/system-architecture.md` is the canonical vision;
+`docs/mizan-project-one.md` pins the Core ↔ Mizan split.
