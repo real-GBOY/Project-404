@@ -35,6 +35,16 @@
     "language": {
       "ar": "العربية",
       "en": "English"
+    },
+    "pagination": {
+      "label": "Pagination",
+      "previous": "Previous page",
+      "next": "Next page"
+    },
+    "command": {
+      "title": "Command menu",
+      "placeholder": "Search for a page or action…",
+      "empty": "No matching commands"
     }
   }
 }
