@@ -24,7 +24,7 @@ export function InvoiceDetailPage() {
   const canManage = can("issue:invoice");
 
   return (
-    <PageContainer width="narrow">
+    <PageContainer>
       <QueryBoundary
         query={query}
         loading={

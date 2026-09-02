@@ -2,6 +2,10 @@ import { forwardRef } from "react";
 import * as SwitchPrimitive from "@radix-ui/react-switch";
 import { cn } from "@/lib/cn";
 
+/**
+ * Toggle — the prototype's `38×22` pill with an `18×18` knob,
+ * `#3B2418` on / `#E2E2EA` off, `2px` padding (16px travel).
+ */
 export const Switch = forwardRef<
   React.ComponentRef<typeof SwitchPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof SwitchPrimitive.Root>
@@ -11,7 +15,7 @@ export const Switch = forwardRef<
       ref={ref}
       data-slot="switch"
       className={cn(
-        "peer inline-flex h-5 w-9 flex-none items-center rounded-pill border border-transparent bg-border-control p-0.5 transition-colors",
+        "peer inline-flex h-[22px] w-[38px] flex-none items-center rounded-pill bg-[#e2e2ea] p-0.5 transition-colors",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
         "data-[state=checked]:bg-primary",
         "disabled:cursor-not-allowed disabled:opacity-50",
@@ -21,7 +25,7 @@ export const Switch = forwardRef<
     >
       <SwitchPrimitive.Thumb
         className={cn(
-          "size-3.5 rounded-full bg-surface shadow-pop transition-transform",
+          "block size-[18px] rounded-full bg-surface transition-transform",
           "data-[state=checked]:translate-x-4 rtl:data-[state=checked]:-translate-x-4",
         )}
       />

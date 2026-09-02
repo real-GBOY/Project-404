@@ -75,7 +75,8 @@
       "org_switched": "Organization switched",
       "logout": "Sign out",
       "coming_in": "Arriving in {{phase}}.",
-      "notifications_unread": "Notifications, {{count}} unread"
+      "notifications_unread": "Notifications, {{count}} unread",
+      "search_hint": "Search matters, clients…"
     },
     "language": {
       "ar": "العربية",
@@ -182,42 +183,95 @@
   },
   "dashboard": {
     "title": "Dashboard",
-    "greeting": "Good to see you, {{name}}",
-    "subtitle": "What needs your attention across the firm today.",
-    "view_all": "View all",
+    "greeting": {
+      "morning": "Good morning, {{name}}",
+      "afternoon": "Good afternoon, {{name}}",
+      "evening": "Good evening, {{name}}",
+      "summary": "{{hearings}} hearings and {{deadlines}} filing deadlines fall in the next 7 days."
+    },
+    "date_range": "This week",
+    "export": "Export",
+    "alert": {
+      "critical_deadlines": "{{count}} filing deadlines fall within 72 hours",
+      "view_deadlines": "View deadlines"
+    },
     "kpi": {
       "active_matters": "Active matters",
-      "open_tasks": "Open tasks",
-      "hearings_week": "Hearings this week",
+      "active_matters_sub": "↑ {{opened}} opened this month · {{closed}} closed YTD",
+      "hearings_month": "Hearings this month",
+      "hearings_month_sub": "{{next7}} in the next 7 days · {{adjourned}} adjourned",
+      "unbilled": "Unbilled time",
+      "hrs": "hrs",
+      "unbilled_sub": "≈ {{value}} ready to invoice",
       "outstanding": "Outstanding",
-      "collected_month": "Collected this month"
+      "outstanding_sub": "{{count}} invoices overdue · {{amount}}"
     },
     "panels": {
       "upcoming_hearings": "Upcoming hearings",
+      "see_all": "See all",
       "no_hearings": "No hearings scheduled",
       "urgent_deadlines": "Urgent deadlines",
+      "n_critical": "{{count}} critical",
       "no_deadlines": "Nothing due soon",
       "my_tasks": "My tasks",
+      "open_tasks": "Open tasks",
       "no_tasks": "You're all caught up",
-      "no_matter": "No matter",
-      "review_documents": "Documents to review",
+      "no_matter": "Firm-wide",
+      "review_documents": "Documents needing attention",
+      "all": "All",
       "no_documents": "Nothing waiting for review",
       "recent_activity": "Recent activity",
       "no_activity": "No activity yet",
       "practice_areas": "Matters by practice area",
-      "no_matters": "No open matters",
-      "billing_vs_collections": "Billed vs collected ({{currency}})",
+      "open_matters": "open matters",
+      "other": "Other",
+      "billing_vs_collections": "Billing vs collections",
+      "open_finance": "Open finance",
+      "billed_ytd": "Billed (YTD)",
+      "collected_ytd": "Collected (YTD)",
+      "collection_rate": "{{rate}}% collection rate",
       "billed": "Billed",
-      "collected": "Collected",
-      "collection_rate": "{{rate}}% collected"
+      "collected": "Collected"
+    },
+    "cols": {
+      "task": "Task",
+      "assignee": "Assignee",
+      "due": "Due",
+      "priority": "Priority"
+    },
+    "task_scope": {
+      "today": "Today",
+      "week": "This week",
+      "overdue": "Overdue",
+      "all": "All"
+    },
+    "priority": {
+      "high": "High",
+      "normal": "Medium",
+      "low": "Low"
+    },
+    "hearing_status": {
+      "confirmed": "Confirmed",
+      "awaiting_court": "Awaiting court",
+      "adjourned": "Adjourned"
+    },
+    "doc_status": {
+      "awaiting_review": "Awaiting review",
+      "expiring": "Expiring",
+      "in_review": "In review"
     },
     "activity": {
-      "matter.opened": "opened",
-      "matter.update_added": "added an update to",
-      "document.uploaded": "uploaded",
-      "hearing.scheduled": "scheduled",
-      "payment.recorded": "recorded a payment —",
-      "task.completed": "completed"
+      "matter.opened": "Matter opened",
+      "matter.update_added": "Update added",
+      "matter.assigned": "Team member assigned",
+      "matter.closed": "Matter closed",
+      "document.uploaded": "Document uploaded",
+      "hearing.scheduled": "Hearing scheduled",
+      "hearing.adjourned": "Hearing adjourned",
+      "payment.recorded": "Payment recorded",
+      "invoice.sent": "Invoice sent",
+      "task.completed": "Task completed",
+      "task.assigned": "Task assigned"
     }
   },
   "clients": {
@@ -225,7 +279,11 @@
     "subtitle": "Every organisation and individual the firm acts for.",
     "search_placeholder": "Search clients…",
     "client_since": "Client since {{date}}",
-    "actions": { "new": "New client", "archive": "Archive client", "more": "More actions" },
+    "actions": {
+      "new": "New client",
+      "archive": "Archive client",
+      "more": "More actions"
+    },
     "columns": {
       "name": "Name",
       "type": "Type",
@@ -234,9 +292,20 @@
       "outstanding": "Outstanding",
       "client_since": "Client since"
     },
-    "type": { "all": "All types", "company": "Company", "individual": "Individual" },
-    "status": { "active": "Active", "archived": "Archived" },
-    "stats": { "open_matters": "Open matters", "documents": "Documents", "outstanding": "Outstanding" },
+    "type": {
+      "all": "All types",
+      "company": "Company",
+      "individual": "Individual"
+    },
+    "status": {
+      "active": "Active",
+      "archived": "Archived"
+    },
+    "stats": {
+      "open_matters": "Open matters",
+      "documents": "Documents",
+      "outstanding": "Outstanding"
+    },
     "fields": {
       "type": "Client type",
       "name": "Name",
@@ -309,7 +378,11 @@
       "hearings": "Hearings",
       "tasks": "Tasks"
     },
-    "actions": { "new": "New matter", "more": "More actions", "close": "Close matter" },
+    "actions": {
+      "new": "New matter",
+      "more": "More actions",
+      "close": "Close matter"
+    },
     "columns": {
       "matter": "Matter",
       "status": "Status",
@@ -318,7 +391,11 @@
       "next_hearing": "Next hearing",
       "tasks": "Open tasks"
     },
-    "status": { "open": "Open", "on_hold": "On hold", "closed": "Closed" },
+    "status": {
+      "open": "Open",
+      "on_hold": "On hold",
+      "closed": "Closed"
+    },
     "fields": {
       "title": "Matter title",
       "client": "Client",
@@ -329,7 +406,11 @@
       "description": "Description / scope",
       "select": "Select…"
     },
-    "form": { "new_title": "Open a new matter", "edit_title": "Edit matter", "create": "Open matter" },
+    "form": {
+      "new_title": "Open a new matter",
+      "edit_title": "Edit matter",
+      "create": "Open matter"
+    },
     "tabs": {
       "overview": "Overview",
       "hearings": "Hearings",
@@ -355,7 +436,10 @@
       "hearings": "Hearings",
       "documents": "Documents"
     },
-    "timeline": { "placeholder": "Add an update to the matter timeline…", "add": "Add update" },
+    "timeline": {
+      "placeholder": "Add an update to the matter timeline…",
+      "add": "Add update"
+    },
     "notes": {
       "placeholder": "Add a private working note…",
       "add": "Add note",
@@ -397,9 +481,21 @@
   "hearings": {
     "title": "Hearings",
     "subtitle": "Every scheduled and past court session.",
-    "scope": { "label": "Timeframe", "upcoming": "Upcoming", "past": "Past" },
-    "status": { "scheduled": "Scheduled", "adjourned": "Adjourned", "decided": "Decided" },
-    "actions": { "schedule": "Schedule hearing", "adjourn": "Adjourn", "record_outcome": "Record outcome" },
+    "scope": {
+      "label": "Timeframe",
+      "upcoming": "Upcoming",
+      "past": "Past"
+    },
+    "status": {
+      "scheduled": "Scheduled",
+      "adjourned": "Adjourned",
+      "decided": "Decided"
+    },
+    "actions": {
+      "schedule": "Schedule hearing",
+      "adjourn": "Adjourn",
+      "record_outcome": "Record outcome"
+    },
     "fields": {
       "matter": "Matter",
       "matter_placeholder": "Select a matter",
@@ -408,15 +504,25 @@
       "purpose": "Purpose",
       "court": "Court"
     },
-    "schedule": { "title": "Schedule a hearing", "submit": "Schedule" },
+    "schedule": {
+      "title": "Schedule a hearing",
+      "submit": "Schedule"
+    },
     "adjourn": {
       "title": "Adjourn hearing",
       "new_date": "New date",
       "reason": "Reason (optional)",
       "submit": "Adjourn & reschedule"
     },
-    "outcome": { "title": "Record the outcome", "label": "What did the court decide?", "submit": "Record" },
-    "empty": { "upcoming": "No upcoming hearings", "past": "No past hearings" },
+    "outcome": {
+      "title": "Record the outcome",
+      "label": "What did the court decide?",
+      "submit": "Record"
+    },
+    "empty": {
+      "upcoming": "No upcoming hearings",
+      "past": "No past hearings"
+    },
     "toasts": {
       "scheduled": "Hearing scheduled",
       "adjourned": "Hearing adjourned and rescheduled",
@@ -434,10 +540,27 @@
   "tasks": {
     "title": "Tasks",
     "subtitle": "Everything the firm needs to get done.",
-    "range": { "label": "Range", "today": "Today", "week": "This week", "overdue": "Overdue", "all": "All" },
-    "scope": { "label": "Owner", "mine": "Mine", "everyone": "Everyone" },
-    "priority": { "low": "Low", "normal": "Normal", "high": "High" },
-    "actions": { "new": "New task", "toggle_complete": "Toggle complete" },
+    "range": {
+      "label": "Range",
+      "today": "Today",
+      "week": "This week",
+      "overdue": "Overdue",
+      "all": "All"
+    },
+    "scope": {
+      "label": "Owner",
+      "mine": "Mine",
+      "everyone": "Everyone"
+    },
+    "priority": {
+      "low": "Low",
+      "normal": "Normal",
+      "high": "High"
+    },
+    "actions": {
+      "new": "New task",
+      "toggle_complete": "Toggle complete"
+    },
     "fields": {
       "title": "What needs doing?",
       "matter": "Matter",
@@ -445,23 +568,56 @@
       "priority": "Priority",
       "due": "Due date"
     },
-    "dialog": { "title": "New task" },
-    "empty": { "title": "Nothing to do here", "body": "Add a task to track work on a matter." },
-    "toasts": { "created": "Task added", "failed": "Couldn't save. Try again." },
-    "errors": { "title_required": "Describe the task." }
+    "dialog": {
+      "title": "New task"
+    },
+    "empty": {
+      "title": "Nothing to do here",
+      "body": "Add a task to track work on a matter."
+    },
+    "toasts": {
+      "created": "Task added",
+      "failed": "Couldn't save. Try again."
+    },
+    "errors": {
+      "title_required": "Describe the task."
+    }
   },
   "documents": {
     "title": "Documents",
     "subtitle": "Every file across the firm's matters.",
     "search_placeholder": "Search files…",
     "all_categories": "All categories",
-    "actions": { "upload": "Upload" },
-    "fields": { "name": "File name", "matter": "Matter", "matter_none": "No matter", "category": "Category", "status": "Status" },
-    "status": { "draft": "Draft", "final": "Final", "filed": "Filed", "signed": "Signed" },
-    "upload": { "title": "Upload a document", "pick": "Choose a file to upload" },
-    "edit": { "title": "Edit document" },
-    "delete": { "title": "Delete “{{name}}”?" },
-    "empty": { "title": "No documents yet", "body": "Upload the first file for a matter." },
+    "actions": {
+      "upload": "Upload"
+    },
+    "fields": {
+      "name": "File name",
+      "matter": "Matter",
+      "matter_none": "No matter",
+      "category": "Category",
+      "status": "Status"
+    },
+    "status": {
+      "draft": "Draft",
+      "final": "Final",
+      "filed": "Filed",
+      "signed": "Signed"
+    },
+    "upload": {
+      "title": "Upload a document",
+      "pick": "Choose a file to upload"
+    },
+    "edit": {
+      "title": "Edit document"
+    },
+    "delete": {
+      "title": "Delete “{{name}}”?"
+    },
+    "empty": {
+      "title": "No documents yet",
+      "body": "Upload the first file for a matter."
+    },
     "toasts": {
       "uploaded": "Document uploaded",
       "updated": "Document updated",
@@ -476,16 +632,36 @@
     "filter_lawyer": "Filter by lawyer",
     "all_lawyers": "All lawyers",
     "more": "+{{count}} more",
-    "actions": { "new_event": "New event" },
-    "fields": { "title": "Title", "date": "Date", "time": "Time", "matter": "Matter", "matter_none": "No matter" },
-    "new_event": { "title": "New calendar event" },
-    "toasts": { "created": "Event added", "failed": "Couldn't save. Try again." },
-    "errors": { "title_required": "Give the event a title.", "date_required": "Pick a date." }
+    "actions": {
+      "new_event": "New event"
+    },
+    "fields": {
+      "title": "Title",
+      "date": "Date",
+      "time": "Time",
+      "matter": "Matter",
+      "matter_none": "No matter"
+    },
+    "new_event": {
+      "title": "New calendar event"
+    },
+    "toasts": {
+      "created": "Event added",
+      "failed": "Couldn't save. Try again."
+    },
+    "errors": {
+      "title_required": "Give the event a title.",
+      "date_required": "Pick a date."
+    }
   },
   "billing": {
     "title": "Finance",
     "subtitle": "Invoices, payments and expenses.",
-    "tabs": { "invoices": "Invoices", "payments": "Payments", "expenses": "Expenses" },
+    "tabs": {
+      "invoices": "Invoices",
+      "payments": "Payments",
+      "expenses": "Expenses"
+    },
     "columns": {
       "invoice": "Invoice",
       "status": "Status",
@@ -496,10 +672,28 @@
       "received": "Received",
       "amount": "Amount"
     },
-    "invoice_status": { "draft": "Draft", "issued": "Issued", "sent": "Sent", "paid": "Paid", "void": "Void" },
-    "expense_status": { "pending": "Pending", "approved": "Approved", "rejected": "Rejected" },
-    "method": { "bank_transfer": "Bank transfer", "cheque": "Cheque", "cash": "Cash", "card": "Card" },
-    "line_kind": { "fee": "Fee", "disbursement": "Disbursement" },
+    "invoice_status": {
+      "draft": "Draft",
+      "issued": "Issued",
+      "sent": "Sent",
+      "paid": "Paid",
+      "void": "Void"
+    },
+    "expense_status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "method": {
+      "bank_transfer": "Bank transfer",
+      "cheque": "Cheque",
+      "cash": "Cash",
+      "card": "Card"
+    },
+    "line_kind": {
+      "fee": "Fee",
+      "disbursement": "Disbursement"
+    },
     "actions": {
       "new_invoice": "New invoice",
       "issue": "Issue",
@@ -571,16 +765,34 @@
     "tasks": "tasks",
     "hearings": "hearings",
     "active_matters": "Active matters",
-    "status": { "inactive": "Inactive" },
-    "fields": { "title": "Job title", "phone": "Phone", "capacity": "Weekly capacity (hours)" },
-    "edit": { "title": "Edit profile" },
-    "toasts": { "updated": "Profile updated", "failed": "Couldn't save. Try again." }
+    "status": {
+      "inactive": "Inactive"
+    },
+    "fields": {
+      "title": "Job title",
+      "phone": "Phone",
+      "capacity": "Weekly capacity (hours)"
+    },
+    "edit": {
+      "title": "Edit profile"
+    },
+    "toasts": {
+      "updated": "Profile updated",
+      "failed": "Couldn't save. Try again."
+    }
   },
   "notifications": {
     "title": "Notifications",
     "mark_all_read": "Mark all read",
-    "filter": { "label": "Filter", "all": "All", "unread": "Unread" },
-    "empty": { "title": "You're all caught up", "body": "New notifications will show up here." }
+    "filter": {
+      "label": "Filter",
+      "all": "All",
+      "unread": "Unread"
+    },
+    "empty": {
+      "title": "You're all caught up",
+      "body": "New notifications will show up here."
+    }
   },
   "settings": {
     "title": "Settings",
@@ -594,7 +806,11 @@
       "audit": "Security & audit log",
       "locale": "Language & region"
     },
-    "firm": { "name": "Firm name", "registration": "Registration number", "address": "Address" },
+    "firm": {
+      "name": "Firm name",
+      "registration": "Registration number",
+      "address": "Address"
+    },
     "practice": {
       "matter_types": "Practice areas",
       "courts": "Courts",
@@ -611,7 +827,10 @@
       "enable": "Enable “Ask Mizan” for the firm",
       "note": "A preview assistant over your demo data. No AI actions are taken."
     },
-    "users": { "permissions": "{{count}} permissions", "role": "Role" },
+    "users": {
+      "permissions": "{{count}} permissions",
+      "role": "Role"
+    },
     "audit": {
       "search": "Search the log…",
       "when": "When",

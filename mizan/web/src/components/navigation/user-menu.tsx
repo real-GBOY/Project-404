@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/auth/use-auth";
 import { useOrganization } from "@/lib/tenant/use-organization";
 import { useToast } from "@/components/ui/toast-context";
-import { Avatar } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
 import {
   DropdownMenu,
@@ -15,6 +14,22 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+function initials(name: string) {
+  return name
+    .replace(/[^A-Za-z؀-ۿ ]/g, "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
+}
+
+/**
+ * Sidebar-footer account card — the prototype's user card
+ * (`border:1px solid #ECECF1; border-radius:12px; padding:10px`). Opens the
+ * account menu (org switch, language, sign out).
+ */
 export function UserMenu() {
   const { t, i18n } = useTranslation("common");
   const navigate = useNavigate();
@@ -24,6 +39,7 @@ export function UserMenu() {
   const [switching, setSwitching] = useState(false);
 
   const name = user?.displayName ?? user?.email ?? "";
+  const subtitle = organization?.name ?? user?.email ?? "";
 
   async function handleSwitch(orgId: string) {
     if (orgId === organization?.organizationId || switching) return;
@@ -44,12 +60,19 @@ export function UserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label={t("shell.user_menu")}
-        className="flex items-center gap-2 rounded-md p-0.5 hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        className="flex w-full items-center gap-2.5 rounded-panel border border-border p-2.5 text-start transition-colors hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       >
-        <Avatar name={name} size="sm" />
-        <Icon name="expand_more" size={16} className="text-muted" />
+        <span className="flex size-[34px] flex-none items-center justify-center rounded-full bg-border-warm text-[12.5px] font-extrabold text-primary-deep">
+          {initials(name)}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[12.5px] font-bold text-foreground">{name}</span>
+          <span className="block truncate text-[11px] font-medium text-muted">{subtitle}</span>
+        </span>
+        <Icon name="chevron_right" size={18} className="flex-none text-faint rtl:rotate-180" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="min-w-56">
+
+      <DropdownMenuContent align="start" side="top" className="min-w-56">
         <DropdownMenuLabel>
           <div className="truncate text-[12.5px] font-bold text-foreground">{name}</div>
           {user?.email && (

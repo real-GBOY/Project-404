@@ -2,59 +2,95 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { Icon } from "./icon";
 
+type Tone = "default" | "success" | "warning" | "danger" | "brand" | "muted";
+
+const TONE_TEXT: Record<Tone, string> = {
+  default: "text-foreground",
+  success: "text-success",
+  warning: "text-warning",
+  danger: "text-danger",
+  brand: "text-link",
+  muted: "text-muted-2",
+};
+
 interface StatCardProps {
   label: string;
-  /** primary value — a string, or stacked lines for per-currency money */
+  /** primary value — a string/number, or stacked lines for per-currency money */
   value: ReactNode | string[];
+  /** trailing unit rendered small + muted after the value (e.g. "hrs", "/hr") */
+  unit?: string;
+  /** leading icon — switches the label to the icon+label row of the dashboard KPIs */
   icon?: string;
-  /** optional trend/context line under the value */
-  hint?: ReactNode;
-  trend?: { direction: "up" | "down"; label: string };
+  /** context line under the value */
+  sub?: ReactNode;
+  subTone?: Tone;
+  valueTone?: Tone;
+  /** 22px · 24px · 28px value — `sm` list KPI, `md` section KPI, `lg` dashboard KPI */
+  size?: "sm" | "md" | "lg";
   className?: string;
 }
 
 /**
- * Dashboard KPI tile. Money must be passed as `string[]` (one line per currency)
- * — never summed across currencies (PLAN §6).
+ * KPI tile — the prototype's stat cards. Money must arrive as `string[]`
+ * (one line per currency) and is never summed across currencies (PLAN §6).
  */
-export function StatCard({ label, value, icon, hint, trend, className }: StatCardProps) {
+export function StatCard({
+  label,
+  value,
+  unit,
+  icon,
+  sub,
+  subTone = "muted",
+  valueTone = "default",
+  size = "sm",
+  className,
+}: StatCardProps) {
   const lines = Array.isArray(value) ? value : null;
+  const valueSize =
+    size === "lg" ? "text-[28px]" : size === "md" ? "text-[24px]" : "text-[22px]";
+  const pad = size === "sm" ? "px-[17px] py-[15px]" : "px-[18px] py-4";
+
   return (
     <div
       data-slot="stat-card"
-      className={cn("rounded-lg border border-border bg-surface p-4 shadow-card", className)}
+      className={cn("rounded-card border border-border bg-surface", pad, className)}
     >
-      <div className="flex items-center justify-between">
-        <span className="text-[12px] font-semibold text-muted">{label}</span>
-        {icon && (
-          <span className="flex size-7 items-center justify-center rounded-md bg-surface-sand text-link">
-            <Icon name={icon} size={16} />
-          </span>
-        )}
-      </div>
-      <div className="mt-2 flex flex-col gap-0.5">
-        {lines ? (
-          lines.map((line) => (
-            <span key={line} className="text-[17px] font-extrabold tracking-tight text-foreground">
+      {icon ? (
+        <div className="mb-3 flex items-center gap-2.5">
+          <Icon name={icon} size={19} className="text-primary" />
+          <span className="text-[12.5px] font-bold text-secondary">{label}</span>
+        </div>
+      ) : (
+        <div className="mb-2 text-[12px] font-bold text-secondary">{label}</div>
+      )}
+
+      {lines ? (
+        <div className="flex flex-col gap-0.5">
+          {lines.map((line) => (
+            <span
+              key={line}
+              className={cn(
+                valueSize,
+                "font-extrabold tracking-[-0.03em]",
+                TONE_TEXT[valueTone],
+              )}
+            >
               {line}
             </span>
-          ))
-        ) : (
-          <span className="text-[22px] font-extrabold tracking-tight text-foreground">{value}</span>
-        )}
-      </div>
-      {trend && (
+          ))}
+        </div>
+      ) : (
         <div
-          className={cn(
-            "mt-1.5 inline-flex items-center gap-1 text-[11.5px] font-semibold",
-            trend.direction === "up" ? "text-success" : "text-danger",
-          )}
+          className={cn(valueSize, "font-extrabold tracking-[-0.03em]", TONE_TEXT[valueTone])}
         >
-          <Icon name={trend.direction === "up" ? "trending_up" : "trending_down"} size={14} />
-          {trend.label}
+          {value}
+          {unit && <span className="ms-1 text-[14px] font-bold text-muted">{unit}</span>}
         </div>
       )}
-      {hint && <div className="mt-1.5 text-[11.5px] text-muted">{hint}</div>}
+
+      {sub && (
+        <div className={cn("mt-1.5 text-[11.5px] font-semibold", TONE_TEXT[subTone])}>{sub}</div>
+      )}
     </div>
   );
 }

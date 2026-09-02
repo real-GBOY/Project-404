@@ -1,7 +1,12 @@
 import { forwardRef } from "react";
 import { cn } from "@/lib/cn";
 
-/** Surface container. Compose with `CardHeader` / `CardTitle` / `CardBody`. */
+/**
+ * The card — the prototype's universal surface:
+ * `background:#fff; border:1px solid #ECECF1; border-radius:14px`. No shadow.
+ * Compose with `CardHeader` / `CardTitle` / `CardBody`, or drop children in
+ * directly with `overflow-hidden` when the card holds a flush list/table.
+ */
 export const Card = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(function Card(
   { className, ...props },
   ref,
@@ -10,18 +15,19 @@ export const Card = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEleme
     <div
       ref={ref}
       data-slot="card"
-      className={cn("rounded-lg border border-border bg-surface shadow-card", className)}
+      className={cn("rounded-card border border-border bg-surface", className)}
       {...props}
     />
   );
 });
 
+/** Flush card header — `padding:14–15px 18px; border-bottom:1px solid #F2F2F6`. */
 export function CardHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       data-slot="card-header"
       className={cn(
-        "flex items-center justify-between gap-3 border-b border-divider px-4 py-3",
+        "flex items-center gap-2.5 border-b border-divider px-[18px] py-[15px]",
         className,
       )}
       {...props}
@@ -29,6 +35,7 @@ export function CardHeader({ className, ...props }: React.HTMLAttributes<HTMLDiv
   );
 }
 
+/** Section title — `font-size:14px; font-weight:800`. */
 export function CardTitle({
   className,
   children,
@@ -37,7 +44,7 @@ export function CardTitle({
   return (
     <h3
       data-slot="card-title"
-      className={cn("text-[13.5px] font-bold tracking-tight text-foreground", className)}
+      className={cn("text-[14px] font-extrabold text-foreground", className)}
       {...props}
     >
       {children}
@@ -45,6 +52,7 @@ export function CardTitle({
   );
 }
 
+/** Padded card body — the prototype's panels use `padding:18px`. */
 export function CardBody({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div data-slot="card-body" className={cn("p-4", className)} {...props} />;
+  return <div data-slot="card-body" className={cn("p-[18px]", className)} {...props} />;
 }

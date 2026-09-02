@@ -56,9 +56,9 @@ export function AskMizan() {
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger
         aria-label={t("assistant.open")}
-        className="flex h-9 items-center gap-1.5 rounded-md border border-border-accent bg-surface-sand px-2.5 text-[12.5px] font-semibold text-link hover:bg-surface-sand-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        className="flex h-9 items-center gap-[7px] rounded-pill border border-border-accent bg-surface-sand px-3.5 text-[13px] font-bold text-link hover:bg-surface-sand-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       >
-        <Icon name="auto_awesome" size={16} filled />
+        <Icon name="auto_awesome" size={18} />
         <span className="hidden sm:inline">{t("assistant.name")}</span>
       </SheetTrigger>
       <SheetContent side="end" className="w-[min(32rem,100vw-2rem)]">

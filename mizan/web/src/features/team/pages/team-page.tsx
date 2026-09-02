@@ -205,7 +205,7 @@ export function TeamMemberPage() {
   });
 
   return (
-    <PageContainer width="narrow">
+    <PageContainer>
       <QueryBoundary query={query} loading={<Skeleton className="h-72" />}>
         {(u) => (
           <>

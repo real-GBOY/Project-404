@@ -75,7 +75,8 @@
       "org_switched": "تم تبديل المؤسسة",
       "logout": "تسجيل الخروج",
       "coming_in": "سيصل في المرحلة {{phase}}.",
-      "notifications_unread": "الإشعارات، {{count}} غير مقروءة"
+      "notifications_unread": "الإشعارات، {{count}} غير مقروءة",
+      "search_hint": "ابحث في القضايا والعملاء…"
     },
     "language": {
       "ar": "العربية",
@@ -181,43 +182,96 @@
     }
   },
   "dashboard": {
-    "title": "لوحة المعلومات",
-    "greeting": "أهلًا بك، {{name}}",
-    "subtitle": "ما يحتاج إلى انتباهك في المكتب اليوم.",
-    "view_all": "عرض الكل",
+    "title": "لوحة التحكم",
+    "greeting": {
+      "morning": "صباح الخير، {{name}}",
+      "afternoon": "مساء الخير، {{name}}",
+      "evening": "مساء الخير، {{name}}",
+      "summary": "{{hearings}} جلسات و{{deadlines}} مواعيد إيداع خلال الأيام السبعة القادمة."
+    },
+    "date_range": "هذا الأسبوع",
+    "export": "تصدير",
+    "alert": {
+      "critical_deadlines": "{{count}} مواعيد إيداع خلال 72 ساعة",
+      "view_deadlines": "عرض المواعيد"
+    },
     "kpi": {
       "active_matters": "القضايا النشطة",
-      "open_tasks": "المهام المفتوحة",
-      "hearings_week": "جلسات هذا الأسبوع",
-      "outstanding": "المستحقات",
-      "collected_month": "المحصّل هذا الشهر"
+      "active_matters_sub": "↑ {{opened}} فُتحت هذا الشهر · {{closed}} أُغلقت هذا العام",
+      "hearings_month": "جلسات هذا الشهر",
+      "hearings_month_sub": "{{next7}} خلال 7 أيام · {{adjourned}} مؤجلة",
+      "unbilled": "وقت غير مُفوتر",
+      "hrs": "ساعة",
+      "unbilled_sub": "≈ {{value}} جاهزة للفوترة",
+      "outstanding": "مستحقات",
+      "outstanding_sub": "{{count}} فواتير متأخرة · {{amount}}"
     },
     "panels": {
       "upcoming_hearings": "الجلسات القادمة",
-      "no_hearings": "لا توجد جلسات مجدولة",
-      "urgent_deadlines": "مواعيد نهائية عاجلة",
-      "no_deadlines": "لا شيء مستحق قريبًا",
+      "see_all": "عرض الكل",
+      "no_hearings": "لا توجد جلسات",
+      "urgent_deadlines": "مواعيد عاجلة",
+      "n_critical": "{{count}} حرجة",
+      "no_deadlines": "لا شيء قريب",
       "my_tasks": "مهامي",
+      "open_tasks": "فتح المهام",
       "no_tasks": "أنجزت كل شيء",
-      "no_matter": "بدون قضية",
-      "review_documents": "مستندات للمراجعة",
-      "no_documents": "لا شيء بانتظار المراجعة",
+      "no_matter": "على مستوى المكتب",
+      "review_documents": "مستندات تحتاج مراجعة",
+      "all": "الكل",
+      "no_documents": "لا شيء للمراجعة",
       "recent_activity": "النشاط الأخير",
-      "no_activity": "لا يوجد نشاط بعد",
+      "no_activity": "لا يوجد نشاط",
       "practice_areas": "القضايا حسب مجال الممارسة",
-      "no_matters": "لا توجد قضايا مفتوحة",
-      "billing_vs_collections": "المُصدر مقابل المُحصّل ({{currency}})",
-      "billed": "مُصدر",
-      "collected": "مُحصّل",
-      "collection_rate": "{{rate}}٪ محصّل"
+      "open_matters": "قضية نشطة",
+      "other": "أخرى",
+      "billing_vs_collections": "الفوترة مقابل التحصيل",
+      "open_finance": "فتح المالية",
+      "billed_ytd": "المُفوتر (السنة)",
+      "collected_ytd": "المُحصّل (السنة)",
+      "collection_rate": "نسبة التحصيل {{rate}}%",
+      "billed": "مُفوتر",
+      "collected": "مُحصّل"
+    },
+    "cols": {
+      "task": "المهمة",
+      "assignee": "المسؤول",
+      "due": "الاستحقاق",
+      "priority": "الأولوية"
+    },
+    "task_scope": {
+      "today": "اليوم",
+      "week": "هذا الأسبوع",
+      "overdue": "متأخرة",
+      "all": "الكل"
+    },
+    "priority": {
+      "high": "عالية",
+      "normal": "متوسطة",
+      "low": "منخفضة"
+    },
+    "hearing_status": {
+      "confirmed": "مؤكدة",
+      "awaiting_court": "بانتظار المحكمة",
+      "adjourned": "مؤجلة"
+    },
+    "doc_status": {
+      "awaiting_review": "بانتظار المراجعة",
+      "expiring": "تنتهي قريباً",
+      "in_review": "قيد المراجعة"
     },
     "activity": {
-      "matter.opened": "فتح",
-      "matter.update_added": "أضاف تحديثًا إلى",
-      "document.uploaded": "رفع",
-      "hearing.scheduled": "جدول",
-      "payment.recorded": "سجّل دفعة —",
-      "task.completed": "أكمل"
+      "matter.opened": "فتح قضية",
+      "matter.update_added": "إضافة تحديث",
+      "matter.assigned": "إسناد عضو",
+      "matter.closed": "إغلاق قضية",
+      "document.uploaded": "رفع مستند",
+      "hearing.scheduled": "جدولة جلسة",
+      "hearing.adjourned": "تأجيل جلسة",
+      "payment.recorded": "تسجيل دفعة",
+      "invoice.sent": "إرسال فاتورة",
+      "task.completed": "إنجاز مهمة",
+      "task.assigned": "إسناد مهمة"
     }
   },
   "clients": {
@@ -225,7 +279,11 @@
     "subtitle": "كل مؤسسة وفرد يمثّلهم المكتب.",
     "search_placeholder": "ابحث في العملاء…",
     "client_since": "عميل منذ {{date}}",
-    "actions": { "new": "عميل جديد", "archive": "أرشفة العميل", "more": "إجراءات أخرى" },
+    "actions": {
+      "new": "عميل جديد",
+      "archive": "أرشفة العميل",
+      "more": "إجراءات أخرى"
+    },
     "columns": {
       "name": "الاسم",
       "type": "النوع",
@@ -234,9 +292,20 @@
       "outstanding": "المستحقات",
       "client_since": "عميل منذ"
     },
-    "type": { "all": "كل الأنواع", "company": "شركة", "individual": "فرد" },
-    "status": { "active": "نشط", "archived": "مؤرشف" },
-    "stats": { "open_matters": "قضايا مفتوحة", "documents": "المستندات", "outstanding": "المستحقات" },
+    "type": {
+      "all": "كل الأنواع",
+      "company": "شركة",
+      "individual": "فرد"
+    },
+    "status": {
+      "active": "نشط",
+      "archived": "مؤرشف"
+    },
+    "stats": {
+      "open_matters": "قضايا مفتوحة",
+      "documents": "المستندات",
+      "outstanding": "المستحقات"
+    },
     "fields": {
       "type": "نوع العميل",
       "name": "الاسم",
@@ -309,7 +378,11 @@
       "hearings": "الجلسات",
       "tasks": "المهام"
     },
-    "actions": { "new": "قضية جديدة", "more": "إجراءات أخرى", "close": "إغلاق القضية" },
+    "actions": {
+      "new": "قضية جديدة",
+      "more": "إجراءات أخرى",
+      "close": "إغلاق القضية"
+    },
     "columns": {
       "matter": "القضية",
       "status": "الحالة",
@@ -318,7 +391,11 @@
       "next_hearing": "الجلسة القادمة",
       "tasks": "مهام مفتوحة"
     },
-    "status": { "open": "مفتوحة", "on_hold": "معلّقة", "closed": "مغلقة" },
+    "status": {
+      "open": "مفتوحة",
+      "on_hold": "معلّقة",
+      "closed": "مغلقة"
+    },
     "fields": {
       "title": "عنوان القضية",
       "client": "العميل",
@@ -329,7 +406,11 @@
       "description": "الوصف / النطاق",
       "select": "اختر…"
     },
-    "form": { "new_title": "فتح قضية جديدة", "edit_title": "تعديل القضية", "create": "فتح القضية" },
+    "form": {
+      "new_title": "فتح قضية جديدة",
+      "edit_title": "تعديل القضية",
+      "create": "فتح القضية"
+    },
     "tabs": {
       "overview": "نظرة عامة",
       "hearings": "الجلسات",
@@ -355,7 +436,10 @@
       "hearings": "الجلسات",
       "documents": "المستندات"
     },
-    "timeline": { "placeholder": "أضف تحديثًا إلى الجدول الزمني للقضية…", "add": "إضافة تحديث" },
+    "timeline": {
+      "placeholder": "أضف تحديثًا إلى الجدول الزمني للقضية…",
+      "add": "إضافة تحديث"
+    },
     "notes": {
       "placeholder": "أضف ملاحظة عمل خاصة…",
       "add": "إضافة ملاحظة",
@@ -397,9 +481,21 @@
   "hearings": {
     "title": "الجلسات",
     "subtitle": "كل جلسة محكمة مجدولة وسابقة.",
-    "scope": { "label": "الإطار الزمني", "upcoming": "القادمة", "past": "السابقة" },
-    "status": { "scheduled": "مجدولة", "adjourned": "مؤجلة", "decided": "مفصولة" },
-    "actions": { "schedule": "جدولة جلسة", "adjourn": "تأجيل", "record_outcome": "تسجيل النتيجة" },
+    "scope": {
+      "label": "الإطار الزمني",
+      "upcoming": "القادمة",
+      "past": "السابقة"
+    },
+    "status": {
+      "scheduled": "مجدولة",
+      "adjourned": "مؤجلة",
+      "decided": "مفصولة"
+    },
+    "actions": {
+      "schedule": "جدولة جلسة",
+      "adjourn": "تأجيل",
+      "record_outcome": "تسجيل النتيجة"
+    },
     "fields": {
       "matter": "القضية",
       "matter_placeholder": "اختر قضية",
@@ -408,15 +504,25 @@
       "purpose": "الغرض",
       "court": "المحكمة"
     },
-    "schedule": { "title": "جدولة جلسة", "submit": "جدولة" },
+    "schedule": {
+      "title": "جدولة جلسة",
+      "submit": "جدولة"
+    },
     "adjourn": {
       "title": "تأجيل الجلسة",
       "new_date": "التاريخ الجديد",
       "reason": "السبب (اختياري)",
       "submit": "تأجيل وإعادة جدولة"
     },
-    "outcome": { "title": "تسجيل النتيجة", "label": "بماذا قضت المحكمة؟", "submit": "تسجيل" },
-    "empty": { "upcoming": "لا توجد جلسات قادمة", "past": "لا توجد جلسات سابقة" },
+    "outcome": {
+      "title": "تسجيل النتيجة",
+      "label": "بماذا قضت المحكمة؟",
+      "submit": "تسجيل"
+    },
+    "empty": {
+      "upcoming": "لا توجد جلسات قادمة",
+      "past": "لا توجد جلسات سابقة"
+    },
     "toasts": {
       "scheduled": "تم جدولة الجلسة",
       "adjourned": "تم تأجيل الجلسة وإعادة جدولتها",
@@ -434,10 +540,27 @@
   "tasks": {
     "title": "المهام",
     "subtitle": "كل ما يحتاج المكتب إلى إنجازه.",
-    "range": { "label": "النطاق", "today": "اليوم", "week": "هذا الأسبوع", "overdue": "متأخرة", "all": "الكل" },
-    "scope": { "label": "المالك", "mine": "مهامي", "everyone": "الجميع" },
-    "priority": { "low": "منخفضة", "normal": "عادية", "high": "عالية" },
-    "actions": { "new": "مهمة جديدة", "toggle_complete": "تبديل الإكمال" },
+    "range": {
+      "label": "النطاق",
+      "today": "اليوم",
+      "week": "هذا الأسبوع",
+      "overdue": "متأخرة",
+      "all": "الكل"
+    },
+    "scope": {
+      "label": "المالك",
+      "mine": "مهامي",
+      "everyone": "الجميع"
+    },
+    "priority": {
+      "low": "منخفضة",
+      "normal": "عادية",
+      "high": "عالية"
+    },
+    "actions": {
+      "new": "مهمة جديدة",
+      "toggle_complete": "تبديل الإكمال"
+    },
     "fields": {
       "title": "ما الذي يجب فعله؟",
       "matter": "القضية",
@@ -445,23 +568,56 @@
       "priority": "الأولوية",
       "due": "تاريخ الاستحقاق"
     },
-    "dialog": { "title": "مهمة جديدة" },
-    "empty": { "title": "لا شيء للقيام به هنا", "body": "أضف مهمة لتتبع العمل على قضية." },
-    "toasts": { "created": "تمت إضافة المهمة", "failed": "تعذّر الحفظ. حاول مرة أخرى." },
-    "errors": { "title_required": "صف المهمة." }
+    "dialog": {
+      "title": "مهمة جديدة"
+    },
+    "empty": {
+      "title": "لا شيء للقيام به هنا",
+      "body": "أضف مهمة لتتبع العمل على قضية."
+    },
+    "toasts": {
+      "created": "تمت إضافة المهمة",
+      "failed": "تعذّر الحفظ. حاول مرة أخرى."
+    },
+    "errors": {
+      "title_required": "صف المهمة."
+    }
   },
   "documents": {
     "title": "المستندات",
     "subtitle": "كل ملف عبر قضايا المكتب.",
     "search_placeholder": "ابحث في الملفات…",
     "all_categories": "كل الفئات",
-    "actions": { "upload": "رفع" },
-    "fields": { "name": "اسم الملف", "matter": "القضية", "matter_none": "بدون قضية", "category": "الفئة", "status": "الحالة" },
-    "status": { "draft": "مسودة", "final": "نهائي", "filed": "مودع", "signed": "موقّع" },
-    "upload": { "title": "رفع مستند", "pick": "اختر ملفًا للرفع" },
-    "edit": { "title": "تعديل المستند" },
-    "delete": { "title": "حذف «{{name}}»؟" },
-    "empty": { "title": "لا توجد مستندات بعد", "body": "ارفع أول ملف لقضية." },
+    "actions": {
+      "upload": "رفع"
+    },
+    "fields": {
+      "name": "اسم الملف",
+      "matter": "القضية",
+      "matter_none": "بدون قضية",
+      "category": "الفئة",
+      "status": "الحالة"
+    },
+    "status": {
+      "draft": "مسودة",
+      "final": "نهائي",
+      "filed": "مودع",
+      "signed": "موقّع"
+    },
+    "upload": {
+      "title": "رفع مستند",
+      "pick": "اختر ملفًا للرفع"
+    },
+    "edit": {
+      "title": "تعديل المستند"
+    },
+    "delete": {
+      "title": "حذف «{{name}}»؟"
+    },
+    "empty": {
+      "title": "لا توجد مستندات بعد",
+      "body": "ارفع أول ملف لقضية."
+    },
     "toasts": {
       "uploaded": "تم رفع المستند",
       "updated": "تم تحديث المستند",
@@ -476,16 +632,36 @@
     "filter_lawyer": "تصفية حسب المحامي",
     "all_lawyers": "كل المحامين",
     "more": "+{{count}} أخرى",
-    "actions": { "new_event": "حدث جديد" },
-    "fields": { "title": "العنوان", "date": "التاريخ", "time": "الوقت", "matter": "القضية", "matter_none": "بدون قضية" },
-    "new_event": { "title": "حدث تقويم جديد" },
-    "toasts": { "created": "تمت إضافة الحدث", "failed": "تعذّر الحفظ. حاول مرة أخرى." },
-    "errors": { "title_required": "أعطِ الحدث عنوانًا.", "date_required": "اختر تاريخًا." }
+    "actions": {
+      "new_event": "حدث جديد"
+    },
+    "fields": {
+      "title": "العنوان",
+      "date": "التاريخ",
+      "time": "الوقت",
+      "matter": "القضية",
+      "matter_none": "بدون قضية"
+    },
+    "new_event": {
+      "title": "حدث تقويم جديد"
+    },
+    "toasts": {
+      "created": "تمت إضافة الحدث",
+      "failed": "تعذّر الحفظ. حاول مرة أخرى."
+    },
+    "errors": {
+      "title_required": "أعطِ الحدث عنوانًا.",
+      "date_required": "اختر تاريخًا."
+    }
   },
   "billing": {
     "title": "المالية",
     "subtitle": "الفواتير والمدفوعات والمصروفات.",
-    "tabs": { "invoices": "الفواتير", "payments": "المدفوعات", "expenses": "المصروفات" },
+    "tabs": {
+      "invoices": "الفواتير",
+      "payments": "المدفوعات",
+      "expenses": "المصروفات"
+    },
     "columns": {
       "invoice": "الفاتورة",
       "status": "الحالة",
@@ -496,10 +672,28 @@
       "received": "استُلمت",
       "amount": "المبلغ"
     },
-    "invoice_status": { "draft": "مسودة", "issued": "صادرة", "sent": "مُرسلة", "paid": "مدفوعة", "void": "ملغاة" },
-    "expense_status": { "pending": "قيد الاعتماد", "approved": "معتمدة", "rejected": "مرفوضة" },
-    "method": { "bank_transfer": "تحويل بنكي", "cheque": "شيك", "cash": "نقدًا", "card": "بطاقة" },
-    "line_kind": { "fee": "أتعاب", "disbursement": "مصروف" },
+    "invoice_status": {
+      "draft": "مسودة",
+      "issued": "صادرة",
+      "sent": "مُرسلة",
+      "paid": "مدفوعة",
+      "void": "ملغاة"
+    },
+    "expense_status": {
+      "pending": "قيد الاعتماد",
+      "approved": "معتمدة",
+      "rejected": "مرفوضة"
+    },
+    "method": {
+      "bank_transfer": "تحويل بنكي",
+      "cheque": "شيك",
+      "cash": "نقدًا",
+      "card": "بطاقة"
+    },
+    "line_kind": {
+      "fee": "أتعاب",
+      "disbursement": "مصروف"
+    },
     "actions": {
       "new_invoice": "فاتورة جديدة",
       "issue": "إصدار",
@@ -571,16 +765,34 @@
     "tasks": "مهام",
     "hearings": "جلسات",
     "active_matters": "القضايا النشطة",
-    "status": { "inactive": "غير نشط" },
-    "fields": { "title": "المسمى الوظيفي", "phone": "الهاتف", "capacity": "السعة الأسبوعية (ساعات)" },
-    "edit": { "title": "تعديل الملف" },
-    "toasts": { "updated": "تم تحديث الملف", "failed": "تعذّر الحفظ. حاول مرة أخرى." }
+    "status": {
+      "inactive": "غير نشط"
+    },
+    "fields": {
+      "title": "المسمى الوظيفي",
+      "phone": "الهاتف",
+      "capacity": "السعة الأسبوعية (ساعات)"
+    },
+    "edit": {
+      "title": "تعديل الملف"
+    },
+    "toasts": {
+      "updated": "تم تحديث الملف",
+      "failed": "تعذّر الحفظ. حاول مرة أخرى."
+    }
   },
   "notifications": {
     "title": "الإشعارات",
     "mark_all_read": "تعليم الكل كمقروء",
-    "filter": { "label": "تصفية", "all": "الكل", "unread": "غير المقروءة" },
-    "empty": { "title": "أنجزت كل شيء", "body": "ستظهر الإشعارات الجديدة هنا." }
+    "filter": {
+      "label": "تصفية",
+      "all": "الكل",
+      "unread": "غير المقروءة"
+    },
+    "empty": {
+      "title": "أنجزت كل شيء",
+      "body": "ستظهر الإشعارات الجديدة هنا."
+    }
   },
   "settings": {
     "title": "الإعدادات",
@@ -594,7 +806,11 @@
       "audit": "الأمان وسجل التدقيق",
       "locale": "اللغة والمنطقة"
     },
-    "firm": { "name": "اسم المكتب", "registration": "رقم التسجيل", "address": "العنوان" },
+    "firm": {
+      "name": "اسم المكتب",
+      "registration": "رقم التسجيل",
+      "address": "العنوان"
+    },
     "practice": {
       "matter_types": "مجالات الممارسة",
       "courts": "المحاكم",
@@ -611,7 +827,10 @@
       "enable": "تفعيل «اسأل ميزان» للمكتب",
       "note": "مساعد معاينة على بياناتك التجريبية. لا تُنفّذ أي إجراءات ذكاء اصطناعي."
     },
-    "users": { "permissions": "{{count}} صلاحية", "role": "الدور" },
+    "users": {
+      "permissions": "{{count}} صلاحية",
+      "role": "الدور"
+    },
     "audit": {
       "search": "ابحث في السجل…",
       "when": "متى",

@@ -28,9 +28,17 @@ describe("SidebarNav", () => {
     expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute("aria-current", "page");
   });
 
-  it("groups items under their section heading", () => {
+  it("groups items under their collapsible section heading", () => {
     renderApp(<SidebarNav />, { perms: ["read:client", "read:matter"] });
-    const workspace = screen.getByText("Workspace").parentElement as HTMLElement;
-    expect(within(workspace).getByRole("link", { name: "Clients" })).toBeInTheDocument();
+    const group = screen.getByRole("button", { name: /Workspace/ }).parentElement as HTMLElement;
+    expect(within(group).getByRole("link", { name: "Clients" })).toBeInTheDocument();
+  });
+
+  it("collapses a section when its heading is clicked", () => {
+    const { user } = renderApp(<SidebarNav />, { perms: ["read:client"] });
+    expect(screen.getByRole("link", { name: "Clients" })).toBeInTheDocument();
+    return user.click(screen.getByRole("button", { name: /Workspace/ })).then(() => {
+      expect(screen.queryByRole("link", { name: "Clients" })).not.toBeInTheDocument();
+    });
   });
 });

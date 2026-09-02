@@ -1,41 +1,74 @@
 import { useTranslation } from "react-i18next";
+import { Card } from "@/components/ui/card";
+import { PanelHeader } from "@/components/tables/list-card";
 import { formatNumber } from "@/lib/format";
-import { DashboardPanel, PanelEmpty } from "./dashboard-panel";
 import type { PracticeAreaSlice } from "../types/dashboard";
 
+/** The prototype's espresso→sand ramp for the practice-area donut. */
+const RAMP = ["#3b2418", "#a67c52", "#be9a6b", "#d4b98f", "#ede3db"];
+
 /**
- * Open matters by practice area — magnitude comparison, one series, so
- * horizontal bars in a single hue with a direct value on each (dataviz:
- * choosing-a-form → bars; no categorical palette needed).
+ * Open matters by practice area — a conic donut with a legend, matching the
+ * prototype. One entity per slice, fixed order, never a generated hue: a 6th
+ * area folds into "Other" (dataviz non-negotiable).
  */
 export function PracticeAreaChart({ data }: { data: PracticeAreaSlice[] }) {
   const { t } = useTranslation("dashboard");
-  const max = Math.max(1, ...data.map((d) => d.matters));
+
+  const top = data.slice(0, 4);
+  const rest = data.slice(4).reduce((s, d) => s + d.matters, 0);
+  const slices = rest > 0 ? [...top, { area: t("panels.other"), matters: rest }] : top;
+  const total = slices.reduce((s, d) => s + d.matters, 0) || 1;
+
+  let acc = 0;
+  const stops = slices
+    .map((s, i) => {
+      const from = (acc / total) * 100;
+      acc += s.matters;
+      const to = (acc / total) * 100;
+      return `${RAMP[i] ?? RAMP[RAMP.length - 1]} ${from}% ${to}%`;
+    })
+    .join(", ");
 
   return (
-    <DashboardPanel title={t("panels.practice_areas")} icon="donut_small">
-      {data.length === 0 ? (
-        <PanelEmpty label={t("panels.no_matters")} />
-      ) : (
-        <ul className="flex flex-col gap-2 p-2">
-          {data.map((slice) => (
-            <li key={slice.area} className="grid grid-cols-[7rem_1fr_auto] items-center gap-3">
-              <span className="truncate text-[12px] font-medium text-foreground-body">
-                {slice.area}
+    <Card>
+      <PanelHeader icon="donut_small" title={t("panels.practice_areas")} />
+      <div className="flex items-center gap-[22px] p-[18px]">
+        <div
+          className="grid size-[132px] flex-none place-items-center rounded-full"
+          style={{ background: `conic-gradient(${stops})` }}
+          role="img"
+          aria-label={slices.map((s) => `${s.area}: ${s.matters}`).join(", ")}
+        >
+          <div className="grid size-[92px] place-items-center rounded-full bg-surface text-center">
+            <div>
+              <div className="text-[22px] font-extrabold tracking-[-0.03em] text-foreground">
+                {formatNumber(total)}
+              </div>
+              <div className="text-[10.5px] font-semibold text-muted">
+                {t("panels.open_matters")}
+              </div>
+            </div>
+          </div>
+        </div>
+        <ul className="flex flex-1 flex-col gap-[9px]">
+          {slices.map((s, i) => (
+            <li key={s.area} className="flex items-center gap-2.5">
+              <span
+                className="size-[9px] flex-none rounded-[3px]"
+                style={{ background: RAMP[i] ?? RAMP[RAMP.length - 1] }}
+                aria-hidden="true"
+              />
+              <span className="flex-1 truncate text-[12.5px] font-semibold text-foreground-body">
+                {s.area}
               </span>
-              <span className="h-2.5 rounded-full bg-chart-track" aria-hidden="true">
-                <span
-                  className="block h-full rounded-full bg-chart-fill"
-                  style={{ width: `${(slice.matters / max) * 100}%` }}
-                />
-              </span>
-              <span className="text-[12px] font-bold tabular-nums text-foreground">
-                {formatNumber(slice.matters)}
+              <span className="text-[12.5px] font-extrabold text-foreground">
+                {formatNumber(s.matters)}
               </span>
             </li>
           ))}
         </ul>
-      )}
-    </DashboardPanel>
+      </div>
+    </Card>
   );
 }

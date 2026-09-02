@@ -41,7 +41,7 @@ export function NotificationsPage() {
   const readAll = useMutation({ mutationFn: markAllNotificationsRead, onSuccess: invalidate });
 
   return (
-    <PageContainer width="narrow">
+    <PageContainer>
       <PageHeader
         title={t("title")}
         actions={

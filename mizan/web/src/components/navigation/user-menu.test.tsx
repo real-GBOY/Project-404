@@ -15,8 +15,10 @@ describe("UserMenu", () => {
     const logout = vi.fn();
     renderApp(<UserMenu />, { perms: [], auth: { logout } });
 
-    openOverlay(screen.getByRole("button", { name: "Account menu" }));
+    // the trigger card already shows the name; opening adds the menu label copy
     expect(screen.getByText("Test User")).toBeInTheDocument();
+    openOverlay(screen.getByRole("button", { name: "Account menu" }));
+    expect(screen.getAllByText("Test User").length).toBeGreaterThan(0);
     expect(screen.queryByText("Organizations")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("menuitem", { name: "Sign out" }));

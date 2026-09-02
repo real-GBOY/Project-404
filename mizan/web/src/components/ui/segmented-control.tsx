@@ -18,7 +18,11 @@ interface SegmentedControlProps<T extends string> {
   className?: string;
 }
 
-/** A compact single-select toggle — table/grid, Month/Week/Agenda, etc. */
+/**
+ * Compact single-select toggle — "My tasks" filters, calendar Month/Week/Agenda,
+ * task-list scopes. The prototype: `background:#F5F5F8; border-radius:9px;
+ * padding:3px`, active segment `background:#fff; box-shadow:0 1px 2px …`.
+ */
 export function SegmentedControl<T extends string>({
   value,
   onValueChange,
@@ -33,7 +37,7 @@ export function SegmentedControl<T extends string>({
       aria-label={ariaLabel}
       data-slot="segmented-control"
       className={cn(
-        "inline-flex items-center gap-0.5 rounded-md border border-border-control bg-surface-subtle p-0.5",
+        "inline-flex items-center gap-0.5 rounded-md bg-divider-row p-[3px]",
         className,
       )}
     >
@@ -49,11 +53,11 @@ export function SegmentedControl<T extends string>({
             title={opt.ariaLabel ?? (opt.icon ? opt.label : undefined)}
             onClick={() => onValueChange(opt.value)}
             className={cn(
-              "inline-flex items-center justify-center gap-1.5 rounded-[7px] font-semibold transition-colors",
-              size === "sm" ? "h-7 px-2 text-[12px]" : "h-8 px-2.5 text-[12.5px]",
+              "inline-flex items-center justify-center gap-1.5 rounded-chip transition-colors",
+              size === "sm" ? "px-2.5 py-1 text-[12px]" : "px-3 py-1.5 text-[12px]",
               active
-                ? "bg-surface text-foreground shadow-pop"
-                : "text-muted hover:text-foreground-body",
+                ? "bg-surface font-bold text-foreground shadow-tab"
+                : "font-semibold text-muted-2 hover:text-foreground-body",
             )}
           >
             {opt.icon && <Icon name={opt.icon} size={16} />}
