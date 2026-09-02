@@ -26,11 +26,21 @@ function load(userId: string) {
   };
 }
 
+const FEE_ROLES = new Set(["firm_admin", "partner", "lawyer"]);
+
+function barYear(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return 1998 + (h % 24);
+}
+
 const view = (u: TeamMemberRow) => ({
   id: u.id,
   name: u.name,
   title: u.title,
   role: u.role,
+  department: u.practiceAreas[0] ?? u.title,
+  barAdmission: FEE_ROLES.has(u.role) ? `Cairo Bar · ${barYear(u.id)}` : "—",
   email: u.email,
   phone: u.phone,
   practiceAreas: u.practiceAreas,
@@ -40,6 +50,20 @@ const view = (u: TeamMemberRow) => ({
 });
 
 export const teamHandlers = [
+  http.get("/api/team/summary", () => {
+    const active = db.team.filter((u) => u.status === "active");
+    const feeEarners = active.filter((u) => FEE_ROLES.has(u.role)).length;
+    const utils = active.map((u) => load(u.id).utilization);
+    return HttpResponse.json({
+      feeEarners,
+      support: active.length - feeEarners,
+      avgUtilisation: utils.length
+        ? Math.round(utils.reduce((s, v) => s + v, 0) / utils.length)
+        : 0,
+      onLeave: db.team.filter((u) => u.status === "inactive").length,
+    });
+  }),
+
   http.get("/api/team", () =>
     HttpResponse.json({
       items: db.team

@@ -2,27 +2,72 @@ import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { formatRelative } from "@/lib/format";
-import { cn } from "@/lib/cn";
 import { PageContainer } from "@/components/ui/page-container";
-import { PageHeader } from "@/components/ui/page-header";
-import { Button } from "@/components/ui/button";
+import { Card, CardBody } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
+import { Switch } from "@/components/ui/switch";
 import { SegmentedControl } from "@/components/ui/segmented-control";
+import { PanelHeader } from "@/components/tables/list-card";
+import { ListCard } from "@/components/tables/list-card";
 import { useUrlParams } from "@/hooks/use-url-params";
 import { QueryBoundary } from "@/components/feedback/query-boundary";
 import { EmptyState } from "@/components/feedback/empty-state";
 import { RowsSkeleton } from "@/components/feedback/skeleton";
-import { listNotifications, markAllNotificationsRead, markNotificationRead } from "../api/notifications.api";
+import {
+  listNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+} from "../api/notifications.api";
 import { notificationKeys } from "../api/notifications.keys";
 import type { AppNotification } from "../types/notification";
 
 const ICON: Record<string, string> = {
-  "hearing.scheduled": "event",
-  "hearing.adjourned": "event_repeat",
+  "hearing.scheduled": "gavel",
+  "hearing.adjourned": "gavel",
   "task.assigned": "task_alt",
   "invoice.paid": "payments",
+  "invoice.overdue": "schedule",
+  "payment.received": "payments",
   "matter.update_added": "gavel",
+  "document.uploaded": "description",
+  "deadline.approaching": "warning",
 };
+
+const PREF_KEYS = [
+  ["hearing_reminders", true],
+  ["filing_deadlines", true],
+  ["document_uploads", true],
+  ["payments", false],
+  ["digest", true],
+] as const;
+
+function Preferences() {
+  const { t } = useTranslation("notifications");
+  return (
+    <Card>
+      <CardBody className="p-[18px]">
+        <div className="mb-3.5 text-[14px] font-extrabold text-foreground">
+          {t("preferences.title")}
+        </div>
+        <div className="flex flex-col gap-3.5">
+          {PREF_KEYS.map(([key, on]) => (
+            <div key={key} className="flex items-center gap-3">
+              <div className="flex-1">
+                <div className="text-[12.5px] font-bold text-foreground">
+                  {t(`preferences.${key}`)}
+                </div>
+                <div className="text-[11px] font-medium text-muted">
+                  {t(`preferences.${key}_d`)}
+                </div>
+              </div>
+              <Switch defaultChecked={on} aria-label={t(`preferences.${key}`)} />
+            </div>
+          ))}
+        </div>
+      </CardBody>
+    </Card>
+  );
+}
 
 export function NotificationsPage() {
   const { t } = useTranslation("notifications");
@@ -35,79 +80,103 @@ export function NotificationsPage() {
     queryKey: notificationKeys.list({ unread: unreadOnly }),
     queryFn: ({ signal }) => listNotifications({ unread: unreadOnly }, signal),
   });
+  const unreadCountQuery = useQuery({
+    queryKey: notificationKeys.list({ unread: true }),
+    queryFn: ({ signal }) => listNotifications({ unread: true }, signal),
+  });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: notificationKeys.all });
   const readOne = useMutation({ mutationFn: markNotificationRead, onSuccess: invalidate });
   const readAll = useMutation({ mutationFn: markAllNotificationsRead, onSuccess: invalidate });
+  const unread = unreadCountQuery.data?.items.length ?? 0;
 
   return (
     <PageContainer>
-      <PageHeader
-        title={t("title")}
-        actions={
-          <Button
-            variant="secondary"
-            icon="done_all"
-            onClick={() => readAll.mutate()}
-            loading={readAll.isPending}
-          >
-            {t("mark_all_read")}
-          </Button>
-        }
-      />
-
-      <SegmentedControl
-        aria-label={t("filter.label")}
-        value={unreadOnly ? "unread" : "all"}
-        onValueChange={(v) => params.set({ filter: v === "all" ? undefined : v })}
-        options={[
-          { value: "all", label: t("filter.all") },
-          { value: "unread", label: t("filter.unread") },
-        ]}
-      />
-
-      <QueryBoundary
-        query={query}
-        loading={<RowsSkeleton rows={6} />}
-        isEmpty={(d) => d.items.length === 0}
-        empty={<EmptyState icon="notifications" title={t("empty.title")} description={t("empty.body")} />}
-      >
-        {(data) => (
-          <div className="divide-y divide-divider rounded-lg border border-border bg-surface">
-            {data.items.map((n: AppNotification) => (
-              <button
-                key={n.id}
-                type="button"
-                onClick={() => {
-                  if (!n.readAt) readOne.mutate(n.id);
-                  if (n.href) navigate(n.href);
-                }}
-                className={cn(
-                  "flex w-full items-start gap-3 px-4 py-3 text-start hover:bg-surface-subtle",
-                  !n.readAt && "bg-surface-warm",
+      <div className="grid items-start gap-3.5 lg:grid-cols-[1.5fr_1fr]">
+        <ListCard>
+          <PanelHeader
+            title={t("all_notifications")}
+            action={
+              <div className="flex items-center gap-2.5">
+                {unread > 0 && (
+                  <span className="rounded-pill bg-surface-sand px-[9px] py-[3px] text-[11px] font-bold text-link">
+                    {t("n_unread", { count: unread })}
+                  </span>
                 )}
-              >
-                <span
-                  className={cn(
-                    "mt-0.5 flex size-8 flex-none items-center justify-center rounded-md",
-                    n.readAt ? "bg-surface-subtle text-muted" : "bg-surface-sand text-link",
-                  )}
+                <button
+                  type="button"
+                  onClick={() => readAll.mutate()}
+                  className="text-[12px] font-bold text-link hover:underline"
                 >
-                  <Icon name={ICON[n.type] ?? "notifications"} size={16} />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className={cn("text-[12.5px]", n.readAt ? "font-medium text-foreground-body" : "font-bold text-foreground")}>
-                    {n.title}
-                  </div>
-                  {n.body && <div className="text-[11.5px] text-muted">{n.body}</div>}
-                  <div className="mt-0.5 text-[11px] text-subtle">{formatRelative(n.createdAt)}</div>
-                </div>
-                {!n.readAt && <span className="mt-1.5 size-2 flex-none rounded-full bg-danger" />}
-              </button>
-            ))}
+                  {t("mark_all_read")}
+                </button>
+              </div>
+            }
+          />
+
+          <div className="border-b border-divider px-[18px] py-2.5">
+            <SegmentedControl
+              aria-label={t("filter.label")}
+              size="sm"
+              value={unreadOnly ? "unread" : "all"}
+              onValueChange={(v) => params.set({ filter: v === "all" ? undefined : v })}
+              options={[
+                { value: "all", label: t("filter.all") },
+                { value: "unread", label: t("filter.unread") },
+              ]}
+            />
           </div>
-        )}
-      </QueryBoundary>
+
+          <QueryBoundary
+            query={query}
+            loading={<RowsSkeleton rows={6} />}
+            isEmpty={(d) => d.items.length === 0}
+            empty={
+              <EmptyState
+                icon="notifications"
+                title={t("empty.title")}
+                description={t("empty.body")}
+              />
+            }
+          >
+            {(data) =>
+              data.items.map((n: AppNotification) => (
+                <button
+                  key={n.id}
+                  type="button"
+                  onClick={() => {
+                    if (!n.readAt) readOne.mutate(n.id);
+                    if (n.href) navigate(n.href);
+                  }}
+                  className="flex w-full items-start gap-3 border-b border-divider-row px-[18px] py-3.5 text-start last:border-0 hover:bg-surface-subtle"
+                >
+                  <span className="grid size-[34px] flex-none place-items-center rounded-btn bg-surface-warm-2 text-link">
+                    <Icon name={ICON[n.type] ?? "notifications"} size={18} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[13px] font-extrabold text-foreground">{n.title}</span>
+                      {!n.readAt && (
+                        <span className="size-[7px] flex-none rounded-full bg-primary" />
+                      )}
+                    </div>
+                    {n.body && (
+                      <div className="mt-[3px] text-[12.5px] font-medium leading-[1.55] text-secondary">
+                        {n.body}
+                      </div>
+                    )}
+                    <div className="mt-1.5 text-[11px] font-semibold text-subtle">
+                      {formatRelative(n.createdAt)}
+                    </div>
+                  </div>
+                </button>
+              ))
+            }
+          </QueryBoundary>
+        </ListCard>
+
+        <Preferences />
+      </div>
     </PageContainer>
   );
 }

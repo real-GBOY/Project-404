@@ -11,10 +11,10 @@ import { useUrlParams } from "@/hooks/use-url-params";
 import { formatDate } from "@/lib/format";
 import { useToast } from "@/components/ui/toast-context";
 import { PageContainer } from "@/components/ui/page-container";
-import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
-import { IconButton } from "@/components/ui/icon-button";
 import { Icon } from "@/components/ui/icon";
+import { SegmentedControl } from "@/components/ui/segmented-control";
+import { useSetPageChrome } from "@/lib/page-chrome";
 import { cn } from "@/lib/cn";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -37,8 +37,15 @@ import { calendarKeys, createEvent, getCalendar, type CalendarItem } from "../ap
 const KIND_STYLE: Record<CalendarItem["kind"], string> = {
   hearing: "bg-brandtone-surface text-brandtone",
   deadline: "bg-danger-surface text-danger",
-  event: "bg-info-surface text-info",
+  event: "bg-neutral-surface text-neutral",
 };
+
+const LEGEND: { swatch: string; key: string }[] = [
+  { swatch: "bg-primary", key: "hearing" },
+  { swatch: "bg-danger-solid", key: "filing" },
+  { swatch: "bg-accent-1", key: "internal" },
+  { swatch: "bg-subtle", key: "meeting" },
+];
 
 function monthMatrix(year: number, month: number): Date[][] {
   const first = new Date(year, month, 1);
@@ -157,6 +164,8 @@ export function CalendarPage() {
   const lawyerId = params.get("lawyer");
   const [creating, setCreating] = useState(false);
 
+  useSetPageChrome({ title: t("title") });
+
   const from = new Date(year, month - 1, 1);
   from.setDate(from.getDate() - 7);
   const to = new Date(year, month, 0);
@@ -190,54 +199,83 @@ export function CalendarPage() {
 
   return (
     <PageContainer>
-      <PageHeader
-        title={t("title")}
-        actions={
-          can("create:event") ? (
-            <Button icon="add" onClick={() => setCreating(true)}>
+      <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => shiftMonth(-1)}
+            aria-label={t("prev_month")}
+            className="flex size-[34px] items-center justify-center rounded-md border border-border-control bg-surface text-secondary hover:bg-surface-subtle"
+          >
+            <Icon name="chevron_left" size={18} className="rtl:rotate-180" />
+          </button>
+          <button
+            type="button"
+            onClick={() => shiftMonth(1)}
+            aria-label={t("next_month")}
+            className="flex size-[34px] items-center justify-center rounded-md border border-border-control bg-surface text-secondary hover:bg-surface-subtle"
+          >
+            <Icon name="chevron_right" size={18} className="rtl:rotate-180" />
+          </button>
+        </div>
+        <div className="text-[17px] font-extrabold tracking-[-0.02em] text-foreground">
+          {new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }).format(cursor)}
+        </div>
+        <SegmentedControl
+          aria-label={t("view.label")}
+          size="sm"
+          value="month"
+          onValueChange={() => {}}
+          className="ms-2"
+          options={[
+            { value: "month", label: t("view.month") },
+            { value: "week", label: t("view.week") },
+            { value: "agenda", label: t("view.agenda") },
+          ]}
+        />
+        <div className="ms-auto flex flex-wrap items-center gap-2">
+          <Select
+            value={lawyerId ?? "all"}
+            onValueChange={(v) => params.set({ lawyer: v === "all" ? undefined : v })}
+          >
+            <SelectTrigger aria-label={t("filter_lawyer")} className="h-9 w-[11rem]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("all_lawyers")}</SelectItem>
+              {(options.data?.lawyers ?? []).map((l) => (
+                <SelectItem key={l.id} value={l.id}>
+                  {l.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {can("create:event") && (
+            <Button size="sm" icon="add" onClick={() => setCreating(true)}>
               {t("actions.new_event")}
             </Button>
-          ) : undefined
-        }
-      />
-
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-1">
-          <IconButton icon="chevron_left" aria-label={t("prev_month")} className="rtl:rotate-180" onClick={() => shiftMonth(-1)} />
-          <span className="min-w-40 text-center text-[14px] font-bold text-foreground">
-            {new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }).format(cursor)}
-          </span>
-          <IconButton icon="chevron_right" aria-label={t("next_month")} className="rtl:rotate-180" onClick={() => shiftMonth(1)} />
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => params.set({ month: undefined })}
-            className="ms-1"
-          >
-            {t("common:time.today")}
-          </Button>
+          )}
         </div>
-        <Select value={lawyerId ?? "all"} onValueChange={(v) => params.set({ lawyer: v === "all" ? undefined : v })}>
-          <SelectTrigger aria-label={t("filter_lawyer")} className="h-9 w-[11rem]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t("all_lawyers")}</SelectItem>
-            {(options.data?.lawyers ?? []).map((l) => (
-              <SelectItem key={l.id} value={l.id}>
-                {l.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-[18px]">
+        {LEGEND.map((l) => (
+          <span key={l.key} className="flex items-center gap-[7px]">
+            <span className={cn("size-[9px] rounded-[3px]", l.swatch)} />
+            <span className="text-[11.5px] font-semibold text-secondary">{t(`legend.${l.key}`)}</span>
+          </span>
+        ))}
       </div>
 
       <QueryBoundary query={query} loading={<Skeleton className="h-[32rem]" />}>
         {() => (
-          <div className="overflow-hidden rounded-lg border border-border bg-surface">
-            <div className="grid grid-cols-7 border-b border-divider bg-surface-subtle">
+          <div className="overflow-hidden rounded-card border border-border bg-surface">
+            <div className="grid grid-cols-7 border-b border-divider-row-2 bg-surface-subtle">
               {weekdays.map((w) => (
-                <div key={w} className="px-2 py-1.5 text-center text-[10.5px] font-bold uppercase text-subtle">
+                <div
+                  key={w}
+                  className="px-3 py-2.5 text-[11px] font-bold uppercase tracking-[0.05em] text-muted"
+                >
                   {w}
                 </div>
               ))}
@@ -251,43 +289,40 @@ export function CalendarPage() {
                 return (
                   <div
                     key={key}
-                    className={cn(
-                      "min-h-24 border-b border-e border-divider p-1.5 last:border-e-0",
-                      !inMonth && "bg-surface-subtle/60",
-                    )}
+                    className="flex min-h-[106px] flex-col gap-1 border-b border-e border-divider-faint p-[9px] last:border-e-0"
                   >
-                    <div
-                      className={cn(
-                        "mb-1 inline-flex size-5 items-center justify-center rounded-full text-[11px] font-semibold",
-                        isToday ? "bg-primary text-primary-foreground" : inMonth ? "text-foreground-body" : "text-subtle",
-                      )}
-                    >
-                      {day.getDate()}
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      {items.slice(0, 3).map((item) => (
-                        <Link
-                          key={item.id}
-                          to={item.matterId ? `/matters/${item.matterId}` : "/calendar"}
-                          className={cn(
-                            "flex items-center gap-1 truncate rounded px-1 py-0.5 text-[10.5px] font-medium",
-                            KIND_STYLE[item.kind],
-                          )}
-                          title={`${formatDate(item.at, { hour: "2-digit", minute: "2-digit" })} · ${item.title}`}
-                        >
-                          <Icon
-                            name={item.kind === "hearing" ? "gavel" : item.kind === "deadline" ? "flag" : "event"}
-                            size={11}
-                          />
-                          <span className="truncate">{item.title}</span>
-                        </Link>
-                      ))}
-                      {items.length > 3 && (
-                        <span className="px-1 text-[10px] font-semibold text-muted">
-                          {t("more", { count: items.length - 3 })}
-                        </span>
-                      )}
-                    </div>
+                    {isToday ? (
+                      <div className="grid size-[22px] place-items-center rounded-full bg-primary text-[11.5px] font-extrabold text-primary-foreground">
+                        {day.getDate()}
+                      </div>
+                    ) : (
+                      <div
+                        className={cn(
+                          "text-[12px]",
+                          inMonth ? "font-bold text-foreground-body" : "font-semibold text-fainter",
+                        )}
+                      >
+                        {day.getDate()}
+                      </div>
+                    )}
+                    {items.slice(0, 3).map((item) => (
+                      <Link
+                        key={item.id}
+                        to={item.matterId ? `/matters/${item.matterId}` : "/calendar"}
+                        className={cn(
+                          "truncate rounded-xs px-1.5 py-[3px] text-[10.5px] font-bold",
+                          KIND_STYLE[item.kind],
+                        )}
+                        title={`${formatDate(item.at, { hour: "2-digit", minute: "2-digit" })} · ${item.title}`}
+                      >
+                        {formatDate(item.at, { hour: "2-digit", minute: "2-digit" })} {item.title}
+                      </Link>
+                    ))}
+                    {items.length > 3 && (
+                      <span className="px-1 text-[10px] font-bold text-muted">
+                        {t("more", { count: items.length - 3 })}
+                      </span>
+                    )}
                   </div>
                 );
               })}

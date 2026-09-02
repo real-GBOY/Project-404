@@ -7,12 +7,20 @@ export interface DocRow {
   name: string;
   matterId: string | null;
   matterTitle: string | null;
+  matterReference: string | null;
   category: string;
   status: DocumentStatus;
   sizeBytes: number;
   mimeType: string;
   uploadedBy: string | null;
   uploadedAt: string;
+}
+
+export interface DocumentsSummary {
+  total: number;
+  awaitingReview: number;
+  expiring: number;
+  addedThisMonth: number;
 }
 
 export interface DocListParams {

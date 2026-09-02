@@ -1,18 +1,31 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { usePermissions } from "@/lib/permissions/use-permissions";
-import { cn } from "@/lib/cn";
+import { useSetPageChrome } from "@/lib/page-chrome";
+import { useUrlParams } from "@/hooks/use-url-params";
+import { httpClient } from "@/lib/api/http-client";
 import { useToast } from "@/components/ui/toast-context";
 import { PageContainer } from "@/components/ui/page-container";
-import { PageHeader } from "@/components/ui/page-header";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Pill } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { StatCard } from "@/components/ui/stat-card";
 import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
+import {
+  Cell,
+  ColumnHeader,
+  ListCard,
+  ListRow,
+  ListSearch,
+  ListToolbar,
+  ToolbarButton,
+  ViewToggle,
+} from "@/components/tables/list-card";
 import {
   Dialog,
   DialogBody,
@@ -30,13 +43,15 @@ import {
   teamKeys,
   updateTeamMember,
   type TeamMember,
+  type TeamSummary,
 } from "../api/team.api";
 
+/** Prototype util-bar colour: >90 dark-red, >75 espresso, else tan. */
 function UtilizationBar({ value }: { value: number }) {
-  const tone = value >= 90 ? "bg-danger" : value >= 70 ? "bg-warning" : "bg-chart-fill";
+  const color = value > 90 ? "#8b3a2e" : value > 75 ? "#3b2418" : "#a67c52";
   return (
-    <div className="h-2 w-full rounded-full bg-chart-track" aria-hidden="true">
-      <div className={cn("h-full rounded-full", tone)} style={{ width: `${value}%` }} />
+    <div className="h-[7px] w-full overflow-hidden rounded-pill bg-chart-track" aria-hidden="true">
+      <div className="h-full rounded-pill" style={{ width: `${value}%`, background: color }} />
     </div>
   );
 }
@@ -117,80 +132,189 @@ function EditProfileDialog({
   );
 }
 
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
+}
+
 export function TeamPage() {
   const { t } = useTranslation("team");
   const { can } = usePermissions();
+  const navigate = useNavigate();
+  const params = useUrlParams<"q" | "view">({ view: "table" });
+  const view = (params.get("view") ?? "table") as "table" | "grid";
+  const q = (params.get("q") ?? "").toLowerCase();
   const query = useQuery({ queryKey: teamKeys.all, queryFn: ({ signal }) => listTeam(signal) });
+  const summary = useQuery({
+    queryKey: ["team", "summary"],
+    queryFn: ({ signal }) => httpClient<TeamSummary>("/team/summary", { signal }),
+  });
   const [editing, setEditing] = useState<TeamMember | null>(null);
+
+  useSetPageChrome({ title: t("title"), count: query.data?.items.length ?? null });
+
+  const columns = [
+    { key: "member", label: t("columns.member"), flex: 1.3 },
+    { key: "role", label: t("columns.role"), width: 150 },
+    { key: "dept", label: t("columns.department"), width: 150 },
+    { key: "bar", label: t("columns.bar"), width: 150 },
+    { key: "matters", label: t("columns.matters"), width: 90 },
+    { key: "util", label: t("columns.utilisation"), width: 150 },
+    { key: "status", label: t("columns.status"), width: 100 },
+  ] as const;
+
+  const s = summary.data;
 
   return (
     <PageContainer>
-      <PageHeader title={t("title")} description={t("subtitle")} />
-      <QueryBoundary query={query} loading={<RowsSkeleton rows={5} />}>
-        {(data) => (
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {data.items.map((u) => (
-              <div key={u.id} className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4">
-                <div className="flex items-start justify-between">
-                  <Link to={`/team/${u.id}`} className="flex items-center gap-3">
-                    <Avatar name={u.name} size="md" />
-                    <div>
-                      <div className="text-[13.5px] font-bold text-foreground">{u.name}</div>
-                      <div className="text-[11.5px] text-muted">{u.title}</div>
-                    </div>
-                  </Link>
-                  {u.status === "inactive" ? (
-                    <Badge tone="neutral" size="sm">
-                      {t("status.inactive")}
-                    </Badge>
-                  ) : (
-                    can("update:staff") && (
-                      <button
-                        type="button"
-                        onClick={() => setEditing(u)}
-                        aria-label={t("common:actions.edit")}
-                        className="text-muted hover:text-foreground"
-                      >
-                        <Icon name="edit" size={15} />
-                      </button>
-                    )
-                  )}
-                </div>
+      <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
+        <StatCard label={t("kpi.fee_earners")} value={s?.feeEarners ?? "—"} />
+        <StatCard label={t("kpi.support")} value={s?.support ?? "—"} />
+        <StatCard
+          label={t("kpi.avg_util")}
+          value={s ? `${s.avgUtilisation}%` : "—"}
+        />
+        <StatCard label={t("kpi.on_leave")} value={s?.onLeave ?? "—"} valueTone="warning" />
+      </div>
 
-                {u.practiceAreas.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {u.practiceAreas.map((a) => (
-                      <span key={a} className="rounded bg-surface-subtle px-1.5 py-0.5 text-[10.5px] text-muted">
-                        {a}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                <div>
-                  <div className="mb-1 flex items-center justify-between text-[11px] font-semibold text-muted">
-                    <span>{t("utilization")}</span>
-                    <span className="tabular-nums text-foreground-body">{u.utilization}%</span>
-                  </div>
-                  <UtilizationBar value={u.utilization} />
-                </div>
-
-                <div className="flex gap-4 border-t border-divider pt-2 text-[11.5px] text-muted">
-                  <span>
-                    {u.activeMatters} <span className="text-subtle">{t("matters")}</span>
-                  </span>
-                  <span>
-                    {u.openTasks} <span className="text-subtle">{t("tasks")}</span>
-                  </span>
-                  <span>
-                    {u.upcomingHearings} <span className="text-subtle">{t("hearings")}</span>
-                  </span>
-                </div>
-              </div>
-            ))}
+      <ListCard>
+        <ListToolbar>
+          <ListSearch
+            className="min-w-[270px]"
+            value={params.get("q") ?? ""}
+            placeholder={t("search_placeholder")}
+            onChange={(v) => params.set({ q: v })}
+          />
+          <div className="ms-auto flex flex-wrap items-center gap-2">
+            <ToolbarButton icon="filter_list">{t("filter")}</ToolbarButton>
+            <ViewToggle
+              value={view}
+              onChange={(v) => params.set({ view: v })}
+              labels={{ table: t("common:table.view_table"), grid: t("common:table.view_grid") }}
+            />
+            {can("update:staff") && (
+              <Button size="sm" icon="person_add">
+                {t("actions.add")}
+              </Button>
+            )}
           </div>
-        )}
-      </QueryBoundary>
+        </ListToolbar>
+
+        <QueryBoundary query={query} loading={<RowsSkeleton rows={8} />}>
+          {(data) => {
+            const rows = q
+              ? data.items.filter((u) =>
+                  `${u.name} ${u.role} ${u.department}`.toLowerCase().includes(q),
+                )
+              : data.items;
+
+            if (view === "grid") {
+              return (
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(262px,1fr))] gap-3.5 px-[18px] py-4">
+                  {rows.map((u) => (
+                    <button
+                      key={u.id}
+                      type="button"
+                      onClick={() => navigate(`/team/${u.id}`)}
+                      className="rounded-card border border-border bg-surface p-4 text-start transition-colors hover:border-border-accent hover:bg-surface-warm"
+                    >
+                      <div className="flex items-start gap-[11px]">
+                        <span className="grid size-[42px] flex-none place-items-center rounded-full bg-surface-sand text-[13px] font-extrabold text-link">
+                          {initials(u.name)}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[13.5px] font-bold text-foreground">{u.name}</div>
+                          <div className="mt-0.5 text-[11.5px] font-semibold text-secondary">
+                            {u.role}
+                          </div>
+                          <div className="text-[11px] font-medium text-muted">{u.department}</div>
+                        </div>
+                        <Pill tone={u.status === "active" ? "green" : "amber"}>
+                          {t(`status.${u.status}`)}
+                        </Pill>
+                      </div>
+                      <div className="mt-3.5 border-t border-divider pt-3.5">
+                        <div className="mb-1.5 flex items-center justify-between">
+                          <span className="text-[11px] font-bold uppercase tracking-[0.05em] text-subtle">
+                            {t("columns.utilisation")}
+                          </span>
+                          <span className="text-[11.5px] font-extrabold">{u.utilization}%</span>
+                        </div>
+                        <UtilizationBar value={u.utilization} />
+                        <div className="mt-2.5 text-[11px] font-semibold text-muted">
+                          {u.activeMatters} {t("active_matters_word")} · {u.barAdmission}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              );
+            }
+
+            return (
+              <>
+                <ColumnHeader columns={[...columns]} />
+                {rows.map((u) => (
+                  <ListRow key={u.id} onClick={() => navigate(`/team/${u.id}`)}>
+                    <Cell col={columns[0]} className="flex items-center gap-[11px]">
+                      <span className="grid size-[34px] flex-none place-items-center rounded-full bg-surface-sand text-[12px] font-extrabold text-link">
+                        {initials(u.name)}
+                      </span>
+                      <div className="min-w-0">
+                        <div className="text-[13px] font-bold text-foreground">{u.name}</div>
+                        <div className="truncate text-[11px] font-medium text-muted">{u.email}</div>
+                      </div>
+                    </Cell>
+                    <Cell col={columns[1]} className="truncate text-foreground-body">
+                      {u.role}
+                    </Cell>
+                    <Cell col={columns[2]} className="truncate">
+                      {u.department}
+                    </Cell>
+                    <Cell col={columns[3]} className="truncate">
+                      {u.barAdmission}
+                    </Cell>
+                    <Cell col={columns[4]} className="font-bold text-foreground">
+                      {u.activeMatters}
+                    </Cell>
+                    <Cell col={columns[5]} className="flex items-center gap-2.5">
+                      <div className="flex-1">
+                        <UtilizationBar value={u.utilization} />
+                      </div>
+                      <span className="text-[11.5px] font-bold text-secondary">
+                        {u.utilization}%
+                      </span>
+                    </Cell>
+                    <Cell col={columns[6]} className="flex items-center gap-1">
+                      <Pill tone={u.status === "active" ? "green" : "amber"}>
+                        {t(`status.${u.status}`)}
+                      </Pill>
+                      {can("update:staff") && u.status === "active" && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditing(u);
+                          }}
+                          aria-label={t("common:actions.edit")}
+                          className="flex size-6 items-center justify-center rounded text-faint hover:bg-surface-subtle"
+                        >
+                          <Icon name="edit" size={15} />
+                        </button>
+                      )}
+                    </Cell>
+                  </ListRow>
+                ))}
+              </>
+            );
+          }}
+        </QueryBoundary>
+      </ListCard>
+
       <EditProfileDialog member={editing} onOpenChange={(o) => !o && setEditing(null)} />
     </PageContainer>
   );

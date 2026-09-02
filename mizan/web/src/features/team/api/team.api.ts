@@ -5,6 +5,8 @@ export interface TeamMember {
   name: string;
   title: string;
   role: string;
+  department: string;
+  barAdmission: string;
   email: string;
   phone: string | null;
   practiceAreas: string[];
@@ -14,6 +16,13 @@ export interface TeamMember {
   openTasks: number;
   upcomingHearings: number;
   utilization: number;
+}
+
+export interface TeamSummary {
+  feeEarners: number;
+  support: number;
+  avgUtilisation: number;
+  onLeave: number;
 }
 
 export interface TeamMemberDetail extends TeamMember {

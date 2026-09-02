@@ -726,7 +726,7 @@
   "documents": {
     "title": "Documents",
     "subtitle": "Every file across the firm's matters.",
-    "search_placeholder": "Search files…",
+    "search_placeholder": "Search documents, matters or type…",
     "all_categories": "All categories",
     "actions": {
       "upload": "Upload"
@@ -763,7 +763,23 @@
       "updated": "Document updated",
       "deleted": "Document deleted",
       "failed": "Couldn't save. Try again."
-    }
+    },
+    "kpi": {
+      "total": "Total documents",
+      "awaiting": "Awaiting review",
+      "expiring": "Expiring authorities",
+      "added": "Added this month"
+    },
+    "columns": {
+      "document": "Document",
+      "matter": "Matter",
+      "type": "Type",
+      "size": "Size",
+      "added_by": "Added by",
+      "date": "Date",
+      "status": "Status"
+    },
+    "filter": "Filter"
   },
   "calendar": {
     "title": "Calendar",
@@ -792,6 +808,18 @@
     "errors": {
       "title_required": "Give the event a title.",
       "date_required": "Pick a date."
+    },
+    "view": {
+      "label": "View",
+      "month": "Month",
+      "week": "Week",
+      "agenda": "Agenda"
+    },
+    "legend": {
+      "hearing": "Hearing",
+      "filing": "Filing deadline",
+      "internal": "Internal deadline",
+      "meeting": "Meeting / call"
     }
   },
   "billing": {
@@ -810,7 +838,16 @@
       "balance": "Balance",
       "method": "Method",
       "received": "Received",
-      "amount": "Amount"
+      "amount": "Amount",
+      "client": "Client",
+      "matter": "Matter",
+      "due": "Due",
+      "receipt": "Receipt",
+      "against": "Against invoice",
+      "date": "Date",
+      "ref": "Ref",
+      "description": "Description",
+      "submitted": "Submitted by"
     },
     "invoice_status": {
       "draft": "Draft",
@@ -895,7 +932,33 @@
       "expense_recorded": "Expense recorded",
       "expense_approved": "Expense approved",
       "failed": "Couldn't save. Try again."
-    }
+    },
+    "hint": {
+      "invoices": "Invoices raised against matters.",
+      "payments": "Receipts allocated to invoices and matters.",
+      "expenses": "Disbursements recorded on matters."
+    },
+    "kpi_inv": {
+      "billed": "Billed (YTD)",
+      "collected": "Collected (YTD)",
+      "outstanding": "Outstanding",
+      "unbilled": "Unbilled time",
+      "overdue": "{{count}} invoices overdue"
+    },
+    "kpi_pay": {
+      "received": "Received this month",
+      "pending": "Pending clearance",
+      "avg_days": "Average days to pay",
+      "retainer": "Retainer balances held"
+    },
+    "kpi_exp": {
+      "disbursements": "Disbursements (month)",
+      "recoverable": "Recoverable from clients",
+      "pending": "Pending approval",
+      "overheads": "Firm overheads (month)"
+    },
+    "filter": "Filter",
+    "export": "Export"
   },
   "team": {
     "title": "Team",
@@ -906,7 +969,8 @@
     "hearings": "hearings",
     "active_matters": "Active matters",
     "status": {
-      "inactive": "Inactive"
+      "inactive": "Inactive",
+      "active": "Active"
     },
     "fields": {
       "title": "Job title",
@@ -919,11 +983,32 @@
     "toasts": {
       "updated": "Profile updated",
       "failed": "Couldn't save. Try again."
-    }
+    },
+    "kpi": {
+      "fee_earners": "Fee earners",
+      "support": "Support staff",
+      "avg_util": "Average utilisation",
+      "on_leave": "On leave this week"
+    },
+    "columns": {
+      "member": "Member",
+      "role": "Role",
+      "department": "Department",
+      "bar": "Bar admission",
+      "matters": "Matters",
+      "utilisation": "Utilisation",
+      "status": "Status"
+    },
+    "search_placeholder": "Search by name, role or department…",
+    "actions": {
+      "add": "Add member"
+    },
+    "filter": "Filter",
+    "active_matters_word": "active matters"
   },
   "notifications": {
     "title": "Notifications",
-    "mark_all_read": "Mark all read",
+    "mark_all_read": "Mark all as read",
     "filter": {
       "label": "Filter",
       "all": "All",
@@ -932,6 +1017,21 @@
     "empty": {
       "title": "You're all caught up",
       "body": "New notifications will show up here."
+    },
+    "all_notifications": "All notifications",
+    "n_unread": "{{count}} unread",
+    "preferences": {
+      "title": "Notification preferences",
+      "hearing_reminders": "Hearing reminders",
+      "hearing_reminders_d": "3 days and 1 day before each session",
+      "filing_deadlines": "Filing deadlines",
+      "filing_deadlines_d": "Escalate to the lead partner at 48 hours",
+      "document_uploads": "Document uploads",
+      "document_uploads_d": "Only for matters where I am assigned",
+      "payments": "Payments & invoices",
+      "payments_d": "Receipts, overdue balances and write-offs",
+      "digest": "Daily digest email",
+      "digest_d": "Sent at 08:00 Cairo time"
     }
   },
   "settings": {

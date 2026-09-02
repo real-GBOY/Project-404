@@ -7,12 +7,27 @@ export interface InvoiceListItem {
   number: string;
   clientName: string;
   matterTitle: string | null;
+  matterReference: string | null;
   status: InvoiceStatus;
   currency: string;
   total: number;
   balance: number;
   issuedAt: string | null;
   dueAt: string | null;
+}
+
+export interface Money {
+  currency: string;
+  amount: string;
+}
+
+/** Four KPI slots for a finance tab — `a`/`b`/`c` money lists, `d` money or a count. */
+export interface FinanceSummary {
+  a: Money[];
+  b: Money[];
+  c: Money[] | string;
+  d: Money[] | string;
+  overdue?: number;
 }
 
 export interface InvoiceLine {
@@ -29,6 +44,9 @@ export interface Invoice {
   clientName: string;
   matterId: string | null;
   matterTitle: string | null;
+  matterReference: string | null;
+  billingPartner: string;
+  terms: string;
   status: InvoiceStatus;
   currency: string;
   issuedAt: string | null;
@@ -53,9 +71,11 @@ export interface PaymentListItem {
 
 export interface ExpenseListItem {
   id: string;
+  reference: string;
   description: string;
   category: string;
   matterTitle: string | null;
+  matterReference: string | null;
   amount: number;
   currency: string;
   status: "pending" | "approved" | "rejected";

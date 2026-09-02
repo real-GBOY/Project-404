@@ -71,7 +71,7 @@ export function FirmProfileSection() {
     <Section title={t("sections.firm")}>
       <QueryBoundary query={query} loading={<Skeleton className="h-48" />}>
         {() => (
-          <div className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4">
+          <div className="flex flex-col gap-4 rounded-card border border-border bg-surface p-4">
             <FormField label={t("firm.name")}>
               <Input
                 value={form.firmName}
@@ -162,7 +162,7 @@ export function PracticeSection() {
     <Section title={t("sections.practice")}>
       <QueryBoundary query={query} loading={<Skeleton className="h-40" />}>
         {(s) => (
-          <div className="flex flex-col gap-5 rounded-lg border border-border bg-surface p-4">
+          <div className="flex flex-col gap-5 rounded-card border border-border bg-surface p-4">
             <div>
               <div className="mb-2 text-[12px] font-bold text-foreground-body">{t("practice.matter_types")}</div>
               <ChipList
@@ -196,7 +196,7 @@ export function BillingSection() {
     <Section title={t("sections.billing")}>
       <QueryBoundary query={query} loading={<Skeleton className="h-48" />}>
         {(s) => (
-          <div className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4">
+          <div className="flex flex-col gap-4 rounded-card border border-border bg-surface p-4">
             <div className="flex items-center justify-between text-[13px]">
               <span className="text-muted">{t("billing.vat_rate")}</span>
               <span className="font-bold tabular-nums text-foreground">{Math.round(s.vatRate * 100)}%</span>
@@ -235,7 +235,7 @@ export function AssistantSection() {
     <Section title={t("sections.assistant")}>
       <QueryBoundary query={query} loading={<Skeleton className="h-24" />}>
         {(s) => (
-          <div className="flex items-center justify-between rounded-lg border border-border bg-surface p-4">
+          <div className="flex items-center justify-between rounded-card border border-border bg-surface p-4">
             <div>
               <div className="text-[13px] font-semibold text-foreground">{t("assistant.enable")}</div>
               <p className="text-[12px] text-muted">{t("assistant.note")}</p>
@@ -286,7 +286,7 @@ export function UsersRolesSection() {
 
       <QueryBoundary query={members} loading={<RowsSkeleton rows={5} />}>
         {(m) => (
-          <div className="divide-y divide-divider rounded-lg border border-border bg-surface">
+          <div className="divide-y divide-divider rounded-card border border-border bg-surface">
             {m.items.map((member) => (
               <div key={member.id} className="flex items-center justify-between px-4 py-3">
                 <div>
@@ -343,7 +343,7 @@ export function AuditSection() {
       />
       <QueryBoundary query={query} loading={<RowsSkeleton rows={8} />}>
         {(data) => (
-          <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+          <div className="overflow-x-auto rounded-card border border-border bg-surface">
             <table className="w-full text-[12px]">
               <thead>
                 <tr className="border-b border-border text-[11px] font-semibold text-muted">
@@ -379,7 +379,7 @@ export function LocaleSection() {
   const current = i18n.language.startsWith("ar") ? "ar" : "en";
   return (
     <Section title={t("sections.locale")}>
-      <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4">
+      <div className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4">
         <p className="text-[12.5px] text-muted">{t("locale.note")}</p>
         <SegmentedControl
           aria-label={t("sections.locale")}

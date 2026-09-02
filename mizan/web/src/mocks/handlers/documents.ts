@@ -1,5 +1,13 @@
 import { http, HttpResponse } from "msw";
-import { CURRENT_USER_ID, db, matterTitle, nextId, userName, type DocumentRow } from "../fixtures/db";
+import {
+  CURRENT_USER_ID,
+  db,
+  matterRef,
+  matterTitle,
+  nextId,
+  userName,
+  type DocumentRow,
+} from "../fixtures/db";
 
 const find = (id: string) => db.documents.find((d) => d.id === id);
 const notFound = () =>
@@ -10,6 +18,7 @@ const view = (d: DocumentRow) => ({
   name: d.name,
   matterId: d.matterId,
   matterTitle: matterTitle(d.matterId),
+  matterReference: matterRef(d.matterId),
   category: d.category,
   status: d.status,
   sizeBytes: d.sizeBytes,
@@ -19,6 +28,22 @@ const view = (d: DocumentRow) => ({
 });
 
 export const documentHandlers = [
+  http.get("/api/documents/summary", () => {
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+    return HttpResponse.json({
+      total: db.documents.length,
+      awaitingReview: db.documents.filter((d) => d.status === "draft").length,
+      expiring: db.documents.filter((d) =>
+        `${d.category} ${d.name}`.toLowerCase().match(/power|authority|attorney/),
+      ).length,
+      addedThisMonth: db.documents.filter(
+        (d) => new Date(d.uploadedAt).getTime() >= monthStart.getTime(),
+      ).length,
+    });
+  }),
+
   http.get("/api/documents", ({ request }) => {
     const url = new URL(request.url);
     const matterId = url.searchParams.get("matterId");

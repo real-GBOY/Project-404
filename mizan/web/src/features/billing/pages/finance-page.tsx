@@ -1,121 +1,202 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { usePermissions } from "@/lib/permissions/use-permissions";
+import { useSetPageChrome } from "@/lib/page-chrome";
 import { useUrlParams } from "@/hooks/use-url-params";
-import { formatDate, formatMoney } from "@/lib/format";
+import { httpClient } from "@/lib/api/http-client";
+import { cn } from "@/lib/cn";
+import { formatDate, formatMoney, formatMoneyList } from "@/lib/format";
 import { PageContainer } from "@/components/ui/page-container";
-import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
+import { StatCard } from "@/components/ui/stat-card";
+import { Pill, type PillTone } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MatterChip } from "@/components/ui/matter-chip";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { QueryBoundary } from "@/components/feedback/query-boundary";
 import { EmptyState } from "@/components/feedback/empty-state";
 import { RowsSkeleton } from "@/components/feedback/skeleton";
-import { DataTable, type Column } from "@/components/tables/data-table";
+import {
+  Cell,
+  ColumnHeader,
+  ListCard,
+  ListRow,
+  ListToolbar,
+  ToolbarButton,
+} from "@/components/tables/list-card";
 import { useExpenses, useInvoices, usePayments, useBillingMutations } from "../hooks/use-billing";
 import { RecordExpenseDialog, RecordPaymentDialog } from "../components/record-dialogs";
-import { ExpenseStatusBadge, InvoiceStatusBadge } from "../components/billing-badges";
-import type { ExpenseListItem, InvoiceListItem, PaymentListItem } from "../api/billing.api";
+import type {
+  ExpenseListItem,
+  FinanceSummary,
+  InvoiceStatus,
+  Money,
+} from "../api/billing.api";
 
 const TABS = ["invoices", "payments", "expenses"] as const;
+type Tab = (typeof TABS)[number];
+const PERM: Record<Tab, string> = {
+  invoices: "read:invoice",
+  payments: "read:payment",
+  expenses: "read:expense",
+};
+const ICON: Record<Tab, string> = {
+  invoices: "receipt_long",
+  payments: "payments",
+  expenses: "account_balance_wallet",
+};
+
+const INVOICE_TONE: Record<InvoiceStatus, PillTone> = {
+  draft: "gray",
+  issued: "blue",
+  sent: "blue",
+  paid: "green",
+  void: "gray",
+};
+const EXPENSE_TONE: Record<string, PillTone> = {
+  pending: "amber",
+  approved: "green",
+  rejected: "red",
+};
+
+function moneyOrText(v: Money[] | string | undefined): string {
+  if (v == null) return "—";
+  if (typeof v === "string") return v;
+  return v.length ? formatMoneyList(v).join(" · ") : "—";
+}
+
+function useFinanceSummary(tab: Tab) {
+  return useQuery({
+    queryKey: ["finance", "summary", tab],
+    queryFn: ({ signal }) =>
+      httpClient<FinanceSummary>("/finance/summary", { query: { tab }, signal }),
+  });
+}
+
+function FinanceKpis({ tab }: { tab: Tab }) {
+  const { t } = useTranslation("billing");
+  const q = useFinanceSummary(tab);
+  const s = q.data;
+  const KEYS: Record<Tab, [string, string, string, string]> = {
+    invoices: ["kpi_inv.billed", "kpi_inv.collected", "kpi_inv.outstanding", "kpi_inv.unbilled"],
+    payments: ["kpi_pay.received", "kpi_pay.pending", "kpi_pay.avg_days", "kpi_pay.retainer"],
+    expenses: ["kpi_exp.disbursements", "kpi_exp.recoverable", "kpi_exp.pending", "kpi_exp.overheads"],
+  };
+  const [k1, k2, k3, k4] = KEYS[tab];
+  return (
+    <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
+      <StatCard label={t(k1)} value={s ? moneyOrText(s.a) : "—"} />
+      <StatCard label={t(k2)} value={s ? moneyOrText(s.b) : "—"} valueTone="muted" />
+      <StatCard
+        label={t(k3)}
+        value={s ? moneyOrText(s.c) : "—"}
+        valueTone={tab === "invoices" ? "danger" : tab === "expenses" ? "warning" : "default"}
+        sub={
+          tab === "invoices" && s?.overdue
+            ? t("kpi_inv.overdue", { count: s.overdue })
+            : undefined
+        }
+        subTone="danger"
+      />
+      <StatCard label={t(k4)} value={s ? moneyOrText(s.d) : "—"} />
+    </div>
+  );
+}
 
 function InvoicesTab() {
   const { t } = useTranslation("billing");
   const { can } = usePermissions();
   const navigate = useNavigate();
-  const status = useUrlParams<"status">({});
-  const query = useInvoices(status.get("status"));
+  const params = useUrlParams<"status">({});
+  const query = useInvoices(params.get("status"));
 
-  const columns: Column<InvoiceListItem>[] = [
-    {
-      id: "number",
-      header: t("columns.invoice"),
-      cell: (i) => (
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5">
-            <span className="font-semibold text-foreground">{i.number}</span>
-            <InvoiceStatusBadge status={i.status} />
-          </div>
-          <span className="text-[11.5px] text-muted">
-            {i.clientName}
-            {i.matterTitle ? ` · ${i.matterTitle}` : ""}
-          </span>
-        </div>
-      ),
-    },
-    {
-      id: "issuedAt",
-      header: t("columns.issued"),
-      cell: (i) => (i.issuedAt ? formatDate(i.issuedAt) : "—"),
-      hideBelow: "md",
-      align: "end",
-    },
-    {
-      id: "total",
-      header: t("columns.total"),
-      cell: (i) => (
-        <span className="tabular-nums">{formatMoney({ currency: i.currency, amount: String(i.total) })}</span>
-      ),
-      align: "end",
-    },
-    {
-      id: "balance",
-      header: t("columns.balance"),
-      cell: (i) =>
-        i.balance > 0 ? (
-          <span className="font-semibold tabular-nums text-warning">
-            {formatMoney({ currency: i.currency, amount: String(i.balance) })}
-          </span>
-        ) : (
-          <span className="text-muted">—</span>
-        ),
-      align: "end",
-      hideBelow: "sm",
-    },
-  ];
+  const columns = [
+    { key: "no", label: t("columns.invoice"), width: 150 },
+    { key: "client", label: t("columns.client"), flex: 1 },
+    { key: "matter", label: t("columns.matter"), width: 110 },
+    { key: "issued", label: t("columns.issued"), width: 110 },
+    { key: "due", label: t("columns.due"), width: 110 },
+    { key: "amount", label: t("columns.amount"), width: 130 },
+    { key: "status", label: t("columns.status"), width: 120 },
+  ] as const;
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <Select
-          value={status.get("status") ?? "all"}
-          onValueChange={(v) => status.set({ status: v === "all" ? undefined : v })}
+      <FinanceKpis tab="invoices" />
+      <ListCard>
+        <ListToolbar>
+          <span className="text-[14px] font-extrabold text-foreground">{t("tabs.invoices")}</span>
+          <div className="ms-auto flex flex-wrap items-center gap-2">
+            <Select
+              value={params.get("status") ?? "all"}
+              onValueChange={(v) => params.set({ status: v === "all" ? undefined : v })}
+            >
+              <SelectTrigger aria-label={t("columns.status")} className="h-9 w-[8.5rem]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("common:all")}</SelectItem>
+                {(["draft", "issued", "sent", "paid", "void"] as const).map((st) => (
+                  <SelectItem key={st} value={st}>
+                    {t(`invoice_status.${st}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <ToolbarButton icon="download">{t("export")}</ToolbarButton>
+            {can("create:invoice") && (
+              <Button size="sm" icon="add" disabled>
+                {t("actions.new_invoice")}
+              </Button>
+            )}
+          </div>
+        </ListToolbar>
+        <QueryBoundary
+          query={query}
+          loading={<RowsSkeleton rows={6} />}
+          isEmpty={(d) => d.items.length === 0}
+          empty={<EmptyState icon="receipt_long" title={t("empty.invoices")} />}
         >
-          <SelectTrigger aria-label={t("columns.status")} className="h-9 w-[8.5rem]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t("common:all")}</SelectItem>
-            {(["draft", "issued", "sent", "paid", "void"] as const).map((s) => (
-              <SelectItem key={s} value={s}>
-                {t(`invoice_status.${s}`)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {can("create:invoice") && (
-          <Button icon="add" variant="secondary" disabled>
-            {t("actions.new_invoice")}
-          </Button>
-        )}
-      </div>
-      <QueryBoundary
-        query={query}
-        loading={<RowsSkeleton rows={6} />}
-        isEmpty={(d) => d.items.length === 0}
-        empty={<EmptyState icon="request_quote" title={t("empty.invoices")} />}
-      >
-        {(data) => (
-          <DataTable
-            columns={columns}
-            rows={data.items}
-            rowKey={(i) => i.id}
-            onRowClick={(i) => navigate(`/billing/invoices/${i.id}`)}
-          />
-        )}
-      </QueryBoundary>
+          {(data) => (
+            <>
+              <ColumnHeader columns={[...columns]} />
+              {data.items.map((i) => (
+                <ListRow key={i.id} onClick={() => navigate(`/billing/invoices/${i.id}`)}>
+                  <Cell col={columns[0]} className="font-mono font-extrabold text-link">
+                    {i.number}
+                  </Cell>
+                  <Cell col={columns[1]} className="truncate text-[13px] font-bold text-foreground">
+                    {i.clientName}
+                  </Cell>
+                  <Cell col={columns[2]}>
+                    {i.matterReference ? <MatterChip>{i.matterReference}</MatterChip> : "—"}
+                  </Cell>
+                  <Cell col={columns[3]}>
+                    {i.issuedAt ? formatDate(i.issuedAt, { day: "numeric", month: "short" }) : "—"}
+                  </Cell>
+                  <Cell col={columns[4]}>
+                    {i.dueAt ? formatDate(i.dueAt, { day: "numeric", month: "short" }) : "—"}
+                  </Cell>
+                  <Cell col={columns[5]} className="text-[13px] font-extrabold text-foreground">
+                    {formatMoney({ currency: i.currency, amount: String(i.total) })}
+                  </Cell>
+                  <Cell col={columns[6]}>
+                    <Pill tone={INVOICE_TONE[i.status]}>{t(`invoice_status.${i.status}`)}</Pill>
+                  </Cell>
+                </ListRow>
+              ))}
+            </>
+          )}
+        </QueryBoundary>
+      </ListCard>
     </div>
   );
 }
@@ -123,59 +204,69 @@ function InvoicesTab() {
 function PaymentsTab() {
   const { t } = useTranslation("billing");
   const { can } = usePermissions();
+  const navigate = useNavigate();
   const query = usePayments();
   const [recording, setRecording] = useState(false);
 
-  const columns: Column<PaymentListItem>[] = [
-    {
-      id: "invoice",
-      header: t("columns.invoice"),
-      cell: (p) => (
-        <div>
-          <Link to={`/billing/invoices/${p.invoiceId}`} className="font-semibold text-link hover:underline">
-            {p.invoiceNumber}
-          </Link>
-          <div className="text-[11.5px] text-muted">{p.clientName}</div>
-        </div>
-      ),
-    },
-    { id: "method", header: t("columns.method"), cell: (p) => t(`method.${p.method}`), hideBelow: "md" },
-    {
-      id: "receivedAt",
-      header: t("columns.received"),
-      cell: (p) => formatDate(p.receivedAt),
-      hideBelow: "sm",
-      align: "end",
-    },
-    {
-      id: "amount",
-      header: t("columns.amount"),
-      cell: (p) => (
-        <span className="font-semibold tabular-nums text-success">
-          {formatMoney({ currency: p.currency, amount: String(p.amount) })}
-        </span>
-      ),
-      align: "end",
-    },
-  ];
+  const columns = [
+    { key: "ref", label: t("columns.receipt"), width: 150 },
+    { key: "client", label: t("columns.client"), flex: 1 },
+    { key: "against", label: t("columns.against"), width: 150 },
+    { key: "date", label: t("columns.date"), width: 120 },
+    { key: "method", label: t("columns.method"), width: 150 },
+    { key: "amount", label: t("columns.amount"), width: 130 },
+  ] as const;
 
   return (
     <div className="flex flex-col gap-4">
-      {can("record:payment") && (
-        <div className="flex justify-end">
-          <Button icon="add" onClick={() => setRecording(true)}>
-            {t("actions.record_payment")}
-          </Button>
-        </div>
-      )}
-      <QueryBoundary
-        query={query}
-        loading={<RowsSkeleton rows={5} />}
-        isEmpty={(d) => d.items.length === 0}
-        empty={<EmptyState icon="payments" title={t("empty.payments")} />}
-      >
-        {(data) => <DataTable columns={columns} rows={data.items} rowKey={(p) => p.id} />}
-      </QueryBoundary>
+      <FinanceKpis tab="payments" />
+      <ListCard>
+        <ListToolbar>
+          <span className="text-[14px] font-extrabold text-foreground">{t("tabs.payments")}</span>
+          <div className="ms-auto flex items-center gap-2">
+            <ToolbarButton icon="download">{t("export")}</ToolbarButton>
+            {can("record:payment") && (
+              <Button size="sm" icon="add" onClick={() => setRecording(true)}>
+                {t("actions.record_payment")}
+              </Button>
+            )}
+          </div>
+        </ListToolbar>
+        <QueryBoundary
+          query={query}
+          loading={<RowsSkeleton rows={5} />}
+          isEmpty={(d) => d.items.length === 0}
+          empty={<EmptyState icon="payments" title={t("empty.payments")} />}
+        >
+          {(data) => (
+            <>
+              <ColumnHeader columns={[...columns]} />
+              {data.items.map((p) => (
+                <ListRow key={p.id} onClick={() => navigate(`/billing/invoices/${p.invoiceId}`)}>
+                  <Cell col={columns[0]} className="font-extrabold text-link">
+                    {p.reference ?? "—"}
+                  </Cell>
+                  <Cell col={columns[1]} className="truncate text-[13px] font-bold text-foreground">
+                    {p.clientName}
+                  </Cell>
+                  <Cell col={columns[2]} className="truncate">
+                    {p.invoiceNumber}
+                  </Cell>
+                  <Cell col={columns[3]}>
+                    {formatDate(p.receivedAt, { day: "numeric", month: "short", year: "numeric" })}
+                  </Cell>
+                  <Cell col={columns[4]} className="truncate">
+                    {t(`method.${p.method}`, { defaultValue: p.method })}
+                  </Cell>
+                  <Cell col={columns[5]} className="text-[13px] font-extrabold text-foreground">
+                    {formatMoney({ currency: p.currency, amount: String(p.amount) })}
+                  </Cell>
+                </ListRow>
+              ))}
+            </>
+          )}
+        </QueryBoundary>
+      </ListCard>
       <RecordPaymentDialog open={recording} onOpenChange={setRecording} />
     </div>
   );
@@ -184,72 +275,98 @@ function PaymentsTab() {
 function ExpensesTab() {
   const { t } = useTranslation("billing");
   const { can } = usePermissions();
-  const status = useUrlParams<"estatus">({});
-  const query = useExpenses(status.get("estatus"));
+  const params = useUrlParams<"estatus">({});
+  const query = useExpenses(params.get("estatus"));
   const { approveExpense } = useBillingMutations();
   const [recording, setRecording] = useState(false);
 
+  const columns = [
+    { key: "ref", label: t("columns.ref"), width: 110 },
+    { key: "desc", label: t("columns.description"), flex: 1 },
+    { key: "matter", label: t("columns.matter"), width: 110 },
+    { key: "date", label: t("columns.date"), width: 120 },
+    { key: "by", label: t("columns.submitted"), width: 150 },
+    { key: "amount", label: t("columns.amount"), width: 120 },
+    { key: "status", label: t("columns.status"), width: 150 },
+  ] as const;
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <Select
-          value={status.get("estatus") ?? "all"}
-          onValueChange={(v) => status.set({ estatus: v === "all" ? undefined : v })}
-        >
-          <SelectTrigger aria-label={t("columns.status")} className="h-9 w-[9rem]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t("common:all")}</SelectItem>
-            {(["pending", "approved", "rejected"] as const).map((s) => (
-              <SelectItem key={s} value={s}>
-                {t(`expense_status.${s}`)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {can("create:expense") && (
-          <Button icon="add" onClick={() => setRecording(true)}>
-            {t("actions.record_expense")}
-          </Button>
-        )}
-      </div>
-      <QueryBoundary
-        query={query}
-        loading={<RowsSkeleton rows={5} />}
-        isEmpty={(d) => d.items.length === 0}
-        empty={<EmptyState icon="receipt" title={t("empty.expenses")} />}
-      >
-        {(data) => (
-          <div className="divide-y divide-divider rounded-lg border border-border bg-surface">
-            {data.items.map((e: ExpenseListItem) => (
-              <div key={e.id} className="flex items-center gap-3 px-4 py-3">
-                <div className="min-w-0 flex-1">
-                  <div className="text-[12.5px] font-semibold text-foreground">{e.description}</div>
-                  <div className="text-[11.5px] text-muted">
-                    {e.category}
-                    {e.matterTitle ? ` · ${e.matterTitle}` : ""} · {e.submittedBy}
-                  </div>
-                </div>
-                <span className="text-[12.5px] font-semibold tabular-nums text-foreground">
-                  {formatMoney({ currency: e.currency, amount: String(e.amount) })}
-                </span>
-                <ExpenseStatusBadge status={e.status} />
-                {e.status === "pending" && can("approve:expense") && (
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    icon="check"
-                    onClick={() => approveExpense.mutate(e.id)}
-                  >
-                    {t("actions.approve")}
-                  </Button>
-                )}
-              </div>
-            ))}
+      <FinanceKpis tab="expenses" />
+      <ListCard>
+        <ListToolbar>
+          <span className="text-[14px] font-extrabold text-foreground">{t("tabs.expenses")}</span>
+          <div className="ms-auto flex flex-wrap items-center gap-2">
+            <Select
+              value={params.get("estatus") ?? "all"}
+              onValueChange={(v) => params.set({ estatus: v === "all" ? undefined : v })}
+            >
+              <SelectTrigger aria-label={t("columns.status")} className="h-9 w-[9rem]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("common:all")}</SelectItem>
+                {(["pending", "approved", "rejected"] as const).map((st) => (
+                  <SelectItem key={st} value={st}>
+                    {t(`expense_status.${st}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {can("create:expense") && (
+              <Button size="sm" icon="add" onClick={() => setRecording(true)}>
+                {t("actions.record_expense")}
+              </Button>
+            )}
           </div>
-        )}
-      </QueryBoundary>
+        </ListToolbar>
+        <QueryBoundary
+          query={query}
+          loading={<RowsSkeleton rows={5} />}
+          isEmpty={(d) => d.items.length === 0}
+          empty={<EmptyState icon="account_balance_wallet" title={t("empty.expenses")} />}
+        >
+          {(data) => (
+            <>
+              <ColumnHeader columns={[...columns]} />
+              {data.items.map((e: ExpenseListItem) => (
+                <ListRow key={e.id}>
+                  <Cell col={columns[0]} className="font-extrabold text-link">
+                    {e.reference}
+                  </Cell>
+                  <Cell col={columns[1]} className="truncate text-[13px] font-bold text-foreground">
+                    {e.description}
+                  </Cell>
+                  <Cell col={columns[2]}>
+                    {e.matterReference ? <MatterChip>{e.matterReference}</MatterChip> : "—"}
+                  </Cell>
+                  <Cell col={columns[3]}>
+                    {formatDate(e.incurredAt, { day: "numeric", month: "short", year: "numeric" })}
+                  </Cell>
+                  <Cell col={columns[4]} className="truncate">
+                    {e.submittedBy ?? "—"}
+                  </Cell>
+                  <Cell col={columns[5]} className="text-[13px] font-extrabold text-foreground">
+                    {formatMoney({ currency: e.currency, amount: String(e.amount) })}
+                  </Cell>
+                  <Cell col={columns[6]} className="flex items-center gap-1.5">
+                    <Pill tone={EXPENSE_TONE[e.status]}>{t(`expense_status.${e.status}`)}</Pill>
+                    {e.status === "pending" && can("approve:expense") && (
+                      <button
+                        type="button"
+                        onClick={() => approveExpense.mutate(e.id)}
+                        className="text-[11px] font-bold text-link hover:underline"
+                      >
+                        {t("actions.approve")}
+                      </button>
+                    )}
+                  </Cell>
+                </ListRow>
+              ))}
+            </>
+          )}
+        </QueryBoundary>
+      </ListCard>
       <RecordExpenseDialog open={recording} onOpenChange={setRecording} />
     </div>
   );
@@ -260,42 +377,49 @@ export function FinancePage() {
   const { can } = usePermissions();
   const params = useUrlParams<"tab">({ tab: "invoices" });
   const tab = (TABS as readonly string[]).includes(params.get("tab") ?? "")
-    ? (params.get("tab") as (typeof TABS)[number])
+    ? (params.get("tab") as Tab)
     : "invoices";
 
-  const PERM: Record<(typeof TABS)[number], string> = {
-    invoices: "read:invoice",
-    payments: "read:payment",
-    expenses: "read:expense",
-  };
+  useSetPageChrome({ title: t("title") });
+
   const visible = TABS.filter((name) => can(PERM[name]));
 
   return (
     <PageContainer>
-      <PageHeader title={t("title")} description={t("subtitle")} />
-      <Tabs value={tab} onValueChange={(v) => params.set({ tab: v === "invoices" ? undefined : v })}>
-        <TabsList>
-          {visible.map((name) => (
-            <TabsTrigger key={name} value={name}>
-              <Icon
-                name={name === "invoices" ? "receipt_long" : name === "payments" ? "payments" : "receipt"}
-                size={14}
-                className="me-1"
-              />
-              {t(`tabs.${name}`)}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-        <TabsContent value="invoices">
-          <InvoicesTab />
-        </TabsContent>
-        <TabsContent value="payments">
-          <PaymentsTab />
-        </TabsContent>
-        <TabsContent value="expenses">
-          <ExpensesTab />
-        </TabsContent>
-      </Tabs>
+      <div className="flex flex-wrap items-center gap-2.5" role="tablist" aria-label={t("title")}>
+        <div className="flex gap-[3px] rounded-group bg-surface-sand-hover p-1">
+          {visible.map((name) => {
+            const active = name === tab;
+            return (
+              <button
+                key={name}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => params.set({ tab: name === "invoices" ? undefined : name })}
+                className={cn(
+                  "flex items-center gap-[7px] rounded-lg px-[15px] py-2 text-[13px] transition-colors",
+                  active
+                    ? "bg-surface font-extrabold text-primary shadow-tab-warm"
+                    : "font-semibold text-warm-ink hover:bg-surface-warm-2",
+                )}
+              >
+                <Icon name={ICON[name]} size={18} />
+                {t(`tabs.${name}`)}
+              </button>
+            );
+          })}
+        </div>
+        <span className="ms-1.5 text-[12.5px] font-medium text-muted-2">{t(`hint.${tab}`)}</span>
+      </div>
+
+      {tab === "invoices" ? (
+        <InvoicesTab />
+      ) : tab === "payments" ? (
+        <PaymentsTab />
+      ) : (
+        <ExpensesTab />
+      )}
     </PageContainer>
   );
 }

@@ -726,7 +726,7 @@
   "documents": {
     "title": "المستندات",
     "subtitle": "كل ملف عبر قضايا المكتب.",
-    "search_placeholder": "ابحث في الملفات…",
+    "search_placeholder": "ابحث في المستندات أو القضايا أو النوع…",
     "all_categories": "كل الفئات",
     "actions": {
       "upload": "رفع"
@@ -763,7 +763,23 @@
       "updated": "تم تحديث المستند",
       "deleted": "تم حذف المستند",
       "failed": "تعذّر الحفظ. حاول مرة أخرى."
-    }
+    },
+    "kpi": {
+      "total": "إجمالي المستندات",
+      "awaiting": "بانتظار المراجعة",
+      "expiring": "تفويضات تنتهي",
+      "added": "أُضيفت هذا الشهر"
+    },
+    "columns": {
+      "document": "المستند",
+      "matter": "القضية",
+      "type": "النوع",
+      "size": "الحجم",
+      "added_by": "أضافه",
+      "date": "التاريخ",
+      "status": "الحالة"
+    },
+    "filter": "تصفية"
   },
   "calendar": {
     "title": "التقويم",
@@ -792,6 +808,18 @@
     "errors": {
       "title_required": "أعطِ الحدث عنوانًا.",
       "date_required": "اختر تاريخًا."
+    },
+    "view": {
+      "label": "العرض",
+      "month": "شهر",
+      "week": "أسبوع",
+      "agenda": "جدول"
+    },
+    "legend": {
+      "hearing": "جلسة",
+      "filing": "موعد إيداع",
+      "internal": "موعد داخلي",
+      "meeting": "اجتماع / مكالمة"
     }
   },
   "billing": {
@@ -810,7 +838,16 @@
       "balance": "الرصيد",
       "method": "الطريقة",
       "received": "استُلمت",
-      "amount": "المبلغ"
+      "amount": "المبلغ",
+      "client": "العميل",
+      "matter": "القضية",
+      "due": "الاستحقاق",
+      "receipt": "الإيصال",
+      "against": "مقابل فاتورة",
+      "date": "التاريخ",
+      "ref": "المرجع",
+      "description": "الوصف",
+      "submitted": "قدمها"
     },
     "invoice_status": {
       "draft": "مسودة",
@@ -895,7 +932,33 @@
       "expense_recorded": "تم تسجيل المصروف",
       "expense_approved": "تم اعتماد المصروف",
       "failed": "تعذّر الحفظ. حاول مرة أخرى."
-    }
+    },
+    "hint": {
+      "invoices": "الفواتير الصادرة على القضايا.",
+      "payments": "الإيصالات المخصصة للفواتير والقضايا.",
+      "expenses": "المصروفات المسجلة على القضايا."
+    },
+    "kpi_inv": {
+      "billed": "المُفوتر (السنة)",
+      "collected": "المُحصّل (السنة)",
+      "outstanding": "المستحقات",
+      "unbilled": "وقت غير مُفوتر",
+      "overdue": "{{count}} فواتير متأخرة"
+    },
+    "kpi_pay": {
+      "received": "المُحصّل هذا الشهر",
+      "pending": "قيد التحصيل",
+      "avg_days": "متوسط أيام السداد",
+      "retainer": "أرصدة الأتعاب المحتجزة"
+    },
+    "kpi_exp": {
+      "disbursements": "المصروفات (الشهر)",
+      "recoverable": "قابلة للاسترداد من العملاء",
+      "pending": "بانتظار الموافقة",
+      "overheads": "مصاريف المكتب (الشهر)"
+    },
+    "filter": "تصفية",
+    "export": "تصدير"
   },
   "team": {
     "title": "الفريق",
@@ -906,7 +969,8 @@
     "hearings": "جلسات",
     "active_matters": "القضايا النشطة",
     "status": {
-      "inactive": "غير نشط"
+      "inactive": "غير نشط",
+      "active": "نشط"
     },
     "fields": {
       "title": "المسمى الوظيفي",
@@ -919,7 +983,28 @@
     "toasts": {
       "updated": "تم تحديث الملف",
       "failed": "تعذّر الحفظ. حاول مرة أخرى."
-    }
+    },
+    "kpi": {
+      "fee_earners": "المحامون",
+      "support": "الطاقم المساند",
+      "avg_util": "متوسط الإشغال",
+      "on_leave": "في إجازة هذا الأسبوع"
+    },
+    "columns": {
+      "member": "العضو",
+      "role": "الدور",
+      "department": "القسم",
+      "bar": "قيد النقابة",
+      "matters": "القضايا",
+      "utilisation": "الإشغال",
+      "status": "الحالة"
+    },
+    "search_placeholder": "ابحث بالاسم أو الدور أو القسم…",
+    "actions": {
+      "add": "إضافة عضو"
+    },
+    "filter": "تصفية",
+    "active_matters_word": "قضية نشطة"
   },
   "notifications": {
     "title": "الإشعارات",
@@ -932,6 +1017,21 @@
     "empty": {
       "title": "أنجزت كل شيء",
       "body": "ستظهر الإشعارات الجديدة هنا."
+    },
+    "all_notifications": "كل الإشعارات",
+    "n_unread": "{{count}} غير مقروء",
+    "preferences": {
+      "title": "تفضيلات الإشعارات",
+      "hearing_reminders": "تذكيرات الجلسات",
+      "hearing_reminders_d": "قبل كل جلسة بـ 3 أيام ويوم واحد",
+      "filing_deadlines": "مواعيد الإيداع",
+      "filing_deadlines_d": "التصعيد للشريك المسؤول عند 48 ساعة",
+      "document_uploads": "رفع المستندات",
+      "document_uploads_d": "فقط للقضايا المكلف بها",
+      "payments": "المدفوعات والفواتير",
+      "payments_d": "الإيصالات والأرصدة المتأخرة والشطب",
+      "digest": "ملخص يومي بالبريد",
+      "digest_d": "يُرسل الساعة 08:00 بتوقيت القاهرة"
     }
   },
   "settings": {

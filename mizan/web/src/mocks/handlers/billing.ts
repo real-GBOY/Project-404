@@ -4,6 +4,7 @@ import {
   clientName,
   db,
   invoiceTotals,
+  matterRef,
   matterTitle,
   nextId,
   userName,
@@ -17,6 +18,7 @@ const err = (status: number, code: string, message: string) =>
 
 function invoiceView(i: InvoiceRow) {
   const totals = invoiceTotals(i);
+  const m = i.matterId ? db.matters.find((x) => x.id === i.matterId) : null;
   return {
     id: i.id,
     number: i.number,
@@ -24,6 +26,9 @@ function invoiceView(i: InvoiceRow) {
     clientName: clientName(i.clientId),
     matterId: i.matterId,
     matterTitle: matterTitle(i.matterId),
+    matterReference: matterRef(i.matterId),
+    billingPartner: m ? (userName(m.leadLawyerId) ?? "—") : "—",
+    terms: `30 days from issue · bank transfer to CIB 0114-882-9`,
     status: i.status,
     currency: i.currency,
     issuedAt: i.issuedAt,
@@ -46,7 +51,85 @@ function invoiceView(i: InvoiceRow) {
 
 const findInvoice = (id: string) => db.invoices.find((i) => i.id === id);
 
+function moneyList(entries: { currency: string; amount: number }[]) {
+  const map = new Map<string, number>();
+  for (const e of entries) map.set(e.currency, (map.get(e.currency) ?? 0) + e.amount);
+  return [...map.entries()]
+    .filter(([, a]) => a !== 0)
+    .map(([currency, amount]) => ({ currency, amount: String(Math.round(amount)) }));
+}
+
 export const billingHandlers = [
+  http.get("/api/finance/summary", ({ request }) => {
+    const tab = new URL(request.url).searchParams.get("tab") ?? "invoices";
+    const now = Date.now();
+    const yearStart = new Date(new Date().getFullYear(), 0, 1).getTime();
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+
+    if (tab === "payments") {
+      const monthPays = db.payments.filter(
+        (p) => new Date(p.receivedAt).getTime() >= monthStart.getTime(),
+      );
+      return HttpResponse.json({
+        a: moneyList(monthPays.map((p) => ({ currency: p.currency, amount: p.amount }))),
+        b: moneyList(
+          db.payments
+            .filter((p) => new Date(p.receivedAt).getTime() >= now - 5 * 86_400_000)
+            .map((p) => ({ currency: p.currency, amount: Math.round(p.amount * 0.15) })),
+        ),
+        c: "34",
+        d: moneyList([{ currency: "EGP", amount: 640_000 }]),
+      });
+    }
+    if (tab === "expenses") {
+      const monthExp = db.expenses.filter(
+        (e) => new Date(e.incurredAt).getTime() >= monthStart.getTime(),
+      );
+      return HttpResponse.json({
+        a: moneyList(monthExp.map((e) => ({ currency: e.currency, amount: e.amount }))),
+        b: moneyList(
+          monthExp
+            .filter((e) => e.status === "approved")
+            .map((e) => ({ currency: e.currency, amount: e.amount })),
+        ),
+        c: moneyList(
+          db.expenses
+            .filter((e) => e.status === "pending")
+            .map((e) => ({ currency: e.currency, amount: e.amount })),
+        ),
+        d: moneyList([{ currency: "EGP", amount: 1_120_000 }]),
+      });
+    }
+    // invoices
+    const billed = moneyList(
+      db.invoices
+        .filter((i) => i.issuedAt && new Date(i.issuedAt).getTime() >= yearStart)
+        .map((i) => ({ currency: i.currency, amount: invoiceTotals(i).total })),
+    );
+    const collected = moneyList(
+      db.payments
+        .filter((p) => new Date(p.receivedAt).getTime() >= yearStart)
+        .map((p) => ({ currency: p.currency, amount: p.amount })),
+    );
+    const outstanding = moneyList(
+      db.invoices
+        .filter((i) => i.status === "sent" || i.status === "issued")
+        .map((i) => ({ currency: i.currency, amount: invoiceTotals(i).balance })),
+    );
+    const openTasks = db.tasks.filter((k) => k.status !== "done").length;
+    return HttpResponse.json({
+      a: billed,
+      b: collected,
+      c: outstanding,
+      d: moneyList([{ currency: "EGP", amount: openTasks * 74_000 }]),
+      overdue: db.invoices.filter(
+        (i) => (i.status === "sent" || i.status === "issued") && i.dueAt && new Date(i.dueAt).getTime() < now,
+      ).length,
+    });
+  }),
+
   // ─── invoices ──────────────────────────────────────────────────────────────
   http.get("/api/invoices", ({ request }) => {
     const url = new URL(request.url);
@@ -64,6 +147,7 @@ export const billingHandlers = [
           number: i.number,
           clientName: clientName(i.clientId),
           matterTitle: matterTitle(i.matterId),
+          matterReference: matterRef(i.matterId),
           status: i.status,
           currency: i.currency,
           total: totals.total,
@@ -205,9 +289,11 @@ export const billingHandlers = [
     return HttpResponse.json({
       items: rows.map((e) => ({
         id: e.id,
+        reference: e.id.toUpperCase().replace("EXP_", "EXP-"),
         description: e.description,
         category: e.category,
         matterTitle: matterTitle(e.matterId),
+        matterReference: matterRef(e.matterId),
         amount: e.amount,
         currency: e.currency,
         status: e.status,
