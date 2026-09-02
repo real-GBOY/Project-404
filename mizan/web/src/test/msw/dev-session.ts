@@ -1,9 +1,9 @@
 import type { AuthUser, OrganizationMembership } from "@/types/auth";
 
 /**
- * Fixture data for the dev-only session shim (`mocks/handlers/session.ts`).
- * Auth + `/me` are real backend endpoints (PLAN §5); this exists only so the app
- * runs locally without a backend. Inert when `VITE_API_MOCKS=off`.
+ * Session fixture for the **Vitest** MSW layer (`src/test/msw/`). The app has no
+ * in-browser mock — this drives the auth + `/me` + notifications handlers used
+ * by component/page tests only.
  */
 
 export const DEV_USER: AuthUser = {

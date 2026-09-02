@@ -10,8 +10,8 @@ import { TenantProvider } from "@/lib/tenant/tenant-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ToastProvider } from "@/components/ui/toast";
 import { AppRouter } from "@/app/router";
-import { server } from "@/mocks/server";
-import { DEV_ORGS, DEV_USER, makeDevAccessToken } from "@/mocks/dev-session";
+import { server } from "@/test/msw/server";
+import { DEV_ORGS, DEV_USER, makeDevAccessToken } from "@/test/msw/dev-session";
 
 function renderApp(path = "/") {
   const queryClient = new QueryClient({

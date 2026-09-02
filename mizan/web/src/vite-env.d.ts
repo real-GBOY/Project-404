@@ -1,9 +1,7 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  /** `off` disables MSW and talks to the real backend (proxied `/api`). Default: mocks on. */
-  readonly VITE_API_MOCKS?: "on" | "off";
-  /** API base path. Default `/api`. */
+  /** API base path. Default `/api` (the dev server proxies it to the backend). */
   readonly VITE_API_BASE?: string;
 }
 

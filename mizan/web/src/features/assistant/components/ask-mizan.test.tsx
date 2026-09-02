@@ -9,7 +9,7 @@ describe("AskMizan", () => {
     openOverlay(screen.getByRole("button", { name: "Open Ask Mizan" }), "click");
     fireEvent.click(screen.getByRole("button", { name: /What hearings are coming up/ }));
 
-    expect(screen.getByText(/4 hearings in the next two weeks/)).toBeInTheDocument();
+    expect(screen.getByText(/preview of the Mizan assistant/)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /Add a prep task/ }));
     expect(screen.getByText(/Demonstration only/)).toBeInTheDocument();

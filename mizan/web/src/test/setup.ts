@@ -1,11 +1,11 @@
 import "@testing-library/jest-dom/vitest";
 import { afterAll, afterEach, beforeAll, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
-import { server } from "@/mocks/server";
+import { server } from "@/test/msw/server";
 import { initI18n } from "@/lib/i18n";
 import { tokenStore } from "@/lib/auth/token-store";
 import { sessionCache } from "@/lib/auth/session-cache";
-import { resetDb } from "@/mocks/fixtures/db";
+import { resetDb } from "@/test/msw/fixtures/db";
 
 /*
  * Neutralise @floating-ui/react-dom (Radix Popper: Popover, DropdownMenu, Select,

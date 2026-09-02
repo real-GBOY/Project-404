@@ -12,12 +12,11 @@ import { teamHandlers } from "./team";
 import { settingsHandlers } from "./settings";
 
 /**
- * MSW request handlers, one module per feature. As each backend phase ships,
- * delete that feature's handler file and its entry here — the feature's `api/`
- * functions already target the real route (ARCHITECTURE §8).
- *
- * `session` is a dev shim (F2): auth + notifications are real endpoints, mocked
- * only so the shell runs before F3 and without a local backend.
+ * MSW request handlers for the **Vitest** suite only (`src/test/setup.ts`), one
+ * module per feature. The running app has no in-browser mock — every screen
+ * talks to the real Mizan backend. These handlers are a test double that mirrors
+ * the backend's response shapes so component/page tests can assert on rendered
+ * data without a live server; keep them in sync with `mizan/backend/app/lawfirm`.
  */
 export const handlers: RequestHandler[] = [
   ...sessionHandlers,
