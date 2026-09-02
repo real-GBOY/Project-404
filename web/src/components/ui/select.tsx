@@ -45,7 +45,7 @@ export const SelectContent = forwardRef<
         position={position}
         data-slot="select-content"
         className={cn(
-          "z-50 max-h-64 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-md border border-border bg-surface shadow-menu",
+          "z-50 max-h-64 min-w-(--radix-select-trigger-width) overflow-hidden rounded-md border border-border bg-surface shadow-menu",
           position === "popper" && "data-[side=bottom]:translate-y-1 data-[side=top]:-translate-y-1",
           className,
         )}

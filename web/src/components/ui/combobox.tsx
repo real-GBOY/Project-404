@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/cn";
 import { Icon } from "./icon";
@@ -43,6 +43,7 @@ export function Combobox({
   const { t } = useTranslation("common");
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const listboxId = useId();
 
   const selected = options.find((o) => o.value === value) ?? null;
   const filtered = useMemo(() => {
@@ -65,6 +66,10 @@ export function Combobox({
         <button
           type="button"
           id={id}
+          role="combobox"
+          aria-expanded={open}
+          aria-controls={listboxId}
+          aria-haspopup="listbox"
           disabled={disabled}
           aria-invalid={invalid || undefined}
           aria-describedby={describedBy}
@@ -81,7 +86,7 @@ export function Combobox({
           <Icon name="unfold_more" size={16} className="flex-none text-muted" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+      <PopoverContent className="w-(--radix-popover-trigger-width) p-0" align="start">
         <div className="flex items-center gap-2 border-b border-divider px-2.5">
           <Icon name="search" size={15} className="flex-none text-subtle" />
           <input
@@ -93,7 +98,7 @@ export function Combobox({
             className="h-9 w-full bg-transparent text-[13px] outline-none placeholder:text-subtle"
           />
         </div>
-        <ul role="listbox" className="max-h-56 overflow-y-auto p-1">
+        <ul id={listboxId} role="listbox" className="max-h-56 overflow-y-auto p-1">
           {filtered.length === 0 && (
             <li className="px-2 py-6 text-center text-[12.5px] text-muted">
               {emptyText ?? t("states.empty_title")}

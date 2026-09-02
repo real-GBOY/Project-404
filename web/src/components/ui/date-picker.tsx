@@ -68,8 +68,9 @@ export function DatePicker({
         <button
           type="button"
           id={id}
+          aria-haspopup="dialog"
+          aria-expanded={open}
           disabled={disabled}
-          aria-invalid={invalid || undefined}
           aria-describedby={describedBy}
           className={cn(
             "flex h-9 w-full items-center justify-between gap-2 rounded-md border border-border-control bg-surface px-3 text-[13px]",

@@ -29,13 +29,19 @@ export function CardHeader({ className, ...props }: React.HTMLAttributes<HTMLDiv
   );
 }
 
-export function CardTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
+export function CardTitle({
+  className,
+  children,
+  ...props
+}: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h3
       data-slot="card-title"
       className={cn("text-[13.5px] font-bold tracking-tight text-foreground", className)}
       {...props}
-    />
+    >
+      {children}
+    </h3>
   );
 }
 
