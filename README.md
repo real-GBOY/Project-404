@@ -117,4 +117,22 @@ api/ events/ permissions/ validation/ tests/`) so any AURIC developer can
 navigate any module — Plan §3.2. Schema for a module's tables lives in
 `prisma/schema/<module>.prisma`, not in the module folder.
 
-See `docs/` for architecture, integration, and conventions.
+## Architectural contracts (per-module READMEs)
+
+This file is the "clone and run" guide. The **architectural contract** of each
+reusable capability — what it owns, what it does not, its interfaces,
+dependency direction, invariants, and when *not* to reuse it — lives beside the
+code:
+
+| | |
+|---|---|
+| `core/README.md` | AURIC Core as a whole — the Core ↔ product boundary |
+| `core/contracts/` · `core/kernel/` · `core/events/` | the foundation layer |
+| `core/identity/` · `core/rbac/` · `core/organizations/` | auth & access |
+| `core/files/` · `core/audit/` · `core/notifications/` | capabilities |
+| `core/localization/` · `core/observability/` · `core/http/` · `core/bootstrap/` | cross-cutting |
+| `app/README.md` | **Mizan** (Project #1) backend — the Core ↔ Mizan boundary |
+| `web/README.md` | **Mizan** web client — API-only, imports no repo code |
+
+`docs/` has the higher-level architecture, integration guide, tenancy design,
+and conventions. `docs/system-architecture.md` is the canonical vision.
