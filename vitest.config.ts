@@ -6,7 +6,7 @@ export default defineConfig({
   // which Nest's DI container needs for constructor injection.
   plugins: [swc.vite()],
   test: {
-    include: ["core/**/*.test.ts"],
+    include: ["core/**/*.test.ts", "app/**/*.test.ts"],
     environment: "node",
     globals: false,
     // Integration tests that need a live Postgres opt in via AURIC_TEST_DATABASE_URL.

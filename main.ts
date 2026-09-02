@@ -5,16 +5,18 @@ import {
   FastifyAdapter,
   type NestFastifyApplication,
 } from "@nestjs/platform-fastify";
-import { AppModule } from "./core/app.module.js";
+import { AppModule } from "./app/app.module.js";
+import { AppSeedService } from "./app/seed.js";
+import { APP_CODENAME, APP_NAME, APP_VERSION } from "./app/version.js";
 import { getConfig } from "./core/kernel/config.js";
 import { migrateToLatest } from "./core/kernel/db/migrate.js";
 import { rootLogger } from "./core/kernel/logging/logger.js";
 import { CORE_VERSION } from "./core/version.js";
-import { SeedService } from "./core/bootstrap/seed.service.js";
 
 /**
- * Single-process entrypoint. Migrates, seeds, then serves the HTTP API — the
- * whole modular monolith in one process (§3.0). The outbox worker starts via
+ * Single-process entrypoint for the Mizan client application. Migrates, seeds
+ * (Core RBAC + law-firm RBAC), then serves the HTTP API — the whole modular
+ * monolith in one process (§3.0). The outbox worker starts via
  * `OnApplicationBootstrap` when `app.listen()` fires.
  */
 async function main() {
@@ -30,12 +32,18 @@ async function main() {
   app.setGlobalPrefix("api");
   app.enableShutdownHooks();
 
-  await app.get(SeedService).seed();
+  await app.get(AppSeedService).seed();
 
   await app.listen({ port: config.port, host: "0.0.0.0" });
   rootLogger.info(
-    { version: CORE_VERSION, url: `http://localhost:${config.port}/api/health` },
-    "AURIC Core started",
+    {
+      app: APP_NAME,
+      codename: APP_CODENAME,
+      appVersion: APP_VERSION,
+      core: CORE_VERSION,
+      url: `http://localhost:${config.port}/api/health`,
+    },
+    `${APP_NAME} (${APP_CODENAME}) — running on AURIC Core ${CORE_VERSION}`,
   );
 }
 
