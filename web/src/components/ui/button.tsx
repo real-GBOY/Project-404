@@ -48,12 +48,18 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       aria-busy={loading || undefined}
       {...props}
     >
-      {loading ? (
-        <Icon name="progress_activity" size={16} className="animate-spin" />
+      {asChild ? (
+        children
       ) : (
-        icon && <Icon name={icon} size={16} />
+        <>
+          {loading ? (
+            <Icon name="progress_activity" size={16} className="animate-spin" />
+          ) : (
+            icon && <Icon name={icon} size={16} />
+          )}
+          {children}
+        </>
       )}
-      {children}
     </Comp>
   );
 });

@@ -30,7 +30,29 @@
       "finance": "المالية",
       "team": "الفريق",
       "notifications": "الإشعارات",
-      "settings": "الإعدادات"
+      "settings": "الإعدادات",
+      "groups": {
+        "workspace": "مساحة العمل",
+        "finance": "المالية",
+        "firm": "المكتب",
+        "system": "النظام"
+      }
+    },
+    "shell": {
+      "firm_name": "توفيق وشركاه",
+      "primary_nav": "التنقل الرئيسي",
+      "search": "بحث",
+      "help": "المساعدة والدعم",
+      "toggle_sidebar": "فتح التنقل",
+      "collapse": "طيّ",
+      "collapse_sidebar": "طيّ الشريط الجانبي",
+      "expand_sidebar": "توسيع الشريط الجانبي",
+      "user_menu": "قائمة الحساب",
+      "organizations": "المؤسسات",
+      "org_switched": "تم تبديل المؤسسة",
+      "logout": "تسجيل الخروج",
+      "coming_in": "سيصل في المرحلة {{phase}}.",
+      "notifications_unread": "الإشعارات، {{count}} غير مقروءة"
     },
     "language": {
       "ar": "العربية",
@@ -44,7 +66,22 @@
     "command": {
       "title": "قائمة الأوامر",
       "placeholder": "ابحث عن صفحة أو إجراء…",
-      "empty": "لا توجد أوامر مطابقة"
+      "empty": "لا توجد أوامر مطابقة",
+      "groups": {
+        "navigate": "التنقل"
+      }
+    },
+    "assistant": {
+      "name": "اسأل ميزان",
+      "open": "فتح مساعد ميزان",
+      "demo_badge": "معاينة",
+      "demo_note": "معاينة للمساعد. لا يمكنه تنفيذ إجراءات أو قراءة بيانات مباشرة بعد.",
+      "try": "جرّب أن تسأل",
+      "prompts": {
+        "upcoming_hearings": "ما الجلسات القادمة هذا الأسبوع؟",
+        "overdue_tasks": "أي من مهامي متأخرة؟",
+        "outstanding_invoices": "كم المبلغ المستحق عبر جميع العملاء؟"
+      }
     }
   }
 }

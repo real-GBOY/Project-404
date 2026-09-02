@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import { i18n } from "@/lib/i18n";
-import { renderWithProviders } from "@/test/render";
+import { openOverlay, renderWithProviders } from "@/test/render";
 import { Combobox, type ComboboxOption } from "./combobox";
 import { DatePicker } from "./date-picker";
+
+// See openOverlay — Radix Popover overlays must be driven synchronously in jsdom.
 
 const options: ComboboxOption[] = [
   { value: "tax", label: "Tax dispute" },
@@ -12,31 +14,35 @@ const options: ComboboxOption[] = [
 ];
 
 describe("Combobox", () => {
-  it("filters and selects an option", async () => {
+  it("filters and selects an option", () => {
     function Host() {
       const [value, setValue] = useState<string | null>(null);
-      return <Combobox options={options} value={value} onValueChange={setValue} placeholder="Type" />;
+      return (
+        <Combobox options={options} value={value} onValueChange={setValue} placeholder="Type" />
+      );
     }
-    const { user } = renderWithProviders(<Host />);
+    renderWithProviders(<Host />);
 
-    await user.click(screen.getByRole("combobox"));
-    await user.keyboard("lab");
-    await user.click(await screen.findByRole("option", { name: "Labour claim" }));
+    openOverlay(screen.getByRole("combobox"), "click");
+    fireEvent.change(screen.getByPlaceholderText("Search"), { target: { value: "lab" } });
+    fireEvent.click(screen.getByRole("option", { name: "Labour claim" }));
 
     expect(screen.getByRole("combobox")).toHaveTextContent("Labour claim");
   });
 });
 
 describe("DatePicker", () => {
-  // Assert against Latin digits / month names — independent of the AR default.
+  // Assert against Latin digits / month names regardless of the ambient locale.
+  let previousLanguage: string;
   beforeEach(async () => {
+    previousLanguage = i18n.language;
     await i18n.changeLanguage("en");
   });
   afterEach(async () => {
-    await i18n.changeLanguage("ar");
+    await i18n.changeLanguage(previousLanguage);
   });
 
-  it("opens a grid and picks a day", async () => {
+  it("opens a grid and picks a day", () => {
     function Host() {
       const [value, setValue] = useState<string | null>("2026-03-10");
       return (
@@ -46,10 +52,10 @@ describe("DatePicker", () => {
         </>
       );
     }
-    const { user } = renderWithProviders(<Host />);
+    renderWithProviders(<Host />);
 
-    await user.click(screen.getByRole("button", { name: /2026/ }));
-    await user.click(screen.getByRole("button", { name: "15" }));
+    openOverlay(screen.getByRole("button", { name: /2026/ }), "click");
+    fireEvent.click(screen.getByRole("button", { name: "15" }));
 
     expect(screen.getByTestId("value")).toHaveTextContent("2026-03-15");
   });

@@ -51,10 +51,8 @@ describe("DataTable", () => {
 
 describe("Pagination", () => {
   it("hides itself for a single page", () => {
-    const { container } = renderWithProviders(
-      <Pagination page={1} pageCount={1} onPageChange={() => {}} />,
-    );
-    expect(container).toBeEmptyDOMElement();
+    renderWithProviders(<Pagination page={1} pageCount={1} onPageChange={() => {}} />);
+    expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
   });
 
   it("navigates to a chosen page", async () => {

@@ -1,5 +1,6 @@
 import { setupWorker } from "msw/browser";
 import { handlers } from "./handlers";
+import { seedDevSession } from "./dev-session";
 
 export const worker = setupWorker(...handlers);
 
@@ -11,4 +12,6 @@ export async function enableMocks(): Promise<void> {
     quiet: true,
     serviceWorker: { url: `${import.meta.env.BASE_URL}mockServiceWorker.js` },
   });
+  // Dev shim — see dev-session.ts. Superseded by F3's real login flow.
+  seedDevSession();
 }

@@ -25,9 +25,13 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
     css: false,
-    // Constrained CI/sandbox: one worker, no child-process fan-out.
-    pool: "threads",
-    poolOptions: { threads: { singleThread: true, maxThreads: 1, minThreads: 1 } },
+    // One isolated worker, no fan-out (constrained CI/sandbox). We use `forks`
+    // rather than `threads`: jsdom's CSS/layout engine runs pathologically slow
+    // inside worker_threads here, and @floating-ui (Radix Popover/Select/Menu)
+    // calls getComputedStyle heavily — a single overlay render took minutes on
+    // `threads`, milliseconds on a single fork.
+    pool: "forks",
+    poolOptions: { forks: { singleFork: true, maxForks: 1, minForks: 1 } },
     fileParallelism: false,
   },
 });

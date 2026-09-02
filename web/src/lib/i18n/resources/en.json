@@ -30,7 +30,29 @@
       "finance": "Finance",
       "team": "Team",
       "notifications": "Notifications",
-      "settings": "Settings"
+      "settings": "Settings",
+      "groups": {
+        "workspace": "Workspace",
+        "finance": "Finance",
+        "firm": "Firm",
+        "system": "System"
+      }
+    },
+    "shell": {
+      "firm_name": "Tawfik & Partners",
+      "primary_nav": "Primary navigation",
+      "search": "Search",
+      "help": "Help & support",
+      "toggle_sidebar": "Open navigation",
+      "collapse": "Collapse",
+      "collapse_sidebar": "Collapse sidebar",
+      "expand_sidebar": "Expand sidebar",
+      "user_menu": "Account menu",
+      "organizations": "Organizations",
+      "org_switched": "Organization switched",
+      "logout": "Sign out",
+      "coming_in": "Arriving in {{phase}}.",
+      "notifications_unread": "Notifications, {{count}} unread"
     },
     "language": {
       "ar": "العربية",
@@ -44,7 +66,22 @@
     "command": {
       "title": "Command menu",
       "placeholder": "Search for a page or action…",
-      "empty": "No matching commands"
+      "empty": "No matching commands",
+      "groups": {
+        "navigate": "Navigate"
+      }
+    },
+    "assistant": {
+      "name": "Ask Mizan",
+      "open": "Open Ask Mizan",
+      "demo_badge": "Preview",
+      "demo_note": "A preview of the assistant. It can't take actions or read live data yet.",
+      "try": "Try asking",
+      "prompts": {
+        "upcoming_hearings": "What hearings are coming up this week?",
+        "overdue_tasks": "Which of my tasks are overdue?",
+        "outstanding_invoices": "How much is outstanding across all clients?"
+      }
     }
   }
 }
