@@ -6,11 +6,13 @@ import { queryClient } from "@/lib/api/query-client";
 import { i18n } from "@/lib/i18n";
 import { AuthProvider } from "@/lib/auth/auth-provider";
 import { TenantProvider } from "@/lib/tenant/tenant-provider";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { ToastProvider } from "@/components/ui/toast";
 import { AppErrorBoundary } from "./error-boundary";
 
 /**
  * Provider composition (outer → inner):
- *   ErrorBoundary → Query → i18n → Router → Auth → Tenant
+ *   ErrorBoundary → Query → i18n → Router → Auth → Tenant → Tooltip → Toast
  * Auth is inside Router because it navigates on logout; Tenant reads Auth.
  */
 export function AppProviders({ children }: { children: ReactNode }) {
@@ -20,7 +22,11 @@ export function AppProviders({ children }: { children: ReactNode }) {
         <I18nextProvider i18n={i18n}>
           <BrowserRouter>
             <AuthProvider>
-              <TenantProvider>{children}</TenantProvider>
+              <TenantProvider>
+                <TooltipProvider>
+                  <ToastProvider>{children}</ToastProvider>
+                </TooltipProvider>
+              </TenantProvider>
             </AuthProvider>
           </BrowserRouter>
         </I18nextProvider>
