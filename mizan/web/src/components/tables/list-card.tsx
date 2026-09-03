@@ -209,7 +209,7 @@ export function ListSearch({
   return (
     <div
       className={cn(
-        "flex min-w-[280px] items-center gap-2 rounded-btn border border-border-input bg-[#f7f7fa] px-[11px] py-2",
+        "flex min-w-[280px] items-center gap-2 rounded-btn border border-border-input bg-surface-subtle px-[11px] py-2",
         className,
       )}
     >

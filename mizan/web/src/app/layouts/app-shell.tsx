@@ -6,6 +6,7 @@ import { RouteErrorBoundary } from "@/app/router/route-error-boundary";
 import { PageChromeProvider } from "@/lib/page-chrome";
 import { usePermissions } from "@/lib/permissions/use-permissions";
 import { Icon } from "@/components/ui/icon";
+import { MizanMark } from "@/components/ui/logo";
 import { RowsSkeleton } from "@/components/feedback/skeleton";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { CommandMenu, type CommandAction } from "@/components/navigation/command-menu";
@@ -16,13 +17,17 @@ import { UserMenu } from "@/components/navigation/user-menu";
 function Brand() {
   const { t } = useTranslation("common");
   return (
-    <div className="flex items-center gap-2.5 border-b border-divider-brand px-[18px] pb-4 pt-[18px]">
-      <div className="flex size-[34px] flex-none items-center justify-center rounded-group bg-primary text-[16px] font-extrabold text-primary-foreground">
-        M
-      </div>
+    <div className="flex items-center gap-3 border-b border-divider-brand px-[18px] pb-4 pt-[18px]">
+      <span className="flex size-[34px] flex-none items-center justify-center rounded-group bg-primary">
+        <MizanMark size={22} className="text-primary-foreground" />
+      </span>
       <div className="min-w-0">
-        <div className="text-[15px] font-extrabold tracking-[-0.015em]">{t("app_name")}</div>
-        <div className="truncate text-[11px] font-medium text-muted">{t("shell.firm_name")}</div>
+        <div className="font-display text-[17px] font-normal leading-none tracking-[0.02em] text-foreground">
+          {t("app_name")}
+        </div>
+        <div className="mt-1 truncate text-[10.5px] font-medium uppercase tracking-[0.16em] text-muted">
+          {t("shell.firm_name")}
+        </div>
       </div>
     </div>
   );
@@ -34,7 +39,7 @@ function SidebarSearch({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-2 rounded-btn border border-border-input bg-[#f7f7fa] px-2.5 py-2 text-start focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      className="flex w-full items-center gap-2 rounded-btn border border-border-input bg-surface-subtle px-2.5 py-2 text-start focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
     >
       <Icon name="search" size={18} className="text-subtle" />
       <span className="truncate text-[12.5px] font-medium text-subtle">{t("shell.search_hint")}</span>

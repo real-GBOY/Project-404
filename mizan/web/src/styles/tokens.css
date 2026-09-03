@@ -1,29 +1,42 @@
 @import "tailwindcss";
 
 /**
- * Mizan design tokens — transcribed verbatim from the Claude Design prototype
- * (`Mizan Law Firm ERP.dc.html`). Every colour here appears literally in that file.
+ * Mizan design tokens — the "Mizan Identity" visual system
+ * (Claude Design: `Mizan Identity.dc.html`).
  *
- * Tailwind v4 `@theme`: `--color-x` → `bg-x` / `text-x` / `border-x`,
- * `--radius-x` → `rounded-x`, `--shadow-x` → `shadow-x`, `--spacing-x` → `w-x` / `p-x`.
- * Semantic radii below (`rounded-card`, `rounded-btn`, …) — Tailwind's own
- * `rounded-sm/md/lg` scale is left untouched.
- * The prototype is a single light theme; a dark set can layer on later.
+ *   Court Navy  #16233A  primary ink · the mark · headers · primary buttons
+ *   Slate Blue  #31456B  interactive states · links · secondary labels
+ *   Brass       #B99A5B  accent only — never a surface, never body text
+ *   Paper       #F5F3EF  default background — warm, not white
+ *   Card        #FAF9F6  raised surfaces: case cards, panels, tables
+ *
+ *   Spectral    display — page & case titles, never UI controls or data
+ *   Public Sans interface — tables, forms, labels, filters, notifications
+ *   Amiri       wordmark & Arabic display
+ *
+ * Token NAMES are unchanged from the previous system, so component code is
+ * untouched — only the values move. The prototype is a single light theme.
  */
 @theme {
-  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: "Public Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-display: "Spectral", Georgia, "Times New Roman", serif;
+  --font-arabic: "Amiri", "Times New Roman", serif;
   --font-mono: ui-monospace, "SFMono-Regular", "Menlo", "Consolas", monospace;
 
-  /* semantic radii — the prototype's exact set */
-  --radius-xs: 5px; /* checkbox */
-  --radius-chip: 7px; /* matter-number chip, inner segmented tab */
-  --radius-control: 9px; /* small buttons, segmented control, disc icons */
-  --radius-btn: 10px; /* buttons, inputs, nav items, view toggles */
-  --radius-group: 11px; /* logo, Case Work tab group */
-  --radius-panel: 12px; /* nested cards, footer card */
-  --radius-card: 14px; /* the card */
-  --radius-sheet: 22px; /* Ask Mizan bottom sheet */
+  /* semantic radii — institutional, tightened from the prototype */
+  --radius-xs: 3px; /* checkbox */
+  --radius-chip: 3px; /* matter-number chip, inner segmented tab */
+  --radius-control: 5px; /* small buttons, segmented control, disc icons */
+  --radius-btn: 6px; /* buttons, inputs, nav items, view toggles */
+  --radius-group: 7px; /* logo tile, Case Work tab group */
+  --radius-panel: 7px; /* nested cards, footer card */
+  --radius-card: 8px; /* the card */
+  --radius-sheet: 14px; /* Ask Mizan bottom sheet */
   --radius-pill: 999px;
+  --radius-sm: 4px;
+  --radius-md: 5px;
+  --radius-lg: 7px;
+  --radius-xl: 9px;
 
   /* frame dimensions */
   --spacing-sidebar: 246px;
@@ -31,105 +44,105 @@
   --spacing-content: 1180px;
 
   /* ── surfaces ───────────────────────────────────────────── */
-  --color-canvas: #f6f6f8;
-  --color-surface: #ffffff;
-  --color-surface-subtle: #fafafc; /* row hover, table-header bg */
-  --color-surface-subtle-2: #fcfcfe; /* nested note cards */
-  --color-surface-sand: #f1e8d9; /* active nav, "Ask Mizan", date chips */
-  --color-surface-sand-hover: #ede3db;
-  --color-surface-warm: #fcfaf6; /* alert banner, grid-card hover */
-  --color-surface-warm-2: #f7f3ef; /* activity / notification icon discs */
+  --color-canvas: #f5f3ef; /* Paper */
+  --color-surface: #faf9f6; /* Card — raised surfaces */
+  --color-surface-subtle: #f2efe8; /* row hover, table-header bg */
+  --color-surface-subtle-2: #f6f3ec; /* nested note cards */
+  --color-surface-sand: #f0eadb; /* active nav, "Ask Mizan", date chips */
+  --color-surface-sand-hover: #eae2cf;
+  --color-surface-warm: #faf8f2; /* alert banner, grid-card hover */
+  --color-surface-warm-2: #f1ece0; /* activity / notification icon discs */
 
   /* ── text ───────────────────────────────────────────────── */
-  --color-foreground: #16161d;
-  --color-foreground-strong: #22222e;
-  --color-foreground-body: #33333f;
-  --color-foreground-body-2: #4a4a5c;
-  --color-secondary: #55556b; /* labels, secondary cell text */
-  --color-warm-ink: #5b3928; /* text on sand (Case Work idle tab) */
-  --color-muted: #8a8aa0;
-  --color-muted-2: #7a7a90; /* descriptions, subtitles */
-  --color-subtle: #9a9ab0; /* uppercase field labels */
-  --color-warm-muted: #a08e80; /* uppercase labels inside detail cards */
-  --color-faint: #b6b6c6; /* trailing chevrons, more_vert */
-  --color-fainter: #c4c4d0;
-  --color-checkbox: #d6d6e0;
+  --color-foreground: #16233a; /* Court Navy — primary ink */
+  --color-foreground-strong: #101b2e;
+  --color-foreground-body: #29344a;
+  --color-foreground-body-2: #3d4a63;
+  --color-secondary: #47597a; /* labels, secondary cell text */
+  --color-warm-ink: #5b4a2c; /* text on sand */
+  --color-muted: #7b869a;
+  --color-muted-2: #6a7690; /* descriptions, subtitles */
+  --color-subtle: #98a1b3; /* uppercase field labels */
+  --color-warm-muted: #9a8c72; /* uppercase labels inside detail cards */
+  --color-faint: #aeb6c4; /* trailing chevrons, more_vert */
+  --color-fainter: #c3c9d3;
+  --color-checkbox: #cfd4de;
 
-  /* ── brand (espresso) ───────────────────────────────────── */
-  --color-primary: #3b2418;
-  --color-primary-hover: #4a2d1f;
-  --color-primary-deep: #2e1a12;
-  --color-primary-deepest: #24140e;
-  --color-primary-foreground: #ffffff;
-  --color-link: #4a2d1f;
-  --color-ink: #16161d; /* near-black button variant */
-  --color-ink-foreground: #ffffff;
+  /* ── brand (Court Navy) ─────────────────────────────────── */
+  --color-primary: #16233a;
+  --color-primary-hover: #21304a;
+  --color-primary-deep: #101b2e;
+  --color-primary-deepest: #0b1422;
+  --color-primary-foreground: #f5f3ef; /* Paper on navy */
+  --color-link: #31456b; /* Slate Blue */
+  --color-ink: #16233a;
+  --color-ink-foreground: #f5f3ef;
 
-  /* ── borders ────────────────────────────────────────────── */
-  --color-border: #ececf1; /* card border */
-  --color-border-input: #ededf2; /* search field */
-  --color-border-control: #e5e5ec; /* buttons, toggles, form fields */
-  --color-border-tab: #e9e9ef; /* tab underline track */
-  --color-border-accent: #d1bba8; /* "Ask Mizan", grid-card hover */
-  --color-border-warm: #d4b98f; /* matter-number chip, alert banner */
-  --color-border-nested: #efeff3;
-  --color-divider: #f2f2f6; /* card-header divider */
-  --color-divider-row: #f5f5f8; /* table row divider */
-  --color-divider-row-2: #f0f0f4; /* table-header divider */
-  --color-divider-brand: #f3f3f6; /* sidebar brand divider */
-  --color-divider-faint: #f4f4f7;
+  /* ── borders — hairlines on paper ───────────────────────── */
+  --color-border: #e4e0d6; /* card border */
+  --color-border-input: #e1ddd2; /* search field */
+  --color-border-control: #dad5c8; /* buttons, toggles, form fields */
+  --color-border-tab: #e4e0d6; /* tab underline track */
+  --color-border-accent: #d6c19a; /* "Ask Mizan", grid-card hover (brass tint) */
+  --color-border-warm: #cbb086; /* matter-number chip, alert banner */
+  --color-border-nested: #ece8de;
+  --color-divider: #eeeae0; /* card-header divider */
+  --color-divider-row: #f0ede4; /* table row divider */
+  --color-divider-row-2: #ebe7dc; /* table-header divider */
+  --color-divider-brand: #e6e2d6; /* sidebar brand divider */
+  --color-divider-faint: #f1eee6;
 
   /* ── matter-number chip ─────────────────────────────────── */
-  --color-chip: #f7f3ef;
-  --color-chip-border: #d4b98f;
-  --color-chip-foreground: #2e1a12;
+  --color-chip: #f0eadb;
+  --color-chip-border: #cbb086;
+  --color-chip-foreground: #16233a;
 
-  /* ── accent ramp (donut / bars) ─────────────────────────── */
-  --color-accent-1: #a67c52;
-  --color-accent-2: #be9a6b;
-  --color-accent-3: #c9a87c; /* "collected" bars */
-  --color-accent-4: #d4b98f;
-  --color-accent-5: #ede3db;
-  --color-accent-6: #b18b70;
+  /* ── accent ramp (donut / bars) — brass tints + slate ───── */
+  --color-accent-1: #b99a5b; /* Brass */
+  --color-accent-2: #c7ac7c;
+  --color-accent-3: #d3bd97; /* "collected" bars */
+  --color-accent-4: #e0d1b3;
+  --color-accent-5: #efe7d5;
+  --color-accent-6: #31456b; /* Slate Blue */
 
-  /* ── tone pairs — the prototype's `TONES` map, verbatim ──── */
-  --color-success: #067647;
-  --color-success-surface: #e7f7ef;
-  --color-warning: #b54708;
-  --color-warning-surface: #fef4e4;
-  --color-danger: #b42318;
-  --color-danger-surface: #feeceb;
-  --color-danger-solid: #f04438; /* bell dot, alarm icon */
-  --color-info: #175cd3;
-  --color-info-surface: #e8f1ff;
-  --color-neutral: #4a4a5c;
-  --color-neutral-surface: #f2f3f5;
-  --color-brandtone: #4a2d1f; /* prototype "purple" tone → sand */
-  --color-brandtone-surface: #f1e8d9;
-  --color-teal: #0e6e6e;
-  --color-teal-surface: #e4f6f6;
+  /* ── tone pairs — mapped to the identity's status set ───── */
+  --color-success: #2f5c47; /* Filed */
+  --color-success-surface: #e6efe9;
+  --color-warning: #7a6a3c; /* Due soon */
+  --color-warning-surface: #f2ede0;
+  --color-danger: #8c3b2e; /* Overdue */
+  --color-danger-surface: #f5e7e3;
+  --color-danger-solid: #a8412f; /* bell dot, alarm icon */
+  --color-info: #31456b; /* Slate Blue */
+  --color-info-surface: #e8ecf3;
+  --color-neutral: #575d54; /* Closed */
+  --color-neutral-surface: #edeae2;
+  --color-brandtone: #31456b;
+  --color-brandtone-surface: #e8ecf3;
+  --color-teal: #2f5c58;
+  --color-teal-surface: #e3efee;
 
   /* success "done" callout (AI drawer) */
-  --color-done: #065c38;
-  --color-done-body: #3c6b54;
-  --color-done-surface: #f4fcf7;
-  --color-done-border: #cfeddd;
+  --color-done: #2f5c47;
+  --color-done-body: #3f6b58;
+  --color-done-surface: #eef5f0;
+  --color-done-border: #cfe0d4;
 
   /* ── charts ─────────────────────────────────────────────── */
-  --color-chart-track: #f1f1f5; /* progress bars */
-  --color-chart-strong: #3b2418;
-  --color-chart-soft: #c9a87c;
-  --color-chart-grid: #ededf2;
-  --color-priority-critical: #f04438;
-  --color-priority-warning: #f79009;
+  --color-chart-track: #ece9df; /* progress bars */
+  --color-chart-strong: #16233a;
+  --color-chart-soft: #b99a5b;
+  --color-chart-grid: #e4e0d6;
+  --color-priority-critical: #8c3b2e;
+  --color-priority-warning: #b99a5b;
 
-  /* ── shadows ────────────────────────────────────────────── */
-  --shadow-tab: 0 1px 2px rgba(22, 22, 29, 0.08); /* active segmented tab */
-  --shadow-tab-warm: 0 1px 2px rgba(36, 20, 14, 0.1); /* Case Work active tab */
-  --shadow-input: 0 2px 6px rgba(22, 22, 29, 0.04);
-  --shadow-menu: 0 8px 28px rgba(22, 22, 29, 0.14);
-  --shadow-sheet: 0 24px 60px rgba(22, 22, 29, 0.24);
-  --shadow-avatar: 0 10px 24px rgba(59, 36, 24, 0.3);
+  /* ── shadows — navy-tinted, restrained ──────────────────── */
+  --shadow-tab: 0 1px 2px rgba(22, 35, 58, 0.09); /* active segmented tab */
+  --shadow-tab-warm: 0 1px 2px rgba(22, 35, 58, 0.12); /* Case Work active tab */
+  --shadow-input: 0 1px 3px rgba(22, 35, 58, 0.05);
+  --shadow-menu: 0 10px 30px rgba(22, 35, 58, 0.16);
+  --shadow-sheet: 0 24px 60px rgba(22, 35, 58, 0.26);
+  --shadow-avatar: 0 8px 22px rgba(22, 35, 58, 0.28);
 }
 
 /* Tailwind v4 keeps `border-gray-200` as the bare `border` default; the design's

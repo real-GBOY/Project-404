@@ -57,7 +57,7 @@ export function DashboardPage() {
             <div className="flex flex-col gap-[18px]">
               <div className="flex flex-wrap items-end justify-between gap-4">
                 <div>
-                  <h1 className="text-[24px] font-extrabold tracking-[-0.025em] text-foreground">
+                  <h1 className="font-display text-[28px] font-normal leading-[1.1] tracking-[0.01em] text-foreground">
                     {firstName
                       ? t(`greeting.${greet(new Date().getHours())}`, { name: firstName })
                       : t("title")}

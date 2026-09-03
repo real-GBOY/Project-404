@@ -72,7 +72,7 @@ export function SidebarNav() {
                 <Icon
                   name={expanded ? "expand_less" : "expand_more"}
                   size={16}
-                  className="text-[#bebecc]"
+                  className="text-faint"
                 />
               </button>
             )}

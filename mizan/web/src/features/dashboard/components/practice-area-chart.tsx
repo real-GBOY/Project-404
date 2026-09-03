@@ -4,8 +4,8 @@ import { PanelHeader } from "@/components/tables/list-card";
 import { formatNumber } from "@/lib/format";
 import type { PracticeAreaSlice } from "../types/dashboard";
 
-/** The prototype's espresso→sand ramp for the practice-area donut. */
-const RAMP = ["#3b2418", "#a67c52", "#be9a6b", "#d4b98f", "#ede3db"];
+/** Mizan Identity ramp for the practice-area donut: Court Navy → Slate → Brass. */
+const RAMP = ["#16233a", "#31456b", "#b99a5b", "#d3bd97", "#e8dfc9"];
 
 /**
  * Open matters by practice area — a conic donut with a legend, matching the

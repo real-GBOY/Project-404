@@ -48,7 +48,7 @@ import {
 
 /** Prototype util-bar colour: >90 dark-red, >75 espresso, else tan. */
 function UtilizationBar({ value }: { value: number }) {
-  const color = value > 90 ? "#8b3a2e" : value > 75 ? "#3b2418" : "#a67c52";
+  const color = value > 90 ? "#8c3b2e" : value > 75 ? "#16233a" : "#b99a5b";
   return (
     <div className="h-[7px] w-full overflow-hidden rounded-pill bg-chart-track" aria-hidden="true">
       <div className="h-full rounded-pill" style={{ width: `${value}%`, background: color }} />

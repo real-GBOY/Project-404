@@ -54,7 +54,7 @@ export function TopBar({ onToggleSidebar }: TopBarProps) {
             <Icon name="chevron_right" size={18} className="text-fainter rtl:rotate-180" />
           </>
         )}
-        <span className="truncate text-[17px] font-extrabold tracking-[-0.015em] text-foreground">
+        <span className="truncate font-display text-[19px] font-medium tracking-[0.005em] text-foreground">
           {title}
         </span>
         {count != null && count !== "" && (

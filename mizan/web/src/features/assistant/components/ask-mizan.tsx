@@ -3,6 +3,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/cn";
 import { Icon } from "@/components/ui/icon";
+import { MizanMark } from "@/components/ui/logo";
 import { respondTo, type CannedTurn } from "../lib/canned";
 
 interface Message {
@@ -15,8 +16,7 @@ interface Message {
 let seq = 0;
 const mid = () => `m${++seq}`;
 
-const ORB = "radial-gradient(circle at 32% 28%,#b18b70,#5b3928 55%,#24140e)";
-const GRADIENT_BORDER = "linear-gradient(115deg,#a67c52,#d4b98f 45%,#be9a6b)";
+const GRADIENT_BORDER = "linear-gradient(115deg,#31456b,#b99a5b 50%,#16233a)";
 
 export function AskMizan() {
   const { t } = useTranslation("common");
@@ -94,11 +94,10 @@ export function AskMizan() {
               <div className="flex-1 overflow-y-auto p-[18px]">
                 {messages.length === 0 ? (
                   <div className="flex flex-col items-center gap-3.5 px-2.5 pb-6 pt-[30px]">
-                    <div
-                      className="size-[74px] rounded-full shadow-avatar"
-                      style={{ background: ORB }}
-                    />
-                    <div className="text-[20px] font-extrabold tracking-[-0.02em] text-foreground">
+                    <span className="flex size-[68px] items-center justify-center rounded-group bg-primary shadow-avatar">
+                      <MizanMark size={40} className="text-primary-foreground" />
+                    </span>
+                    <div className="font-display text-[22px] font-normal tracking-[0.01em] text-foreground">
                       {t("assistant.empty_title", { defaultValue: "Ask Mizan anything" })}
                     </div>
                     <p className="max-w-[420px] text-center text-[13px] font-medium text-muted-2 text-pretty">
@@ -116,12 +115,11 @@ export function AskMizan() {
                         </div>
                       ) : (
                         <div className="flex gap-2.5">
-                          <div
-                            className="size-[26px] flex-none rounded-full"
-                            style={{ background: ORB }}
-                          />
+                          <span className="flex size-[26px] flex-none items-center justify-center rounded-full bg-primary">
+                            <MizanMark size={16} className="text-primary-foreground" />
+                          </span>
                           <div className="min-w-0 flex-1 pt-0.5">
-                            <p className="whitespace-pre-line text-[13.5px] font-medium leading-[1.62] text-[#2a2a38]">
+                            <p className="whitespace-pre-line text-[13.5px] font-medium leading-[1.62] text-foreground-body">
                               {m.text}
                             </p>
                             {m.turn?.action && (
@@ -173,7 +171,7 @@ export function AskMizan() {
                       key={key}
                       type="button"
                       onClick={() => send(t(key))}
-                      className="rounded-pill border border-[#e7e7ee] bg-surface px-3.5 py-1.5 text-[12px] font-semibold text-foreground-body hover:border-border-accent hover:bg-surface-sand hover:text-link"
+                      className="rounded-pill border border-border-control bg-surface px-3.5 py-1.5 text-[12px] font-semibold text-foreground-body hover:border-border-accent hover:bg-surface-sand hover:text-link"
                     >
                       {t(key)}
                     </button>

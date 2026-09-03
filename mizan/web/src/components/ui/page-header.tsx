@@ -16,7 +16,7 @@ export function PageHeader({ title, description, actions, below, className }: Pa
     <div className={cn("flex flex-col gap-3", className)} data-slot="page-header">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-0.5">
-          <h1 className="text-[19px] font-extrabold tracking-tight text-foreground text-balance">
+          <h1 className="font-display text-[23px] font-medium leading-[1.15] tracking-[0.005em] text-foreground text-balance">
             {title}
           </h1>
           {description && <p className="text-[13px] text-muted">{description}</p>}
