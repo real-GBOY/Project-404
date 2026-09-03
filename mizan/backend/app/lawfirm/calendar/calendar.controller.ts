@@ -10,6 +10,7 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common";
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { z } from "zod";
 import { CurrentUser, RequirePermission } from "@core/http/decorators.js";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
@@ -37,6 +38,8 @@ const updateEvent = z.object({
   endAt: z.string().nullish(),
 });
 
+@ApiTags("lawfirm · calendar")
+@ApiBearerAuth("access-token")
 @Controller("calendar")
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class CalendarController {

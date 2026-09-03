@@ -19,6 +19,8 @@ import type { z } from "zod";
  * the user lookup act on the caller's **active tenant** (§ docs/tenancy.md).
  * Every route needs an authenticated caller plus the stated permission.
  */
+@ApiTags("rbac")
+@ApiBearerAuth("access-token")
 @Controller("rbac")
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class RbacController {

@@ -11,6 +11,7 @@ import {
   Req,
   UseGuards,
 } from "@nestjs/common";
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import type { FastifyRequest } from "fastify";
 import { z } from "zod";
 import { ValidationError } from "@core/kernel/errors.js";
@@ -38,6 +39,8 @@ const updateSchema = z.object({
   status: z.enum(["draft", "final", "filed", "signed"]).optional(),
 });
 
+@ApiTags("lawfirm · documents")
+@ApiBearerAuth("access-token")
 @Controller("documents")
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class DocumentsController {

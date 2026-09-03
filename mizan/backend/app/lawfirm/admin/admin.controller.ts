@@ -1,4 +1,5 @@
 import { Body, Controller, Get, HttpCode, Param, Post, Query, UseGuards } from "@nestjs/common";
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { z } from "zod";
 import { CurrentUser, RequirePermission } from "@core/http/decorators.js";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
@@ -14,6 +15,8 @@ const auditQuery = z.object({ q: z.string().optional() });
  * Law-firm adapter over Core RBAC + audit — reshaped to exactly what the web
  * Settings screen expects (`mizan/web/src/features/settings/api/settings.api.ts`).
  */
+@ApiTags("lawfirm · admin")
+@ApiBearerAuth("access-token")
 @Controller("lawfirm")
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class AdminController {

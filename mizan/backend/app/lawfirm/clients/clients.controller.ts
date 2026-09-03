@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common";
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { CurrentUser, RequirePermission } from "@core/http/decorators.js";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
 import { PermissionGuard } from "@core/http/permission.guard.js";
@@ -26,6 +27,8 @@ import {
   type UpdateClientBody,
 } from "./clients.schema.js";
 
+@ApiTags("lawfirm · clients")
+@ApiBearerAuth("access-token")
 @Controller("clients")
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class ClientsController {

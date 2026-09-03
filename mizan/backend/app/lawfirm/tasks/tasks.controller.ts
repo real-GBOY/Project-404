@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common";
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { z } from "zod";
 import { CurrentUser, RequirePermission } from "@core/http/decorators.js";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
@@ -41,6 +42,8 @@ const updateSchema = z.object({
 });
 const assignSchema = z.object({ assigneeId: z.string().nullable() });
 
+@ApiTags("lawfirm · tasks")
+@ApiBearerAuth("access-token")
 @Controller("tasks")
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class TasksController {

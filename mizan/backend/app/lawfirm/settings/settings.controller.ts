@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Patch, UseGuards } from "@nestjs/common";
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { CurrentUser, RequirePermission } from "@core/http/decorators.js";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
 import { PermissionGuard } from "@core/http/permission.guard.js";
@@ -8,6 +9,8 @@ import { SettingsService } from "./settings-service.js";
 import { updateSettingsSchema, type UpdateSettingsInput } from "./settings.schema.js";
 
 /** GET/PATCH /api/lawfirm/settings — the firm profile screen. */
+@ApiTags("lawfirm · settings")
+@ApiBearerAuth("access-token")
 @Controller("lawfirm/settings")
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class SettingsController {

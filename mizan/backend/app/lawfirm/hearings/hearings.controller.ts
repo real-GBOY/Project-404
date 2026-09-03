@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common";
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { z } from "zod";
 import { CurrentUser, RequirePermission } from "@core/http/decorators.js";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
@@ -41,6 +42,8 @@ const adjournSchema = z.object({
 });
 const outcomeSchema = z.object({ outcome: z.string().trim().min(1).max(2000) });
 
+@ApiTags("lawfirm · hearings")
+@ApiBearerAuth("access-token")
 @Controller("hearings")
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class HearingsController {

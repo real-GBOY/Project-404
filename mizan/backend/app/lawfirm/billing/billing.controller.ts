@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common";
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { z } from "zod";
 import { CurrentUser, RequirePermission } from "@core/http/decorators.js";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
@@ -52,6 +53,8 @@ const recordExpense = z.object({
   incurredAt: z.string().optional(),
 });
 
+@ApiTags("lawfirm · billing")
+@ApiBearerAuth("access-token")
 @Controller()
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class BillingController {

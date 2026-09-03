@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Param, Patch, UseGuards } from "@nestjs/common";
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { z } from "zod";
 import { RequirePermission } from "@core/http/decorators.js";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
@@ -14,6 +15,8 @@ const updateSchema = z.object({
   status: z.enum(["active", "inactive"]).optional(),
 });
 
+@ApiTags("lawfirm · staff")
+@ApiBearerAuth("access-token")
 @Controller("team")
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class TeamController {
