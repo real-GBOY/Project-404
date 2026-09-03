@@ -5,9 +5,17 @@ import { Conflict, NotFound, ValidationError } from "@core/kernel/errors.js";
 import { runAsSystem } from "@core/kernel/logging/context.js";
 import { AUDIT_LOGGER, EVENT_BUS, UNIT_OF_WORK, USER_PROVIDER } from "@core/kernel/tokens.js";
 import type { IAuditLogger, IEventBus, IUserProvider } from "@core/contracts/index.js";
-import { slugify, type Organization, type OrganizationMember } from "@core/organizations/domain/organization.js";
+import {
+  slugify,
+  type Organization,
+  type OrganizationMember,
+} from "@core/organizations/domain/organization.js";
 import { OrganizationRepository } from "@core/organizations/infrastructure/organization-repository.js";
-import { memberAdded, memberRemoved, organizationCreated } from "@core/organizations/events/events.js";
+import {
+  memberAdded,
+  memberRemoved,
+  organizationCreated,
+} from "@core/organizations/events/events.js";
 
 /** Organizations & Users use cases (§7.4 start-here). */
 @Injectable()
@@ -38,11 +46,18 @@ export class OrganizationService {
         if (await this.repo.findBySlug(slug)) {
           throw Conflict("organizations.slug_taken", `The slug "${slug}" is already in use.`);
         }
-        const org = await this.repo.create({ name: input.name, slug, settings: input.settings ?? {} });
+        const org = await this.repo.create({
+          name: input.name,
+          slug,
+          settings: input.settings ?? {},
+        });
 
         if (input.createdBy) {
           if (!(await this.users.userExists(input.createdBy))) {
-            throw ValidationError("organizations.unknown_user", "The creating user does not exist.");
+            throw ValidationError(
+              "organizations.unknown_user",
+              "The creating user does not exist.",
+            );
           }
           await this.repo.addMember({
             organizationId: org.id,

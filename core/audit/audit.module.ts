@@ -10,11 +10,7 @@ import { AuditController } from "@core/audit/api/audit.controller.js";
  */
 @Module({
   controllers: [AuditController],
-  providers: [
-    AuditRepository,
-    AuditLogger,
-    { provide: AUDIT_LOGGER, useExisting: AuditLogger },
-  ],
+  providers: [AuditRepository, AuditLogger, { provide: AUDIT_LOGGER, useExisting: AuditLogger }],
   exports: [AUDIT_LOGGER, AuditRepository],
 })
 export class AuditModule {}

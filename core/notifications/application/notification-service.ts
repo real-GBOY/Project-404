@@ -3,7 +3,13 @@ import type { UnitOfWork } from "@core/kernel/db/db.js";
 import { readInTenant } from "@core/kernel/db/db.js";
 import type { AuricConfig } from "@core/kernel/config.js";
 import { moduleLogger } from "@core/kernel/logging/logger.js";
-import { CONFIG, EMAIL_CHANNEL, EVENT_BUS, UNIT_OF_WORK, USER_PROVIDER } from "@core/kernel/tokens.js";
+import {
+  CONFIG,
+  EMAIL_CHANNEL,
+  EVENT_BUS,
+  UNIT_OF_WORK,
+  USER_PROVIDER,
+} from "@core/kernel/tokens.js";
 import type {
   INotificationProvider,
   IUserProvider,
@@ -12,7 +18,10 @@ import type {
 } from "@core/contracts/index.js";
 import type { DomainEvent } from "@core/contracts/domain-event.js";
 import { t } from "@core/localization/i18n/catalog.js";
-import { NotificationRepository, type NotificationRow } from "@core/notifications/infrastructure/notification-repository.js";
+import {
+  NotificationRepository,
+  type NotificationRow,
+} from "@core/notifications/infrastructure/notification-repository.js";
 import { TemplateRepository } from "@core/notifications/infrastructure/template-repository.js";
 import type { EmailChannel } from "@core/notifications/infrastructure/email-channel.js";
 
@@ -100,7 +109,10 @@ export class NotificationService implements INotificationProvider {
 
     if (p.templateKey) {
       const rendered = await this.uow.transaction(() =>
-        this.templates.render(p.templateKey!, "email", p.locale, { app: this.config.appName, ...p.params }),
+        this.templates.render(p.templateKey!, "email", p.locale, {
+          app: this.config.appName,
+          ...p.params,
+        }),
       );
       if (rendered) {
         subject = rendered.subject ?? subject;
@@ -139,11 +151,14 @@ export class NotificationService implements INotificationProvider {
   async onUserRegistered(event: DomainEvent): Promise<void> {
     const p = event.payload as { userId: string; locale: string | null };
     const locale = p.locale ?? this.config.defaultLocale;
-    const rendered = await this.templates.render("welcome", "in_app", locale, { app: this.config.appName });
+    const rendered = await this.templates.render("welcome", "in_app", locale, {
+      app: this.config.appName,
+    });
     await this.notifications.insert({
       userId: p.userId,
       type: "welcome",
-      title: rendered?.subject ?? t("notification.welcome_title", locale, { app: this.config.appName }),
+      title:
+        rendered?.subject ?? t("notification.welcome_title", locale, { app: this.config.appName }),
       body: rendered?.body ?? t("notification.welcome_body", locale, { app: this.config.appName }),
       locale,
     });
@@ -173,7 +188,9 @@ export class NotificationService implements INotificationProvider {
 
   private async subjectFor(key: string, locale: string | null): Promise<string> {
     const rendered = await this.uow.transaction(() =>
-      this.templates.render(key, "email", locale ?? this.config.defaultLocale, { app: this.config.appName }),
+      this.templates.render(key, "email", locale ?? this.config.defaultLocale, {
+        app: this.config.appName,
+      }),
     );
     return rendered?.subject ?? this.config.appName;
   }

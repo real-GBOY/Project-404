@@ -74,7 +74,9 @@ export class MattersRepository {
       const needle = p.q.toLowerCase();
       const clientNames = await this.clientNameMap();
       rows = rows.filter((m) =>
-        `${m.title} ${m.reference} ${clientNames.get(m.clientId) ?? ""}`.toLowerCase().includes(needle),
+        `${m.title} ${m.reference} ${clientNames.get(m.clientId) ?? ""}`
+          .toLowerCase()
+          .includes(needle),
       );
     }
     rows.sort((a, b) =>
@@ -147,7 +149,13 @@ export class MattersRepository {
 
   async update(
     id: string,
-    patch: Partial<{ title: string; practiceArea: string; court: string | null; description: string | null; clientId: string }>,
+    patch: Partial<{
+      title: string;
+      practiceArea: string;
+      court: string | null;
+      description: string | null;
+      clientId: string;
+    }>,
   ): Promise<MatterRow | null> {
     const set: Record<string, unknown> = {};
     if (patch.title !== undefined) set.title = patch.title;
@@ -193,7 +201,9 @@ export class MattersRepository {
     await currentExecutor()
       .insertInto("lawfirm_matter_participants")
       .values({ id, organization_id: this.org(), matter_id: matterId, user_id: userId, role })
-      .onConflict((oc) => oc.columns(["organization_id", "matter_id", "user_id"]).doUpdateSet({ role }))
+      .onConflict((oc) =>
+        oc.columns(["organization_id", "matter_id", "user_id"]).doUpdateSet({ role }),
+      )
       .execute();
     const row = await currentExecutor()
       .selectFrom("lawfirm_matter_participants")
@@ -228,7 +238,11 @@ export class MattersRepository {
           .selectFrom("lawfirm_matter_update_files")
           .select(["matter_update_id", "document_id"])
           .where("organization_id", "=", this.org())
-          .where("matter_update_id", "in", rows.map((r) => r.id))
+          .where(
+            "matter_update_id",
+            "in",
+            rows.map((r) => r.id),
+          )
           .execute()
       : [];
     return rows.map((r) => ({
@@ -241,7 +255,12 @@ export class MattersRepository {
     }));
   }
 
-  async addUpdate(matterId: string, authorId: string, body: string, documentIds: string[]): Promise<UpdateRow> {
+  async addUpdate(
+    matterId: string,
+    authorId: string,
+    body: string,
+    documentIds: string[],
+  ): Promise<UpdateRow> {
     const id = lawfirmId("mup");
     await currentExecutor()
       .insertInto("lawfirm_matter_updates")
@@ -250,7 +269,12 @@ export class MattersRepository {
     for (const documentId of documentIds) {
       await currentExecutor()
         .insertInto("lawfirm_matter_update_files")
-        .values({ id: lawfirmId("muf"), organization_id: this.org(), matter_update_id: id, document_id: documentId })
+        .values({
+          id: lawfirmId("muf"),
+          organization_id: this.org(),
+          matter_update_id: id,
+          document_id: documentId,
+        })
         .execute();
     }
     return { id, matterId, authorId, body, documentIds, createdAt: new Date() };

@@ -1,4 +1,14 @@
-import { Body, Controller, Get, HttpCode, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from "@nestjs/common";
 import { z } from "zod";
 import { CurrentUser, RequirePermission } from "@core/http/decorators.js";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
@@ -49,20 +59,36 @@ export class BillingController {
 
   @Get("finance/summary")
   @RequirePermission("read", "invoice")
-  financeSummary(@Query(ZodQuery(z.object({ tab: z.enum(["invoices", "payments", "expenses"]).default("invoices") }))) q: { tab: "invoices" | "payments" | "expenses" }) {
+  financeSummary(
+    @Query(
+      ZodQuery(z.object({ tab: z.enum(["invoices", "payments", "expenses"]).default("invoices") })),
+    )
+    q: {
+      tab: "invoices" | "payments" | "expenses";
+    },
+  ) {
     return this.service.financeSummary(q.tab);
   }
 
   @Get("invoices")
   @RequirePermission("read", "invoice")
-  listInvoices(@Query(ZodQuery(z.object({ status: z.string().optional(), clientId: z.string().optional() }))) q: { status?: string; clientId?: string }) {
+  listInvoices(
+    @Query(ZodQuery(z.object({ status: z.string().optional(), clientId: z.string().optional() })))
+    q: {
+      status?: string;
+      clientId?: string;
+    },
+  ) {
     return this.service.listInvoices(q.status, q.clientId);
   }
 
   @Post("invoices")
   @HttpCode(201)
   @RequirePermission("create", "invoice")
-  createInvoice(@Body(ZodBody(createInvoice)) body: z.infer<typeof createInvoice>, @CurrentUser() user: Principal) {
+  createInvoice(
+    @Body(ZodBody(createInvoice)) body: z.infer<typeof createInvoice>,
+    @CurrentUser() user: Principal,
+  ) {
     return this.service.createInvoice(body, user.userId);
   }
 
@@ -74,7 +100,10 @@ export class BillingController {
 
   @Patch("invoices/:id")
   @RequirePermission("create", "invoice")
-  updateInvoice(@Param("id") id: string, @Body(ZodBody(updateInvoice)) body: z.infer<typeof updateInvoice>) {
+  updateInvoice(
+    @Param("id") id: string,
+    @Body(ZodBody(updateInvoice)) body: z.infer<typeof updateInvoice>,
+  ) {
     return this.service.updateInvoice(id, body);
   }
 
@@ -105,20 +134,28 @@ export class BillingController {
   @Post("payments")
   @HttpCode(201)
   @RequirePermission("record", "payment")
-  recordPayment(@Body(ZodBody(recordPayment)) body: z.infer<typeof recordPayment>, @CurrentUser() user: Principal) {
+  recordPayment(
+    @Body(ZodBody(recordPayment)) body: z.infer<typeof recordPayment>,
+    @CurrentUser() user: Principal,
+  ) {
     return this.service.recordPayment(body, user.userId);
   }
 
   @Get("expenses")
   @RequirePermission("read", "expense")
-  listExpenses(@Query(ZodQuery(z.object({ status: z.string().optional() }))) q: { status?: string }) {
+  listExpenses(
+    @Query(ZodQuery(z.object({ status: z.string().optional() }))) q: { status?: string },
+  ) {
     return this.service.listExpenses(q.status);
   }
 
   @Post("expenses")
   @HttpCode(201)
   @RequirePermission("record", "expense")
-  recordExpense(@Body(ZodBody(recordExpense)) body: z.infer<typeof recordExpense>, @CurrentUser() user: Principal) {
+  recordExpense(
+    @Body(ZodBody(recordExpense)) body: z.infer<typeof recordExpense>,
+    @CurrentUser() user: Principal,
+  ) {
     return this.service.recordExpense(body, user.userId);
   }
 

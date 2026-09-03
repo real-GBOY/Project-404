@@ -24,7 +24,12 @@ export class DocumentsRepository {
     return requireOrganizationId();
   }
 
-  async list(filter: { matterId?: string; q?: string; category?: string; status?: DocumentStatus }): Promise<DocumentRow[]> {
+  async list(filter: {
+    matterId?: string;
+    q?: string;
+    category?: string;
+    status?: DocumentStatus;
+  }): Promise<DocumentRow[]> {
     let q = currentExecutor()
       .selectFrom("lawfirm_documents")
       .selectAll()

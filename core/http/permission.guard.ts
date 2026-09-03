@@ -23,10 +23,9 @@ export class PermissionGuard implements CanActivate {
   ) {}
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
-    const required = this.reflector.getAllAndOverride<{ action: string; resource: string } | undefined>(
-      PERMISSION_KEY,
-      [ctx.getHandler(), ctx.getClass()],
-    );
+    const required = this.reflector.getAllAndOverride<
+      { action: string; resource: string } | undefined
+    >(PERMISSION_KEY, [ctx.getHandler(), ctx.getClass()]);
     if (!required) return true;
 
     const principal = ctx.switchToHttp().getRequest<RequestWithPrincipal>().principal;
@@ -36,7 +35,10 @@ export class PermissionGuard implements CanActivate {
       this.permissions.can(principal.userId, required.action, required.resource),
     );
     if (!allowed) {
-      throw Forbidden("auth.forbidden", `Missing permission: ${required.action}:${required.resource}`);
+      throw Forbidden(
+        "auth.forbidden",
+        `Missing permission: ${required.action}:${required.resource}`,
+      );
     }
     return true;
   }

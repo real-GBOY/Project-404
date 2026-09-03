@@ -1,7 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { directionOf, isSupported, languageOf, negotiateLocale } from "@core/localization/domain/locale.js";
-import { isTranslatable, resolveTranslatable, translatable } from "@core/localization/domain/translatable.js";
-import { formatCurrency, formatDate, formatNumber } from "@core/localization/formatters/formatters.js";
+import {
+  directionOf,
+  isSupported,
+  languageOf,
+  negotiateLocale,
+} from "@core/localization/domain/locale.js";
+import {
+  isTranslatable,
+  resolveTranslatable,
+  translatable,
+} from "@core/localization/domain/translatable.js";
+import {
+  formatCurrency,
+  formatDate,
+  formatNumber,
+} from "@core/localization/formatters/formatters.js";
 import { bundleFor, t } from "@core/localization/i18n/catalog.js";
 
 describe("locale", () => {

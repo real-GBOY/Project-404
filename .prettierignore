@@ -1,0 +1,9 @@
+dist/
+node_modules/
+coverage/
+storage/
+core/kernel/db/schema.ts
+prisma/migrations/
+mizan/web/
+web/
+*.md

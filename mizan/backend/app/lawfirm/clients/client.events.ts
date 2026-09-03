@@ -6,7 +6,11 @@ export const ClientEvents = {
   Archived: "lawfirm.client.archived",
 } as const;
 
-export const clientCreated = (p: { clientId: string; name: string; actorId: string }): DomainEvent => ({
+export const clientCreated = (p: {
+  clientId: string;
+  name: string;
+  actorId: string;
+}): DomainEvent => ({
   name: ClientEvents.Created,
   version: 1,
   payload: p,

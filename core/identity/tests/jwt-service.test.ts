@@ -29,7 +29,12 @@ describe("JwtService — access tokens", () => {
   });
 
   it("rejects a token signed with a different secret", () => {
-    const token = make({ secret: "one" }).signAccessToken({ sub: "u", email: "", org: null, perms: [] });
+    const token = make({ secret: "one" }).signAccessToken({
+      sub: "u",
+      email: "",
+      org: null,
+      perms: [],
+    });
     expect(() => make({ secret: "two" }).verifyAccessToken(token)).toThrow();
   });
 

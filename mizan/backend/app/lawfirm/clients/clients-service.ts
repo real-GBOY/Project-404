@@ -100,7 +100,9 @@ export class ClientsService {
         resourceId: created.id,
         after: created,
       });
-      await this.events.publish(clientCreated({ clientId: created.id, name: created.name, actorId }));
+      await this.events.publish(
+        clientCreated({ clientId: created.id, name: created.name, actorId }),
+      );
       return created;
     });
     return readInTenant(() => this.detail(client));
@@ -152,7 +154,14 @@ export class ClientsService {
   async contacts(clientId: string) {
     await this.assertExists(clientId);
     return readInTenant(() => this.repo.contacts(clientId)).then((rows) =>
-      rows.map((c) => ({ id: c.id, name: c.name, role: c.role, email: c.email, phone: c.phone, primary: c.primary })),
+      rows.map((c) => ({
+        id: c.id,
+        name: c.name,
+        role: c.role,
+        email: c.email,
+        phone: c.phone,
+        primary: c.primary,
+      })),
     );
   }
 
@@ -165,7 +174,14 @@ export class ClientsService {
       if (!client) throw NotFound("client.not_found", "Client not found.");
       if (input.primary) await this.repo.clearPrimary(clientId);
       const row = await this.repo.addContact(clientId, input);
-      return { id: row.id, name: row.name, role: row.role, email: row.email, phone: row.phone, primary: row.primary };
+      return {
+        id: row.id,
+        name: row.name,
+        role: row.role,
+        email: row.email,
+        phone: row.phone,
+        primary: row.primary,
+      };
     });
   }
 
@@ -261,15 +277,16 @@ export class ClientsService {
   }
 
   private async detail(c: ClientRow) {
-    const [counts, partnerId, outstanding, rollup, documents, openTasks, primary] = await Promise.all([
-      this.queries.matterCountsForClient(c.id),
-      this.queries.relationshipPartnerId(c.id),
-      this.queries.outstandingForClient(c.id),
-      this.queries.billingRollupForClient(c.id),
-      this.queries.documentCountForClient(c.id),
-      this.openTaskCountForClient(c.id),
-      this.repo.primaryContact(c.id),
-    ]);
+    const [counts, partnerId, outstanding, rollup, documents, _openTasks, primary] =
+      await Promise.all([
+        this.queries.matterCountsForClient(c.id),
+        this.queries.relationshipPartnerId(c.id),
+        this.queries.outstandingForClient(c.id),
+        this.queries.billingRollupForClient(c.id),
+        this.queries.documentCountForClient(c.id),
+        this.openTaskCountForClient(c.id),
+        this.repo.primaryContact(c.id),
+      ]);
     return {
       id: c.id,
       name: c.name,
@@ -294,7 +311,14 @@ export class ClientsService {
         unbilledHours: 0,
       },
       primaryContact: primary
-        ? { id: primary.id, name: primary.name, role: primary.role, email: primary.email, phone: primary.phone, primary: primary.primary }
+        ? {
+            id: primary.id,
+            name: primary.name,
+            role: primary.role,
+            email: primary.email,
+            phone: primary.phone,
+            primary: primary.primary,
+          }
         : null,
     };
   }

@@ -1,6 +1,9 @@
 import type { EventRegistry } from "@core/events/registry.js";
 import { IdentityEvents } from "@core/identity/events/events.js";
-import { NotificationService, NotificationEvents } from "@core/notifications/application/notification-service.js";
+import {
+  NotificationService,
+  NotificationEvents,
+} from "@core/notifications/application/notification-service.js";
 
 /**
  * Wires the Notifications module's reactions to events from other modules.
@@ -12,7 +15,10 @@ import { NotificationService, NotificationEvents } from "@core/notifications/app
  *  - the in-app welcome note is a DB-only effect → `onInProcess`, committed in
  *    the same transaction as the registration.
  */
-export function registerNotificationSubscribers(registry: EventRegistry, service: NotificationService): void {
+export function registerNotificationSubscribers(
+  registry: EventRegistry,
+  service: NotificationService,
+): void {
   registry.onExternal(
     IdentityEvents.EmailVerificationRequested,
     "notifications.send_verification_email",

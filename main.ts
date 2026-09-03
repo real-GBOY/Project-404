@@ -1,16 +1,14 @@
 import "reflect-metadata";
 import multipart from "@fastify/multipart";
 import { NestFactory } from "@nestjs/core";
-import {
-  FastifyAdapter,
-  type NestFastifyApplication,
-} from "@nestjs/platform-fastify";
+import { FastifyAdapter, type NestFastifyApplication } from "@nestjs/platform-fastify";
 import { AppModule } from "@app/app.module.js";
 import { AppSeedService } from "@app/seed.js";
 import { APP_CODENAME, APP_NAME, APP_VERSION } from "@app/version.js";
 import { getConfig } from "@core/kernel/config.js";
 import { migrateToLatest } from "@core/kernel/db/migrate.js";
 import { rootLogger } from "@core/kernel/logging/logger.js";
+import { setupOpenApi } from "@core/http/openapi.js";
 import { CORE_VERSION } from "@core/version.js";
 
 /**
@@ -32,6 +30,12 @@ async function main() {
   app.setGlobalPrefix("api");
   app.enableShutdownHooks();
 
+  setupOpenApi(app, {
+    title: `${APP_NAME} API`,
+    version: APP_VERSION,
+    description: `${APP_NAME} (${APP_CODENAME}) — running on AURIC Core ${CORE_VERSION}. Interactive docs; most write routes need a Bearer access token (see /api/auth/login).`,
+  });
+
   await app.get(AppSeedService).seed();
 
   await app.listen({ port: config.port, host: "0.0.0.0" });
@@ -41,7 +45,8 @@ async function main() {
       codename: APP_CODENAME,
       appVersion: APP_VERSION,
       core: CORE_VERSION,
-      url: `http://localhost:${config.port}/api/health`,
+      health: `http://localhost:${config.port}/api/health`,
+      docs: `http://localhost:${config.port}/api/docs`,
     },
     `${APP_NAME} (${APP_CODENAME}) — running on AURIC Core ${CORE_VERSION}`,
   );

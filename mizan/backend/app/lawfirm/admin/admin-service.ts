@@ -131,7 +131,9 @@ export class AdminService {
         ip: `197.44.10.${20 + (i % 5)}`,
       }));
       const filtered = q
-        ? items.filter((a) => `${a.actor} ${a.action} ${a.resource}`.toLowerCase().includes(q.toLowerCase()))
+        ? items.filter((a) =>
+            `${a.actor} ${a.action} ${a.resource}`.toLowerCase().includes(q.toLowerCase()),
+          )
         : items;
       return { items: filtered.slice(0, 50), total: filtered.length };
     });

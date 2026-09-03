@@ -12,7 +12,8 @@ Each file is self-contained: the ones that need auth start with a `# @name login
 ## Start the server first
 
 ```
-npm run dev          # tsx watch scripts/serve.ts  → http://localhost:3000
+npm run dev          # node --watch --import @swc-node/register main.ts  → http://localhost:3000
+                     # or: docker compose up --build
 ```
 
 Needs Postgres running with the `auric` database (see `.env` / `AURIC_DATABASE_URL`).

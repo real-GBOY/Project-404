@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from "@nestjs/common";
 import { z } from "zod";
 import { CurrentUser, RequirePermission } from "@core/http/decorators.js";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
@@ -40,7 +51,10 @@ export class CalendarController {
   @Post("events")
   @HttpCode(201)
   @RequirePermission("create", "event")
-  create(@Body(ZodBody(createEvent)) body: z.infer<typeof createEvent>, @CurrentUser() user: Principal) {
+  create(
+    @Body(ZodBody(createEvent)) body: z.infer<typeof createEvent>,
+    @CurrentUser() user: Principal,
+  ) {
     return this.service.createEvent(body, user.userId);
   }
 

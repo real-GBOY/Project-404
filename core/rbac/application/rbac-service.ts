@@ -100,7 +100,8 @@ export class RbacService {
 
   async revokePermission(roleKey: string, key: string): Promise<void> {
     const parsed = parsePermissionKey(key);
-    if (!parsed) throw NotFound("rbac.bad_permission_key", `"${key}" is not a valid permission key.`);
+    if (!parsed)
+      throw NotFound("rbac.bad_permission_key", `"${key}" is not a valid permission key.`);
     await this.uow.transaction(async () => {
       const role = await this.requireRole(roleKey);
       const permId = await this.repo.permissionIdByKey(key);

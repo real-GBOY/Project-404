@@ -58,7 +58,11 @@ export async function seedFirm(app: TestingModule, name = "Test Firm"): Promise<
   const rbac = get<RbacService>(app, RbacService);
 
   const adminEmail = `admin+${Date.now()}-${seq++}@firm.test`;
-  const admin = await identity.register({ email: adminEmail, password: "correct horse battery staple", displayName: "Firm Admin" });
+  const admin = await identity.register({
+    email: adminEmail,
+    password: "correct horse battery staple",
+    displayName: "Firm Admin",
+  });
   const org = await orgs.createOrganization({ name, createdBy: admin.id });
   await asSystem(() => rbac.assignRole(admin.id, "firm_admin", admin.id, org.id));
   return { orgId: org.id, adminId: admin.id, adminEmail };

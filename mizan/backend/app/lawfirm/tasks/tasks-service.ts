@@ -7,7 +7,12 @@ import type { Clock } from "@core/kernel/clock.js";
 import type { IEventBus } from "@core/contracts/index.js";
 import { ActivityService } from "@app/lawfirm/activity/activity-service.js";
 import { LawfirmDirectory } from "@app/lawfirm/shared/directory.js";
-import { TasksRepository, type TaskPriority, type TaskRow, type TaskStatus } from "./tasks-repository.js";
+import {
+  TasksRepository,
+  type TaskPriority,
+  type TaskRow,
+  type TaskStatus,
+} from "./tasks-repository.js";
 
 const DAY = 86_400_000;
 
@@ -30,9 +35,12 @@ export class TasksService {
       const monthAgo = now - 30 * DAY;
       return {
         open: all.filter((t) => t.status !== "done").length,
-        dueThisWeek: all.filter((t) => t.status !== "done" && t.dueAt && t.dueAt.getTime() <= week).length,
-        overdue: all.filter((t) => t.status !== "done" && t.dueAt && t.dueAt.getTime() < now).length,
-        completed30d: all.filter((t) => t.completedAt && t.completedAt.getTime() >= monthAgo).length,
+        dueThisWeek: all.filter((t) => t.status !== "done" && t.dueAt && t.dueAt.getTime() <= week)
+          .length,
+        overdue: all.filter((t) => t.status !== "done" && t.dueAt && t.dueAt.getTime() < now)
+          .length,
+        completed30d: all.filter((t) => t.completedAt && t.completedAt.getTime() >= monthAgo)
+          .length,
       };
     });
   }
@@ -55,9 +63,13 @@ export class TasksService {
           (t) => t.dueAt && t.dueAt.toDateString() === now.toDateString() && t.status !== "done",
         );
       if (filter.range === "week")
-        rows = rows.filter((t) => t.dueAt && t.dueAt.getTime() <= now.getTime() + 7 * DAY && t.status !== "done");
+        rows = rows.filter(
+          (t) => t.dueAt && t.dueAt.getTime() <= now.getTime() + 7 * DAY && t.status !== "done",
+        );
       if (filter.range === "overdue")
-        rows = rows.filter((t) => t.dueAt && t.dueAt.getTime() < now.getTime() && t.status !== "done");
+        rows = rows.filter(
+          (t) => t.dueAt && t.dueAt.getTime() < now.getTime() && t.status !== "done",
+        );
 
       rows.sort((a, b) => (a.dueAt?.getTime() ?? 9e15) - (b.dueAt?.getTime() ?? 9e15));
       const items = await Promise.all(rows.map((t) => this.view(t)));
@@ -66,7 +78,13 @@ export class TasksService {
   }
 
   async create(
-    input: { title: string; matterId?: string | null; assigneeId?: string | null; priority?: TaskPriority; dueAt?: string | null },
+    input: {
+      title: string;
+      matterId?: string | null;
+      assigneeId?: string | null;
+      priority?: TaskPriority;
+      dueAt?: string | null;
+    },
     actorId: string,
   ) {
     const task = await this.uow.transaction(() =>
@@ -83,7 +101,13 @@ export class TasksService {
 
   async update(
     id: string,
-    patch: { title?: string; priority?: TaskPriority; dueAt?: string | null; status?: TaskStatus; assigneeId?: string | null },
+    patch: {
+      title?: string;
+      priority?: TaskPriority;
+      dueAt?: string | null;
+      status?: TaskStatus;
+      assigneeId?: string | null;
+    },
   ) {
     const task = await this.uow.transaction(async () => {
       const existing = await this.repo.findById(id);

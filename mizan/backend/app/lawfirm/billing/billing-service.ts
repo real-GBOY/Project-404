@@ -36,7 +36,9 @@ export class BillingService {
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
 
-  private paidByInvoice(payments: Array<{ invoiceId: string; amount: number }>): Map<string, number> {
+  private paidByInvoice(
+    payments: Array<{ invoiceId: string; amount: number }>,
+  ): Map<string, number> {
     const m = new Map<string, number>();
     for (const p of payments) m.set(p.invoiceId, (m.get(p.invoiceId) ?? 0) + p.amount);
     return m;
@@ -71,10 +73,14 @@ export class BillingService {
         return {
           a: moneyList(monthExp.map((e) => ({ currency: e.currency, amount: e.amount }))),
           b: moneyList(
-            monthExp.filter((e) => e.status === "approved").map((e) => ({ currency: e.currency, amount: e.amount })),
+            monthExp
+              .filter((e) => e.status === "approved")
+              .map((e) => ({ currency: e.currency, amount: e.amount })),
           ),
           c: moneyList(
-            expenses.filter((e) => e.status === "pending").map((e) => ({ currency: e.currency, amount: e.amount })),
+            expenses
+              .filter((e) => e.status === "pending")
+              .map((e) => ({ currency: e.currency, amount: e.amount })),
           ),
           d: [],
         };
@@ -86,7 +92,9 @@ export class BillingService {
           .map((i) => ({ currency: i.currency, amount: totalsFor(i).total })),
       );
       const collected = moneyList(
-        payments.filter((p) => p.receivedAt >= yearStart).map((p) => ({ currency: p.currency, amount: p.amount })),
+        payments
+          .filter((p) => p.receivedAt >= yearStart)
+          .map((p) => ({ currency: p.currency, amount: p.amount })),
       );
       const outstanding = moneyList(
         invoices
@@ -140,7 +148,13 @@ export class BillingService {
   }
 
   async createInvoice(
-    input: { clientId: string; matterId?: string | null; currency?: Currency; vatRate?: number; lines?: Array<{ kind: LineKind; description: string; amount: number }> },
+    input: {
+      clientId: string;
+      matterId?: string | null;
+      currency?: Currency;
+      vatRate?: number;
+      lines?: Array<{ kind: LineKind; description: string; amount: number }>;
+    },
     actorId: string,
   ) {
     const settings = await this.settings.get();
@@ -171,7 +185,11 @@ export class BillingService {
 
   async updateInvoice(
     id: string,
-    patch: { lines?: Array<{ kind: LineKind; description: string; amount: number }>; vatRate?: number; dueAt?: string | null },
+    patch: {
+      lines?: Array<{ kind: LineKind; description: string; amount: number }>;
+      vatRate?: number;
+      dueAt?: string | null;
+    },
   ) {
     const invoice = await this.uow.transaction(async () => {
       const existing = await this.repo.invoiceById(id);
@@ -194,17 +212,20 @@ export class BillingService {
       const existing = await this.repo.invoiceById(id);
       if (!existing) throw NotFound("invoice.not_found", "Invoice not found.");
       if (action === "issue") {
-        if (existing.status !== "draft") throw Conflict("invoice.bad_state", "Only a draft can be issued.");
+        if (existing.status !== "draft")
+          throw Conflict("invoice.bad_state", "Only a draft can be issued.");
         await this.repo.updateInvoice(id, {
           status: "issued",
           issuedAt: this.clock.now(),
           dueAt: new Date(this.clock.now().getTime() + 30 * DAY),
         });
       } else if (action === "send") {
-        if (existing.status !== "issued") throw Conflict("invoice.bad_state", "Issue the invoice first.");
+        if (existing.status !== "issued")
+          throw Conflict("invoice.bad_state", "Issue the invoice first.");
         await this.repo.updateInvoice(id, { status: "sent" });
       } else {
-        if (existing.status === "paid") throw Conflict("invoice.bad_state", "A paid invoice can't be voided.");
+        if (existing.status === "paid")
+          throw Conflict("invoice.bad_state", "A paid invoice can't be voided.");
         await this.repo.updateInvoice(id, { status: "void" });
       }
       await this.events.publish({
@@ -242,14 +263,24 @@ export class BillingService {
   }
 
   async recordPayment(
-    input: { invoiceId: string; amount: number; currency: string; method: PaymentMethod; receivedAt?: string; reference?: string },
+    input: {
+      invoiceId: string;
+      amount: number;
+      currency: string;
+      method: PaymentMethod;
+      receivedAt?: string;
+      reference?: string;
+    },
     actorId: string,
   ) {
     const payment = await this.uow.transaction(async () => {
       const invoice = await this.repo.invoiceById(input.invoiceId);
       if (!invoice) throw ValidationError("invoice.not_found", "Unknown invoice.");
       if (input.currency !== invoice.currency) {
-        throw ValidationError("payment.currency_mismatch", `Payment must be in ${invoice.currency}.`);
+        throw ValidationError(
+          "payment.currency_mismatch",
+          `Payment must be in ${invoice.currency}.`,
+        );
       }
       const paidSoFar = (await this.repo.payments(invoice.id)).reduce((s, p) => s + p.amount, 0);
       const balance = invoiceTotals(invoice, paidSoFar).balance;
@@ -320,7 +351,14 @@ export class BillingService {
   }
 
   async recordExpense(
-    input: { description: string; category?: string; amount: number; currency?: string; matterId?: string | null; incurredAt?: string },
+    input: {
+      description: string;
+      category?: string;
+      amount: number;
+      currency?: string;
+      matterId?: string | null;
+      incurredAt?: string;
+    },
     actorId: string,
   ) {
     const expense = await this.uow.transaction(() =>
@@ -355,7 +393,10 @@ export class BillingService {
   // ─── shaping ───────────────────────────────────────────────────────────────
   private async invoiceView(i: InvoiceRow) {
     const payments = await this.repo.payments(i.id);
-    const totals = invoiceTotals(i, payments.reduce((s, p) => s + p.amount, 0));
+    const totals = invoiceTotals(
+      i,
+      payments.reduce((s, p) => s + p.amount, 0),
+    );
     const clientNames = await this.repo.clientNames();
     const matterInfo = i.matterId ? (await this.repo.matterInfo()).get(i.matterId) : null;
     return {
@@ -366,7 +407,9 @@ export class BillingService {
       matterId: i.matterId,
       matterTitle: matterInfo?.title ?? null,
       matterReference: matterInfo?.reference ?? null,
-      billingPartner: matterInfo ? ((await this.directory.userName(matterInfo.leadLawyerId)) ?? "—") : "—",
+      billingPartner: matterInfo
+        ? ((await this.directory.userName(matterInfo.leadLawyerId)) ?? "—")
+        : "—",
       terms: "30 days from issue · bank transfer to CIB 0114-882-9",
       status: i.status,
       currency: i.currency,
@@ -386,7 +429,17 @@ export class BillingService {
     };
   }
 
-  private expenseRow(e: { id: string; matterId: string | null; description: string; category: string; amount: number; currency: Currency; status: ExpenseStatus; incurredAt: Date; submittedById: string }) {
+  private expenseRow(e: {
+    id: string;
+    matterId: string | null;
+    description: string;
+    category: string;
+    amount: number;
+    currency: Currency;
+    status: ExpenseStatus;
+    incurredAt: Date;
+    submittedById: string;
+  }) {
     return {
       id: e.id,
       matterId: e.matterId,

@@ -63,14 +63,20 @@ export class DocumentsController {
     const contentType = req.headers["content-type"] ?? "";
     if (contentType.includes("multipart/form-data")) {
       const uploaded = await req.file();
-      if (!uploaded) throw ValidationError("document.no_file", "Send the file as multipart/form-data.");
+      if (!uploaded)
+        throw ValidationError("document.no_file", "Send the file as multipart/form-data.");
       const content = await uploaded.toBuffer();
       const fields = uploaded.fields as Record<string, { value?: string } | undefined>;
       const name = fields.name?.value || uploaded.filename || "Untitled.pdf";
       const matterId = fields.matterId?.value || null;
       const category = fields.category?.value || "Other";
       return this.service.upload(
-        { name, matterId, category, file: { content, originalName: uploaded.filename, contentType: uploaded.mimetype } },
+        {
+          name,
+          matterId,
+          category,
+          file: { content, originalName: uploaded.filename, contentType: uploaded.mimetype },
+        },
         user.userId,
       );
     }

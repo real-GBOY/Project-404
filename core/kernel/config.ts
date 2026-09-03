@@ -10,9 +10,7 @@ loadDotenv();
 const schema = z.object({
   nodeEnv: z.enum(["development", "test", "production"]).default("development"),
   port: z.coerce.number().int().positive().default(3000),
-  logLevel: z
-    .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
-    .default("info"),
+  logLevel: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info"),
 
   // Migrations run as the schema owner (this URL). The runtime connects with
   // two lower-privilege roles: `auric_app` (no BYPASSRLS — every tenant-scoped
@@ -32,7 +30,12 @@ const schema = z.object({
   supportedLocales: z
     .string()
     .default("ar,en")
-    .transform((s: string) => s.split(",").map((x: string) => x.trim()).filter(Boolean)),
+    .transform((s: string) =>
+      s
+        .split(",")
+        .map((x: string) => x.trim())
+        .filter(Boolean),
+    ),
 
   fileStorageDriver: z.enum(["local"]).default("local"),
   fileStoragePath: z.string().default("./storage/files"),

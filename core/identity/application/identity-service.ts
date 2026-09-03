@@ -106,7 +106,9 @@ export class IdentityService {
         after: { email: user.email, status: user.status },
       });
 
-      await this.events.publish(userRegistered({ userId: user.id, email: user.email, locale: user.locale }));
+      await this.events.publish(
+        userRegistered({ userId: user.id, email: user.email, locale: user.locale }),
+      );
 
       if (this.requireEmailVerification) {
         const token = await this.verificationTokens.issue({
@@ -136,7 +138,10 @@ export class IdentityService {
     organizationId?: string;
     userAgent?: string;
   }): Promise<{ user: User; tokens: TokenPair; organizations: OrganizationMembership[] }> {
-    const genericError = Unauthenticated("identity.invalid_credentials", "Incorrect email or password.");
+    const genericError = Unauthenticated(
+      "identity.invalid_credentials",
+      "Incorrect email or password.",
+    );
 
     const user = await this.users.findByEmail(input.email);
     if (!user) {
@@ -171,7 +176,12 @@ export class IdentityService {
           await this.users.update(user);
         }
 
-        const tokens = await this.issueTokens(user.id, user.email, activeOrg, input.userAgent ?? null);
+        const tokens = await this.issueTokens(
+          user.id,
+          user.email,
+          activeOrg,
+          input.userAgent ?? null,
+        );
 
         await this.audit.record({
           actorId: user.id,
@@ -193,7 +203,10 @@ export class IdentityService {
    * belongs to (§ docs/tenancy.md) — no re-login needed.
    */
   async refresh(refreshToken: string, organizationId?: string): Promise<TokenPair> {
-    const invalid = Unauthenticated("identity.invalid_refresh_token", "Session expired. Please sign in again.");
+    const invalid = Unauthenticated(
+      "identity.invalid_refresh_token",
+      "Session expired. Please sign in again.",
+    );
 
     const hash = this.jwt.hashRefreshToken(refreshToken);
     const stored = await this.uow.transaction(() => this.refreshTokens.findByHash(hash));
@@ -204,7 +217,10 @@ export class IdentityService {
       // family in its OWN committed transaction — this must survive the
       // rejection we are about to throw.
       await this.uow.transaction(() => this.refreshTokens.revokeAllForUser(stored.userId));
-      log.warn({ userId: stored.userId }, "reuse of a rotated refresh token — all sessions revoked");
+      log.warn(
+        { userId: stored.userId },
+        "reuse of a rotated refresh token — all sessions revoked",
+      );
       throw invalid;
     }
     if (stored.expiresAt < this.clock.now()) throw invalid;
@@ -278,10 +294,17 @@ export class IdentityService {
     await this.uow.transaction(async () => {
       const userId = await this.verificationTokens.consume(token, "password_reset");
       if (!userId) {
-        throw ValidationError("identity.invalid_reset_token", "This reset link is invalid or has expired.");
+        throw ValidationError(
+          "identity.invalid_reset_token",
+          "This reset link is invalid or has expired.",
+        );
       }
       const user = await this.users.findById(userId);
-      if (!user) throw ValidationError("identity.invalid_reset_token", "This reset link is invalid or has expired.");
+      if (!user)
+        throw ValidationError(
+          "identity.invalid_reset_token",
+          "This reset link is invalid or has expired.",
+        );
 
       user.changePassword(await this.hasher.hash(newPassword));
       await this.users.update(user);
@@ -335,7 +358,12 @@ export class IdentityService {
         ttlSeconds: EMAIL_VERIFICATION_TTL_SECONDS,
       });
       await this.events.publish(
-        emailVerificationRequested({ userId: user.id, email: user.email, token, locale: user.locale }),
+        emailVerificationRequested({
+          userId: user.id,
+          email: user.email,
+          token,
+          locale: user.locale,
+        }),
       );
     });
   }
@@ -350,7 +378,12 @@ export class IdentityService {
     // caller has already pinned it, so this resolves the user's perms *in
     // `organizationId`* (empty for an orgless session).
     const perms = organizationId ? await this.permissions.permissionsFor(userId) : [];
-    const accessToken = this.jwt.signAccessToken({ sub: userId, email, org: organizationId, perms });
+    const accessToken = this.jwt.signAccessToken({
+      sub: userId,
+      email,
+      org: organizationId,
+      perms,
+    });
     const { token: refreshToken, hash } = this.jwt.newRefreshToken();
     await this.refreshTokens.create({
       userId,

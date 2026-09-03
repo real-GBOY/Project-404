@@ -84,6 +84,6 @@ describe("auth flow (integration, MSW-backed)", () => {
     await signIn(user);
 
     expect(await screen.findByText("Choose an organization")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Tawfik & Partners/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Mizan/ })).toBeInTheDocument();
   });
 });

@@ -18,7 +18,8 @@ export const memberAdded = (p: {
   membershipRole: string;
 }): DomainEvent => ({ name: OrganizationEvents.MemberAdded, version: 1, payload: p });
 
-export const memberRemoved = (p: {
-  organizationId: string;
-  userId: string;
-}): DomainEvent => ({ name: OrganizationEvents.MemberRemoved, version: 1, payload: p });
+export const memberRemoved = (p: { organizationId: string; userId: string }): DomainEvent => ({
+  name: OrganizationEvents.MemberRemoved,
+  version: 1,
+  payload: p,
+});

@@ -32,10 +32,15 @@ export class HearingsService {
       return {
         scheduled: all.filter((h) => h.status === "scheduled").length,
         next7: all.filter(
-          (h) => h.status === "scheduled" && h.scheduledAt.getTime() >= now && h.scheduledAt.getTime() <= week,
+          (h) =>
+            h.status === "scheduled" &&
+            h.scheduledAt.getTime() >= now &&
+            h.scheduledAt.getTime() <= week,
         ).length,
         awaitingDate: all.filter((h) => h.status === "scheduled" && !h.court).length,
-        adjournedQuarter: all.filter((h) => h.status === "adjourned" && h.scheduledAt.getTime() >= quarterAgo).length,
+        adjournedQuarter: all.filter(
+          (h) => h.status === "adjourned" && h.scheduledAt.getTime() >= quarterAgo,
+        ).length,
       };
     });
   }

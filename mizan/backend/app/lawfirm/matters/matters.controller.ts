@@ -54,7 +54,10 @@ export class MattersController {
   @Post("matters")
   @HttpCode(201)
   @RequirePermission("create", "matter")
-  create(@Body(ZodBody(createMatterSchema)) body: CreateMatterBody, @CurrentUser() user: Principal) {
+  create(
+    @Body(ZodBody(createMatterSchema)) body: CreateMatterBody,
+    @CurrentUser() user: Principal,
+  ) {
     return this.service.create(body, user.userId);
   }
 

@@ -65,7 +65,8 @@ export class StaffRepository {
       if (input.phone !== undefined) set.phone = input.phone;
       if (input.practiceAreas !== undefined) set.practice_areas = input.practiceAreas;
       if (input.status !== undefined) set.status = input.status;
-      if (input.weeklyCapacityHours !== undefined) set.weekly_capacity_hours = input.weeklyCapacityHours;
+      if (input.weeklyCapacityHours !== undefined)
+        set.weekly_capacity_hours = input.weeklyCapacityHours;
       if (input.barAdmission !== undefined) set.bar_admission = input.barAdmission;
       if (Object.keys(set).length > 0) {
         await currentExecutor()

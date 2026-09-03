@@ -35,7 +35,10 @@ export function createEmailChannel(params: { from: string; smtpUrl?: string }): 
         ...(message.html ? { html: message.html } : {}),
       });
       if (params.smtpUrl) {
-        log.info({ to: message.to, subject: message.subject, messageId: info.messageId }, "email sent");
+        log.info(
+          { to: message.to, subject: message.subject, messageId: info.messageId },
+          "email sent",
+        );
       } else {
         log.info(
           { to: message.to, subject: message.subject, body: message.text },

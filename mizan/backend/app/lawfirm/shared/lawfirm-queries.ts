@@ -17,9 +17,19 @@ export class LawfirmQueries {
   }
 
   /** Server-authoritative invoice totals (README §6), keyed by invoice id. */
-  async invoiceTotals(
-    invoiceIds?: string[],
-  ): Promise<Map<string, { fees: number; disbursements: number; vat: number; total: number; paid: number; balance: number }>> {
+  async invoiceTotals(invoiceIds?: string[]): Promise<
+    Map<
+      string,
+      {
+        fees: number;
+        disbursements: number;
+        vat: number;
+        total: number;
+        paid: number;
+        balance: number;
+      }
+    >
+  > {
     const ex = currentExecutor();
     let invQ = ex
       .selectFrom("lawfirm_invoices")
@@ -48,11 +58,20 @@ export class LawfirmQueries {
 
     const out = new Map<
       string,
-      { fees: number; disbursements: number; vat: number; total: number; paid: number; balance: number }
+      {
+        fees: number;
+        disbursements: number;
+        vat: number;
+        total: number;
+        paid: number;
+        balance: number;
+      }
     >();
     for (const inv of invoices) {
       const myLines = lines.filter((l) => l.invoice_id === inv.id);
-      const fees = myLines.filter((l) => l.kind === "fee").reduce((s, l) => s + decimal(l.amount), 0);
+      const fees = myLines
+        .filter((l) => l.kind === "fee")
+        .reduce((s, l) => s + decimal(l.amount), 0);
       const disbursements = myLines
         .filter((l) => l.kind === "disbursement")
         .reduce((s, l) => s + decimal(l.amount), 0);
@@ -102,7 +121,9 @@ export class LawfirmQueries {
   }> {
     const ex = currentExecutor();
     const org = this.org();
-    const count = async (table: "lawfirm_hearings" | "lawfirm_documents" | "lawfirm_matter_notes") => {
+    const count = async (
+      table: "lawfirm_hearings" | "lawfirm_documents" | "lawfirm_matter_notes",
+    ) => {
       const r = await ex
         .selectFrom(table)
         .select((eb) => eb.fn.countAll<string>().as("c"))
@@ -218,7 +239,11 @@ export class LawfirmQueries {
       .innerJoin("lawfirm_matters", (join) =>
         join
           .onRef("lawfirm_matters.id", "=", "lawfirm_matter_participants.matter_id")
-          .onRef("lawfirm_matters.organization_id", "=", "lawfirm_matter_participants.organization_id"),
+          .onRef(
+            "lawfirm_matters.organization_id",
+            "=",
+            "lawfirm_matter_participants.organization_id",
+          ),
       )
       .select(["lawfirm_matters.id as id"])
       .where("lawfirm_matter_participants.organization_id", "=", org)
@@ -256,7 +281,9 @@ export class LawfirmQueries {
     };
   }
 
-  async mattersForUser(userId: string): Promise<Array<{ id: string; reference: string; title: string; isLead: boolean }>> {
+  async mattersForUser(
+    userId: string,
+  ): Promise<Array<{ id: string; reference: string; title: string; isLead: boolean }>> {
     const ex = currentExecutor();
     const org = this.org();
     const rows = await ex
@@ -264,7 +291,11 @@ export class LawfirmQueries {
       .leftJoin("lawfirm_matter_participants", (join) =>
         join
           .onRef("lawfirm_matter_participants.matter_id", "=", "lawfirm_matters.id")
-          .onRef("lawfirm_matter_participants.organization_id", "=", "lawfirm_matters.organization_id")
+          .onRef(
+            "lawfirm_matter_participants.organization_id",
+            "=",
+            "lawfirm_matters.organization_id",
+          )
           .on("lawfirm_matter_participants.user_id", "=", userId),
       )
       .select([
@@ -277,13 +308,24 @@ export class LawfirmQueries {
       .where("lawfirm_matters.organization_id", "=", org)
       .where("lawfirm_matters.status", "!=", "closed")
       .where((eb) =>
-        eb.or([eb("lawfirm_matters.lead_lawyer_id", "=", userId), eb("lawfirm_matter_participants.user_id", "=", userId)]),
+        eb.or([
+          eb("lawfirm_matters.lead_lawyer_id", "=", userId),
+          eb("lawfirm_matter_participants.user_id", "=", userId),
+        ]),
       )
       .execute();
-    const seen = new Map<string, { id: string; reference: string; title: string; isLead: boolean }>();
+    const seen = new Map<
+      string,
+      { id: string; reference: string; title: string; isLead: boolean }
+    >();
     for (const r of rows) {
       if (!seen.has(r.id)) {
-        seen.set(r.id, { id: r.id, reference: r.reference, title: r.title, isLead: r.leadLawyerId === userId });
+        seen.set(r.id, {
+          id: r.id,
+          reference: r.reference,
+          title: r.title,
+          isLead: r.leadLawyerId === userId,
+        });
       }
     }
     return [...seen.values()];

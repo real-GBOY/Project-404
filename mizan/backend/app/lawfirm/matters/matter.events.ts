@@ -7,7 +7,11 @@ export const MatterEvents = {
   Assigned: "lawfirm.matter.assigned",
 } as const;
 
-export const matterOpened = (p: { matterId: string; reference: string; actorId: string }): DomainEvent => ({
+export const matterOpened = (p: {
+  matterId: string;
+  reference: string;
+  actorId: string;
+}): DomainEvent => ({
   name: MatterEvents.Opened,
   version: 1,
   payload: p,
@@ -19,7 +23,12 @@ export const matterClosed = (p: { matterId: string; actorId: string }): DomainEv
   payload: p,
 });
 
-export const matterAssigned = (p: { matterId: string; userId: string; role: string; actorId: string }): DomainEvent => ({
+export const matterAssigned = (p: {
+  matterId: string;
+  userId: string;
+  role: string;
+  actorId: string;
+}): DomainEvent => ({
   name: MatterEvents.Assigned,
   version: 1,
   payload: p,

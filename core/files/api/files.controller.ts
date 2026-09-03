@@ -55,7 +55,8 @@ export class FilesController {
     const uploaded = await req.file();
     if (!uploaded) throw ValidationError("files.no_file", "Send the file as multipart/form-data.");
     const content = await uploaded.toBuffer();
-    if (content.length === 0) throw ValidationError("files.empty_file", "The uploaded file is empty.");
+    if (content.length === 0)
+      throw ValidationError("files.empty_file", "The uploaded file is empty.");
 
     const ref = await this.files.upload({
       content,
@@ -87,7 +88,10 @@ export class FilesController {
     const { content, ref } = await this.files.getContent({ id });
     reply
       .header("Content-Type", ref.contentType)
-      .header("Content-Disposition", `attachment; filename="${encodeURIComponent(ref.originalName)}"`)
+      .header(
+        "Content-Disposition",
+        `attachment; filename="${encodeURIComponent(ref.originalName)}"`,
+      )
       .send(content);
   }
 

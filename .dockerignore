@@ -1,0 +1,17 @@
+node_modules
+dist
+coverage
+.git
+.github
+.env
+.env.local
+*.log
+storage/files
+mizan/web
+mizan/mobile
+web
+docs
+http
+SHOWCASE.md
+**/*.test.ts
+**/tests

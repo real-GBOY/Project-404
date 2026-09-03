@@ -63,19 +63,16 @@ export class OutboxRepository {
     const rows = await currentExecutor()
       .updateTable("outbox_messages")
       .set({ status: "processing", locked_at: now })
-      .where(
-        "id",
-        "in",
-        (eb) =>
-          eb
-            .selectFrom("outbox_messages")
-            .select("id")
-            .where("status", "=", "pending")
-            .where("next_attempt_at", "<=", now)
-            .orderBy("next_attempt_at", "asc")
-            .limit(limit)
-            .forUpdate()
-            .skipLocked(),
+      .where("id", "in", (eb) =>
+        eb
+          .selectFrom("outbox_messages")
+          .select("id")
+          .where("status", "=", "pending")
+          .where("next_attempt_at", "<=", now)
+          .orderBy("next_attempt_at", "asc")
+          .limit(limit)
+          .forUpdate()
+          .skipLocked(),
       )
       .returning([
         "id",
@@ -158,7 +155,12 @@ export class OutboxRepository {
   }
 
   /** Ops helper: how many messages are stuck. Feeds the health check (§6.2). */
-  async stats(): Promise<{ pending: number; processing: number; failed: number; deadLettered: number }> {
+  async stats(): Promise<{
+    pending: number;
+    processing: number;
+    failed: number;
+    deadLettered: number;
+  }> {
     const exec = currentExecutor();
     const byStatus = await exec
       .selectFrom("outbox_messages")

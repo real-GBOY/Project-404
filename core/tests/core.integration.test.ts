@@ -14,7 +14,10 @@ import { RbacPermissionProvider } from "@core/rbac/infrastructure/permission-pro
 import { OrganizationService } from "@core/organizations/application/organization-service.js";
 import { NotificationService } from "@core/notifications/application/notification-service.js";
 import { AuditRepository } from "@core/audit/infrastructure/audit-repository.js";
-import type { EmailChannel, EmailMessage } from "@core/notifications/infrastructure/email-channel.js";
+import type {
+  EmailChannel,
+  EmailMessage,
+} from "@core/notifications/infrastructure/email-channel.js";
 import { asSystem, asUser, createTestCore, get, hasTestDb } from "./helpers.js";
 
 /**
@@ -78,14 +81,16 @@ suite("AURIC Core — integration", () => {
     const mail = sent.find((m) => m.to === email);
     expect(mail?.text).toMatch(/https:\/\/app\.test\/verify-email\?token=/);
 
-    const token = decodeURIComponent(mail!.text.match(/token=([A-Za-z0-9_\-]+)/)![1]!);
+    const token = decodeURIComponent(mail!.text.match(/token=([A-Za-z0-9_-]+)/)![1]!);
     await identity().verifyEmail(token);
 
     const login = await identity().login({ email, password });
     expect(login.user.status).toBe("active");
     expect(login.tokens.tokenType).toBe("Bearer");
     expect(login.organizations).toEqual([]);
-    expect(get<JwtService>(core, JWT_SERVICE).verifyAccessToken(login.tokens.accessToken).org).toBeNull();
+    expect(
+      get<JwtService>(core, JWT_SERVICE).verifyAccessToken(login.tokens.accessToken).org,
+    ).toBeNull();
 
     const rotated = await identity().refresh(login.tokens.refreshToken);
     expect(rotated.refreshToken).not.toBe(login.tokens.refreshToken);
@@ -105,7 +110,9 @@ suite("AURIC Core — integration", () => {
     const perms = get(core, RbacPermissionProvider);
 
     expect(await asUser(user.id, org.id, () => perms.can(user.id, "manage", "role"))).toBe(true);
-    expect(await asUser(user.id, org.id, () => perms.can(user.id, "whatever", "anything"))).toBe(true);
+    expect(await asUser(user.id, org.id, () => perms.can(user.id, "whatever", "anything"))).toBe(
+      true,
+    );
     expect(await asUser(user.id, null, () => perms.can(user.id, "manage", "role"))).toBe(false);
   }, 30_000);
 

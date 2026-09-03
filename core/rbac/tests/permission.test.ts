@@ -1,10 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { parsePermissionKey, permissionKey, permissionMatches } from "@core/rbac/domain/permission.js";
+import {
+  parsePermissionKey,
+  permissionKey,
+  permissionMatches,
+} from "@core/rbac/domain/permission.js";
 
 describe("permission keys", () => {
   it("builds and parses action:resource", () => {
     expect(permissionKey("create", "employee")).toBe("create:employee");
-    expect(parsePermissionKey("create:employee")).toEqual({ action: "create", resource: "employee" });
+    expect(parsePermissionKey("create:employee")).toEqual({
+      action: "create",
+      resource: "employee",
+    });
     expect(parsePermissionKey("bad")).toBeNull();
     expect(parsePermissionKey(":employee")).toBeNull();
     expect(parsePermissionKey("create:")).toBeNull();

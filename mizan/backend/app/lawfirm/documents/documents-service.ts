@@ -8,7 +8,11 @@ import type { IFileStorage } from "@core/contracts/index.js";
 import { lawfirmId } from "@app/lawfirm/shared/ids.js";
 import { ActivityService } from "@app/lawfirm/activity/activity-service.js";
 import { LawfirmDirectory } from "@app/lawfirm/shared/directory.js";
-import { DocumentsRepository, type DocumentRow, type DocumentStatus } from "./documents-repository.js";
+import {
+  DocumentsRepository,
+  type DocumentRow,
+  type DocumentStatus,
+} from "./documents-repository.js";
 
 const DAY = 86_400_000;
 
@@ -39,13 +43,19 @@ export class DocumentsService {
       return {
         total: all.length,
         awaitingReview: all.filter((d) => d.status === "draft").length,
-        expiring: all.filter((d) => /power|authority|attorney/i.test(`${d.category} ${d.name}`)).length,
+        expiring: all.filter((d) => /power|authority|attorney/i.test(`${d.category} ${d.name}`))
+          .length,
         addedThisMonth: all.filter((d) => d.uploadedAt >= monthStart).length,
       };
     });
   }
 
-  async list(filter: { matterId?: string; q?: string; category?: string; status?: DocumentStatus | "all" }) {
+  async list(filter: {
+    matterId?: string;
+    q?: string;
+    category?: string;
+    status?: DocumentStatus | "all";
+  }) {
     return readInTenant(async () => {
       const rows = await this.repo.list({
         matterId: filter.matterId,

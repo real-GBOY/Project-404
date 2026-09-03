@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  HttpCode,
-  Param,
-  Post,
-  UseGuards,
-} from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, Param, Post, UseGuards } from "@nestjs/common";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
 import { PermissionGuard } from "@core/http/permission.guard.js";
 import { RequirePermission, CurrentUser } from "@core/http/decorators.js";
@@ -61,10 +52,7 @@ export class RbacController {
   @Delete("roles/:roleKey/permissions/:permissionKey")
   @HttpCode(204)
   @RequirePermission("manage", "role")
-  async revoke(
-    @Param("roleKey") roleKey: string,
-    @Param("permissionKey") permissionKey: string,
-  ) {
+  async revoke(@Param("roleKey") roleKey: string, @Param("permissionKey") permissionKey: string) {
     await this.service.revokePermission(roleKey, permissionKey);
   }
 

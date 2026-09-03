@@ -42,11 +42,15 @@ export class AppError extends Error {
 export const ValidationError = (code: string, message: string, details?: unknown) =>
   new AppError({ code, message, kind: "validation", details });
 
-export const Unauthenticated = (code = "auth.unauthenticated", message = "Authentication required.") =>
-  new AppError({ code, message, kind: "unauthenticated" });
+export const Unauthenticated = (
+  code = "auth.unauthenticated",
+  message = "Authentication required.",
+) => new AppError({ code, message, kind: "unauthenticated" });
 
-export const Forbidden = (code = "auth.forbidden", message = "You do not have permission to do this.") =>
-  new AppError({ code, message, kind: "forbidden" });
+export const Forbidden = (
+  code = "auth.forbidden",
+  message = "You do not have permission to do this.",
+) => new AppError({ code, message, kind: "forbidden" });
 
 export const NotFound = (code: string, message: string) =>
   new AppError({ code, message, kind: "not_found" });

@@ -58,14 +58,20 @@ suite("AURIC Core — multi-tenancy", () => {
   it("cross-tenant leakage: an unscoped query in tenant A never returns tenant B rows", async () => {
     const seen = await asUser(userA, orgA, () =>
       unitOfWork.transaction(async () => ({
-        auditOrgs: await currentExecutor().selectFrom("audit_logs").select("organization_id").execute(),
-        roleOrgs: await currentExecutor().selectFrom("user_roles").select("organization_id").execute(),
+        auditOrgs: await currentExecutor()
+          .selectFrom("audit_logs")
+          .select("organization_id")
+          .execute(),
+        roleOrgs: await currentExecutor()
+          .selectFrom("user_roles")
+          .select("organization_id")
+          .execute(),
       })),
     );
 
-    expect(seen.auditOrgs.every((r) => r.organization_id === orgA || r.organization_id === null)).toBe(
-      true,
-    );
+    expect(
+      seen.auditOrgs.every((r) => r.organization_id === orgA || r.organization_id === null),
+    ).toBe(true);
     expect(seen.auditOrgs.some((r) => r.organization_id === orgB)).toBe(false);
     expect(seen.roleOrgs.every((r) => r.organization_id === orgA)).toBe(true);
     expect(seen.roleOrgs.length).toBeGreaterThan(0);
@@ -113,7 +119,11 @@ suite("AURIC Core — multi-tenancy", () => {
 
     await asUser(userA, orgA, () =>
       unitOfWork.transaction(() =>
-        get<IEventBus>(core, EVENT_BUS).publish({ name: "test.tenant_probe", version: 1, payload: {} }),
+        get<IEventBus>(core, EVENT_BUS).publish({
+          name: "test.tenant_probe",
+          version: 1,
+          payload: {},
+        }),
       ),
     );
     await get(core, OutboxWorker).tick();
@@ -128,12 +138,20 @@ suite("AURIC Core — multi-tenancy", () => {
 
     await asUser(userA, orgA, () =>
       unitOfWork.transaction(() =>
-        get<IEventBus>(core, EVENT_BUS).publish({ name: "test.multi_tenant", version: 1, payload: {} }),
+        get<IEventBus>(core, EVENT_BUS).publish({
+          name: "test.multi_tenant",
+          version: 1,
+          payload: {},
+        }),
       ),
     );
     await asUser(userB, orgB, () =>
       unitOfWork.transaction(() =>
-        get<IEventBus>(core, EVENT_BUS).publish({ name: "test.multi_tenant", version: 1, payload: {} }),
+        get<IEventBus>(core, EVENT_BUS).publish({
+          name: "test.multi_tenant",
+          version: 1,
+          payload: {},
+        }),
       ),
     );
     await get(core, OutboxWorker).tick();

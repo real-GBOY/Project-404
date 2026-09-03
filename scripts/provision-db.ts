@@ -36,8 +36,12 @@ async function main() {
            END IF;
          END $$;`,
       );
-      await client.query(`ALTER ROLE "${role}" LOGIN PASSWORD $1`, [pw]);
-      await client.query(`ALTER ROLE "${role}" ${bypass ? "BYPASSRLS" : "NOBYPASSRLS"}`);
+      // `ALTER ROLE ... PASSWORD` is a utility statement — it does not accept
+      // bind parameters ($1), so the password is escaped and inlined.
+      await client.query(
+        `ALTER ROLE "${role}" LOGIN PASSWORD ${client.escapeLiteral(pw)} ` +
+          `${bypass ? "BYPASSRLS" : "NOBYPASSRLS"}`,
+      );
     }
     console.log("✓ auric_app / auric_system provisioned");
   } finally {

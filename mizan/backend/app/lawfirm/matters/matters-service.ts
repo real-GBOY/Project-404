@@ -104,7 +104,13 @@ export class MattersService {
   }
 
   async create(
-    input: { title: string; clientId: string; practiceArea: string; court?: string | null; description?: string | null },
+    input: {
+      title: string;
+      clientId: string;
+      practiceArea: string;
+      court?: string | null;
+      description?: string | null;
+    },
     actorId: string,
   ) {
     const matter = await this.uow.transaction(async () => {
@@ -145,7 +151,13 @@ export class MattersService {
 
   async update(
     id: string,
-    patch: Partial<{ title: string; practiceArea: string; court: string | null; description: string | null; clientId: string }>,
+    patch: Partial<{
+      title: string;
+      practiceArea: string;
+      court: string | null;
+      description: string | null;
+      clientId: string;
+    }>,
     actorId: string,
   ) {
     const matter = await this.uow.transaction(async () => {
@@ -201,7 +213,12 @@ export class MattersService {
       if (!matter) throw NotFound("matter.not_found", "Matter not found.");
       const row = await this.repo.addParticipant(id, userId, role);
       await this.events.publish(matterAssigned({ matterId: id, userId, role, actorId }));
-      return { id: row.id, userId: row.userId, name: (await this.directory.userName(userId)) ?? "—", role: row.role };
+      return {
+        id: row.id,
+        userId: row.userId,
+        name: (await this.directory.userName(userId)) ?? "—",
+        role: row.role,
+      };
     });
   }
 
@@ -298,12 +315,18 @@ export class MattersService {
       const totals = await this.queries.invoiceTotals(invoices.map((i) => i.id));
       const expenses = await this.repo.expensesForMatter(id);
       return {
-        billed: moneyList(invoices.map((i) => ({ currency: i.currency, amount: totals.get(i.id)?.total ?? 0 }))),
-        collected: moneyList(invoices.map((i) => ({ currency: i.currency, amount: totals.get(i.id)?.paid ?? 0 }))),
+        billed: moneyList(
+          invoices.map((i) => ({ currency: i.currency, amount: totals.get(i.id)?.total ?? 0 })),
+        ),
+        collected: moneyList(
+          invoices.map((i) => ({ currency: i.currency, amount: totals.get(i.id)?.paid ?? 0 })),
+        ),
         outstanding: moneyList(
           invoices.map((i) => ({ currency: i.currency, amount: totals.get(i.id)?.balance ?? 0 })),
         ),
-        expenses: moneyList(expenses.map((e) => ({ currency: e.currency, amount: Number(e.amount) }))),
+        expenses: moneyList(
+          expenses.map((e) => ({ currency: e.currency, amount: Number(e.amount) })),
+        ),
         invoices: invoices.map((i) => ({
           id: i.id,
           number: i.number,
@@ -381,10 +404,18 @@ export class MattersService {
   private async participantViews(matterId: string) {
     const rows = await this.repo.participants(matterId);
     const names = await this.directory.userNames(rows.map((r) => r.userId));
-    return rows.map((p) => ({ id: p.id, userId: p.userId, name: names.get(p.userId) ?? "—", role: p.role }));
+    return rows.map((p) => ({
+      id: p.id,
+      userId: p.userId,
+      name: names.get(p.userId) ?? "—",
+      role: p.role,
+    }));
   }
 
-  private noteView(n: { id: string; authorId: string; body: string; createdAt: Date; updatedAt: Date }, author: string) {
+  private noteView(
+    n: { id: string; authorId: string; body: string; createdAt: Date; updatedAt: Date },
+    author: string,
+  ) {
     return {
       id: n.id,
       author,

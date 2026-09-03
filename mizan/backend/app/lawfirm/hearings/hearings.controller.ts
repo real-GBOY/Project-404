@@ -1,4 +1,14 @@
-import { Body, Controller, Get, HttpCode, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from "@nestjs/common";
 import { z } from "zod";
 import { CurrentUser, RequirePermission } from "@core/http/decorators.js";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
@@ -25,7 +35,10 @@ const updateSchema = z.object({
   scheduledAt: z.string().optional(),
   purpose: z.string().trim().max(300).optional(),
 });
-const adjournSchema = z.object({ newDate: z.string().min(1), reason: z.string().trim().max(1000).optional() });
+const adjournSchema = z.object({
+  newDate: z.string().min(1),
+  reason: z.string().trim().max(1000).optional(),
+});
 const outcomeSchema = z.object({ outcome: z.string().trim().min(1).max(2000) });
 
 @Controller("hearings")
@@ -48,7 +61,10 @@ export class HearingsController {
   @Post()
   @HttpCode(201)
   @RequirePermission("schedule", "hearing")
-  create(@Body(ZodBody(createSchema)) body: z.infer<typeof createSchema>, @CurrentUser() user: Principal) {
+  create(
+    @Body(ZodBody(createSchema)) body: z.infer<typeof createSchema>,
+    @CurrentUser() user: Principal,
+  ) {
     return this.service.create(body, user.userId);
   }
 

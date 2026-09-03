@@ -14,7 +14,9 @@ const LAWFIRM_ROLE_KEYS = ["firm_admin", "partner", "lawyer", "paralegal", "fina
 @Injectable()
 export class AdminRepository {
   /** Members of the active tenant: `{ userId, name, email, roleKey }`. */
-  async members(): Promise<Array<{ userId: string; name: string | null; email: string; roleKey: string | null }>> {
+  async members(): Promise<
+    Array<{ userId: string; name: string | null; email: string; roleKey: string | null }>
+  > {
     const org = requireOrganizationId();
     const rows = await currentExecutor()
       .selectFrom("organization_members")
@@ -38,7 +40,10 @@ export class AdminRepository {
       .execute();
 
     // one row per member; prefer a row that carries a law-firm role key
-    const seen = new Map<string, { userId: string; name: string | null; email: string; roleKey: string | null }>();
+    const seen = new Map<
+      string,
+      { userId: string; name: string | null; email: string; roleKey: string | null }
+    >();
     for (const r of rows) {
       const existing = seen.get(r.userId);
       if (!existing || (!existing.roleKey && r.roleKey)) seen.set(r.userId, r);

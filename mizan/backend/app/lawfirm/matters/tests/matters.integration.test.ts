@@ -1,7 +1,14 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { TestingModule } from "@nestjs/testing";
 import { fixedClock } from "@core/kernel/clock.js";
-import { asUser, createMizanTestApp, get, hasTestDb, seedFirm, type SeededFirm } from "@app/lawfirm/tests/helpers.js";
+import {
+  asUser,
+  createMizanTestApp,
+  get,
+  hasTestDb,
+  seedFirm,
+  type SeededFirm,
+} from "@app/lawfirm/tests/helpers.js";
 import { ClientsService } from "@app/lawfirm/clients/clients-service.js";
 import { MattersService } from "@app/lawfirm/matters/matters-service.js";
 
@@ -22,7 +29,15 @@ suite("lawfirm/matters", () => {
     firmB = await seedFirm(app, "Firm B");
     const c = await asUser(firmA.adminId, firmA.orgId, () =>
       clients().create(
-        { name: "Al-Nour", type: "company", email: null, phone: null, taxId: null, address: null, notes: null },
+        {
+          name: "Al-Nour",
+          type: "company",
+          email: null,
+          phone: null,
+          taxId: null,
+          address: null,
+          notes: null,
+        },
         firmA.adminId,
       ),
     );
@@ -36,7 +51,12 @@ suite("lawfirm/matters", () => {
   it("opens a matter with a generated reference and a Lead participant", async () => {
     const m = await asUser(firmA.adminId, firmA.orgId, () =>
       matters().create(
-        { title: "Facility dispute", clientId, practiceArea: "Litigation", court: "Cairo Economic Court" },
+        {
+          title: "Facility dispute",
+          clientId,
+          practiceArea: "Litigation",
+          court: "Cairo Economic Court",
+        },
         firmA.adminId,
       ),
     );
@@ -57,7 +77,10 @@ suite("lawfirm/matters", () => {
   it("rejects a matter for an unknown client", async () => {
     await expect(
       asUser(firmA.adminId, firmA.orgId, () =>
-        matters().create({ title: "X", clientId: "cli_missing", practiceArea: "Tax" }, firmA.adminId),
+        matters().create(
+          { title: "X", clientId: "cli_missing", practiceArea: "Tax" },
+          firmA.adminId,
+        ),
       ),
     ).rejects.toThrow(/client/i);
   });
@@ -73,9 +96,13 @@ suite("lawfirm/matters", () => {
     const m = await asUser(firmA.adminId, firmA.orgId, () =>
       matters().create({ title: "With notes", clientId, practiceArea: "Tax" }, firmA.adminId),
     );
-    const n = await asUser(firmA.adminId, firmA.orgId, () => matters().addNote(m.id, "keep settlement open", firmA.adminId));
+    const n = await asUser(firmA.adminId, firmA.orgId, () =>
+      matters().addNote(m.id, "keep settlement open", firmA.adminId),
+    );
     expect(n.author).toBe("Firm Admin");
-    const edited = await asUser(firmA.adminId, firmA.orgId, () => matters().updateNote(m.id, n.id, "changed"));
+    const edited = await asUser(firmA.adminId, firmA.orgId, () =>
+      matters().updateNote(m.id, n.id, "changed"),
+    );
     expect(edited.body).toBe("changed");
     await asUser(firmA.adminId, firmA.orgId, () => matters().deleteNote(m.id, n.id));
     const notes = await asUser(firmA.adminId, firmA.orgId, () => matters().notes(m.id));
@@ -86,7 +113,9 @@ suite("lawfirm/matters", () => {
     const m = await asUser(firmA.adminId, firmA.orgId, () =>
       matters().create({ title: "To close", clientId, practiceArea: "Tax" }, firmA.adminId),
     );
-    const closed = await asUser(firmA.adminId, firmA.orgId, () => matters().close(m.id, firmA.adminId));
+    const closed = await asUser(firmA.adminId, firmA.orgId, () =>
+      matters().close(m.id, firmA.adminId),
+    );
     expect(closed.status).toBe("closed");
     expect(closed.closedAt).not.toBeNull();
     const feed = await asUser(firmA.adminId, firmA.orgId, () => matters().activityFeed(m.id));
@@ -97,6 +126,8 @@ suite("lawfirm/matters", () => {
     const m = await asUser(firmA.adminId, firmA.orgId, () =>
       matters().create({ title: "A only", clientId, practiceArea: "Tax" }, firmA.adminId),
     );
-    await expect(asUser(firmB.adminId, firmB.orgId, () => matters().get(m.id))).rejects.toThrow(/not found/i);
+    await expect(asUser(firmB.adminId, firmB.orgId, () => matters().get(m.id))).rejects.toThrow(
+      /not found/i,
+    );
   });
 });

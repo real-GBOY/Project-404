@@ -1,8 +1,20 @@
 node_modules/
 dist/
+build/
+coverage/
 *.log
+*.tsbuildinfo
+
+# env
 .env
 .env.local
-coverage/
+.env.*.local
+
+# runtime data
+/storage/files/
 /var/
-/storage/
+
+# editor / OS
+.DS_Store
+.idea/
+*.swp

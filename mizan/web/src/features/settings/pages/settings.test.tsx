@@ -23,14 +23,14 @@ describe("Settings", () => {
       perms: ["read:lawfirm_setting", "read:role", "read:audit_log"],
     });
 
-    expect(await screen.findByDisplayValue("Tawfik & Partners")).toBeInTheDocument();
+    expect(await screen.findByDisplayValue("Mizan")).toBeInTheDocument();
     await user.click(screen.getByRole("link", { name: /Users & roles/ }));
     expect(await screen.findByText("Firm administrator")).toBeInTheDocument();
   });
 
   it("hides sections the user can't read", async () => {
     renderApp(<Harness />, { path: "/settings", perms: ["read:lawfirm_setting"] });
-    await screen.findByDisplayValue("Tawfik & Partners");
+    await screen.findByDisplayValue("Mizan");
     expect(screen.queryByRole("link", { name: /Security & audit/ })).not.toBeInTheDocument();
   });
 });

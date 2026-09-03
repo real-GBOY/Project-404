@@ -1,4 +1,14 @@
-import { Body, Controller, Get, HttpCode, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from "@nestjs/common";
 import { CurrentUser, RequirePermission } from "@core/http/decorators.js";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
 import { PermissionGuard } from "@core/http/permission.guard.js";
@@ -30,7 +40,10 @@ export class ClientsController {
   @Post()
   @HttpCode(201)
   @RequirePermission("create", "client")
-  create(@Body(ZodBody(createClientSchema)) body: CreateClientBody, @CurrentUser() user: Principal) {
+  create(
+    @Body(ZodBody(createClientSchema)) body: CreateClientBody,
+    @CurrentUser() user: Principal,
+  ) {
     return this.service.create(body, user.userId);
   }
 
@@ -65,10 +78,7 @@ export class ClientsController {
   @Post(":id/contacts")
   @HttpCode(201)
   @RequirePermission("update", "client")
-  addContact(
-    @Param("id") id: string,
-    @Body(ZodBody(createContactSchema)) body: CreateContactBody,
-  ) {
+  addContact(@Param("id") id: string, @Body(ZodBody(createContactSchema)) body: CreateContactBody) {
     return this.service.addContact(id, {
       name: body.name,
       role: body.role ?? undefined,

@@ -35,7 +35,10 @@ export const rootLogger = pino({
   },
   transport:
     cfg.nodeEnv === "development"
-      ? { target: "pino-pretty", options: { translateTime: "SYS:standard", ignore: "pid,hostname,service" } }
+      ? {
+          target: "pino-pretty",
+          options: { translateTime: "SYS:standard", ignore: "pid,hostname,service" },
+        }
       : undefined,
 });
 

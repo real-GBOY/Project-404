@@ -384,7 +384,7 @@ const activity: ActivityRow[] = [
 ];
 
 const settings: LawFirmSettingsRow = {
-  firmName: "Tawfik & Partners",
+  firmName: "Mizan",
   registrationNumber: "EG-LAW-2009-0447",
   address: "Nile City Towers, North Tower, 21st Floor, Corniche El Nil, Cairo",
   defaultCurrency: "EGP",

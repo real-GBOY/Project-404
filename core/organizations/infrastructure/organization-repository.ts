@@ -45,7 +45,11 @@ export class OrganizationRepository {
   }
 
   async rename(id: string, name: string): Promise<void> {
-    await currentExecutor().updateTable("organizations").set({ name }).where("id", "=", id).execute();
+    await currentExecutor()
+      .updateTable("organizations")
+      .set({ name })
+      .where("id", "=", id)
+      .execute();
   }
 
   async addMember(input: {
@@ -92,7 +96,9 @@ export class OrganizationRepository {
 
   async membershipsForUser(
     userId: string,
-  ): Promise<Array<{ organizationId: string; slug: string; name: string; membershipRole: string }>> {
+  ): Promise<
+    Array<{ organizationId: string; slug: string; name: string; membershipRole: string }>
+  > {
     const rows = await currentExecutor()
       .selectFrom("organization_members")
       .innerJoin("organizations", "organizations.id", "organization_members.organization_id")

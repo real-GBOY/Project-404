@@ -33,7 +33,10 @@ export class AdminController {
 
   @Post("rbac/assignments")
   @RequirePermission("assign", "role")
-  assign(@Body(ZodBody(assignSchema)) body: z.infer<typeof assignSchema>, @CurrentUser() user: Principal) {
+  assign(
+    @Body(ZodBody(assignSchema)) body: z.infer<typeof assignSchema>,
+    @CurrentUser() user: Principal,
+  ) {
     return this.service.assignRole(body.userId, body.role, user.userId);
   }
 

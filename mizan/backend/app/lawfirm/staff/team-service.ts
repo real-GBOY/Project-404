@@ -67,7 +67,13 @@ export class TeamService {
 
   async update(
     id: string,
-    patch: { title?: string; phone?: string | null; practiceAreas?: string[]; weeklyCapacityHours?: number; status?: "active" | "inactive" },
+    patch: {
+      title?: string;
+      phone?: string | null;
+      practiceAreas?: string[];
+      weeklyCapacityHours?: number;
+      status?: "active" | "inactive";
+    },
   ) {
     const profile = await this.uow.transaction(async () => {
       const existing = await this.repo.findById(id);

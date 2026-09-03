@@ -54,7 +54,10 @@ export class AppSeedService {
 
           for (const key of role.permissionKeys) {
             const parsed = parsePermissionKey(key);
-            if (!parsed) throw new Error(`AppSeedService: invalid permission key "${key}" on role "${role.key}"`);
+            if (!parsed)
+              throw new Error(
+                `AppSeedService: invalid permission key "${key}" on role "${role.key}"`,
+              );
             const permId = await this.rbac.upsertPermission(parsed);
             await this.rbac.grantPermissionToRole(stored.id, permId);
           }

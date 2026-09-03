@@ -89,7 +89,8 @@ export class SettingsRepository {
     if (patch.vatRate !== undefined) set.vat_rate = String(patch.vatRate);
     if (patch.matterTypes !== undefined) set.matter_types = patch.matterTypes;
     if (patch.courts !== undefined) set.courts = patch.courts;
-    if (patch.standardRates !== undefined) set.standard_rates = sql`${JSON.stringify(patch.standardRates)}::jsonb`;
+    if (patch.standardRates !== undefined)
+      set.standard_rates = sql`${JSON.stringify(patch.standardRates)}::jsonb`;
     if (patch.aiAssistantEnabled !== undefined) set.ai_assistant_enabled = patch.aiAssistantEnabled;
 
     if (Object.keys(set).length > 0) {

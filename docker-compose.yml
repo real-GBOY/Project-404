@@ -1,0 +1,64 @@
+# One-command local stack for the Mizan backend (the NestJS modular monolith).
+#
+#   docker compose up --build
+#   → API on http://localhost:3000/api   ·   docs on http://localhost:3000/api/docs
+#
+# Boot order: db (healthy) → migrate (apply migrations + provision the two
+# RLS roles, then exit) → app (runs as auric_app / auric_system so Postgres
+# row-level security is actually enforced — see docs/tenancy.md).
+#
+# The web client is a separate package: `cd mizan/web && npm run dev`.
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: auric
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - auric-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d auric"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  migrate:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      AURIC_DATABASE_URL: postgres://postgres:postgres@db:5432/auric
+      AURIC_APP_DB_PASSWORD: auric_app_pw
+      AURIC_SYSTEM_DB_PASSWORD: auric_system_pw
+    command: sh -c "node dist/scripts/migrate.js up && node dist/scripts/provision-db.js"
+    restart: "no"
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: production
+      AURIC_PORT: "3000"
+      # Local-only. Generate a real one per deploy: `openssl rand -base64 48`.
+      AURIC_JWT_SECRET: local-compose-secret-not-for-real-deploys-please
+      AURIC_DATABASE_URL: postgres://postgres:postgres@db:5432/auric
+      AURIC_APP_DATABASE_URL: postgres://auric_app:auric_app_pw@db:5432/auric
+      AURIC_SYSTEM_DATABASE_URL: postgres://auric_system:auric_system_pw@db:5432/auric
+      AURIC_APP_URL: http://localhost:3000
+      # Seed the fictional "Mizan" firm so /api/docs has data to poke at.
+      # Login: amira.tawfik@tawfikpartners.eg / demo-password-2026
+      MIZAN_SEED_DEMO: "true"
+    ports:
+      - "3000:3000"
+
+volumes:
+  auric-db:

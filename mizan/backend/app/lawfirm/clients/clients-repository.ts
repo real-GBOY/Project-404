@@ -74,8 +74,10 @@ export class ClientsRepository {
 
     const all = await q.execute();
     const sorted = [...all].sort((a, b) => {
-      if (p.sort === "-createdAt") return b.created_at < a.created_at ? -1 : b.created_at > a.created_at ? 1 : 0;
-      if (p.sort === "createdAt") return a.created_at < b.created_at ? -1 : a.created_at > b.created_at ? 1 : 0;
+      if (p.sort === "-createdAt")
+        return b.created_at < a.created_at ? -1 : b.created_at > a.created_at ? 1 : 0;
+      if (p.sort === "createdAt")
+        return a.created_at < b.created_at ? -1 : a.created_at > b.created_at ? 1 : 0;
       return a.name.localeCompare(b.name);
     });
     const start = (p.page - 1) * p.pageSize;
@@ -196,7 +198,13 @@ export class ClientsRepository {
 
   async addContact(
     clientId: string,
-    input: { name: string; role?: string | null; email?: string | null; phone?: string | null; primary?: boolean },
+    input: {
+      name: string;
+      role?: string | null;
+      email?: string | null;
+      phone?: string | null;
+      primary?: boolean;
+    },
   ): Promise<ContactRow> {
     const id = lawfirmId("cnt");
     await currentExecutor()
@@ -235,7 +243,16 @@ export class ClientsRepository {
   > {
     const rows = await currentExecutor()
       .selectFrom("lawfirm_matters")
-      .select(["id", "reference", "title", "practice_area", "court", "lead_lawyer_id", "status", "opened_at"])
+      .select([
+        "id",
+        "reference",
+        "title",
+        "practice_area",
+        "court",
+        "lead_lawyer_id",
+        "status",
+        "opened_at",
+      ])
       .where("organization_id", "=", this.org())
       .where("client_id", "=", clientId)
       .orderBy("opened_at", "desc")
@@ -253,7 +270,14 @@ export class ClientsRepository {
   }
 
   async documentsForClient(clientId: string): Promise<
-    Array<{ id: string; name: string; matterTitle: string | null; category: string; status: string; uploadedAt: Date }>
+    Array<{
+      id: string;
+      name: string;
+      matterTitle: string | null;
+      category: string;
+      status: string;
+      uploadedAt: Date;
+    }>
   > {
     const rows = await currentExecutor()
       .selectFrom("lawfirm_documents")
@@ -286,7 +310,9 @@ export class ClientsRepository {
 
   async invoicesForClient(
     clientId: string,
-  ): Promise<Array<{ id: string; number: string; status: string; currency: string; issuedAt: Date | null }>> {
+  ): Promise<
+    Array<{ id: string; number: string; status: string; currency: string; issuedAt: Date | null }>
+  > {
     const rows = await currentExecutor()
       .selectFrom("lawfirm_invoices")
       .select(["id", "number", "status", "currency", "issued_at"])

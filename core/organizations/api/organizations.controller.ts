@@ -46,7 +46,9 @@ export class OrganizationsController {
     @Body(ZodBody(createOrganizationSchema)) input: z.infer<typeof createOrganizationSchema>,
     @CurrentUser() user: Principal,
   ) {
-    return { organization: await this.service.createOrganization({ ...input, createdBy: user.userId }) };
+    return {
+      organization: await this.service.createOrganization({ ...input, createdBy: user.userId }),
+    };
   }
 
   /** GET /api/organizations/:id — the active tenant's record. Needs `read:organization`. */

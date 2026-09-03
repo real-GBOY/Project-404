@@ -38,7 +38,7 @@ const TEST_USER: AuthUser = {
 };
 
 const TEST_ORGS: OrganizationMembership[] = [
-  { organizationId: "org_1", slug: "tawfik", name: "Tawfik & Partners", membershipRole: "firm_admin" },
+  { organizationId: "org_1", slug: "tawfik", name: "Mizan", membershipRole: "firm_admin" },
 ];
 
 function base64Url(json: unknown): string {

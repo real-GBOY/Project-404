@@ -115,7 +115,13 @@ export class HearingsRepository {
 
   async update(
     id: string,
-    patch: Partial<{ court: string; scheduledAt: Date; purpose: string; status: HearingStatus; outcome: string | null }>,
+    patch: Partial<{
+      court: string;
+      scheduledAt: Date;
+      purpose: string;
+      status: HearingStatus;
+      outcome: string | null;
+    }>,
   ): Promise<HearingRow | null> {
     const set: Record<string, unknown> = {};
     if (patch.court !== undefined) set.court = patch.court;

@@ -56,7 +56,11 @@ export class EventBus implements IEventBus {
     }
 
     log.debug(
-      { event: enriched.name, inProcess: inProcess.length, external: this.registry.hasExternal(enriched.name) },
+      {
+        event: enriched.name,
+        inProcess: inProcess.length,
+        external: this.registry.hasExternal(enriched.name),
+      },
       "event published",
     );
   }

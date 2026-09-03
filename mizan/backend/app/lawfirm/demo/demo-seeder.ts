@@ -34,7 +34,7 @@ const DEMO_SLUG = "tawfik-partners";
 /**
  * Opt-in demo dataset (README §12 — "demo data is a separate opt-in seeder").
  * Runs from `AppSeedService` only when `MIZAN_SEED_DEMO === "true"`. Idempotent:
- * skips entirely if the Tawfik & Partners org already exists. Ports
+ * skips entirely if the Mizan org already exists. Ports
  * `mizan/web/src/mocks/fixtures/db.ts` so the web client can run against the
  * real backend with the data it shows today.
  */
@@ -48,7 +48,11 @@ export class DemoSeeder {
   async seed(clock: { now(): Date }): Promise<void> {
     const already = await runAsSystem(() =>
       unitOfWork.transaction(() =>
-        currentExecutor().selectFrom("organizations").select("id").where("slug", "=", DEMO_SLUG).executeTakeFirst(),
+        currentExecutor()
+          .selectFrom("organizations")
+          .select("id")
+          .where("slug", "=", DEMO_SLUG)
+          .executeTakeFirst(),
       ),
     );
     if (already) {
@@ -90,7 +94,7 @@ export class DemoSeeder {
             .execute();
         }
         for (const [slug, name] of [
-          [DEMO_SLUG, "Tawfik & Partners"],
+          [DEMO_SLUG, "Mizan"],
           ["demo-firm", "Demo Firm"],
         ] as const) {
           await ex
@@ -126,12 +130,19 @@ export class DemoSeeder {
           .insertInto("lawfirm_settings")
           .values({
             organization_id: orgId,
-            firm_name: "Tawfik & Partners",
+            firm_name: "Mizan",
             registration_number: "EG-LAW-2009-0447",
             address: "Nile City Towers, North Tower, 21st Floor, Corniche El Nil, Cairo",
             default_currency: "EGP",
             vat_rate: "0.14",
-            matter_types: ["Litigation", "Corporate", "Real Estate", "Employment", "Arbitration", "Tax"],
+            matter_types: [
+              "Litigation",
+              "Corporate",
+              "Real Estate",
+              "Employment",
+              "Arbitration",
+              "Tax",
+            ],
             courts: [
               "Cairo Economic Court",
               "Cairo Court of Appeal",
@@ -438,7 +449,7 @@ export class DemoSeeder {
               actor_id: userId.get(a.actorKey)!,
               action: a.action,
               target_type: a.targetType,
-              target_id: a.targetKey ? matterId.get(a.targetKey) ?? a.targetKey : "n/a",
+              target_id: a.targetKey ? (matterId.get(a.targetKey) ?? a.targetKey) : "n/a",
               target_label: a.label,
               at: at(a.days),
             })
@@ -467,6 +478,6 @@ export class DemoSeeder {
       }),
     );
 
-    log.info({ orgId, users: DEMO_TEAM.length }, "Tawfik & Partners demo data seeded");
+    log.info({ orgId, users: DEMO_TEAM.length }, "Mizan demo data seeded");
   }
 }

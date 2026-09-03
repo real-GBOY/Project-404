@@ -6,8 +6,10 @@ This repository is two things with a hard seam between them:
 
 | | | |
 |---|---|---|
-| **`core/`** | **AURIC Core** — a versioned, reusable platform: identity, RBAC, multi-tenancy, files, audit, notifications, an event/outbox system, localization, observability. It knows nothing about any business domain. | 94 source files · 13 test suites |
-| **`mizan/`** | **Mizan** (codename *Project 404*) — a law-firm management system for *Tawfik & Partners*. **Project #1**: the first application built on Core, and the proof that Core's contracts hold under a real product. | web: 213 files · 78 tests · F0–F16 done |
+| **`core/`** | **AURIC Core** — a versioned, reusable platform: identity, RBAC, multi-tenancy, files, audit, notifications, an event/outbox system, localization, observability. It knows nothing about any business domain. | 11 capabilities · v0.1 shipped |
+| **`mizan/`** | **Mizan** (codename *Project 404*) — a multi-tenant law-firm management system. **Project #1**: the first application built on Core, and the proof that Core's contracts hold under a real product. | backend domain complete · web F0–F16 · **202 tests green** |
+
+**Run it:** `docker compose up --build` → API on `http://localhost:3000/api`, interactive docs on `http://localhost:3000/api/docs`.
 
 > **AURIC is not a law-firm ERP.** It is the foundation. Mizan is the ERP, *powered by* AURIC Core. The next client after Mizan will not re-implement auth, tenancy, permissions, file storage, an audit trail, or an outbox — that is the entire point.
 
@@ -21,9 +23,9 @@ This repository is two things with a hard seam between them:
                          │
                          │   HTTP / JSON only — the clients share no code with the server
                          ▼
-   MIZAN BACKEND    mizan/backend/app/
+   MIZAN BACKEND    mizan/backend/app/lawfirm/
                     clients · matters · hearings · tasks · documents
-                    billing · staff · dashboard · settings
+                    billing · calendar · staff · dashboard · settings · activity
                          │
                          │   core/contracts interfaces + DI tokens only — never a Core table
                          ▼
@@ -80,23 +82,29 @@ The full contract — what each side owns, why there is no `modules/` or `client
 | Observability — structured logs, correlation IDs, `/health`, `/health/ready` | `core/observability` | ✅ |
 | HTTP — Zod pipe, `JwtAuthGuard` + `PermissionGuard` + `@RequirePermission`, exception filter, request-context middleware | `core/http` | ✅ |
 
-8 Prisma schema files · 4 migrations · 2 integration suites that boot the real Core against a throwaway Postgres.
+17 Prisma schema files · 5 migrations · integration suites that boot the real Core against a throwaway Postgres and run it as the `auric_app` / `auric_system` roles so `FORCE ROW LEVEL SECURITY` is actually exercised.
 
-### Mizan backend — `mizan/backend/app/` 🚧 Part-1 in progress
+### Mizan backend — `mizan/backend/app/lawfirm/` ✅ domain complete
 
-- ✅ Composition root (`app.module.ts`), the **two-layer seed** (Core platform permissions, then law-firm permissions + the roles `firm_admin · partner · lawyer · paralegal · finance · read_only`), product version.
-- ✅ Law-firm permission definitions for all 9 domains (`create:matter`, `void:invoice`, `record:payment`, …) contributed into Core RBAC.
-- 🚧 **Current build front:** the feature modules (matters, hearings, tasks, documents, billing, staff, dashboard) — each ships `domain / application / infrastructure / api / events / permissions / validation / tests` and proves **Tenant A ⊗ Tenant B** isolation before it lands.
+- **Two-layer seed** — Core platform permissions + `admin` wildcard role + bilingual templates, then law-firm permissions (`create:matter`, `void:invoice`, `record:payment`, …) across 9 domains + the roles `firm_admin · partner · lawyer · paralegal · finance · read_only`. No domain code branches on a role key — only on permissions.
+- **Feature modules** — clients · matters · hearings · tasks · documents · billing · calendar · staff · dashboard · settings · activity — each ships `domain / application / infrastructure / api / events / permissions / validation / tests` and proves **Tenant A ⊗ Tenant B** isolation.
+- 19 `lawfirm_*` tables, all `organization_id NOT NULL` + `tenant_isolation` RLS; child tables carry a composite FK to the parent so a row can't point across tenants.
+- Financial calculation is server-authoritative (`fees + disbursements + VAT − payments`), per-currency, no FX.
+- **124 backend tests** — unit + use-case + repo/integration + authz + tenant-isolation + outbox.
 
-### Mizan web — `mizan/web/` ✅ F0–F16 complete
+### Mizan web — `mizan/web/` ✅ F0–F16 complete, on the real backend
 
-The entire product surface, live against a mock API layer shaped to the frozen Part-1 contracts:
+The entire product surface, cut over from the mock layer to the live API:
 
-`dashboard` · `clients` (+6 tabs) · `matters` (+7 tabs, "Case Work" group) · `hearings` · `tasks` · `documents` · `calendar` (month grid) · `billing` (invoices / payments / expenses + server-computed invoice detail) · `team` (utilisation) · `notifications` inbox · `settings` (7 sections — Users & roles → real `/api/rbac`, audit → real `/api/audit-logs`, locale switch) · "Ask Mizan" assistant (canned demo drawer, no fake results)
+`dashboard` · `clients` (+6 tabs) · `matters` (+7 tabs, "Case Work" group) · `hearings` · `tasks` · `documents` · `calendar` (month grid) · `billing` (invoices / payments / expenses + server-computed invoice detail) · `team` (utilisation) · `notifications` inbox · `settings` (7 sections — Users & roles → `/api/rbac`, audit → `/api/audit-logs`, locale switch) · "Ask Mizan" assistant (canned demo drawer, no fake results)
 
-- **213** source files · **~37** design-system primitives (Radix, fully restyled to Mizan tokens) · **13** feature areas · **29** test files / **78** tests · typecheck + lint + build green every phase.
-- Stack: Vite 6 · React 19 · TypeScript · Tailwind v4 (semantic tokens) · Radix · TanStack Query v5 · React Router v7 · react-hook-form + Zod · i18next (AR default + RTL) · MSW.
-- Permission-aware nav, actions, and routes from the exact keys `/api/me` returns. Code-split feature routes, split vendor chunks. Auth / notifications / RBAC / audit already call real endpoints; the rest cut over per feature by deleting one mock handler file.
+- **213** source files · **~37** design-system primitives (Radix, fully restyled to Mizan tokens) · **13** feature areas · **78** tests · ESLint + Prettier + typecheck + build green.
+- Stack: Vite 6 · React 19 · TypeScript · Tailwind v4 (semantic tokens) · Radix · TanStack Query v5 · React Router v7 · react-hook-form + Zod · i18next (AR default + RTL).
+- Permission-aware nav, actions, and routes from the exact keys `/api/me` returns. Code-split feature routes, split vendor chunks. The web app talks only to the real backend; the MSW layer moved to `src/test/` and is Vitest-only.
+
+### Continuous integration
+
+**GitHub Actions** on every push and PR (`.github/workflows/ci.yml`): backend `typecheck · lint · format:check · test` (against a Postgres service, RLS enforced) `· build`; web `lint · typecheck · test · build`; and the production Docker image builds.
 
 ---
 
@@ -119,10 +127,11 @@ auric/
 │   └── mobile/               Phase 2 (placeholder)
 │
 ├── prisma/                   schema (mirrors every table) + migration history — Core + lawfirm
-├── scripts/                  migrate · provision-db
+├── scripts/                  migrate · provision-db · build
 ├── http/                     .http request files for the API
 ├── docs/                     architecture, tenancy, integration guide, conventions
-└── main.ts                   entrypoint — migrate → NestFactory (Fastify adapter) → seed → listen :3000
+├── Dockerfile · docker-compose.yml · .github/workflows/ci.yml
+└── main.ts                   entrypoint — migrate → NestFactory (Fastify) → OpenAPI → seed → listen :3000
 ```
 
 Every module — Core or Mizan — follows the same anatomy (`domain / application / infrastructure / api / events / permissions / validation / tests`), so any developer can navigate any module. Table schema lives in `prisma/schema/<module>.prisma`, not the module folder.
@@ -134,9 +143,10 @@ Every module — Core or Mizan — follows the same anatomy (`domain / applicati
 ## Stack
 
 TypeScript · Node **22.12+ / 24** · PostgreSQL only ·
-**NestJS 11 on `@nestjs/platform-fastify`** (Fastify 5) · SWC transform (decorator metadata — esbuild can't) ·
+**NestJS 11 on `@nestjs/platform-fastify`** (Fastify 5) · SWC for dev/tests, `tsc` for the production build (both emit the decorator metadata Nest's DI needs; esbuild can't) ·
 Kysely (typed query builder, no ORM) · Prisma (schema + migrations only — no Prisma Client) ·
-Zod · `jsonwebtoken` + `argon2` (argon2id) · `nodemailer` · `pino` · Vitest.
+Zod · `@nestjs/swagger` (`/api/docs`) · `jsonwebtoken` + `argon2` (argon2id) · `nodemailer` · `pino` · Vitest ·
+ESLint 9 + Prettier.
 
 > Node **22.12+ or 24+** required (Prisma won't install on odd majors like 23.x). `.nvmrc` pins 24 — `nvm use`.
 
@@ -144,57 +154,85 @@ Zod · `jsonwebtoken` + `argon2` (argon2id) · `nodemailer` · `pino` · Vitest.
 
 ## Quick start
 
-### Backend
+### With Docker (one command)
 
 ```bash
-npm install
-cp .env.example .env          # set AURIC_DATABASE_URL etc.
-createdb auric
-npm run provision-db          # once — give auric_app / auric_system a login (see docs/tenancy.md)
-npm run migrate               # prisma migrate deploy
-npm run serve                 # migrate + Nest bootstrap + seed + serve on :3000
+docker compose up --build
 ```
+
+Brings up Postgres, applies migrations, provisions the two RLS roles, seeds a
+demo firm, and serves the API:
 
 ```bash
 curl localhost:3000/api/health
 curl localhost:3000/api/health/ready      # 503 if the outbox worker is stopped or backed up
+open  localhost:3000/api/docs             # interactive OpenAPI — click "Authorize", paste a token
 ```
+
+Sign in to get a token — the compose file seeds a fictional firm:
+
+```bash
+curl -sX POST localhost:3000/api/auth/login -H 'content-type: application/json' \
+  -d '{"email":"amira.tawfik@tawfikpartners.eg","password":"demo-password-2026"}'
+```
+
+### Without Docker
+
+```bash
+npm install
+cp .env.example .env                       # then set AURIC_JWT_SECRET etc.
+createdb auric
+npm run migrate                            # prisma migrate deploy (creates the auric_app / auric_system roles)
+AURIC_APP_DB_PASSWORD=app AURIC_SYSTEM_DB_PASSWORD=sys npm run provision-db   # once — give those roles a login
+# then in .env: AURIC_APP_DATABASE_URL=postgres://auric_app:app@localhost:5432/auric
+#               AURIC_SYSTEM_DATABASE_URL=postgres://auric_system:sys@localhost:5432/auric
+npm run serve                              # migrate → Nest bootstrap → OpenAPI → seed → :3000
+```
+
+> Skipping `provision-db` and the two role URLs also works for a quick look — the
+> app then connects as the schema owner and RLS is present but not enforced.
+> The roles are what make the isolation guarantees real (`docs/tenancy.md`).
 
 ### Web
 
 ```bash
 cd mizan/web
 npm install
-npm run dev                   # http://localhost:4300 — MSW mock layer on
-# sign in: any valid email + any password ≥ 10 characters
+npm run dev                                # http://localhost:4300 — proxies /api → :3000
 ```
 
-Point the web client at a real backend with `VITE_API_MOCKS=off` (Vite proxies `/api` → `:3000`).
+The web client talks to the real backend; run the backend first. Register an
+account at `/register`, or use a seeded demo login above.
 
 ---
 
 ## Scripts
 
+**Backend** (repo root):
+
 | Command | Purpose |
 |---|---|
-| `npm run serve` / `npm run dev` | Run the whole modular monolith in one process (`dev` = with reload) |
-| `npm run migrate` / `migrate:status` | Apply / inspect Prisma migrations |
-| `npm run migrate:dev` | Author a new migration |
+| `npm run serve` / `npm run dev` | Run the modular monolith in one process (`dev` = reload; SWC at runtime) |
+| `npm run build` → `npm start` | Compile to `dist/` (`tsc` + `tsc-alias`), then `node dist/main.js` |
+| `npm run migrate` / `migrate:status` / `migrate:dev` | Apply / inspect / author Prisma migrations |
+| `npm run provision-db` | Give `auric_app` / `auric_system` a login + password |
 | `npm run db:generate` | Regenerate `core/kernel/db/schema.ts` from `prisma/schema/` |
-| `npm run typecheck` | `tsc --noEmit` |
-| `npm test` | Core unit + integration (integration needs a Postgres) |
+| `npm run typecheck` · `lint` · `format` · `format:check` | `tsc --noEmit` · ESLint · Prettier |
+| `npm test` · `npm run test:cov` | Vitest (integration needs a Postgres) |
 
-Web (`cd mizan/web`): `npm run dev` · `npm run build` · `npm run typecheck` · `npm run lint` · `npm test`.
+**Web** (`cd mizan/web`): `dev` · `build` · `typecheck` · `lint` · `format` · `test`.
 
 ### Tests
-
-Core unit tests run anywhere. Integration tests (`core/tests/`) boot the real Core against a throwaway database:
 
 ```bash
 AURIC_TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/auric_test npm test
 ```
 
-They cover the things that must not regress: an unauthorized action is blocked, a permission change takes effect, **tenant A cannot see tenant B**, RLS cannot be bypassed, the outbox delivers exactly once.
+The harness resets the schema as the owner but runs the Core as `auric_app` /
+`auric_system`, so `FORCE ROW LEVEL SECURITY` is exercised. It covers the things
+that must not regress: an unauthorized action is blocked, a permission change
+takes effect, **tenant A cannot see tenant B**, RLS cannot be bypassed, the
+outbox delivers exactly once and dead-letters on exhaustion.
 
 ---
 

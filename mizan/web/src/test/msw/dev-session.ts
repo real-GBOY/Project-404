@@ -16,7 +16,7 @@ export const DEV_USER: AuthUser = {
 };
 
 export const DEV_ORGS: OrganizationMembership[] = [
-  { organizationId: "org_tawfik", slug: "tawfik-partners", name: "Tawfik & Partners", membershipRole: "firm_admin" },
+  { organizationId: "org_tawfik", slug: "tawfik-partners", name: "Mizan", membershipRole: "firm_admin" },
   { organizationId: "org_demo", slug: "demo", name: "Demo Firm", membershipRole: "partner" },
 ];
 

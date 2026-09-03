@@ -44,7 +44,11 @@ export class AppExceptionFilter implements ExceptionFilter {
     const status = e.status ?? e.statusCode ?? 500;
     if (status < 500) {
       reply.status(status).send({
-        error: { code: e.code ?? "request.invalid", message: e.message ?? "Bad request.", correlationId },
+        error: {
+          code: e.code ?? "request.invalid",
+          message: e.message ?? "Bad request.",
+          correlationId,
+        },
       });
       return;
     }

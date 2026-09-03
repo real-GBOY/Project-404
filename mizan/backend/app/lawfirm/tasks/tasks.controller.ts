@@ -1,4 +1,14 @@
-import { Body, Controller, Get, HttpCode, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from "@nestjs/common";
 import { z } from "zod";
 import { CurrentUser, RequirePermission } from "@core/http/decorators.js";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
@@ -51,7 +61,10 @@ export class TasksController {
   @Post()
   @HttpCode(201)
   @RequirePermission("create", "task")
-  create(@Body(ZodBody(createSchema)) body: z.infer<typeof createSchema>, @CurrentUser() user: Principal) {
+  create(
+    @Body(ZodBody(createSchema)) body: z.infer<typeof createSchema>,
+    @CurrentUser() user: Principal,
+  ) {
     return this.service.create(body, user.userId);
   }
 

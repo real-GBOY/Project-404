@@ -36,11 +36,19 @@ export function formatDate(
   }).format(new Date(value));
 }
 
-export function formatDateTime(value: Date | string | number, locale: string, opts: FormatOptions = {}): string {
+export function formatDateTime(
+  value: Date | string | number,
+  locale: string,
+  opts: FormatOptions = {},
+): string {
   return formatDate(value, locale, { dateStyle: "medium", timeStyle: "short", ...opts });
 }
 
-export function formatNumber(value: number, locale: string, opts: Intl.NumberFormatOptions = {}): string {
+export function formatNumber(
+  value: number,
+  locale: string,
+  opts: Intl.NumberFormatOptions = {},
+): string {
   return new Intl.NumberFormat(intlLocale(locale), opts).format(value);
 }
 

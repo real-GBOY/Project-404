@@ -25,5 +25,23 @@ export default defineConfig({
     // schema in beforeAll — they must not run concurrently with each other.
     fileParallelism: false,
     setupFiles: ["core/tests/setup.ts"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "html", "lcov"],
+      reportsDirectory: "coverage",
+      include: ["core/**/*.ts", "mizan/backend/app/**/*.ts"],
+      exclude: [
+        "**/*.test.ts",
+        "**/tests/**",
+        "**/*.module.ts",
+        "**/permissions.ts",
+        "**/permissions/**",
+        "**/events/events.ts",
+        "**/*.events.ts",
+        "core/kernel/db/schema.ts",
+        "core/kernel/db/json.ts",
+        "**/demo/**",
+      ],
+    },
   },
 });

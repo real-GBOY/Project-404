@@ -1,5 +1,5 @@
-import ar from "./ar.json";
-import en from "./en.json";
+import ar from "./ar.json" with { type: "json" };
+import en from "./en.json" with { type: "json" };
 import { languageOf } from "@core/localization/domain/locale.js";
 
 type Bundle = Record<string, unknown>;
@@ -24,7 +24,11 @@ function interpolate(template: string, params: Record<string, string | number>):
  * Translate a key for a locale. Falls back to the other bundled language,
  * then returns the key itself so a missing string is visible, not silent.
  */
-export function t(key: string, locale: string, params: Record<string, string | number> = {}): string {
+export function t(
+  key: string,
+  locale: string,
+  params: Record<string, string | number> = {},
+): string {
   const lang = languageOf(locale);
   const primary = BUNDLES[lang] ?? BUNDLES.ar;
   const found = lookup(primary!, key) ?? lookup(BUNDLES.en!, key) ?? lookup(BUNDLES.ar!, key);

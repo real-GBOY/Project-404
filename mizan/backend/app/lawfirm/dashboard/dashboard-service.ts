@@ -69,15 +69,28 @@ export class DashboardService {
         ]);
 
       const matterInfo = new Map(
-        allMatters.map((m) => [m.id, { number: m.reference, title: m.title, leadLawyerId: m.leadLawyerId, practiceArea: m.practiceArea, court: m.court }]),
+        allMatters.map((m) => [
+          m.id,
+          {
+            number: m.reference,
+            title: m.title,
+            leadLawyerId: m.leadLawyerId,
+            practiceArea: m.practiceArea,
+            court: m.court,
+          },
+        ]),
       );
       const paidByInvoice = new Map<string, number>();
-      for (const p of payments) paidByInvoice.set(p.invoiceId, (paidByInvoice.get(p.invoiceId) ?? 0) + p.amount);
-      const totalsFor = (i: (typeof invoices)[number]) => invoiceTotals(i, paidByInvoice.get(i.id) ?? 0);
+      for (const p of payments)
+        paidByInvoice.set(p.invoiceId, (paidByInvoice.get(p.invoiceId) ?? 0) + p.amount);
+      const totalsFor = (i: (typeof invoices)[number]) =>
+        invoiceTotals(i, paidByInvoice.get(i.id) ?? 0);
 
       const openMatters = allMatters.filter((m) => m.status !== "closed");
       const monthHearings = allHearings.filter((h) => h.scheduledAt >= monthStart);
-      const outstandingInvoices = invoices.filter((i) => i.status === "sent" || i.status === "issued");
+      const outstandingInvoices = invoices.filter(
+        (i) => i.status === "sent" || i.status === "issued",
+      );
       const outstanding = moneyList(
         outstandingInvoices.map((i) => ({ currency: i.currency, amount: totalsFor(i).balance })),
       );
@@ -131,7 +144,8 @@ export class DashboardService {
       );
 
       const areaCounts = new Map<string, number>();
-      for (const m of openMatters) areaCounts.set(m.practiceArea, (areaCounts.get(m.practiceArea) ?? 0) + 1);
+      for (const m of openMatters)
+        areaCounts.set(m.practiceArea, (areaCounts.get(m.practiceArea) ?? 0) + 1);
       const practiceAreas = [...areaCounts.entries()]
         .map(([area, matters]) => ({ area, matters }))
         .sort((a, b) => b.matters - a.matters);
@@ -162,7 +176,10 @@ export class DashboardService {
           })),
       );
 
-      const docStatus = (d: { status: string; category: string }): "awaiting_review" | "expiring" | "in_review" =>
+      const docStatus = (d: {
+        status: string;
+        category: string;
+      }): "awaiting_review" | "expiring" | "in_review" =>
         /power|authority/i.test(d.category)
           ? "expiring"
           : d.status === "draft"
@@ -199,7 +216,10 @@ export class DashboardService {
           closedYtd: allMatters.filter((m) => m.closedAt && m.closedAt >= yearStart).length,
           hearingsThisMonth: monthHearings.length,
           hearingsNext7: allHearings.filter(
-            (h) => h.status === "scheduled" && h.scheduledAt.getTime() >= nowMs && h.scheduledAt.getTime() <= weekOut,
+            (h) =>
+              h.status === "scheduled" &&
+              h.scheduledAt.getTime() >= nowMs &&
+              h.scheduledAt.getTime() <= weekOut,
           ).length,
           adjournedThisMonth: monthHearings.filter((h) => h.status === "adjourned").length,
           unbilledHours: 0,

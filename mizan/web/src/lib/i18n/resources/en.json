@@ -62,7 +62,7 @@
       }
     },
     "shell": {
-      "firm_name": "Tawfik & Partners",
+      "firm_name": "Mizan",
       "primary_nav": "Primary navigation",
       "search": "Search",
       "help": "Help & support",
@@ -138,7 +138,7 @@
     },
     "login": {
       "title": "Sign in to Mizan",
-      "subtitle": "Tawfik & Partners case management",
+      "subtitle": "Mizan case management",
       "submit": "Sign in",
       "forgot_link": "Forgot your password?",
       "errors": {

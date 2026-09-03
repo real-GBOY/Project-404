@@ -9,5 +9,9 @@ import type { PermissionDefinition } from "@app/lawfirm/shared/rbac.js";
  */
 export const settingsPermissions: PermissionDefinition[] = [
   { action: "read", resource: "lawfirm_setting", description: "View firm settings" },
-  { action: "manage", resource: "lawfirm_setting", description: "Edit firm settings, matter types, courts and rates" },
+  {
+    action: "manage",
+    resource: "lawfirm_setting",
+    description: "Edit firm settings, matter types, courts and rates",
+  },
 ];

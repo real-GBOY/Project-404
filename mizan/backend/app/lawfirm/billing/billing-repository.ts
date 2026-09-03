@@ -59,7 +59,9 @@ export class BillingRepository {
   }
 
   // ─── invoices ──────────────────────────────────────────────────────────────
-  async invoices(filter: { status?: InvoiceStatus; clientId?: string } = {}): Promise<InvoiceRow[]> {
+  async invoices(
+    filter: { status?: InvoiceStatus; clientId?: string } = {},
+  ): Promise<InvoiceRow[]> {
     let q = currentExecutor()
       .selectFrom("lawfirm_invoices")
       .selectAll()
@@ -142,7 +144,12 @@ export class BillingRepository {
 
   async updateInvoice(
     id: string,
-    patch: Partial<{ status: InvoiceStatus; issuedAt: Date | null; dueAt: Date | null; vatRate: number }>,
+    patch: Partial<{
+      status: InvoiceStatus;
+      issuedAt: Date | null;
+      dueAt: Date | null;
+      vatRate: number;
+    }>,
   ): Promise<InvoiceRow | null> {
     const set: Record<string, unknown> = {};
     if (patch.status !== undefined) set.status = patch.status;
@@ -265,13 +272,20 @@ export class BillingRepository {
     return new Map(rows.map((r) => [r.id, r.name]));
   }
 
-  async matterInfo(): Promise<Map<string, { title: string; reference: string; leadLawyerId: string }>> {
+  async matterInfo(): Promise<
+    Map<string, { title: string; reference: string; leadLawyerId: string }>
+  > {
     const rows = await currentExecutor()
       .selectFrom("lawfirm_matters")
       .select(["id", "title", "reference", "lead_lawyer_id"])
       .where("organization_id", "=", this.org())
       .execute();
-    return new Map(rows.map((r) => [r.id, { title: r.title, reference: r.reference, leadLawyerId: r.lead_lawyer_id }]));
+    return new Map(
+      rows.map((r) => [
+        r.id,
+        { title: r.title, reference: r.reference, leadLawyerId: r.lead_lawyer_id },
+      ]),
+    );
   }
 
   async clientExists(clientId: string): Promise<boolean> {
@@ -302,7 +316,11 @@ export class BillingRepository {
       .selectFrom("lawfirm_invoice_lines")
       .selectAll()
       .where("organization_id", "=", this.org())
-      .where("invoice_id", "in", rows.map((r) => r.id))
+      .where(
+        "invoice_id",
+        "in",
+        rows.map((r) => r.id),
+      )
       .orderBy("created_at", "asc")
       .execute();
     return rows.map((r) => ({
@@ -317,7 +335,12 @@ export class BillingRepository {
       vatRate: decimal(r.vat_rate),
       lines: lines
         .filter((l) => l.invoice_id === r.id)
-        .map((l) => ({ id: l.id, kind: l.kind, description: l.description, amount: decimal(l.amount) })),
+        .map((l) => ({
+          id: l.id,
+          kind: l.kind,
+          description: l.description,
+          amount: decimal(l.amount),
+        })),
     }));
   }
 

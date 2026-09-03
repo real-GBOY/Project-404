@@ -52,9 +52,7 @@ export class ActivityRepository {
     let q = currentExecutor().selectFrom("lawfirm_activity_entries").selectAll();
     q = q.where((eb) =>
       eb.or(
-        targets.map((t) =>
-          eb.and([eb("target_type", "=", t.type), eb("target_id", "=", t.id)]),
-        ),
+        targets.map((t) => eb.and([eb("target_type", "=", t.type), eb("target_id", "=", t.id)])),
       ),
     );
     const rows = await q.orderBy("at", "desc").execute();
@@ -71,7 +69,10 @@ export class ActivityRepository {
     return rows.map(this.toEntry);
   }
 
-  async search(q: string | undefined, limit = 50): Promise<{ items: ActivityEntry[]; total: number }> {
+  async search(
+    q: string | undefined,
+    limit = 50,
+  ): Promise<{ items: ActivityEntry[]; total: number }> {
     let query = currentExecutor().selectFrom("lawfirm_activity_entries").selectAll();
     if (q) {
       const like = `%${q.toLowerCase()}%`;

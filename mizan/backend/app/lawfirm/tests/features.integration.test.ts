@@ -1,7 +1,15 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { TestingModule } from "@nestjs/testing";
 import { fixedClock } from "@core/kernel/clock.js";
-import { asUser, createMizanTestApp, get, hasTestDb, seedFirm, seedMember, type SeededFirm } from "./helpers.js";
+import {
+  asUser,
+  createMizanTestApp,
+  get,
+  hasTestDb,
+  seedFirm,
+  seedMember,
+  type SeededFirm,
+} from "./helpers.js";
 import { ClientsService } from "@app/lawfirm/clients/clients-service.js";
 import { MattersService } from "@app/lawfirm/matters/matters-service.js";
 import { HearingsService } from "@app/lawfirm/hearings/hearings-service.js";
@@ -30,12 +38,25 @@ suite("lawfirm feature areas", () => {
     firmB = await seedFirm(app, "Firm B");
     await asUser(firm.adminId, firm.orgId, async () => {
       const c = await svc(ClientsService).create(
-        { name: "Al-Nour", type: "company", email: null, phone: null, taxId: null, address: null, notes: null },
+        {
+          name: "Al-Nour",
+          type: "company",
+          email: null,
+          phone: null,
+          taxId: null,
+          address: null,
+          notes: null,
+        },
         firm.adminId,
       );
       clientId = c.id;
       const m = await svc(MattersService).create(
-        { title: "Facility dispute", clientId, practiceArea: "Litigation", court: "Cairo Economic Court" },
+        {
+          title: "Facility dispute",
+          clientId,
+          practiceArea: "Litigation",
+          court: "Cairo Economic Court",
+        },
         firm.adminId,
       );
       matterId = m.id;
@@ -48,7 +69,10 @@ suite("lawfirm feature areas", () => {
 
   it("hearings: schedule → adjourn chains a new scheduled session", async () => {
     const h = await asUser(firm.adminId, firm.orgId, () =>
-      svc(HearingsService).create({ matterId, purpose: "Merits", scheduledAt: "2026-06-10T09:00:00Z" }, firm.adminId),
+      svc(HearingsService).create(
+        { matterId, purpose: "Merits", scheduledAt: "2026-06-10T09:00:00Z" },
+        firm.adminId,
+      ),
     );
     expect(h.matterReference).toMatch(/^TP-/);
     const { adjourned, next } = await asUser(firm.adminId, firm.orgId, () =>
@@ -66,10 +90,15 @@ suite("lawfirm feature areas", () => {
 
   it("tasks: create, toggle complete, and 'mine' filter", async () => {
     const t = await asUser(firm.adminId, firm.orgId, () =>
-      svc(TasksService).create({ title: "Draft memo", matterId, priority: "high", dueAt: "2026-06-02T00:00:00Z" }, firm.adminId),
+      svc(TasksService).create(
+        { title: "Draft memo", matterId, priority: "high", dueAt: "2026-06-02T00:00:00Z" },
+        firm.adminId,
+      ),
     );
     expect(t.overdue).toBe(false);
-    const done = await asUser(firm.adminId, firm.orgId, () => svc(TasksService).toggleComplete(t.id, firm.adminId));
+    const done = await asUser(firm.adminId, firm.orgId, () =>
+      svc(TasksService).toggleComplete(t.id, firm.adminId),
+    );
     expect(done.status).toBe("done");
     expect(done.completedAt).not.toBeNull();
     const mine = await asUser(firm.adminId, firm.orgId, () =>
@@ -80,7 +109,10 @@ suite("lawfirm feature areas", () => {
 
   it("documents: metadata-only upload + summary", async () => {
     const d = await asUser(firm.adminId, firm.orgId, () =>
-      svc(DocumentsService).upload({ name: "Statement.pdf", matterId, category: "Pleading" }, firm.adminId),
+      svc(DocumentsService).upload(
+        { name: "Statement.pdf", matterId, category: "Pleading" },
+        firm.adminId,
+      ),
     );
     expect(d.matterReference).toMatch(/^TP-/);
     expect(d.status).toBe("draft");
@@ -107,7 +139,11 @@ suite("lawfirm feature areas", () => {
 
   it("team: a staff profile carries real workload counts and utilization 0", async () => {
     await asUser(firm.adminId, firm.orgId, () =>
-      get<StaffRepository>(app, StaffRepository).upsert({ userId: firm.adminId, title: "Managing Partner", practiceAreas: ["Litigation"] }),
+      get<StaffRepository>(app, StaffRepository).upsert({
+        userId: firm.adminId,
+        title: "Managing Partner",
+        practiceAreas: ["Litigation"],
+      }),
     );
     const list = await asUser(firm.adminId, firm.orgId, () => svc(TeamService).list());
     const me = list.items.find((m) => m.email.startsWith("admin+"));
@@ -135,7 +171,9 @@ suite("lawfirm feature areas", () => {
     expect(members.items.some((m) => m.role === "lawyer")).toBe(true);
 
     // assignRole is replace, not add
-    await asUser(firm.adminId, firm.orgId, () => svc(AdminService).assignRole(lawyerId, "paralegal", firm.adminId));
+    await asUser(firm.adminId, firm.orgId, () =>
+      svc(AdminService).assignRole(lawyerId, "paralegal", firm.adminId),
+    );
     const after = await asUser(firm.adminId, firm.orgId, () => svc(AdminService).members());
     expect(after.items.find((m) => m.id === lawyerId)!.role).toBe("paralegal");
   });
@@ -157,13 +195,19 @@ suite("lawfirm feature areas", () => {
         })
         .execute();
     });
-    const list = await asUser(firm.adminId, firm.orgId, () => svc(AdminService).notifications(firm.adminId, false));
+    const list = await asUser(firm.adminId, firm.orgId, () =>
+      svc(AdminService).notifications(firm.adminId, false),
+    );
     expect(Array.isArray(list.items)).toBe(true);
     expect(list.items.some((n) => n.title === "Hearing scheduled" && n.readAt === null)).toBe(true);
     expect(list.unreadCount).toBeGreaterThanOrEqual(1);
 
-    await asUser(firm.adminId, firm.orgId, () => svc(AdminService).markAllNotificationsRead(firm.adminId));
-    const after = await asUser(firm.adminId, firm.orgId, () => svc(AdminService).notifications(firm.adminId, false));
+    await asUser(firm.adminId, firm.orgId, () =>
+      svc(AdminService).markAllNotificationsRead(firm.adminId),
+    );
+    const after = await asUser(firm.adminId, firm.orgId, () =>
+      svc(AdminService).notifications(firm.adminId, false),
+    );
     expect(after.unreadCount).toBe(0);
   });
 

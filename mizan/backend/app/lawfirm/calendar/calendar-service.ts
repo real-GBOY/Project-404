@@ -103,7 +103,13 @@ export class CalendarService {
   }
 
   async createEvent(
-    input: { title: string; kind?: string; startAt?: string; endAt?: string | null; matterId?: string | null },
+    input: {
+      title: string;
+      kind?: string;
+      startAt?: string;
+      endAt?: string | null;
+      matterId?: string | null;
+    },
     actorId: string,
   ) {
     const row = await this.uow.transaction(() =>
@@ -146,10 +152,23 @@ export class CalendarService {
       .select(["id", "title", "reference", "lead_lawyer_id"])
       .where("organization_id", "=", requireOrganizationId())
       .execute();
-    return new Map(rows.map((r) => [r.id, { title: r.title, reference: r.reference, leadLawyerId: r.lead_lawyer_id }]));
+    return new Map(
+      rows.map((r) => [
+        r.id,
+        { title: r.title, reference: r.reference, leadLawyerId: r.lead_lawyer_id },
+      ]),
+    );
   }
 
-  private eventRow(e: { id: string; title: string; kind: EventKind; startAt: Date; endAt: Date | null; matterId: string | null; ownerId: string }) {
+  private eventRow(e: {
+    id: string;
+    title: string;
+    kind: EventKind;
+    startAt: Date;
+    endAt: Date | null;
+    matterId: string | null;
+    ownerId: string;
+  }) {
     return {
       id: e.id,
       title: e.title,

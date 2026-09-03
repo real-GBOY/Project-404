@@ -20,10 +20,13 @@ const CORRELATION_HEADER = "x-correlation-id";
 export class RequestContextMiddleware implements NestMiddleware {
   constructor(@Inject(CONFIG) private readonly config: AuricConfig) {}
 
-  use(req: FastifyRequest["raw"] & Partial<FastifyRequest>, res: FastifyReply["raw"], next: () => void): void {
+  use(
+    req: FastifyRequest["raw"] & Partial<FastifyRequest>,
+    res: FastifyReply["raw"],
+    next: () => void,
+  ): void {
     const inbound = req.headers?.[CORRELATION_HEADER];
-    const correlationId =
-      (Array.isArray(inbound) ? inbound[0] : inbound)?.trim() || randomUUID();
+    const correlationId = (Array.isArray(inbound) ? inbound[0] : inbound)?.trim() || randomUUID();
     enterContext({ correlationId });
     res.setHeader(CORRELATION_HEADER, correlationId);
 

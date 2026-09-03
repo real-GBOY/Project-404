@@ -1,6 +1,14 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { TestingModule } from "@nestjs/testing";
-import { asUser, createMizanTestApp, get, hasTestDb, seedFirm, seedMember, type SeededFirm } from "@app/lawfirm/tests/helpers.js";
+import {
+  asUser,
+  createMizanTestApp,
+  get,
+  hasTestDb,
+  seedFirm,
+  seedMember,
+  type SeededFirm,
+} from "@app/lawfirm/tests/helpers.js";
 import { PERMISSION_PROVIDER } from "@core/kernel/tokens.js";
 import type { IPermissionProvider } from "@core/contracts/index.js";
 import { ClientsService } from "@app/lawfirm/clients/clients-service.js";
@@ -26,7 +34,15 @@ suite("lawfirm/clients", () => {
   it("creates a client and reads it back in detail shape", async () => {
     const created = await asUser(firmA.adminId, firmA.orgId, () =>
       svc().create(
-        { name: "Al-Nour Trading Co.", type: "company", taxId: "204-889-113", address: "Mohandessin, Giza", email: null, phone: null, notes: null },
+        {
+          name: "Al-Nour Trading Co.",
+          type: "company",
+          taxId: "204-889-113",
+          address: "Mohandessin, Giza",
+          email: null,
+          phone: null,
+          notes: null,
+        },
         firmA.adminId,
       ),
     );
@@ -44,7 +60,15 @@ suite("lawfirm/clients", () => {
     await asUser(firmA.adminId, firmA.orgId, async () => {
       for (let i = 0; i < 12; i++) {
         await svc().create(
-          { name: `Client ${String(i).padStart(2, "0")}`, type: i % 2 ? "individual" : "company", email: null, phone: null, taxId: null, address: null, notes: null },
+          {
+            name: `Client ${String(i).padStart(2, "0")}`,
+            type: i % 2 ? "individual" : "company",
+            email: null,
+            phone: null,
+            taxId: null,
+            address: null,
+            notes: null,
+          },
           firmA.adminId,
         );
       }
@@ -53,17 +77,34 @@ suite("lawfirm/clients", () => {
     expect(page1.items).toHaveLength(10);
     expect(page1.total).toBeGreaterThanOrEqual(13);
     expect(page1.summary.total).toBe(page1.total);
-    expect(page1.summary.companies + page1.summary.individuals).toBeLessThanOrEqual(page1.summary.total);
+    expect(page1.summary.companies + page1.summary.individuals).toBeLessThanOrEqual(
+      page1.summary.total,
+    );
 
-    const filtered = await asUser(firmA.adminId, firmA.orgId, () => svc().list({ type: "individual" }));
+    const filtered = await asUser(firmA.adminId, firmA.orgId, () =>
+      svc().list({ type: "individual" }),
+    );
     expect(filtered.items.every((c) => c.type === "individual")).toBe(true);
   });
 
   it("archive flips status and records activity", async () => {
     const c = await asUser(firmA.adminId, firmA.orgId, () =>
-      svc().create({ name: "Cedar Holdings", type: "company", email: null, phone: null, taxId: null, address: null, notes: null }, firmA.adminId),
+      svc().create(
+        {
+          name: "Cedar Holdings",
+          type: "company",
+          email: null,
+          phone: null,
+          taxId: null,
+          address: null,
+          notes: null,
+        },
+        firmA.adminId,
+      ),
     );
-    const archived = await asUser(firmA.adminId, firmA.orgId, () => svc().archive(c.id, firmA.adminId));
+    const archived = await asUser(firmA.adminId, firmA.orgId, () =>
+      svc().archive(c.id, firmA.adminId),
+    );
     expect(archived.status).toBe("archived");
     const feed = await asUser(firmA.adminId, firmA.orgId, () => svc().activityFeed(c.id));
     expect(feed.some((e) => e.action === "client.archived")).toBe(true);
@@ -71,10 +112,25 @@ suite("lawfirm/clients", () => {
 
   it("contacts: adding a primary contact demotes the previous primary", async () => {
     const c = await asUser(firmA.adminId, firmA.orgId, () =>
-      svc().create({ name: "Contact Co", type: "company", email: null, phone: null, taxId: null, address: null, notes: null }, firmA.adminId),
+      svc().create(
+        {
+          name: "Contact Co",
+          type: "company",
+          email: null,
+          phone: null,
+          taxId: null,
+          address: null,
+          notes: null,
+        },
+        firmA.adminId,
+      ),
     );
-    await asUser(firmA.adminId, firmA.orgId, () => svc().addContact(c.id, { name: "First", primary: true }));
-    await asUser(firmA.adminId, firmA.orgId, () => svc().addContact(c.id, { name: "Second", primary: true }));
+    await asUser(firmA.adminId, firmA.orgId, () =>
+      svc().addContact(c.id, { name: "First", primary: true }),
+    );
+    await asUser(firmA.adminId, firmA.orgId, () =>
+      svc().addContact(c.id, { name: "Second", primary: true }),
+    );
     const contacts = await asUser(firmA.adminId, firmA.orgId, () => svc().contacts(c.id));
     expect(contacts.filter((k) => k.primary)).toHaveLength(1);
     expect(contacts.find((k) => k.primary)?.name).toBe("Second");
@@ -93,10 +149,23 @@ suite("lawfirm/clients", () => {
 
   it("tenant isolation: firm B cannot see or fetch firm A's clients", async () => {
     const a = await asUser(firmA.adminId, firmA.orgId, () =>
-      svc().create({ name: "A-only", type: "company", email: null, phone: null, taxId: null, address: null, notes: null }, firmA.adminId),
+      svc().create(
+        {
+          name: "A-only",
+          type: "company",
+          email: null,
+          phone: null,
+          taxId: null,
+          address: null,
+          notes: null,
+        },
+        firmA.adminId,
+      ),
     );
     const bList = await asUser(firmB.adminId, firmB.orgId, () => svc().list({}));
     expect(bList.items.some((c) => c.id === a.id)).toBe(false);
-    await expect(asUser(firmB.adminId, firmB.orgId, () => svc().get(a.id))).rejects.toThrow(/not found/i);
+    await expect(asUser(firmB.adminId, firmB.orgId, () => svc().get(a.id))).rejects.toThrow(
+      /not found/i,
+    );
   });
 });

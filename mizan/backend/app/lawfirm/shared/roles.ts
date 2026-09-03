@@ -43,7 +43,8 @@ export const LAWFIRM_ROLES: RoleSeed[] = [
   {
     key: "partner",
     name: "Partner",
-    description: "Full case and finance access; cannot change firm settings or manage staff profiles.",
+    description:
+      "Full case and finance access; cannot change firm settings or manage staff profiles.",
     permissionKeys: [
       ...all.filter((k) => k !== "manage:staff" && k !== "manage:lawfirm_setting"),
       "read:role",

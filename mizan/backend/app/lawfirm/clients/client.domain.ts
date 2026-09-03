@@ -13,7 +13,6 @@ export function registrationLabel(client: {
   type: "company" | "individual";
 }): string {
   return (
-    client.taxId ??
-    (client.type === "individual" ? "National ID on file" : "Registration on file")
+    client.taxId ?? (client.type === "individual" ? "National ID on file" : "Registration on file")
   );
 }
