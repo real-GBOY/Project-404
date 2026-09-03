@@ -1,4 +1,5 @@
 import { Controller, Get, Res } from "@nestjs/common";
+import { ApiTags } from "@nestjs/swagger";
 import type { FastifyReply } from "fastify";
 import { sql } from "kysely";
 import { getDb, unitOfWork } from "@core/kernel/db/db.js";
@@ -14,6 +15,7 @@ import { OutboxWorker } from "@core/events/outbox/outbox-worker.js";
  * backlog spans every tenant, so it is read on the system connection. Both
  * routes are public (no guards) — they're for load balancers and probes.
  */
+@ApiTags("health")
 @Controller("health")
 export class HealthController {
   constructor(

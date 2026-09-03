@@ -1,4 +1,5 @@
 import { Controller, Get, HttpCode, Param, Post, Query, UseGuards } from "@nestjs/common";
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { z } from "zod";
 import { CurrentUser } from "@core/http/decorators.js";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
@@ -21,6 +22,8 @@ const listQuery = z.object({
  * is needed, just a valid session. A person's notifications are visible in any
  * tenant context (account-level rows have a NULL `organization_id`).
  */
+@ApiTags("notifications")
+@ApiBearerAuth("access-token")
 @Controller("notifications")
 @UseGuards(JwtAuthGuard)
 export class NotificationsController {

@@ -1,13 +1,11 @@
-/** @format */
-
-import { Body, Controller, Get, Headers, HttpCode, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Headers, HttpCode, Inject, Post, UseGuards } from "@nestjs/common";
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import type { z } from "zod";
 import { CurrentUser } from "@core/http/decorators.js";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
 import { ZodBody } from "@core/http/zod.pipe.js";
 import type { Principal } from "@core/http/principal.js";
 import { USER_PROVIDER } from "@core/kernel/tokens.js";
-import { Inject } from "@nestjs/common";
 import type { IUserProvider } from "@core/contracts/index.js";
 import { IdentityService } from "@core/identity/application/identity-service.js";
 import {
@@ -20,6 +18,7 @@ import {
   verifyEmailSchema,
 } from "@core/identity/validation/schemas.js";
 
+@ApiTags("identity")
 @Controller("auth")
 export class AuthController {
   constructor(private readonly service: IdentityService) {}
@@ -101,6 +100,8 @@ export class AuthController {
   }
 }
 
+@ApiTags("identity")
+@ApiBearerAuth("access-token")
 @Controller("me")
 @UseGuards(JwtAuthGuard)
 export class MeController {

@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Post, UseGuards } from "@nestjs/common";
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
 import { PermissionGuard } from "@core/http/permission.guard.js";
 import { RequirePermission, CurrentUser } from "@core/http/decorators.js";

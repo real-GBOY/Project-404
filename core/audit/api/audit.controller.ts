@@ -1,4 +1,5 @@
 import { Controller, Get, Query, UseGuards } from "@nestjs/common";
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { z } from "zod";
 import { readInTenant } from "@core/kernel/db/db.js";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
@@ -23,6 +24,8 @@ const querySchema = z.object({
  * Row-level security scopes results to the caller's active tenant — NULL-org
  * (system) rows are only visible to the system role, never here.
  */
+@ApiTags("audit")
+@ApiBearerAuth("access-token")
 @Controller("audit-logs")
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class AuditController {

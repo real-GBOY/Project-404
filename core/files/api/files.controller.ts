@@ -11,6 +11,7 @@ import {
   Res,
   UseGuards,
 } from "@nestjs/common";
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { Forbidden, ValidationError } from "@core/kernel/errors.js";
@@ -31,6 +32,8 @@ const uploadQuery = z.object({ visibility: z.enum(["private", "public"]).optiona
  * their own files; reaching someone else's needs `file:read` / `file:delete`.
  * Multipart parsing is registered on the Fastify adapter in `main.ts`.
  */
+@ApiTags("files")
+@ApiBearerAuth("access-token")
 @Controller("files")
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class FilesController {

@@ -1,5 +1,8 @@
 # AURIC
 
+[![CI](https://github.com/real-GBOY/Project-404/actions/workflows/ci.yml/badge.svg)](https://github.com/real-GBOY/Project-404/actions/workflows/ci.yml)
+&nbsp;·&nbsp; NestJS 11 · Fastify · PostgreSQL + RLS · Kysely · TypeScript · MIT
+
 **A domain-agnostic application foundation, and the first real product built on it.**
 
 This repository is two things with a hard seam between them:
@@ -261,3 +264,11 @@ Every reusable capability carries its **architectural contract** next to the cod
 | [`docs/tenancy.md`](docs/tenancy.md) | the multi-tenancy design + rollout |
 | [`docs/integration-guide.md`](docs/integration-guide.md) | building a client project on Core |
 | [`docs/conventions.md`](docs/conventions.md) | code conventions |
+| [`docs/engineering-overview.md`](docs/engineering-overview.md) | one-file synthesis of the whole system |
+| [`docs/database-erd.md`](docs/database-erd.md) | the schema as a Mermaid ER diagram |
+
+---
+
+## License
+
+MIT — see [`LICENSE`](LICENSE).

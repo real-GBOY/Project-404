@@ -9,6 +9,7 @@ import {
   Post,
   UseGuards,
 } from "@nestjs/common";
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import type { z } from "zod";
 import { Forbidden } from "@core/kernel/errors.js";
 import { CurrentUser, RequirePermission } from "@core/http/decorators.js";
@@ -29,6 +30,8 @@ import {
  * caller's *active* tenant — `assertActive` rejects a `:id` that isn't it (RLS
  * is the backstop, this is the clean 403).
  */
+@ApiTags("organizations")
+@ApiBearerAuth("access-token")
 @Controller("organizations")
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class OrganizationsController {
