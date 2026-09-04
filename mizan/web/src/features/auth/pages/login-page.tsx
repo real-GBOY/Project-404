@@ -25,15 +25,7 @@ export function LoginPage() {
     handleSubmit,
     setError,
     formState: { errors, isSubmitting },
-  } = useForm<LoginValues>({
-    resolver: zodResolver(loginSchema),
-    // Demo deployments set VITE_DEMO_* so the form arrives pre-filled and a
-    // visitor can sign straight in. Unset in a normal build → empty fields.
-    defaultValues: {
-      email: import.meta.env.VITE_DEMO_EMAIL ?? "",
-      password: import.meta.env.VITE_DEMO_PASSWORD ?? "",
-    },
-  });
+  } = useForm<LoginValues>({ resolver: zodResolver(loginSchema) });
 
   async function onSubmit(values: LoginValues) {
     setFormError(null);

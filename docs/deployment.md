@@ -22,7 +22,7 @@ push to main
                                                                 │
   └─ deploy job                                                 ◄┘
        1. build backend  → dist/           (tsc; Prisma staged inside dist/)
-       2. build web       → mizan/web/dist/ (vite; VITE_DEMO_* baked in)
+       2. build web       → mizan/web/dist/ (vite)
        3. rsync (via `sudo rsync` on the box, --delete on build output):
             dist/            → $VPS_BACKEND_DIR/dist/
             package*.json    → $VPS_BACKEND_DIR/
@@ -62,7 +62,6 @@ ssh-keyscan -H 13.220.157.42        # → value for VPS_SSH_KNOWN_HOSTS
 | `VPS_HOST` | yes | `13.220.157.42` |
 | `VPS_USER` | yes | `ubuntu` |
 | `VPS_SSH_KNOWN_HOSTS` | recommended | `ssh-keyscan -H 13.220.157.42` output. If unset, CI trusts the host on first contact (TOFU) with a warning. |
-| `VITE_DEMO_PASSWORD` | optional | pre-fills the login form on the deployed site (demo instances only) |
 
 ### 3. Repo variables — same page → *Variables* (all optional; defaults match the current box)
 
@@ -72,7 +71,6 @@ ssh-keyscan -H 13.220.157.42        # → value for VPS_SSH_KNOWN_HOSTS
 | `VPS_WEB_ROOT` | `/var/www/mizan` | nginx `root` for the SPA |
 | `VPS_SERVICE` | `mizan` | systemd unit (`mizan.service`) |
 | `VPS_PORT` | `3000` | `AURIC_PORT` the service listens on |
-| `VITE_DEMO_EMAIL` | — | pairs with `VITE_DEMO_PASSWORD` |
 
 ### 4. On the VPS — let the deploy user drive rsync + the release as root
 
@@ -131,9 +129,9 @@ For an emergency without waiting on CI, build that commit locally and run the
 manual steps above. **Migrations are forward-only** — reverting a commit that
 added a migration does not undo the schema change; write a new migration for that.
 
-## Demo instance
+## Demo data
 
-The current deployment sets `MIZAN_SEED_DEMO=true` (seeds org "Mizan" + 7 users;
-login `amira.tawfik@tawfikpartners.eg` / `demo-password-2026`) and is built with
-`VITE_DEMO_EMAIL` / `VITE_DEMO_PASSWORD` so the sign-in form arrives pre-filled.
-Remove the env var, the build args, and wipe the demo data before real use.
+The current deployment sets `MIZAN_SEED_DEMO=true` on the backend (seeds org
+"Mizan" + 7 users; login `amira.tawfik@tawfikpartners.eg` / `demo-password-2026`).
+Visitors land on the normal login screen and must sign in. Unset
+`MIZAN_SEED_DEMO` and wipe the demo data before real use.

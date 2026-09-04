@@ -103,9 +103,9 @@ jobs:
   # architecture, and restarts the service (migrations run on boot).
   #
   # Required repo secrets:  VPS_SSH_KEY  VPS_HOST  VPS_USER
-  # Optional repo secrets:  VPS_SSH_KNOWN_HOSTS  VITE_DEMO_PASSWORD
+  # Optional repo secrets:  VPS_SSH_KNOWN_HOSTS
   # Optional repo variables: VPS_BACKEND_DIR (/opt/mizan)  VPS_WEB_ROOT (/var/www/mizan)
-  #                          VPS_SERVICE (mizan)  VPS_PORT (3000)  VITE_DEMO_EMAIL
+  #                          VPS_SERVICE (mizan)  VPS_PORT (3000)
   # See docs/deployment.md.
   deploy:
     name: deploy to VPS
@@ -136,9 +136,6 @@ jobs:
 
       - name: Build web bundle
         working-directory: mizan/web
-        env:
-          VITE_DEMO_EMAIL: ${{ vars.VITE_DEMO_EMAIL }}
-          VITE_DEMO_PASSWORD: ${{ secrets.VITE_DEMO_PASSWORD }}
         run: |
           npm ci
           npm run build
