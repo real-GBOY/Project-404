@@ -3,6 +3,9 @@ import { authEvents } from "@/lib/auth/auth-events";
 import { ApiError } from "./api-error";
 
 const BASE = import.meta.env.VITE_API_BASE ?? "/api";
+/** An absolute base (Vercel → VPS) must survive into the request URL; a relative
+ *  one (`/api` — dev proxy, tests, the VPS-served bundle) stays same-origin. */
+const BASE_IS_ABSOLUTE = /^https?:\/\//i.test(BASE);
 
 type QueryValue = string | number | boolean | null | undefined;
 
@@ -27,7 +30,7 @@ function buildUrl(path: string, query?: RequestOptions["query"]): string {
       }
     }
   }
-  return url.pathname + url.search;
+  return BASE_IS_ABSOLUTE ? url.href : url.pathname + url.search;
 }
 
 async function parseError(res: Response): Promise<ApiError> {

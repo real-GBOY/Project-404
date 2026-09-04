@@ -30,6 +30,23 @@ async function main() {
   app.setGlobalPrefix("api");
   app.enableShutdownHooks();
 
+  // Cross-site access for a separately-hosted frontend (e.g. Vercel). Off unless
+  // AURIC_CORS_ORIGINS is set — the default deployment serves the SPA same-origin
+  // behind nginx. Auth is Bearer-token only, so no credentialed CORS.
+  if (config.corsOrigins.length > 0) {
+    // An `*.example.com` entry becomes a host-suffix RegExp (Vercel previews);
+    // anything else is matched literally.
+    const origin = config.corsOrigins.map((o) =>
+      o.startsWith("*.") ? new RegExp(`${o.slice(1).replace(/[.]/g, "\\$&")}$`) : o,
+    );
+    app.enableCors({
+      origin,
+      methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+      allowedHeaders: ["authorization", "content-type"],
+      maxAge: 86_400,
+    });
+  }
+
   setupOpenApi(app, {
     title: `${APP_NAME} API`,
     version: APP_VERSION,

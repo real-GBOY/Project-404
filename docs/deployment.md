@@ -1,14 +1,48 @@
 # Deployment
 
 Mizan runs as a single Node process on one small VPS — bare **systemd + nginx +
-Postgres**, no Docker. `nginx` serves the web bundle statically and reverse-proxies
-`/api` to the Node process. Secrets live only in `$VPS_BACKEND_DIR/.env` on the box.
+Postgres**, no Docker. The **API** lives on the box; the **frontend is hosted on
+Vercel** and calls the API directly over HTTPS. Secrets live only in
+`$VPS_BACKEND_DIR/.env` on the box.
 
-**Current box:** `http://13.220.157.42` — AWS EC2 `t4g` (ARM64), Ubuntu 20.04,
-921 MB RAM + 2 GB swap. SSH `ubuntu@13.220.157.42`. Service `mizan.service` runs
-as `User=auric`, `WorkingDirectory=/opt/mizan`, `ExecStart=… node dist/main.js`.
-nginx serves `/var/www/mizan`, proxies `/api` → `127.0.0.1:3000`. Postgres 12,
+**Current box (API):** `https://13-220-157-42.sslip.io` (and `http://13.220.157.42`)
+— AWS EC2 `t4g` (ARM64), Ubuntu 20.04, 921 MB RAM + 2 GB swap. SSH
+`ubuntu@13.220.157.42`. Service `mizan.service` runs as `User=auric`,
+`WorkingDirectory=/opt/mizan`, `ExecStart=… node dist/main.js`. nginx serves
+`/var/www/mizan` (a fallback copy of the SPA), proxies `/api` → `127.0.0.1:3000`,
+and terminates TLS on 443 (Let's Encrypt via the `sslip.io` hostname). Postgres 12,
 DB `auric`, localhost only, RLS roles `auric_app` / `auric_system`.
+
+## Frontend (Vercel)
+
+The SPA (`mizan/web`) is deployed on Vercel — real HTTPS + CDN + per-PR preview
+URLs — and is the primary URL users visit. `nginx` on the VPS still serves a copy
+at the bare IP as a fallback, but that one is not TLS-terminated on the raw IP and
+mobile browsers that force HTTPS can't reach it.
+
+- **Project:** `mizan-web`, **Root Directory `mizan/web`** (the monorepo's web
+  `package-lock.json` lives there, so the build is self-contained). Framework
+  preset Vite; config in [`mizan/web/vercel.json`](../mizan/web/vercel.json).
+- **Environment variables** (set for *Production* and *Preview*):
+
+  | var | value | purpose |
+  |---|---|---|
+  | `VITE_API_BASE` | `https://13-220-157-42.sslip.io/api` | absolute API base — baked into the bundle at build time |
+  | `VITE_DEMO_EMAIL` | `mahmoud.nayel@tawfikpartners.eg` | pre-fills the sign-in form (demo) |
+  | `VITE_DEMO_PASSWORD` | `demo-password-2026` | pairs with the above |
+
+- **CORS:** the browser now calls the API cross-site, so the backend must
+  allow-list the Vercel origins — see `AURIC_CORS_ORIGINS` below.
+- **Auto-deploy:** Vercel's Git integration builds every push to `main` (prod)
+  and every PR (preview). No GitHub Actions changes — the `deploy` job below
+  still ships the fallback copy to the VPS.
+
+### API base URL resolution
+
+`mizan/web/src/lib/api/http-client.ts` reads `VITE_API_BASE` (default `/api`). A
+value starting `http(s)://` is treated as absolute and kept intact in the request
+URL; a relative value stays same-origin (dev proxy, tests, the VPS fallback
+bundle). `src/lib/export.ts` uses the same variable for binary downloads.
 
 ## Continuous deployment
 
@@ -106,6 +140,38 @@ Also ensure:
   npm ci --omit=dev --foreground-scripts --unsafe-perm
   npm rebuild argon2 prisma @prisma/engines
   ```
+
+### 5. TLS + CORS (for the Vercel frontend)
+
+The API needs HTTPS (the Vercel SPA is served over HTTPS — a plain-HTTP API is
+blocked as mixed content) and must allow the Vercel origin.
+
+**TLS** — via a free `sslip.io` hostname, no domain purchase, no DNS to manage.
+`13-220-157-42.sslip.io` resolves to `13.220.157.42`:
+
+```bash
+sudo apt-get update && sudo apt-get install -y certbot python3-certbot-nginx
+# ensure the port-80 server block in /etc/nginx/sites-available/mizan carries
+#   server_name 13-220-157-42.sslip.io;
+sudo nginx -t && sudo systemctl reload nginx
+sudo certbot --nginx -d 13-220-157-42.sslip.io --non-interactive --agree-tos \
+  -m <admin-email> --redirect      # installs the cert + the renewal timer
+```
+
+**CORS** — add the Vercel origins to `$VPS_BACKEND_DIR/.env` (mode 600) and
+restart:
+
+```
+AURIC_CORS_ORIGINS=https://<prod-alias>.vercel.app,*.vercel.app
+```
+```bash
+sudo systemctl restart mizan
+curl -si https://13-220-157-42.sslip.io/api/health   # 200, valid chain
+```
+
+`AURIC_CORS_ORIGINS` is comma-separated; an entry starting `*.` is a host-suffix
+match (covers Vercel's per-commit preview URLs). Empty/unset → CORS stays off
+(the default same-origin deployment). Handled in `main.ts` + `core/kernel/config.ts`.
 
 ## Manual deploy
 

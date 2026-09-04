@@ -37,6 +37,20 @@ const schema = z.object({
         .filter(Boolean),
     ),
 
+  // Browser origins allowed to call the API cross-site (comma-separated). Empty
+  // (the default) leaves CORS off — the frontend is same-origin behind nginx.
+  // An entry beginning `*.` is a suffix match (e.g. `*.vercel.app` for Vercel
+  // preview deployments). See docs/deployment.md.
+  corsOrigins: z
+    .string()
+    .default("")
+    .transform((s: string) =>
+      s
+        .split(",")
+        .map((x: string) => x.trim())
+        .filter(Boolean),
+    ),
+
   fileStorageDriver: z.enum(["local"]).default("local"),
   fileStoragePath: z.string().default("./storage/files"),
 
@@ -63,6 +77,7 @@ function readEnv(): AuricConfig {
     jwtSecret: process.env.AURIC_JWT_SECRET,
     accessTokenTtl: process.env.AURIC_ACCESS_TOKEN_TTL,
     refreshTokenTtl: process.env.AURIC_REFRESH_TOKEN_TTL,
+    corsOrigins: process.env.AURIC_CORS_ORIGINS,
     defaultLocale: process.env.AURIC_DEFAULT_LOCALE,
     supportedLocales: process.env.AURIC_SUPPORTED_LOCALES,
     fileStorageDriver: process.env.AURIC_FILE_STORAGE_DRIVER,
