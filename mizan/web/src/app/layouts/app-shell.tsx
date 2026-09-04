@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { NAV_ITEMS } from "@/app/router/nav";
 import { RouteErrorBoundary } from "@/app/router/route-error-boundary";
@@ -17,7 +17,11 @@ import { UserMenu } from "@/components/navigation/user-menu";
 function Brand() {
   const { t } = useTranslation("common");
   return (
-    <div className="flex items-center gap-3 border-b border-divider-brand px-[18px] pb-4 pt-[18px]">
+    <Link
+      to="/"
+      aria-label={t("shell.home")}
+      className="flex items-center gap-3 border-b border-divider-brand px-[18px] pb-4 pt-[18px] transition-colors hover:bg-surface-subtle focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
+    >
       <span className="flex size-[34px] flex-none items-center justify-center rounded-group bg-primary">
         <MizanMark size={22} className="text-primary-foreground" />
       </span>
@@ -29,7 +33,7 @@ function Brand() {
           {t("shell.firm_name")}
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
