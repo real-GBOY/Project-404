@@ -158,6 +158,35 @@ export class DashboardService {
       const collectedTotal = paidYtd.reduce((s, p) => s + p.amount, 0);
       const collectionRate = billedTotal ? Math.round((collectedTotal / billedTotal) * 100) : 0;
 
+      // Billing vs collections — trailing 6 calendar months (oldest → newest),
+      // EGP only (the chart is single-scale, single-currency). Stays empty until
+      // the firm has issued an invoice or taken a payment.
+      const CHART_CURRENCY = "EGP";
+      const series =
+        invoices.some((i) => i.issuedAt) || payments.length > 0
+          ? Array.from({ length: 6 }, (_, i) => {
+              const from = new Date(
+                Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (5 - i), 1),
+              );
+              const to = new Date(Date.UTC(from.getUTCFullYear(), from.getUTCMonth() + 1, 1));
+              const within = (d: Date) => d >= from && d < to;
+              const billed = invoices
+                .filter(
+                  (iv) => iv.currency === CHART_CURRENCY && iv.issuedAt && within(iv.issuedAt),
+                )
+                .reduce((s, iv) => s + totalsFor(iv).total, 0);
+              const collected = payments
+                .filter((p) => p.currency === CHART_CURRENCY && within(p.receivedAt))
+                .reduce((s, p) => s + p.amount, 0);
+              return {
+                month: from.toISOString().slice(0, 7),
+                billed: Math.round(billed),
+                collected: Math.round(collected),
+                currency: CHART_CURRENCY,
+              };
+            })
+          : [];
+
       const priorityFor = (p: string): "low" | "normal" | "high" =>
         p === "high" ? "high" : p === "low" ? "low" : "normal";
 
@@ -236,7 +265,7 @@ export class DashboardService {
           billedYtd: moneyList(billedYtdEntries),
           collectedYtd: moneyList(paidYtd.map((p) => ({ currency: p.currency, amount: p.amount }))),
           collectionRate,
-          series: [],
+          series,
         },
         myTasks,
         reviewDocuments,

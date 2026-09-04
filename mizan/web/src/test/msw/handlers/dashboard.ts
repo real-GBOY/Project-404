@@ -144,14 +144,26 @@ export const dashboardHandlers = [
       ? Math.round((collectedTotal / billedTotal) * 100)
       : 0;
 
+    // Trailing 6 calendar months (oldest → newest), EGP only — matches
+    // DashboardService.data()'s `billing.series`.
+    const nowDate = new Date(now);
     const series = Array.from({ length: 6 }, (_, i) => {
-      const d = new Date(now);
-      d.setMonth(d.getMonth() - (5 - i), 1);
-      const base = 320_000 + i * 28_000;
+      const from = new Date(Date.UTC(nowDate.getUTCFullYear(), nowDate.getUTCMonth() - (5 - i), 1));
+      const to = new Date(Date.UTC(from.getUTCFullYear(), from.getUTCMonth() + 1, 1));
+      const within = (value: string) => {
+        const t = new Date(value);
+        return t >= from && t < to;
+      };
+      const billed = db.invoices
+        .filter((inv) => inv.currency === "EGP" && inv.issuedAt && within(inv.issuedAt))
+        .reduce((s, inv) => s + invoiceTotals(inv).total, 0);
+      const collected = db.payments
+        .filter((p) => p.currency === "EGP" && within(p.receivedAt))
+        .reduce((s, p) => s + p.amount, 0);
       return {
-        month: d.toISOString().slice(0, 7),
-        billed: base + (i % 2 === 0 ? 40_000 : -10_000),
-        collected: Math.round(base * (0.66 + i * 0.03)),
+        month: from.toISOString().slice(0, 7),
+        billed: Math.round(billed),
+        collected: Math.round(collected),
         currency: "EGP",
       };
     });

@@ -351,12 +351,19 @@ const invoices: InvoiceRow[] = [
   { id: "inv_4", number: "INV-2026-0141", clientId: "cli_5", matterId: "mat_3", status: "draft", currency: "EGP", issuedAt: null, dueAt: null, vatRate: 0.14, lines: [ { id: "il_6", kind: "fee", description: "Contract review", amount: 45_000 } ] },
   { id: "inv_5", number: "INV-2026-0142", clientId: "cli_1", matterId: "mat_6", status: "paid", currency: "EGP", issuedAt: iso(-60), dueAt: iso(-30), vatRate: 0.14, lines: [ { id: "il_7", kind: "fee", description: "Tax appeal — preparation", amount: 150_000 } ] },
   { id: "inv_6", number: "INV-2026-0119", clientId: "cli_2", matterId: "mat_8", status: "paid", currency: "EGP", issuedAt: iso(-80), dueAt: iso(-50), vatRate: 0.14, lines: [ { id: "il_8", kind: "fee", description: "Regulatory advisory", amount: 95_000 } ] },
+  { id: "inv_7", number: "INV-2026-0092", clientId: "cli_2", matterId: "mat_8", status: "paid", currency: "EGP", issuedAt: iso(-150), dueAt: iso(-120), vatRate: 0.14, lines: [ { id: "il_9", kind: "fee", description: "Regulatory advisory — Q1 retainer", amount: 130_000 } ] },
+  { id: "inv_8", number: "INV-2026-0104", clientId: "cli_3", matterId: "mat_2", status: "sent", currency: "EGP", issuedAt: iso(-108), dueAt: iso(-78), vatRate: 0.14, lines: [ { id: "il_10", kind: "fee", description: "Due diligence — scoping", amount: 90_000 }, { id: "il_11", kind: "disbursement", description: "Company registry extracts", amount: 2_000 } ] },
+  { id: "inv_9", number: "INV-2026-0146", clientId: "cli_1", matterId: "mat_1", status: "sent", currency: "EGP", issuedAt: iso(-3), dueAt: iso(27), vatRate: 0.14, lines: [ { id: "il_12", kind: "fee", description: "Professional fees — merits hearing", amount: 210_000 } ] },
 ];
 
 const payments: PaymentRow[] = [
   { id: "pay_1", invoiceId: "inv_5", amount: 171_000, currency: "EGP", method: "bank_transfer", receivedAt: iso(-28), reference: "TRF-99120" },
   { id: "pay_2", invoiceId: "inv_6", amount: 108_300, currency: "EGP", method: "bank_transfer", receivedAt: iso(-47), reference: "TRF-98004" },
   { id: "pay_3", invoiceId: "inv_1", amount: 100_000, currency: "EGP", method: "cheque", receivedAt: iso(-8), reference: "CHQ-4471" },
+  { id: "pay_4", invoiceId: "inv_7", amount: 148_200, currency: "EGP", method: "bank_transfer", receivedAt: iso(-150), reference: "TRF-96110" },
+  { id: "pay_5", invoiceId: "inv_8", amount: 60_000, currency: "EGP", method: "bank_transfer", receivedAt: iso(-100), reference: "TRF-97330" },
+  { id: "pay_6", invoiceId: "inv_2", amount: 90_000, currency: "EGP", method: "bank_transfer", receivedAt: iso(-92), reference: "TRF-97540" },
+  { id: "pay_7", invoiceId: "inv_9", amount: 120_000, currency: "EGP", method: "cheque", receivedAt: iso(-1), reference: "CHQ-4488" },
 ];
 
 const expenses: ExpenseRow[] = [

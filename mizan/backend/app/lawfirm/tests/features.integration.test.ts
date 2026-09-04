@@ -18,6 +18,7 @@ import { DocumentsService } from "@app/lawfirm/documents/documents-service.js";
 import { CalendarService } from "@app/lawfirm/calendar/calendar-service.js";
 import { TeamService } from "@app/lawfirm/staff/team-service.js";
 import { DashboardService } from "@app/lawfirm/dashboard/dashboard-service.js";
+import { BillingService } from "@app/lawfirm/billing/billing-service.js";
 import { AdminService } from "@app/lawfirm/admin/admin-service.js";
 import { StaffRepository } from "@app/lawfirm/staff/staff-repository.js";
 
@@ -160,6 +161,45 @@ suite("lawfirm feature areas", () => {
     expect(data.kpis.unbilledValue).toEqual([]);
     expect(data.billing.series).toEqual([]);
     expect(Array.isArray(data.recentActivity)).toBe(true);
+  });
+
+  it("dashboard: billing series spans the trailing 6 months once there is activity", async () => {
+    const inv = await asUser(firm.adminId, firm.orgId, () =>
+      svc(BillingService).createInvoice(
+        {
+          clientId,
+          currency: "EGP",
+          vatRate: 0.14,
+          lines: [{ kind: "fee", description: "Fees", amount: 100_000 }],
+        },
+        firm.adminId,
+      ),
+    );
+    await asUser(firm.adminId, firm.orgId, () =>
+      svc(BillingService).invoiceAction(inv.id, "issue", firm.adminId),
+    );
+    await asUser(firm.adminId, firm.orgId, () =>
+      svc(BillingService).recordPayment(
+        { invoiceId: inv.id, amount: 50_000, currency: "EGP", method: "bank_transfer" },
+        firm.adminId,
+      ),
+    );
+
+    const data = await asUser(firm.adminId, firm.orgId, () => svc(DashboardService).data());
+    expect(data.billing.series).toHaveLength(6);
+    expect(data.billing.series.map((p) => p.month)).toEqual([
+      "2026-01",
+      "2026-02",
+      "2026-03",
+      "2026-04",
+      "2026-05",
+      "2026-06",
+    ]);
+    const current = data.billing.series.at(-1)!;
+    expect(current).toMatchObject({ month: "2026-06", currency: "EGP", billed: 114_000, collected: 50_000 });
+    expect(data.billing.series.slice(0, 5).every((p) => p.billed === 0 && p.collected === 0)).toBe(
+      true,
+    );
   });
 
   it("admin adapter: roles carry a permission count; members carry a role key", async () => {
