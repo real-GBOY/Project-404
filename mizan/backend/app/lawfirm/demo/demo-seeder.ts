@@ -56,7 +56,33 @@ export class DemoSeeder {
       ),
     );
     if (already) {
-      log.info("demo data already present — skipping");
+      // The dataset is seeded once, but the demo admin's identity in
+      // `demo-data.ts` is authoritative — reconcile it so a rename in code
+      // reaches an already-seeded deployment on the next boot.
+      const admin = DEMO_TEAM.find((t) => t.key === "usr_dev")!;
+      await runAsSystem(() =>
+        unitOfWork.transaction(async () => {
+          const ex = currentExecutor();
+          const owner = await ex
+            .selectFrom("organization_members")
+            .select("user_id")
+            .where("organization_id", "=", already.id)
+            .where("membership_role", "=", "owner")
+            .executeTakeFirst();
+          if (owner) {
+            await ex
+              .updateTable("users")
+              .set({
+                display_name: admin.name,
+                email: admin.email,
+                email_normalized: admin.email,
+              })
+              .where("id", "=", owner.user_id)
+              .execute();
+          }
+        }),
+      );
+      log.info("demo data already present — reconciled the admin identity, skipping the rest");
       return;
     }
 
