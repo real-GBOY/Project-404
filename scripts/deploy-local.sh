@@ -45,10 +45,10 @@ echo "→ releasing on the box"
 $SSH "set -e
   sudo mkdir -p '$BACKEND_DIR/dist' '$WEB_ROOT'
   sudo find '$BACKEND_DIR/dist' -mindepth 1 -delete
-  sudo tar -xzf /tmp/mizan-backend.tgz -C '$BACKEND_DIR/dist'
+  sudo tar --no-same-owner -xzf /tmp/mizan-backend.tgz -C '$BACKEND_DIR/dist'
   sudo cp /tmp/package.json /tmp/package-lock.json /tmp/deploy-vps.sh '$BACKEND_DIR/'
   sudo find '$WEB_ROOT' -mindepth 1 -delete
-  sudo tar -xzf /tmp/mizan-web.tgz -C '$WEB_ROOT'
+  sudo tar --no-same-owner -xzf /tmp/mizan-web.tgz -C '$WEB_ROOT'
   rm -f /tmp/mizan-backend.tgz /tmp/mizan-web.tgz /tmp/package.json /tmp/package-lock.json /tmp/deploy-vps.sh
   sudo env BACKEND_DIR='$BACKEND_DIR' SERVICE='$SERVICE' PORT='$PORT' bash '$BACKEND_DIR/deploy-vps.sh'
   sudo systemctl reload nginx || true
