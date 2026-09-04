@@ -165,9 +165,7 @@ export class DashboardService {
       const series =
         invoices.some((i) => i.issuedAt) || payments.length > 0
           ? Array.from({ length: 6 }, (_, i) => {
-              const from = new Date(
-                Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (5 - i), 1),
-              );
+              const from = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (5 - i), 1));
               const to = new Date(Date.UTC(from.getUTCFullYear(), from.getUTCMonth() + 1, 1));
               const within = (d: Date) => d >= from && d < to;
               const billed = invoices

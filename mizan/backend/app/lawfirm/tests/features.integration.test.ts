@@ -235,7 +235,12 @@ suite("lawfirm feature areas", () => {
       "2026-06",
     ]);
     const current = data.billing.series.at(-1)!;
-    expect(current).toMatchObject({ month: "2026-06", currency: "EGP", billed: 114_000, collected: 50_000 });
+    expect(current).toMatchObject({
+      month: "2026-06",
+      currency: "EGP",
+      billed: 114_000,
+      collected: 50_000,
+    });
     expect(data.billing.series.slice(0, 5).every((p) => p.billed === 0 && p.collected === 0)).toBe(
       true,
     );
