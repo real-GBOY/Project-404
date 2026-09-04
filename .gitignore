@@ -18,3 +18,9 @@ coverage/
 .DS_Store
 .idea/
 *.swp
+
+# secrets / deploy keys — never commit
+/me
+*.pem
+id_rsa
+id_ed25519

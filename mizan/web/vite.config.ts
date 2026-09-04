@@ -11,23 +11,11 @@ export default defineConfig({
     },
   },
   build: {
-    rollupOptions: {
-      output: {
-        // Split the vendor deps so they cache independently of app code.
-        manualChunks(id) {
-          if (!id.includes("node_modules")) return;
-          if (id.includes("react-dom") || id.includes("/react/") || id.includes("scheduler"))
-            return "react";
-          if (id.includes("@radix-ui") || id.includes("@floating-ui") || id.includes("aria-hidden"))
-            return "radix";
-          if (id.includes("@tanstack")) return "query";
-          if (id.includes("i18next")) return "i18n";
-          if (id.includes("zod") || id.includes("hookform") || id.includes("react-hook-form"))
-            return "forms";
-          return "vendor";
-        },
-      },
-    },
+    // Let Rollup derive chunks automatically. A hand-rolled `manualChunks` that
+    // split `react` from its dependents produced a load-order bug in the
+    // production bundle ("Cannot read properties of undefined (reading
+    // 'createContext')") — the vendor chunk evaluated before React initialised.
+    rollupOptions: {},
   },
   server: {
     port: 4300,
