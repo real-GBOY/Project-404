@@ -23,12 +23,13 @@ push to main
   └─ deploy job                                                 ◄┘
        1. build backend  → dist/           (tsc; Prisma staged inside dist/)
        2. build web       → mizan/web/dist/ (vite)
-       3. rsync (via `sudo rsync` on the box, --delete on build output):
+       3. ship two tar streams over ssh (the box has no rsync), then swap the
+          directory contents with `sudo` + coreutils (--delete equivalent):
             dist/            → $VPS_BACKEND_DIR/dist/
             package*.json    → $VPS_BACKEND_DIR/
             deploy-vps.sh    → $VPS_BACKEND_DIR/
             mizan/web/dist/  → $VPS_WEB_ROOT/
-       4. ssh vps  →  sudo … scripts/deploy-vps.sh
+       4. ssh vps  →  sudo bash $VPS_BACKEND_DIR/deploy-vps.sh
             · npm ci --omit=dev   (only when package-lock.json changed; runs the
               native install scripts for argon2 / Prisma and verifies argon2 loads)
             · systemctl restart $VPS_SERVICE
@@ -72,22 +73,23 @@ ssh-keyscan -H 13.220.157.42        # → value for VPS_SSH_KNOWN_HOSTS
 | `VPS_SERVICE` | `mizan` | systemd unit (`mizan.service`) |
 | `VPS_PORT` | `3000` | `AURIC_PORT` the service listens on |
 
-### 4. On the VPS — let the deploy user drive rsync + the release as root
+### 4. On the VPS
 
 The login user (`ubuntu`) differs from the service user (`auric`), so the deploy
-runs the remote `rsync` and `deploy-vps.sh` through `sudo`:
+places files and runs `deploy-vps.sh` through `sudo`. The AWS Ubuntu image's
+default `ubuntu` user already has full passwordless sudo, which is all this
+needs. If yours is locked down, allow these:
 
 ```
 # /etc/sudoers.d/mizan-deploy   (visudo -f, mode 0440)
-ubuntu ALL=(root) NOPASSWD: /usr/bin/rsync, /bin/bash /opt/mizan/deploy-vps.sh
+ubuntu ALL=(root) NOPASSWD: /bin/mkdir, /usr/bin/find, /bin/tar, /bin/cp, \
+  /bin/bash /opt/mizan/deploy-vps.sh, /bin/systemctl reload nginx
 ```
 
 `deploy-vps.sh` runs `npm`, `systemctl restart mizan`, `systemctl status`,
 `journalctl -u mizan` and `curl` — all as root once bash is invoked, so no
 further entries are needed. `SERVICE` / `PORT` reach the script through
-`/opt/mizan/deploy.env` (written by CI), not the sudo command line, so the rule
-above can stay exact. If you change `VPS_BACKEND_DIR`, update the path in the
-rule to match.
+`/opt/mizan/deploy.env` (written by CI), not a sudo command line.
 
 Also ensure:
 
@@ -114,9 +116,10 @@ bash scripts/deploy-local.sh
 ```
 
 It uses `me` as the SSH key and `ubuntu@13.220.157.42` by default; override with
-`SSH_KEY=… SSH_USER=… SSH_HOST=… bash scripts/deploy-local.sh`. You may be asked
-for the sudo password on the box. `scripts/deploy-vps.sh` (run on the box, also
-by CI) is idempotent and defaults to `/opt/mizan` / `mizan` / `3000`.
+`SSH_KEY=… SSH_USER=… SSH_HOST=… bash scripts/deploy-local.sh`. Pass `SKIP_BUILD=1`
+to ship the existing `dist/` folders without rebuilding. Needs `ssh` + `tar`
+locally and passwordless sudo on the box. `scripts/deploy-vps.sh` (run on the box,
+also by CI) is idempotent and defaults to `/opt/mizan` / `mizan` / `3000`.
 
 ## Rollback
 

@@ -12,8 +12,7 @@
     "lint": "eslint .",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "msw:init": "msw init public --save"
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -65,10 +64,5 @@
     "typescript-eslint": "^8.18.1",
     "vite": "^6.0.5",
     "vitest": "^3.2.7"
-  },
-  "msw": {
-    "workerDirectory": [
-      "public"
-    ]
   }
 }
