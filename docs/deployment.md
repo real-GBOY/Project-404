@@ -63,6 +63,7 @@ ssh-keyscan -H 13.220.157.42        # → value for VPS_SSH_KNOWN_HOSTS
 | `VPS_HOST` | yes | `13.220.157.42` |
 | `VPS_USER` | yes | `ubuntu` |
 | `VPS_SSH_KNOWN_HOSTS` | recommended | `ssh-keyscan -H 13.220.157.42` output. If unset, CI trusts the host on first contact (TOFU) with a warning. |
+| `VITE_DEMO_PASSWORD` | optional | pre-fills the sign-in form on the deployed site (demo instances only; pair with the `VITE_DEMO_EMAIL` variable) |
 
 ### 3. Repo variables — same page → *Variables* (all optional; defaults match the current box)
 
@@ -72,6 +73,7 @@ ssh-keyscan -H 13.220.157.42        # → value for VPS_SSH_KNOWN_HOSTS
 | `VPS_WEB_ROOT` | `/var/www/mizan` | nginx `root` for the SPA |
 | `VPS_SERVICE` | `mizan` | systemd unit (`mizan.service`) |
 | `VPS_PORT` | `3000` | `AURIC_PORT` the service listens on |
+| `VITE_DEMO_EMAIL` | — | demo sign-in prefill; pairs with the `VITE_DEMO_PASSWORD` secret |
 
 ### 4. On the VPS
 
@@ -137,6 +139,10 @@ added a migration does not undo the schema change; write a new migration for tha
 ## Demo data
 
 The current deployment sets `MIZAN_SEED_DEMO=true` on the backend (seeds org
-"Mizan" + 7 users; login `mahmoud.nayel@tawfikpartners.eg` / `demo-password-2026`).
-Visitors land on the normal login screen and must sign in. Unset
-`MIZAN_SEED_DEMO` and wipe the demo data before real use.
+"Mizan" + 7 users) and builds the web app with `VITE_DEMO_EMAIL` /
+`VITE_DEMO_PASSWORD` so the sign-in form arrives **pre-filled** with the demo
+admin (`mahmoud.nayel@tawfikpartners.eg` / `demo-password-2026`) — a visitor is
+one click from the dashboard. `scripts/deploy-local.sh` sets those by default;
+deploy a clean empty form with
+`VITE_DEMO_EMAIL= VITE_DEMO_PASSWORD= bash scripts/deploy-local.sh`. For real
+use: unset all three, and wipe the demo data.

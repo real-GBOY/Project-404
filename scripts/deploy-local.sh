@@ -16,6 +16,12 @@ BACKEND_DIR="${BACKEND_DIR:-/opt/mizan}"
 WEB_ROOT="${WEB_ROOT:-/var/www/mizan}"
 SERVICE="${SERVICE:-mizan}"
 PORT="${PORT:-3000}"
+# This box runs the seeded demo (MIZAN_SEED_DEMO=true), so pre-fill the sign-in
+# form with the demo admin. Deploy a clean login screen with:
+#   VITE_DEMO_EMAIL= VITE_DEMO_PASSWORD= bash scripts/deploy-local.sh
+: "${VITE_DEMO_EMAIL=mahmoud.nayel@tawfikpartners.eg}"
+: "${VITE_DEMO_PASSWORD=demo-password-2026}"
+export VITE_DEMO_EMAIL VITE_DEMO_PASSWORD
 set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
