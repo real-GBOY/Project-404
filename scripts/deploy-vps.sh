@@ -34,14 +34,22 @@ cd "$BACKEND_DIR"
 # they are allow-listed, so run them explicitly and then verify.
 STAMP=".deploy-lockfile.sha256"
 NEW_SUM="$(sha256sum package-lock.json | awk '{print $1}')"
-if [[ ! -f "$STAMP" ]] || [[ "$(cat "$STAMP")" != "$NEW_SUM" ]]; then
-  echo "→ dependencies changed — npm ci --omit=dev"
+node_ok() {
+  [[ -d node_modules/prisma ]] && node -e "require('argon2')" >/dev/null 2>&1
+}
+if [[ -f "$STAMP" && "$(cat "$STAMP")" == "$NEW_SUM" ]]; then
+  echo "→ dependencies unchanged — skipping npm ci"
+elif [[ ! -f "$STAMP" ]] && node_ok; then
+  # First run onto a box whose node_modules already works (e.g. a prior manual
+  # deploy) and whose lockfile matches — adopt it instead of a needless reinstall.
+  echo "→ existing node_modules already resolves — adopting without npm ci"
+  echo "$NEW_SUM" > "$STAMP"
+else
+  echo "→ installing production dependencies — npm ci --omit=dev"
   npm ci --omit=dev --no-audit --no-fund --unsafe-perm --foreground-scripts
   # Belt and braces: force the native builds in case scripts were skipped.
   npm rebuild --omit=dev argon2 prisma @prisma/engines >/dev/null 2>&1 || true
   echo "$NEW_SUM" > "$STAMP"
-else
-  echo "→ dependencies unchanged — skipping npm ci"
 fi
 
 # Fail early with a clear message if a native dep did not build.
