@@ -1,7 +1,6 @@
 # AURIC
 
-[![CI](https://github.com/real-GBOY/Project-404/actions/workflows/ci.yml/badge.svg)](https://github.com/real-GBOY/Project-404/actions/workflows/ci.yml)
-&nbsp;·&nbsp; NestJS 11 · Fastify · PostgreSQL + RLS · Kysely · TypeScript · MIT
+NestJS 11 · Fastify · PostgreSQL + RLS · Kysely · TypeScript · MIT
 
 **A domain-agnostic application foundation, and the first real product built on it.**
 
@@ -63,7 +62,7 @@ The full contract — what each side owns, why there is no `modules/` or `client
 | **Every use case owns its transaction** | `authenticate → validate → transaction → persist → publish event`. The event bus never opens a transaction. |
 | **Prisma owns schema, Kysely owns runtime** | Prisma defines tables + migration history and generates Kysely's types. No Prisma Client, no ORM at runtime — typed SQL only. |
 | **Money is never summed across currencies** | Financial values are `{ currency, amount }[]`, rendered as stacked lines. No FX, no "dominant currency". Invoice math is server-authoritative. |
-| **Arabic-first** | AR is the default language, RTL is first-class (logical CSS only), `ar-EG` number/date/currency formatting, bilingual notification templates. |
+| **Bilingual, RTL-first-class** | English is the default; Arabic is fully supported and one switch away (persisted per user). RTL is first-class (logical CSS only), with `ar-EG` number/date/currency formatting and bilingual notification templates. |
 
 ---
 
@@ -102,7 +101,7 @@ The entire product surface, cut over from the mock layer to the live API:
 `dashboard` · `clients` (+6 tabs) · `matters` (+7 tabs, "Case Work" group) · `hearings` · `tasks` · `documents` · `calendar` (month grid) · `billing` (invoices / payments / expenses + server-computed invoice detail) · `team` (utilisation) · `notifications` inbox · `settings` (7 sections — Users & roles → `/api/rbac`, audit → `/api/audit-logs`, locale switch) · "Ask Mizan" assistant (canned demo drawer, no fake results)
 
 - **213** source files · **~37** design-system primitives (Radix, fully restyled to Mizan tokens) · **13** feature areas · **78** tests · ESLint + Prettier + typecheck + build green.
-- Stack: Vite 6 · React 19 · TypeScript · Tailwind v4 (semantic tokens) · Radix · TanStack Query v5 · React Router v7 · react-hook-form + Zod · i18next (AR default + RTL).
+- Stack: Vite 6 · React 19 · TypeScript · Tailwind v4 (semantic tokens) · Radix · TanStack Query v5 · React Router v7 · react-hook-form + Zod · i18next (EN default, AR one switch away, RTL).
 - Permission-aware nav, actions, and routes from the exact keys `/api/me` returns. Code-split feature routes, split vendor chunks. The web app talks only to the real backend; the MSW layer moved to `src/test/` and is Vitest-only.
 
 ### Continuous integration
