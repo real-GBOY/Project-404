@@ -9,7 +9,7 @@ const REGION = "EG";
 const TZ = "Africa/Cairo";
 
 function intlLocale(): string {
-  const lang = (i18n.resolvedLanguage ?? "ar").split("-")[0];
+  const lang = (i18n.resolvedLanguage ?? "en").split("-")[0];
   return `${lang}-${REGION}`;
 }
 

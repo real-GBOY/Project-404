@@ -26,7 +26,7 @@ const schema = z.object({
   accessTokenTtl: z.coerce.number().int().positive().default(900),
   refreshTokenTtl: z.coerce.number().int().positive().default(2_592_000),
 
-  defaultLocale: z.string().default("ar"),
+  defaultLocale: z.string().default("en"),
   supportedLocales: z
     .string()
     .default("ar,en")

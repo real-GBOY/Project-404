@@ -41,7 +41,7 @@ export function DatePicker({
   const selected = value ? new Date(`${value}T00:00:00`) : null;
   const [view, setView] = useState(() => selected ?? new Date());
 
-  const locale = `${(i18n.resolvedLanguage ?? "ar").split("-")[0]}-EG`;
+  const locale = `${(i18n.resolvedLanguage ?? "en").split("-")[0]}-EG`;
   const monthLabel = new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }).format(view);
 
   const first = new Date(view.getFullYear(), view.getMonth(), 1);

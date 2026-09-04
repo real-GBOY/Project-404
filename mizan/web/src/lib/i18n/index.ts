@@ -6,7 +6,10 @@ import ar from "./resources/ar.json";
 
 export const SUPPORTED_LOCALES = ["ar", "en"] as const;
 export type Locale = (typeof SUPPORTED_LOCALES)[number];
-export const DEFAULT_LOCALE: Locale = "ar";
+/** The system default. A visitor gets English until they pick a language
+ *  themselves (persisted to localStorage) — the browser/OS locale does not
+ *  switch it. */
+export const DEFAULT_LOCALE: Locale = "en";
 export const RTL_LOCALES = new Set<Locale>(["ar"]);
 
 export function dirFor(locale: string): "rtl" | "ltr" {
@@ -46,7 +49,9 @@ export async function initI18n(): Promise<typeof i18n> {
       ],
       interpolation: { escapeValue: false },
       detection: {
-        order: ["localStorage", "navigator", "htmlTag"],
+        // No `navigator` — the browser/OS locale must not override the English
+        // default. Only an explicit switch (cached to localStorage) does.
+        order: ["localStorage", "htmlTag"],
         lookupLocalStorage: "mizan.locale",
         caches: ["localStorage"],
       },
