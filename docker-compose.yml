@@ -55,7 +55,7 @@ services:
       AURIC_SYSTEM_DATABASE_URL: postgres://auric_system:auric_system_pw@db:5432/auric
       AURIC_APP_URL: http://localhost:3000
       # Seed the fictional "Mizan" firm so /api/docs has data to poke at.
-      # Login: amira.tawfik@tawfikpartners.eg / demo-password-2026
+      # Login: mahmoud.nayel@tawfikpartners.eg / demo-password-2026
       MIZAN_SEED_DEMO: "true"
     ports:
       - "3000:3000"

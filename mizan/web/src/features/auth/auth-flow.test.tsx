@@ -40,7 +40,7 @@ function renderApp(path = "/") {
 }
 
 async function signIn(user: ReturnType<typeof userEvent.setup>) {
-  await user.type(await screen.findByLabelText("Email"), "amira@tawfik.eg");
+  await user.type(await screen.findByLabelText("Email"), "mahmoud@tawfik.eg");
   await user.type(screen.getByLabelText("Password"), "a-good-long-password");
   await user.click(screen.getByRole("button", { name: "Sign in" }));
 }

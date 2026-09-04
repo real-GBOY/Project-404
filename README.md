@@ -176,7 +176,7 @@ Sign in to get a token — the compose file seeds a fictional firm:
 
 ```bash
 curl -sX POST localhost:3000/api/auth/login -H 'content-type: application/json' \
-  -d '{"email":"amira.tawfik@tawfikpartners.eg","password":"demo-password-2026"}'
+  -d '{"email":"mahmoud.nayel@tawfikpartners.eg","password":"demo-password-2026"}'
 ```
 
 ### Without Docker

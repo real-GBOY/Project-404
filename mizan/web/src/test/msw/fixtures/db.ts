@@ -244,7 +244,7 @@ const COURTS = [
 
 // ─── team ────────────────────────────────────────────────────────────────────
 const team: TeamMemberRow[] = [
-  { id: "usr_dev", name: "Amira Tawfik", title: "Managing Partner", role: "firm_admin", email: "amira.tawfik@tawfikpartners.eg", phone: "+20 2 2735 1200", practiceAreas: ["Corporate", "Arbitration"], status: "active", weeklyCapacityHours: 40 },
+  { id: "usr_dev", name: "Mahmoud Nayel", title: "Managing Partner", role: "firm_admin", email: "mahmoud.nayel@tawfikpartners.eg", phone: "+20 2 2735 1200", practiceAreas: ["Corporate", "Arbitration"], status: "active", weeklyCapacityHours: 40 },
   { id: "usr_2", name: "Karim Fahmy", title: "Partner", role: "partner", email: "karim.fahmy@tawfikpartners.eg", phone: "+20 2 2735 1201", practiceAreas: ["Litigation", "Employment"], status: "active", weeklyCapacityHours: 40 },
   { id: "usr_3", name: "Nour El-Sayed", title: "Senior Associate", role: "lawyer", email: "nour.elsayed@tawfikpartners.eg", phone: null, practiceAreas: ["Real Estate", "Corporate"], status: "active", weeklyCapacityHours: 40 },
   { id: "usr_4", name: "Omar Mansour", title: "Associate", role: "lawyer", email: "omar.mansour@tawfikpartners.eg", phone: null, practiceAreas: ["Litigation", "Tax"], status: "active", weeklyCapacityHours: 40 },

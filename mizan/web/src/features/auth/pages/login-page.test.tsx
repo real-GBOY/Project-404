@@ -32,11 +32,11 @@ describe("LoginPage", () => {
     const login = vi.fn().mockResolvedValue({ needsOrgSelection: false, hasNoOrg: false });
     const { user } = renderApp(<Harness />, { path: "/login", status: "anon", auth: { login } });
 
-    await user.type(screen.getByLabelText("Email"), "amira@tawfik.eg");
+    await user.type(screen.getByLabelText("Email"), "mahmoud@tawfik.eg");
     await user.type(screen.getByLabelText("Password"), "correct-horse");
     await user.click(screen.getByRole("button", { name: "Sign in" }));
 
-    expect(login).toHaveBeenCalledWith("amira@tawfik.eg", "correct-horse");
+    expect(login).toHaveBeenCalledWith("mahmoud@tawfik.eg", "correct-horse");
     expect(await screen.findByText("dashboard")).toBeInTheDocument();
   });
 
@@ -44,7 +44,7 @@ describe("LoginPage", () => {
     const login = vi.fn().mockResolvedValue({ needsOrgSelection: true, hasNoOrg: false });
     const { user } = renderApp(<Harness />, { path: "/login", status: "anon", auth: { login } });
 
-    await user.type(screen.getByLabelText("Email"), "amira@tawfik.eg");
+    await user.type(screen.getByLabelText("Email"), "mahmoud@tawfik.eg");
     await user.type(screen.getByLabelText("Password"), "correct-horse");
     await user.click(screen.getByRole("button", { name: "Sign in" }));
 
@@ -57,7 +57,7 @@ describe("LoginPage", () => {
       .mockRejectedValue(new ApiError(401, { code: "identity.invalid_credentials", message: "nope" }));
     const { user } = renderApp(<Harness />, { path: "/login", status: "anon", auth: { login } });
 
-    await user.type(screen.getByLabelText("Email"), "amira@tawfik.eg");
+    await user.type(screen.getByLabelText("Email"), "mahmoud@tawfik.eg");
     await user.type(screen.getByLabelText("Password"), "wrong-password");
     await user.click(screen.getByRole("button", { name: "Sign in" }));
 

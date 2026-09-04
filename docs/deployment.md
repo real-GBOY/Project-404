@@ -137,6 +137,6 @@ added a migration does not undo the schema change; write a new migration for tha
 ## Demo data
 
 The current deployment sets `MIZAN_SEED_DEMO=true` on the backend (seeds org
-"Mizan" + 7 users; login `amira.tawfik@tawfikpartners.eg` / `demo-password-2026`).
+"Mizan" + 7 users; login `mahmoud.nayel@tawfikpartners.eg` / `demo-password-2026`).
 Visitors land on the normal login screen and must sign in. Unset
 `MIZAN_SEED_DEMO` and wipe the demo data before real use.

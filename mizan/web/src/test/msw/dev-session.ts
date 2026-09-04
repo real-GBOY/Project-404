@@ -8,8 +8,8 @@ import type { AuthUser, OrganizationMembership } from "@/types/auth";
 
 export const DEV_USER: AuthUser = {
   id: "usr_dev",
-  email: "amira.tawfik@tawfikpartners.eg",
-  displayName: "Amira Tawfik",
+  email: "mahmoud.nayel@tawfikpartners.eg",
+  displayName: "Mahmoud Nayel",
   status: "active",
   emailVerified: true,
   locale: "ar",

@@ -8,10 +8,10 @@
 export const DEMO_TEAM = [
   {
     key: "usr_dev",
-    name: "Amira Tawfik",
+    name: "Mahmoud Nayel",
     title: "Managing Partner",
     role: "firm_admin",
-    email: "amira.tawfik@tawfikpartners.eg",
+    email: "mahmoud.nayel@tawfikpartners.eg",
     phone: "+20 2 2735 1200",
     practiceAreas: ["Corporate", "Arbitration"],
     status: "active",
@@ -928,7 +928,7 @@ export const DEMO_EVENTS = [
   },
 ] as const;
 
-/** In-app notifications for the demo admin (Amira / usr_dev). Core `notifications`. */
+/** In-app notifications for the demo admin (Mahmoud / usr_dev). Core `notifications`. */
 export const DEMO_NOTIFICATIONS = [
   {
     type: "hearing.scheduled",
