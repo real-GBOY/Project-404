@@ -105,16 +105,18 @@ Also ensure:
 
 ## Manual deploy
 
+Until the CI secrets are set, deploy the current checkout by hand with the
+bundled script — it builds backend + web and ships both, so the running site
+matches your tree:
+
 ```bash
-npm ci && npm run build
-cd mizan/web && npm ci && npm run build && cd ../..
-rsync -az --delete --rsync-path="sudo rsync" dist/ ubuntu@13.220.157.42:/opt/mizan/dist/
-rsync -az --rsync-path="sudo rsync" package.json package-lock.json scripts/deploy-vps.sh ubuntu@13.220.157.42:/opt/mizan/
-rsync -az --delete --rsync-path="sudo rsync" mizan/web/dist/ ubuntu@13.220.157.42:/var/www/mizan/
-ssh ubuntu@13.220.157.42 'sudo bash /opt/mizan/deploy-vps.sh'
+bash scripts/deploy-local.sh
 ```
 
-`scripts/deploy-vps.sh` is idempotent and defaults to `/opt/mizan` / `mizan` / `3000`.
+It uses `me` as the SSH key and `ubuntu@13.220.157.42` by default; override with
+`SSH_KEY=… SSH_USER=… SSH_HOST=… bash scripts/deploy-local.sh`. You may be asked
+for the sudo password on the box. `scripts/deploy-vps.sh` (run on the box, also
+by CI) is idempotent and defaults to `/opt/mizan` / `mizan` / `3000`.
 
 ## Rollback
 
