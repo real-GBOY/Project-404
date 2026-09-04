@@ -44,6 +44,8 @@ export const listDocuments = (p: DocListParams, signal?: AbortSignal) =>
 export const uploadDocument = (form: FormData) =>
   httpClient<DocRow>("/documents", { method: "POST", form });
 
+export const downloadDocumentPath = (id: string) => `/documents/${id}/download`;
+
 export const updateDocument = (id: string, body: Partial<Pick<DocRow, "name" | "category" | "status">>) =>
   httpClient<DocRow>(`/documents/${id}`, { method: "PATCH", body });
 

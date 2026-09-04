@@ -9,10 +9,11 @@ import {
   Post,
   Query,
   Req,
+  Res,
   UseGuards,
 } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
-import type { FastifyRequest } from "fastify";
+import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { ValidationError } from "@core/kernel/errors.js";
 import { CurrentUser, RequirePermission } from "@core/http/decorators.js";
@@ -94,6 +95,16 @@ export class DocumentsController {
   @RequirePermission("read", "document")
   get(@Param("id") id: string) {
     return this.service.get(id);
+  }
+
+  @Get(":id/download")
+  @RequirePermission("read", "document")
+  async download(@Param("id") id: string, @Res() reply: FastifyReply) {
+    const { content, filename, contentType } = await this.service.content(id);
+    reply
+      .header("Content-Type", contentType)
+      .header("Content-Disposition", `attachment; filename="${encodeURIComponent(filename)}"`)
+      .send(content);
   }
 
   @Patch(":id")

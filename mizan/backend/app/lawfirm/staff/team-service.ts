@@ -1,7 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
 import type { UnitOfWork } from "@core/kernel/db/db.js";
 import { readInTenant } from "@core/kernel/db/db.js";
-import { NotFound } from "@core/kernel/errors.js";
+import { NotFound, ValidationError } from "@core/kernel/errors.js";
 import { CLOCK, UNIT_OF_WORK, USER_PROVIDER } from "@core/kernel/tokens.js";
 import type { Clock } from "@core/kernel/clock.js";
 import type { IUserProvider } from "@core/contracts/index.js";
@@ -48,6 +48,43 @@ export class TeamService {
       );
       return { items };
     });
+  }
+
+  /** Org members who do not yet have a staff profile — candidates for "add to team". */
+  async candidates() {
+    return readInTenant(async () => {
+      const [members, profiles] = await Promise.all([this.admin.members(), this.repo.all()]);
+      const withProfile = new Set(profiles.map((p) => p.userId));
+      return {
+        items: members.items
+          .filter((m) => !withProfile.has(m.id))
+          .map((m) => ({ id: m.id, name: m.name, email: m.email })),
+      };
+    });
+  }
+
+  async create(input: {
+    userId: string;
+    title?: string;
+    weeklyCapacityHours?: number;
+    practiceAreas?: string[];
+  }) {
+    const members = await this.admin.members();
+    if (!members.items.some((m) => m.id === input.userId)) {
+      throw ValidationError("staff.not_a_member", "That user is not a member of this firm.");
+    }
+    const profile = await this.uow.transaction(async () => {
+      if (await this.repo.byUserId(input.userId)) {
+        throw ValidationError("staff.already_exists", "That user already has a team profile.");
+      }
+      return this.repo.upsert({
+        userId: input.userId,
+        title: input.title,
+        weeklyCapacityHours: input.weeklyCapacityHours,
+        practiceAreas: input.practiceAreas,
+      });
+    });
+    return readInTenant(() => this.view(profile));
   }
 
   async get(id: string) {

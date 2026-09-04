@@ -44,3 +44,18 @@ export const updateTeamMember = (
   id: string,
   body: Partial<Pick<TeamMember, "title" | "phone" | "practiceAreas" | "weeklyCapacityHours" | "status">>,
 ) => httpClient<TeamMember>(`/team/${id}`, { method: "PATCH", body });
+
+export interface TeamCandidate {
+  id: string;
+  name: string;
+  email: string;
+}
+
+export const listTeamCandidates = (signal?: AbortSignal) =>
+  httpClient<{ items: TeamCandidate[] }>("/team/candidates", { signal });
+
+export const createTeamMember = (body: {
+  userId: string;
+  title?: string;
+  weeklyCapacityHours?: number;
+}) => httpClient<TeamMember>("/team", { method: "POST", body });

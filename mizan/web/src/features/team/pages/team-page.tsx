@@ -23,7 +23,6 @@ import {
   ListRow,
   ListSearch,
   ListToolbar,
-  ToolbarButton,
   ViewToggle,
 } from "@/components/tables/list-card";
 import {
@@ -35,11 +34,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { FormField } from "@/components/forms/form-field";
+import { Combobox } from "@/components/ui/combobox";
+import { FilterPopover } from "@/components/tables/filter-popover";
 import { QueryBoundary } from "@/components/feedback/query-boundary";
 import { RowsSkeleton, Skeleton } from "@/components/feedback/skeleton";
 import {
+  createTeamMember,
   getTeamMember,
   listTeam,
+  listTeamCandidates,
   teamKeys,
   updateTeamMember,
   type TeamMember,
@@ -53,6 +56,108 @@ function UtilizationBar({ value }: { value: number }) {
     <div className="h-[7px] w-full overflow-hidden rounded-pill bg-chart-track" aria-hidden="true">
       <div className="h-full rounded-pill" style={{ width: `${value}%`, background: color }} />
     </div>
+  );
+}
+
+function AddTeamMemberDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+}) {
+  const { t } = useTranslation("team");
+  const qc = useQueryClient();
+  const toast = useToast();
+  const candidates = useQuery({
+    queryKey: ["team", "candidates"],
+    queryFn: ({ signal }) => listTeamCandidates(signal),
+    enabled: open,
+  });
+  const [userId, setUserId] = useState<string | null>(null);
+  const [title, setTitle] = useState("");
+  const [capacity, setCapacity] = useState("40");
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      createTeamMember({
+        userId: userId!,
+        title: title.trim() || undefined,
+        weeklyCapacityHours: Number(capacity) || undefined,
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: teamKeys.all });
+      qc.invalidateQueries({ queryKey: ["team", "candidates"] });
+      qc.invalidateQueries({ queryKey: ["team", "summary"] });
+      toast.success({ title: t("toasts.added", { defaultValue: "Team member added" }) });
+      onOpenChange(false);
+    },
+    onError: () => toast.error({ title: t("toasts.failed") }),
+  });
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) {
+          setUserId(null);
+          setTitle("");
+          setCapacity("40");
+        }
+        onOpenChange(o);
+      }}
+    >
+      <DialogContent size="sm">
+        <DialogHeader>
+          <DialogTitle>{t("actions.add")}</DialogTitle>
+        </DialogHeader>
+        <DialogBody className="flex flex-col gap-4 py-3">
+          <FormField label={t("columns.member")}>
+            <Combobox
+              options={(candidates.data?.items ?? []).map((c) => ({
+                value: c.id,
+                label: c.name,
+                hint: c.email,
+              }))}
+              value={userId}
+              onValueChange={setUserId}
+              placeholder={
+                candidates.isPending
+                  ? t("common:states.loading", { defaultValue: "Loading…" })
+                  : t("add.pick_member", { defaultValue: "Select a firm member" })
+              }
+            />
+          </FormField>
+          {candidates.data && candidates.data.items.length === 0 && (
+            <p className="text-[12px] text-muted">
+              {t("add.none", {
+                defaultValue: "Every firm member already has a team profile.",
+              })}
+            </p>
+          )}
+          <div className="grid grid-cols-[1fr_6rem] gap-3">
+            <FormField label={t("fields.title")}>
+              <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+            </FormField>
+            <FormField label={t("fields.capacity")}>
+              <Input
+                type="number"
+                value={capacity}
+                onChange={(e) => setCapacity(e.target.value)}
+              />
+            </FormField>
+          </div>
+        </DialogBody>
+        <DialogFooter>
+          <Button variant="secondary" onClick={() => onOpenChange(false)}>
+            {t("common:actions.cancel")}
+          </Button>
+          <Button loading={mutation.isPending} disabled={!userId} onClick={() => mutation.mutate()}>
+            {t("common:actions.add")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -145,15 +250,19 @@ export function TeamPage() {
   const { t } = useTranslation("team");
   const { can } = usePermissions();
   const navigate = useNavigate();
-  const params = useUrlParams<"q" | "view">({ view: "table" });
+  const params = useUrlParams<"q" | "view" | "tstatus" | "trole">({ view: "table" });
   const view = (params.get("view") ?? "table") as "table" | "grid";
   const q = (params.get("q") ?? "").toLowerCase();
+  const tstatus = params.get("tstatus");
+  const trole = params.get("trole");
   const query = useQuery({ queryKey: teamKeys.all, queryFn: ({ signal }) => listTeam(signal) });
+  const roleOptions = [...new Set((query.data?.items ?? []).map((u) => u.role))].sort();
   const summary = useQuery({
     queryKey: ["team", "summary"],
     queryFn: ({ signal }) => httpClient<TeamSummary>("/team/summary", { signal }),
   });
   const [editing, setEditing] = useState<TeamMember | null>(null);
+  const [inviting, setInviting] = useState(false);
 
   useSetPageChrome({ title: t("title"), count: query.data?.items.length ?? null });
 
@@ -190,14 +299,36 @@ export function TeamPage() {
             onChange={(v) => params.set({ q: v })}
           />
           <div className="ms-auto flex flex-wrap items-center gap-2">
-            <ToolbarButton icon="filter_list">{t("filter")}</ToolbarButton>
+            <FilterPopover
+              groups={[
+                {
+                  key: "tstatus",
+                  label: t("columns.status"),
+                  options: (["active", "inactive"] as const).map((s) => ({
+                    value: s,
+                    label: t(`status.${s}`),
+                  })),
+                },
+                ...(roleOptions.length
+                  ? [
+                      {
+                        key: "trole",
+                        label: t("columns.role"),
+                        options: roleOptions.map((r) => ({ value: r, label: r })),
+                      },
+                    ]
+                  : []),
+              ]}
+              value={{ tstatus: tstatus ?? undefined, trole: trole ?? undefined }}
+              onChange={(k, v) => params.set({ [k]: v })}
+            />
             <ViewToggle
               value={view}
               onChange={(v) => params.set({ view: v })}
               labels={{ table: t("common:table.view_table"), grid: t("common:table.view_grid") }}
             />
             {can("manage:staff") && (
-              <Button size="sm" icon="person_add">
+              <Button size="sm" icon="person_add" onClick={() => setInviting(true)}>
                 {t("actions.add")}
               </Button>
             )}
@@ -206,11 +337,13 @@ export function TeamPage() {
 
         <QueryBoundary query={query} loading={<RowsSkeleton rows={8} />}>
           {(data) => {
-            const rows = q
-              ? data.items.filter((u) =>
-                  `${u.name} ${u.role} ${u.department}`.toLowerCase().includes(q),
-                )
-              : data.items;
+            const rows = data.items
+              .filter((u) => !tstatus || u.status === tstatus)
+              .filter((u) => !trole || u.role === trole)
+              .filter(
+                (u) =>
+                  !q || `${u.name} ${u.role} ${u.department}`.toLowerCase().includes(q),
+              );
 
             if (view === "grid") {
               return (
@@ -316,6 +449,7 @@ export function TeamPage() {
       </ListCard>
 
       <EditProfileDialog member={editing} onOpenChange={(o) => !o && setEditing(null)} />
+      <AddTeamMemberDialog open={inviting} onOpenChange={setInviting} />
     </PageContainer>
   );
 }

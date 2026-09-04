@@ -124,11 +124,13 @@ export function MatterDetailPage() {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     )}
-                    <Button variant="secondary" size="sm" icon="download">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      icon="print"
+                      onClick={() => window.print()}
+                    >
                       {t("detail.export_file")}
-                    </Button>
-                    <Button variant="sand" size="sm" icon="auto_awesome">
-                      {t("detail.summarize")}
                     </Button>
                     {canWrite && matter.status !== "closed" && can("close:matter") && (
                       <Button size="sm" onClick={() => setClosing(true)}>

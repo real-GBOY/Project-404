@@ -31,6 +31,7 @@ import {
   ToolbarButton,
   ViewToggle,
 } from "@/components/tables/list-card";
+import { FilterPopover } from "@/components/tables/filter-popover";
 import { useHearingList } from "../hooks/use-hearings";
 import { AdjournDialog, OutcomeDialog, ScheduleHearingDialog } from "../components/hearing-dialogs";
 import type { HearingRow, HearingsSummary, HearingStatus } from "../api/hearings.api";
@@ -45,11 +46,15 @@ export function HearingsListPage({ embedded: _embedded = false }: { embedded?: b
   const { t } = useTranslation("hearings");
   const { can } = usePermissions();
   const navigate = useNavigate();
-  const params = useUrlParams<"scope" | "q" | "view">({ scope: "upcoming", view: "table" });
+  const params = useUrlParams<"scope" | "q" | "view" | "hstatus">({
+    scope: "upcoming",
+    view: "table",
+  });
   const scope = (params.get("scope") as "upcoming" | "past") ?? "upcoming";
   const view = (params.get("view") ?? "table") as "table" | "grid";
   const query = useHearingList({ scope });
   const q = (params.get("q") ?? "").toLowerCase();
+  const statusFilter = params.get("hstatus");
 
   const summary = useQuery({
     queryKey: ["hearings", "summary"],
@@ -102,7 +107,20 @@ export function HearingsListPage({ embedded: _embedded = false }: { embedded?: b
             onChange={(v) => params.set({ q: v })}
           />
           <div className="ms-auto flex flex-wrap items-center gap-2">
-            <ToolbarButton icon="filter_list">{t("filter")}</ToolbarButton>
+            <FilterPopover
+              groups={[
+                {
+                  key: "hstatus",
+                  label: t("columns.status"),
+                  options: (["scheduled", "adjourned", "decided"] as const).map((s) => ({
+                    value: s,
+                    label: t(`status.${s}`),
+                  })),
+                },
+              ]}
+              value={{ hstatus: statusFilter ?? undefined }}
+              onChange={(_k, v) => params.set({ hstatus: v })}
+            />
             <ViewToggle
               value={view}
               onChange={(v) => params.set({ view: v })}
@@ -131,11 +149,13 @@ export function HearingsListPage({ embedded: _embedded = false }: { embedded?: b
           }
         >
           {(data) => {
-            const rows = q
-              ? data.items.filter((h) =>
+            const rows = data.items
+              .filter((h) => !statusFilter || h.status === statusFilter)
+              .filter(
+                (h) =>
+                  !q ||
                   `${h.matterTitle} ${h.court} ${h.leadLawyer}`.toLowerCase().includes(q),
-                )
-              : data.items;
+              );
 
             if (view === "grid") {
               return (

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { formatMoney } from "@/lib/format";
@@ -12,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Icon } from "@/components/ui/icon";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Combobox } from "@/components/ui/combobox";
 import { FormField } from "@/components/forms/form-field";
@@ -152,6 +154,195 @@ export function RecordPaymentDialog({
             }}
           >
             {t("payment.submit")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+const CURRENCIES = ["EGP", "AED", "USD", "SAR"] as const;
+type DraftLine = { kind: "fee" | "disbursement"; description: string; amount: string };
+
+export function NewInvoiceDialog({
+  open,
+  onOpenChange,
+  clientId,
+  matterId,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  clientId?: string;
+  matterId?: string;
+}) {
+  const { t } = useTranslation("billing");
+  const navigate = useNavigate();
+  const options = useMatterFormOptions();
+  const { createInvoice } = useBillingMutations();
+
+  const [client, setClient] = useState<string | null>(clientId ?? null);
+  const [matter, setMatter] = useState<string | null>(matterId ?? null);
+  const [currency, setCurrency] = useState<(typeof CURRENCIES)[number]>("EGP");
+  const [vatPct, setVatPct] = useState("14");
+  const [lines, setLines] = useState<DraftLine[]>([{ kind: "fee", description: "", amount: "" }]);
+
+  useEffect(() => {
+    if (open) {
+      setClient(clientId ?? null);
+      setMatter(matterId ?? null);
+      setCurrency("EGP");
+      setVatPct("14");
+      setLines([{ kind: "fee", description: "", amount: "" }]);
+    }
+  }, [open, clientId, matterId]);
+
+  const validLines = lines.filter((l) => l.description.trim() && Number(l.amount) > 0);
+  const subtotal = validLines.reduce((s, l) => s + Number(l.amount), 0);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent size="lg">
+        <DialogHeader>
+          <DialogTitle>{t("actions.new_invoice")}</DialogTitle>
+        </DialogHeader>
+        <DialogBody className="flex flex-col gap-4 py-3">
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label={t("columns.client")}>
+              <Combobox
+                options={(options.data?.clients ?? []).map((c) => ({ value: c.id, label: c.name }))}
+                value={client}
+                onValueChange={setClient}
+                placeholder={t("payment.pick_invoice", { defaultValue: "Select a client" })}
+              />
+            </FormField>
+            <FormField label={t("columns.matter")}>
+              <Combobox
+                options={(options.data?.matters ?? []).map((m) => ({ value: m.id, label: m.name }))}
+                value={matter}
+                onValueChange={setMatter}
+                placeholder={t("expense.matter_none")}
+              />
+            </FormField>
+          </div>
+
+          <div className="grid grid-cols-[8rem_8rem] gap-3">
+            <FormField label={t("payment.currency")}>
+              <Select value={currency} onValueChange={(v) => setCurrency(v as typeof currency)}>
+                <SelectTrigger aria-label={t("payment.currency")}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CURRENCIES.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormField>
+            <FormField label={t("totals.vat", { defaultValue: "VAT %" })}>
+              <Input
+                type="number"
+                inputMode="decimal"
+                value={vatPct}
+                onChange={(e) => setVatPct(e.target.value)}
+              />
+            </FormField>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <span className="text-[12px] font-bold text-secondary">
+              {t("totals.fees", { defaultValue: "Line items" })}
+            </span>
+            {lines.map((l, i) => (
+              <div key={i} className="grid grid-cols-[7rem_1fr_6rem_2rem] items-center gap-2">
+                <Select
+                  value={l.kind}
+                  onValueChange={(v) =>
+                    setLines((ls) =>
+                      ls.map((x, j) => (j === i ? { ...x, kind: v as DraftLine["kind"] } : x)),
+                    )
+                  }
+                >
+                  <SelectTrigger aria-label={t("columns.description")}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="fee">{t("line_kind.fee", { defaultValue: "Fee" })}</SelectItem>
+                    <SelectItem value="disbursement">
+                      {t("line_kind.disbursement", { defaultValue: "Disbursement" })}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input
+                  value={l.description}
+                  placeholder={t("columns.description")}
+                  onChange={(e) =>
+                    setLines((ls) =>
+                      ls.map((x, j) => (j === i ? { ...x, description: e.target.value } : x)),
+                    )
+                  }
+                />
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  value={l.amount}
+                  placeholder="0"
+                  onChange={(e) =>
+                    setLines((ls) => ls.map((x, j) => (j === i ? { ...x, amount: e.target.value } : x)))
+                  }
+                />
+                <button
+                  type="button"
+                  aria-label={t("common:actions.delete")}
+                  disabled={lines.length === 1}
+                  onClick={() => setLines((ls) => ls.filter((_, j) => j !== i))}
+                  className="flex size-8 items-center justify-center rounded-md border border-border-control text-muted hover:bg-surface-subtle disabled:opacity-40"
+                >
+                  <Icon name="close" size={16} />
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => setLines((ls) => [...ls, { kind: "fee", description: "", amount: "" }])}
+              className="self-start text-[12px] font-bold text-link hover:underline"
+            >
+              + {t("actions.add_line", { defaultValue: "Add line" })}
+            </button>
+          </div>
+
+          {subtotal > 0 && (
+            <p className="text-[12px] text-muted">
+              {t("totals.subtotal", { defaultValue: "Subtotal" })}:{" "}
+              {formatMoney({ currency, amount: String(subtotal) })}
+            </p>
+          )}
+        </DialogBody>
+        <DialogFooter>
+          <Button variant="secondary" onClick={() => onOpenChange(false)}>
+            {t("common:actions.cancel")}
+          </Button>
+          <Button
+            loading={createInvoice.isPending}
+            disabled={!client}
+            onClick={async () => {
+              const created = await createInvoice.mutateAsync({
+                clientId: client!,
+                matterId: matter,
+                currency,
+                vatRate: Number(vatPct) > 0 ? Number(vatPct) / 100 : undefined,
+                lines: validLines.map((l) => ({
+                  kind: l.kind,
+                  description: l.description.trim(),
+                  amount: Number(l.amount),
+                })),
+              });
+              onOpenChange(false);
+              if (created?.id) navigate(`/billing/invoices/${created.id}`);
+            }}
+          >
+            {t("common:actions.create")}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -96,6 +96,17 @@ export const listInvoices = (status: string | undefined, signal?: AbortSignal) =
 export const getInvoice = (id: string, signal?: AbortSignal) =>
   httpClient<Invoice>(`/invoices/${id}`, { signal });
 
+export interface NewInvoiceInput {
+  clientId: string;
+  matterId?: string | null;
+  currency?: "EGP" | "AED" | "USD" | "SAR";
+  vatRate?: number;
+  lines?: { kind: "fee" | "disbursement"; description: string; amount: number }[];
+}
+
+export const createInvoice = (body: NewInvoiceInput) =>
+  httpClient<Invoice>("/invoices", { method: "POST", body });
+
 export const invoiceAction = (id: string, action: "issue" | "send" | "void") =>
   httpClient<Invoice>(`/invoices/${id}/${action}`, { method: "POST" });
 

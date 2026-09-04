@@ -7,6 +7,8 @@ import { Icon } from "@/components/ui/icon";
 import { QueryBoundary } from "@/components/feedback/query-boundary";
 import { Skeleton } from "@/components/feedback/skeleton";
 import { formatDate } from "@/lib/format";
+import { downloadCsv, exportStamp } from "@/lib/export";
+import type { DashboardData } from "../types/dashboard";
 import { useDashboard } from "../hooks/use-dashboard";
 import { KpiRow } from "../components/kpi-row";
 import { PracticeAreaChart } from "../components/practice-area-chart";
@@ -40,6 +42,48 @@ function greet(hour: number): "morning" | "afternoon" | "evening" {
   if (hour < 12) return "morning";
   if (hour < 18) return "afternoon";
   return "evening";
+}
+
+/** Flatten the dashboard's action lists into one printable briefing CSV. */
+function exportBriefing(data: DashboardData) {
+  const rows = [
+    ...data.upcomingHearings.map((h) => ({
+      section: "Hearing",
+      item: h.matterTitle,
+      reference: h.matterNumber,
+      detail: h.court,
+      owner: h.leadLawyer,
+      due: h.scheduledAt,
+    })),
+    ...data.urgentDeadlines.map((d) => ({
+      section: "Deadline",
+      item: d.title,
+      reference: d.matterNumber,
+      detail: d.matterTitle,
+      owner: d.owner,
+      due: d.dueAt,
+    })),
+    ...data.myTasks.map((tk) => ({
+      section: "Task",
+      item: tk.title,
+      reference: "",
+      detail: tk.matterTitle ?? "",
+      owner: tk.assignee,
+      due: tk.dueAt ?? "",
+    })),
+  ];
+  downloadCsv(
+    `mizan-briefing-${exportStamp()}`,
+    [
+      { key: "section", header: "Section" },
+      { key: "item", header: "Item" },
+      { key: "reference", header: "Matter" },
+      { key: "detail", header: "Detail" },
+      { key: "owner", header: "Owner" },
+      { key: "due", header: "Due" },
+    ],
+    rows,
+  );
 }
 
 export function DashboardPage() {
@@ -76,15 +120,7 @@ export function DashboardPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-[9px]">
-                  <button
-                    type="button"
-                    className="flex h-9 items-center gap-2 rounded-btn border border-border-control bg-surface px-[13px] text-[12.5px] font-bold text-foreground"
-                  >
-                    <Icon name="calendar_month" size={17} className="text-muted" />
-                    {t("date_range")}
-                    <Icon name="expand_more" size={17} className="text-muted" />
-                  </button>
-                  <Button size="sm" icon="download">
+                  <Button size="sm" icon="download" onClick={() => exportBriefing(data)}>
                     {t("export")}
                   </Button>
                 </div>

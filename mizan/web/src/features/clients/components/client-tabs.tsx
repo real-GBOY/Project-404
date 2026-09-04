@@ -20,8 +20,10 @@ import {
   ListRow,
   PanelHeader,
   PanelLink,
-  ToolbarButton,
 } from "@/components/tables/list-card";
+import { FilterPopover } from "@/components/tables/filter-popover";
+import { UploadDocumentDialog } from "@/features/documents/components/document-dialogs";
+import { useDocumentDownload } from "@/features/documents/hooks/use-documents";
 import { FormField } from "@/components/forms/form-field";
 import { EmptyState } from "@/components/feedback/empty-state";
 import { QueryBoundary } from "@/components/feedback/query-boundary";
@@ -194,6 +196,9 @@ export function MattersTab({ id, compact = false }: { id: string; compact?: bool
 export function DocumentsTab({ id, count }: { id: string; count?: number }) {
   const { t } = useTranslation("clients");
   const q = useClientDocuments(id);
+  const download = useDocumentDownload();
+  const [category, setCategory] = useState<string | undefined>();
+  const [uploading, setUploading] = useState(false);
 
   return (
     <QueryBoundary
@@ -202,49 +207,63 @@ export function DocumentsTab({ id, count }: { id: string; count?: number }) {
       isEmpty={(d) => d.length === 0}
       empty={<EmptyState icon="folder_open" title={t("tabs.no_documents")} />}
     >
-      {(docs) => (
-        <Card>
-          <CardBody>
-            <div className="mb-4 flex flex-wrap items-center gap-2.5">
-              <span className="flex-1 text-[14px] font-extrabold text-foreground">
-                {t("detail.client_documents")}{" "}
-                <span className="font-bold text-muted">{count ?? docs.length}</span>
-              </span>
-              <ToolbarButton icon="filter_list">{t("filter")}</ToolbarButton>
-              <button
-                type="button"
-                className="flex h-[34px] items-center gap-1.5 rounded-md bg-ink px-[13px] text-[12.5px] font-bold text-ink-foreground"
-              >
-                <Icon name="add" size={17} />
-                {t("detail.add_documents")}
-              </button>
-            </div>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3.5">
-              {docs.map((d) => (
-                <DocThumb
-                  key={d.id}
-                  name={d.name}
-                  meta={`${d.category} · ${formatRelative(d.uploadedAt)}`}
-                  actions={
-                    <>
+      {(docs) => {
+        const categories = [...new Set(docs.map((d) => d.category))].sort();
+        const visible = category ? docs.filter((d) => d.category === category) : docs;
+        return (
+          <Card>
+            <CardBody>
+              <div className="mb-4 flex flex-wrap items-center gap-2.5">
+                <span className="flex-1 text-[14px] font-extrabold text-foreground">
+                  {t("detail.client_documents")}{" "}
+                  <span className="font-bold text-muted">{count ?? docs.length}</span>
+                </span>
+                {categories.length > 1 && (
+                  <FilterPopover
+                    groups={[
+                      {
+                        key: "category",
+                        label: t("columns.category", { defaultValue: "Category" }),
+                        options: categories.map((c) => ({ value: c, label: c })),
+                      },
+                    ]}
+                    value={{ category }}
+                    onChange={(_k, v) => setCategory(v)}
+                  />
+                )}
+                <button
+                  type="button"
+                  onClick={() => setUploading(true)}
+                  className="flex h-[34px] items-center gap-1.5 rounded-md bg-ink px-[13px] text-[12.5px] font-bold text-ink-foreground"
+                >
+                  <Icon name="add" size={17} />
+                  {t("detail.add_documents")}
+                </button>
+              </div>
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3.5">
+                {visible.map((d) => (
+                  <DocThumb
+                    key={d.id}
+                    name={d.name}
+                    meta={`${d.category} · ${formatRelative(d.uploadedAt)}`}
+                    actions={
                       <button
                         type="button"
+                        onClick={() => download.mutate({ id: d.id, name: d.name })}
                         className="flex h-8 flex-1 items-center justify-center gap-1.5 rounded-md bg-ink text-[12px] font-bold text-ink-foreground"
                       >
                         <Icon name="download" size={16} />
                         {t("detail.download")}
                       </button>
-                      <span className="flex size-8 items-center justify-center rounded-md border border-border-control text-muted">
-                        <Icon name="more_vert" size={17} />
-                      </span>
-                    </>
-                  }
-                />
-              ))}
-            </div>
-          </CardBody>
-        </Card>
-      )}
+                    }
+                  />
+                ))}
+              </div>
+            </CardBody>
+            <UploadDocumentDialog open={uploading} onOpenChange={setUploading} />
+          </Card>
+        );
+      }}
     </QueryBoundary>
   );
 }

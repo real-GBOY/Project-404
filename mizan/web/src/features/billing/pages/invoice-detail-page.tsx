@@ -94,7 +94,12 @@ export function InvoiceDetailPage() {
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <Button variant="secondary" size="sm" icon="print">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        icon="print"
+                        onClick={() => window.print()}
+                      >
                         {t("common:actions.print", { defaultValue: "Print" })}
                       </Button>
                       {canManage && inv.status === "draft" && (

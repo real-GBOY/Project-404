@@ -37,6 +37,17 @@ export function useBillingMutations() {
   };
 
   return {
+    createInvoice: useMutation({
+      mutationFn: api.createInvoice,
+      onSuccess: () => {
+        invalidate();
+        toast.success({ title: t("toasts.invoice_created", { defaultValue: "Invoice created" }) });
+      },
+      onError: (e) =>
+        toast.error({
+          title: isApiError(e) && e.status < 500 ? e.message : t("toasts.failed"),
+        }),
+    }),
     invoiceAction: useMutation({
       mutationFn: ({ id, action }: { id: string; action: "issue" | "send" | "void" }) =>
         api.invoiceAction(id, action),

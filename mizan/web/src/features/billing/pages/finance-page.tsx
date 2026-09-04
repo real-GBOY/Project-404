@@ -32,13 +32,20 @@ import {
   ListToolbar,
   ToolbarButton,
 } from "@/components/tables/list-card";
+import { downloadCsv, exportStamp } from "@/lib/export";
 import { useExpenses, useInvoices, usePayments, useBillingMutations } from "../hooks/use-billing";
-import { RecordExpenseDialog, RecordPaymentDialog } from "../components/record-dialogs";
+import {
+  NewInvoiceDialog,
+  RecordExpenseDialog,
+  RecordPaymentDialog,
+} from "../components/record-dialogs";
 import type {
   ExpenseListItem,
   FinanceSummary,
+  InvoiceListItem,
   InvoiceStatus,
   Money,
+  PaymentListItem,
 } from "../api/billing.api";
 
 const TABS = ["invoices", "payments", "expenses"] as const;
@@ -111,12 +118,31 @@ function FinanceKpis({ tab }: { tab: Tab }) {
   );
 }
 
+function exportInvoices(items: InvoiceListItem[]) {
+  downloadCsv(
+    `mizan-invoices-${exportStamp()}`,
+    [
+      { key: "number", header: "Invoice" },
+      { key: "clientName", header: "Client" },
+      { key: "matterReference", header: "Matter" },
+      { key: "status", header: "Status" },
+      { key: "currency", header: "Currency" },
+      { key: "total", header: "Total" },
+      { key: "balance", header: "Balance" },
+      { key: "issuedAt", header: "Issued" },
+      { key: "dueAt", header: "Due" },
+    ],
+    items,
+  );
+}
+
 function InvoicesTab() {
   const { t } = useTranslation("billing");
   const { can } = usePermissions();
   const navigate = useNavigate();
   const params = useUrlParams<"status">({});
   const query = useInvoices(params.get("status"));
+  const [creating, setCreating] = useState(false);
 
   const columns = [
     { key: "no", label: t("columns.invoice"), width: 150 },
@@ -151,9 +177,15 @@ function InvoicesTab() {
                 ))}
               </SelectContent>
             </Select>
-            <ToolbarButton icon="download">{t("export")}</ToolbarButton>
+            <ToolbarButton
+              icon="download"
+              disabled={!query.data?.items.length}
+              onClick={() => query.data && exportInvoices(query.data.items)}
+            >
+              {t("export")}
+            </ToolbarButton>
             {can("create:invoice") && (
-              <Button size="sm" icon="add" disabled>
+              <Button size="sm" icon="add" onClick={() => setCreating(true)}>
                 {t("actions.new_invoice")}
               </Button>
             )}
@@ -197,7 +229,24 @@ function InvoicesTab() {
           )}
         </QueryBoundary>
       </ListCard>
+      <NewInvoiceDialog open={creating} onOpenChange={setCreating} />
     </div>
+  );
+}
+
+function exportPayments(items: PaymentListItem[]) {
+  downloadCsv(
+    `mizan-payments-${exportStamp()}`,
+    [
+      { key: "reference", header: "Receipt" },
+      { key: "clientName", header: "Client" },
+      { key: "invoiceNumber", header: "Invoice" },
+      { key: "receivedAt", header: "Date" },
+      { key: "method", header: "Method" },
+      { key: "currency", header: "Currency" },
+      { key: "amount", header: "Amount" },
+    ],
+    items,
   );
 }
 
@@ -224,7 +273,13 @@ function PaymentsTab() {
         <ListToolbar>
           <span className="text-[14px] font-extrabold text-foreground">{t("tabs.payments")}</span>
           <div className="ms-auto flex items-center gap-2">
-            <ToolbarButton icon="download">{t("export")}</ToolbarButton>
+            <ToolbarButton
+              icon="download"
+              disabled={!query.data?.items.length}
+              onClick={() => query.data && exportPayments(query.data.items)}
+            >
+              {t("export")}
+            </ToolbarButton>
             {can("record:payment") && (
               <Button size="sm" icon="add" onClick={() => setRecording(true)}>
                 {t("actions.record_payment")}

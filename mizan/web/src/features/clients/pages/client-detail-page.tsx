@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { QueryBoundary } from "@/components/feedback/query-boundary";
 import { Skeleton } from "@/components/feedback/skeleton";
+import { MatterFormDialog } from "@/features/matters/components/matter-form-dialog";
 import { useClient, useClientMutations } from "../hooks/use-clients";
 import { ClientFormDialog } from "../components/client-form-dialog";
 import {
@@ -53,14 +54,17 @@ function ClientHero({
   canManage,
   onEdit,
   onArchive,
+  onNewMatter,
 }: {
   client: Client;
   canManage: boolean;
   onEdit: () => void;
   onArchive: () => void;
+  onNewMatter: () => void;
 }) {
   const { t } = useTranslation("clients");
   const since = formatDate(client.createdAt, { month: "long", year: "numeric" });
+  const contactEmail = client.email ?? client.primaryContact?.email ?? null;
   return (
     <Card>
       <CardBody className="p-5">
@@ -103,12 +107,23 @@ function ClientHero({
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
-            <Button variant="secondary" size="sm" icon="mail">
-              {t("detail.send_message")}
-            </Button>
-            <Button size="sm" icon="add" onClick={() => {}}>
-              {t("detail.new_matter")}
-            </Button>
+            {contactEmail && (
+              <Button
+                variant="secondary"
+                size="sm"
+                icon="mail"
+                onClick={() => {
+                  window.location.href = `mailto:${contactEmail}`;
+                }}
+              >
+                {t("detail.send_message")}
+              </Button>
+            )}
+            {canManage && (
+              <Button size="sm" icon="add" onClick={onNewMatter}>
+                {t("detail.new_matter")}
+              </Button>
+            )}
           </div>
         </div>
 
@@ -153,6 +168,7 @@ export function ClientDetailPage() {
   const { archive } = useClientMutations(id);
   const [editing, setEditing] = useState(false);
   const [archiving, setArchiving] = useState(false);
+  const [creatingMatter, setCreatingMatter] = useState(false);
   const canManage = can("update:client");
 
   useSetPageChrome({
@@ -179,6 +195,7 @@ export function ClientDetailPage() {
               canManage={canManage}
               onEdit={() => setEditing(true)}
               onArchive={() => setArchiving(true)}
+              onNewMatter={() => setCreatingMatter(true)}
             />
 
             <Tabs value={tab} onValueChange={(v) => params.set({ tab: v })}>
@@ -226,6 +243,11 @@ export function ClientDetailPage() {
             </Tabs>
 
             <ClientFormDialog open={editing} onOpenChange={setEditing} client={client} />
+            <MatterFormDialog
+              open={creatingMatter}
+              onOpenChange={setCreatingMatter}
+              clientId={client.id}
+            />
             <ConfirmDialog
               open={archiving}
               onOpenChange={setArchiving}

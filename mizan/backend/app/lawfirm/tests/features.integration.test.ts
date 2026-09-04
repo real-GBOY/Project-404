@@ -154,6 +154,45 @@ suite("lawfirm feature areas", () => {
     expect(me!.utilization).toBe(0);
   });
 
+  it("team: candidates lists firm members without a profile, create adds one", async () => {
+    const newUserId = await seedMember(app, firm, "lawyer", "Nadia Farouk");
+
+    const before = await asUser(firm.adminId, firm.orgId, () => svc(TeamService).candidates());
+    expect(before.items.some((c) => c.id === newUserId)).toBe(true);
+
+    const created = await asUser(firm.adminId, firm.orgId, () =>
+      svc(TeamService).create({ userId: newUserId, title: "Senior Associate" }),
+    );
+    expect(created.title).toBe("Senior Associate");
+    expect(created.name).toBe("Nadia Farouk");
+
+    const after = await asUser(firm.adminId, firm.orgId, () => svc(TeamService).candidates());
+    expect(after.items.some((c) => c.id === newUserId)).toBe(false);
+
+    await expect(
+      asUser(firm.adminId, firm.orgId, () => svc(TeamService).create({ userId: newUserId })),
+    ).rejects.toThrow(/already has a team profile/);
+  });
+
+  it("team: create rejects a user who is not a member of the firm", async () => {
+    const outsiderId = await seedMember(app, firmB, "lawyer", "Outsider");
+    await expect(
+      asUser(firm.adminId, firm.orgId, () => svc(TeamService).create({ userId: outsiderId })),
+    ).rejects.toThrow(/not a member of this firm/);
+  });
+
+  it("documents: content() reports when a metadata-only document has no file", async () => {
+    const d = await asUser(firm.adminId, firm.orgId, () =>
+      svc(DocumentsService).upload(
+        { name: "Placeholder.pdf", matterId, category: "Correspondence" },
+        firm.adminId,
+      ),
+    );
+    await expect(
+      asUser(firm.adminId, firm.orgId, () => svc(DocumentsService).content(d.id)),
+    ).rejects.toThrow(/no file attached/);
+  });
+
   it("dashboard: composes KPIs with empty derived slots", async () => {
     const data = await asUser(firm.adminId, firm.orgId, () => svc(DashboardService).data());
     expect(data.kpis.activeMatters).toBeGreaterThanOrEqual(1);

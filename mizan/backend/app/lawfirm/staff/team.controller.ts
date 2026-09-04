@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Param, Patch, Post, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { z } from "zod";
 import { RequirePermission } from "@core/http/decorators.js";
@@ -13,6 +13,13 @@ const updateSchema = z.object({
   practiceAreas: z.array(z.string().trim().min(1).max(80)).max(20).optional(),
   weeklyCapacityHours: z.number().int().min(0).max(80).optional(),
   status: z.enum(["active", "inactive"]).optional(),
+});
+
+const createSchema = z.object({
+  userId: z.string().min(1),
+  title: z.string().trim().max(120).optional(),
+  weeklyCapacityHours: z.number().int().min(0).max(80).optional(),
+  practiceAreas: z.array(z.string().trim().min(1).max(80)).max(20).optional(),
 });
 
 @ApiTags("lawfirm · staff")
@@ -32,6 +39,19 @@ export class TeamController {
   @RequirePermission("read", "staff")
   list() {
     return this.service.list();
+  }
+
+  @Get("candidates")
+  @RequirePermission("manage", "staff")
+  candidates() {
+    return this.service.candidates();
+  }
+
+  @Post()
+  @HttpCode(201)
+  @RequirePermission("manage", "staff")
+  create(@Body(ZodBody(createSchema)) body: z.infer<typeof createSchema>) {
+    return this.service.create(body);
   }
 
   @Get(":id")

@@ -1,7 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
 import type { UnitOfWork } from "@core/kernel/db/db.js";
 import { readInTenant } from "@core/kernel/db/db.js";
-import { NotFound } from "@core/kernel/errors.js";
+import { NotFound, ValidationError } from "@core/kernel/errors.js";
 import { CLOCK, FILE_STORAGE, UNIT_OF_WORK } from "@core/kernel/tokens.js";
 import type { Clock } from "@core/kernel/clock.js";
 import type { IFileStorage } from "@core/contracts/index.js";
@@ -72,6 +72,17 @@ export class DocumentsService {
     const doc = await readInTenant(() => this.repo.findById(id));
     if (!doc) throw NotFound("document.not_found", "Document not found.");
     return readInTenant(() => this.view(doc));
+  }
+
+  /** The stored bytes for a document, for the download route. */
+  async content(id: string): Promise<{ content: Buffer; filename: string; contentType: string }> {
+    const doc = await readInTenant(() => this.repo.findById(id));
+    if (!doc) throw NotFound("document.not_found", "Document not found.");
+    if (!doc.fileId || doc.fileId.endsWith("-placeholder")) {
+      throw ValidationError("document.no_file", "This document has no file attached.");
+    }
+    const { content, ref } = await this.files.getContent({ id: doc.fileId });
+    return { content, filename: doc.name || ref.originalName, contentType: ref.contentType };
   }
 
   async upload(input: UploadInput, actorId: string) {

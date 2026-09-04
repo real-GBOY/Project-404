@@ -40,7 +40,7 @@ import {
   ListToolbar,
   ViewToggle,
 } from "@/components/tables/list-card";
-import { useDocumentList, useDocumentMutations } from "../hooks/use-documents";
+import { useDocumentDownload, useDocumentList, useDocumentMutations } from "../hooks/use-documents";
 import { EditDocumentDialog, UploadDocumentDialog } from "../components/document-dialogs";
 import { CATEGORIES, type DocRow, type DocumentsSummary } from "../api/documents.api";
 
@@ -67,6 +67,7 @@ export function DocumentsListPage() {
     queryFn: ({ signal }) => httpClient<DocumentsSummary>("/documents/summary", { signal }),
   });
   const { remove } = useDocumentMutations();
+  const download = useDocumentDownload();
   const [uploading, setUploading] = useState(false);
   const [editing, setEditing] = useState<DocRow | null>(null);
   const [deleting, setDeleting] = useState<DocRow | null>(null);
@@ -224,7 +225,10 @@ export function DocumentsListPage() {
                           <Icon name="more_vert" size={16} />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
-                          <DropdownMenuItem icon="download">
+                          <DropdownMenuItem
+                            icon="download"
+                            onSelect={() => download.mutate({ id: d.id, name: d.name })}
+                          >
                             {t("common:actions.download")}
                           </DropdownMenuItem>
                           {canManage && (
