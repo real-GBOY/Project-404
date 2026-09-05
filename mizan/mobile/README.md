@@ -1,10 +1,9 @@
 # `mizan/mobile/` — Mizan mobile (Phase 2)
 
-**Not built yet.** Placeholder for the Mizan mobile client.
+Scaffolded with Expo (SDK 57, `blank-typescript` template): React Native + TypeScript.
 
 Per `docs/system-architecture.md` §22–24 and `Plan.md`:
 
-- React Native + TypeScript + Expo.
 - A **separate client of the same backend** as `mizan/web/` — no backend of its
   own, no repo code imported, HTTP API only.
 - May have different UX from web (rule 14); shares the API contracts, not the UI
@@ -12,5 +11,16 @@ Per `docs/system-architecture.md` §22–24 and `Plan.md`:
 - Same permission model: `can("action:resource")` from `/api/me` for UX gating;
   the backend stays the security authority.
 
+## Getting started
+
+```sh
+cd mizan/mobile
+npm install
+npm start        # Expo dev server — scan the QR with Expo Go, or:
+npm run android
+npm run ios       # macOS only
+npm run web
+```
+
 Build priority is **P2** — after Core + Mizan backend + Mizan web (`P1`, current).
-Nothing depends on this folder.
+Nothing else in the repo depends on this folder.
