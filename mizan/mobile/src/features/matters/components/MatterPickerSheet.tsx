@@ -59,7 +59,7 @@ export function MatterPickerSheet({
 }
 
 const styles = StyleSheet.create({
-  title: { fontFamily: fontFamily.extrabold, fontSize: fontSize.display, color: colors.textPrimary, letterSpacing: -0.2 },
+  title: { fontFamily: fontFamily.display, fontSize: fontSize.display, color: colors.textPrimary, letterSpacing: 0.2 },
   row: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.borderHairline },
   rowTitle: { flex: 1, fontFamily: fontFamily.bold, fontSize: fontSize.md, color: colors.textPrimary },
 });

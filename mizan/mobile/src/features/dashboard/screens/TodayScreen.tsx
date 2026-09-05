@@ -7,7 +7,7 @@ import { formatDate, formatTime } from "@/lib/format";
 import { colors, radii } from "@/theme/tokens";
 import { fontFamily, fontSize } from "@/theme/typography";
 import { Icon } from "@/components/ui/Icon";
-import { Avatar } from "@/components/ui/Avatar";
+import { Logo } from "@/components/ui/Logo";
 import { Card } from "@/components/ui/Card";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { MatterRefBadge } from "@/components/ui/MatterRefBadge";
@@ -40,16 +40,22 @@ export default function TodayScreen() {
   return (
     <View style={styles.screen}>
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+        <View style={styles.brandRow}>
+          <Logo size={24} tone="reversed" />
+          <Text style={styles.wordmark}>{t("common:appName")}</Text>
+          <Text style={styles.headerTab}>{t("common:tabs.today")}</Text>
+        </View>
         <View style={styles.headerRow}>
-          <Avatar name={user?.displayName ?? user?.email ?? "?"} size={40} round dark />
           <View style={styles.headerText}>
-            <Text style={styles.headerDate}>{formatDate(new Date(), { weekday: "long", day: "numeric", month: "long" })}</Text>
+            <Text style={styles.headerDate}>
+              {formatDate(new Date(), { weekday: "long", day: "numeric", month: "long" })}
+            </Text>
             <Text style={styles.headerGreeting} numberOfLines={1}>
               {t(greetingKey(new Date().getHours()), { name })}
             </Text>
           </View>
           <Pressable onPress={() => router.push("/notifications")} style={styles.bell} hitSlop={6}>
-            <Icon name="notifications" size={21} color={colors.brandCream} />
+            <Icon name="notifications" size={21} color={colors.textOnDark} />
             {unread > 0 ? <View style={styles.bellDot} /> : null}
           </Pressable>
         </View>
@@ -130,7 +136,7 @@ export default function TodayScreen() {
 function StatTile({ value, label, accent = false }: { value: number; label: string; accent?: boolean }) {
   return (
     <View style={styles.statTile}>
-      <Text style={[styles.statValue, accent && { color: "#E8B49A" }]}>{value}</Text>
+      <Text style={[styles.statValue, accent && { color: colors.brandBronze }]}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
@@ -227,33 +233,49 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: radii.xxl,
     borderBottomRightRadius: radii.xxl,
   },
-  headerRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  brandRow: { flexDirection: "row", alignItems: "center", gap: 11, marginBottom: 18 },
+  wordmark: { fontFamily: fontFamily.display, fontSize: fontSize.displayMd, color: colors.textOnDark, letterSpacing: 0.4 },
+  headerTab: {
+    marginStart: "auto",
+    fontFamily: fontFamily.semibold,
+    fontSize: fontSize.sm,
+    letterSpacing: 1.6,
+    textTransform: "uppercase",
+    color: colors.brandTan,
+  },
+  headerRow: { flexDirection: "row", alignItems: "flex-end", gap: 12 },
   headerText: { flex: 1, minWidth: 0 },
-  headerDate: { fontFamily: fontFamily.semibold, fontSize: fontSize.base, color: colors.brandTan },
-  headerGreeting: { fontFamily: fontFamily.extrabold, fontSize: fontSize.xxl, color: colors.textOnDark, letterSpacing: -0.3 },
+  headerDate: { fontFamily: fontFamily.display, fontSize: fontSize.displayMd, color: colors.textOnDark, letterSpacing: 0.2 },
+  headerGreeting: { fontFamily: fontFamily.regular, fontSize: fontSize.lg, color: colors.brandTan, marginTop: 3 },
   bell: {
     width: 40,
     height: 40,
     borderRadius: radii.md,
-    backgroundColor: colors.brandDeep,
+    borderWidth: 1,
+    borderColor: colors.brandBorderDark,
     alignItems: "center",
     justifyContent: "center",
   },
   bellDot: {
     position: "absolute",
-    top: 9,
-    end: 10,
-    width: 8,
-    height: 8,
-    borderRadius: radii.pill,
-    backgroundColor: "#E8836B",
+    top: 8,
+    end: 9,
+    width: 7,
+    height: 7,
+    backgroundColor: colors.dangerAccent,
     borderWidth: 1.5,
-    borderColor: colors.brandDark,
+    borderColor: colors.brandDeep,
   },
-  statsRow: { flexDirection: "row", gap: 10, marginTop: 18 },
-  statTile: { flex: 1, backgroundColor: colors.brandDeep, borderRadius: radii.lg, padding: 13 },
-  statValue: { fontFamily: fontFamily.extrabold, fontSize: fontSize.displayMd, color: colors.textOnDark },
-  statLabel: { fontFamily: fontFamily.semibold, fontSize: fontSize.sm, color: colors.brandTan, marginTop: 2 },
+  statsRow: { flexDirection: "row", gap: 10, marginTop: 20 },
+  statTile: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: colors.brandBorderDark,
+    borderRadius: radii.md,
+    padding: 13,
+  },
+  statValue: { fontFamily: fontFamily.display, fontSize: fontSize.heroLg, color: colors.textOnDark },
+  statLabel: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.brandTan, marginTop: 3 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
   retry: { fontFamily: fontFamily.bold, color: colors.brandBronzeLabel },
   content: { padding: 20, gap: 18, paddingBottom: 100 },
@@ -265,12 +287,12 @@ const styles = StyleSheet.create({
   hearingCourt: { fontFamily: fontFamily.medium, fontSize: fontSize.base, color: colors.textSecondary, marginTop: 4 },
   hearingDivider: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 14, paddingTop: 13, borderTopWidth: 1, borderTopColor: colors.borderHairline },
   hearingTime: { fontFamily: fontFamily.bold, fontSize: fontSize.baseMd, color: colors.brandDark },
-  directionsPill: { marginStart: "auto", flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 11, paddingVertical: 5, borderRadius: radii.pill, backgroundColor: colors.brandDark },
+  directionsPill: { marginStart: "auto", flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 11, paddingVertical: 5, borderRadius: radii.smMd, backgroundColor: colors.brandDark },
   directionsText: { fontFamily: fontFamily.bold, fontSize: fontSize.base, color: colors.textOnDark },
   deadlineRow: { flexDirection: "row", alignItems: "center", gap: 12, padding: 13, paddingHorizontal: 15 },
   taskRow: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14, paddingHorizontal: 15 },
   rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.borderHairline },
-  accentBar: { width: 3, alignSelf: "stretch", borderRadius: radii.pill },
+  accentBar: { width: 3, alignSelf: "stretch" },
   checkbox: { width: 22, height: 22, borderWidth: 2, borderColor: colors.borderNeutral, borderRadius: radii.xs },
   rowTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.md, color: colors.textPrimary },
   rowSubtitle: { fontFamily: fontFamily.medium, fontSize: fontSize.smMd, color: colors.textSecondary, marginTop: 2 },

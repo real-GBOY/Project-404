@@ -2,8 +2,8 @@ import { View, Text, StyleSheet } from "react-native";
 import { colors, radii } from "@/theme/tokens";
 import { fontFamily, fontSize } from "@/theme/typography";
 
-/** The monospace matter-reference tag seen on nearly every card
- *  ("1042/2026") — cream fill, bronze border, dark monospace text. */
+/** The monospace matter-reference chip ("TP-2025-0055") — sand fill, brass
+ *  hairline border, Court Navy monospace text (Mizan Identity chip tokens). */
 export function MatterRefBadge({ reference, small = false }: { reference: string; small?: boolean }) {
   return (
     <View style={[styles.base, small && styles.small]}>
@@ -15,12 +15,12 @@ export function MatterRefBadge({ reference, small = false }: { reference: string
 const styles = StyleSheet.create({
   base: {
     alignSelf: "flex-start",
-    backgroundColor: colors.bg,
+    backgroundColor: colors.brandCream,
     borderWidth: 1,
     borderColor: colors.brandCreamBorder,
-    borderRadius: radii.sm,
-    paddingHorizontal: 9,
-    paddingVertical: 4,
+    borderRadius: radii.xs,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
   },
   small: {
     borderRadius: radii.xs,

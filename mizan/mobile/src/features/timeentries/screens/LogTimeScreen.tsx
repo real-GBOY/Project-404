@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
   billableTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.mdLg, color: colors.textPrimary },
   billableSub: { fontFamily: fontFamily.medium, fontSize: fontSize.smMd, color: colors.textSecondary, marginTop: 2 },
   localNote: { fontFamily: fontFamily.medium, fontSize: fontSize.base, color: colors.textSecondary, textAlign: "center" },
-  sheetTitle: { fontFamily: fontFamily.extrabold, fontSize: fontSize.display, color: colors.textPrimary },
+  sheetTitle: { fontFamily: fontFamily.display, fontSize: fontSize.display, color: colors.textPrimary },
   activityRow: {
     flexDirection: "row",
     alignItems: "center",

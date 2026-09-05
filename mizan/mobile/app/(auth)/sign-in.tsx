@@ -17,11 +17,14 @@ import { isApiError } from "@/lib/api/api-error";
 import { colors, radii } from "@/theme/tokens";
 import { fontFamily, fontSize } from "@/theme/typography";
 import { Icon } from "@/components/ui/Icon";
+import { Logo } from "@/components/ui/Logo";
 import { BronzeButton } from "@/components/ui/Button";
+import { useDir } from "@/lib/i18n/use-dir";
 
 export default function SignInScreen() {
   const { t } = useTranslation("auth");
   const insets = useSafeAreaInsets();
+  const { isRtl } = useDir();
   const { login, unlockWithBiometrics, biometricAvailable, hasStoredSession, user } = useAuth();
 
   const [email, setEmail] = useState(process.env.EXPO_PUBLIC_DEMO_EMAIL ?? "");
@@ -35,13 +38,7 @@ export default function SignInScreen() {
     setLoading(true);
     try {
       const outcome = await login(email.trim(), password);
-      if (outcome.hasNoOrg) {
-        setError(t("noOrganization"));
-      }
-      // needsOrgSelection: single-org accounts (the common case) resolve
-      // automatically inside AuthProvider's token claims; a multi-org picker
-      // is out of scope for this pass — falls through to the tab navigator,
-      // where org-scoped data will simply reflect the account's default org.
+      if (outcome.hasNoOrg) setError(t("noOrganization"));
     } catch (err) {
       setError(isApiError(err) && err.isUnauthorized ? t("invalidCredentials") : t("invalidCredentials"));
     } finally {
@@ -58,22 +55,20 @@ export default function SignInScreen() {
   return (
     <View style={styles.screen}>
       <StatusBar style="light" />
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView
           contentContainerStyle={[
             styles.content,
-            { paddingTop: insets.top + 58, paddingBottom: Math.max(insets.bottom, 24) + 20 },
+            { paddingTop: insets.top + 60, paddingBottom: Math.max(insets.bottom, 24) + 20 },
           ]}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.logo}>
-            <Text style={styles.logoText}>M</Text>
+          <View style={styles.lockup}>
+            <Logo size={52} tone="reversed" />
+            <Text style={styles.wordmark}>{isRtl ? "ميزان" : "Mizan"}</Text>
           </View>
-          <Text style={styles.title}>{t("common:appName")}</Text>
-          <Text style={styles.subtitle}>{t("firm")} · Cairo</Text>
+          <View style={styles.rule} />
+          <Text style={styles.tagline}>{t("tagline")}</Text>
 
           <View style={styles.form}>
             <View>
@@ -86,7 +81,7 @@ export default function SignInScreen() {
                   autoCorrect={false}
                   keyboardType="email-address"
                   textContentType="username"
-                  placeholder="a.tawfik@tawfiklaw.eg"
+                  placeholder="name@firm.eg"
                   placeholderTextColor={colors.brandTan}
                   style={styles.input}
                 />
@@ -105,11 +100,7 @@ export default function SignInScreen() {
                   style={[styles.input, { flex: 1 }]}
                 />
                 <Pressable onPress={() => setShowPassword((v) => !v)} hitSlop={8}>
-                  <Icon
-                    name="visibility_off"
-                    size={20}
-                    color={colors.brandBronze}
-                  />
+                  <Icon name="visibility_off" size={20} color={colors.brandBronze} />
                 </Pressable>
               </View>
             </View>
@@ -127,7 +118,7 @@ export default function SignInScreen() {
 
           {biometricAvailable && hasStoredSession ? (
             <Pressable style={styles.faceIdRow} onPress={tryBiometrics} hitSlop={8}>
-              <Icon name="face" size={22} color={colors.brandTan} />
+              <Icon name="face" size={20} color={colors.brandTan} />
               <Text style={styles.faceIdText}>{t("useFaceId")}</Text>
             </Pressable>
           ) : null}
@@ -143,75 +134,56 @@ export default function SignInScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.brandDark,
-  },
-  content: {
-    flexGrow: 1,
-    paddingHorizontal: 28,
-  },
-  logo: {
-    width: 60,
-    height: 60,
-    borderRadius: 18,
-    backgroundColor: colors.brandCream,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  logoText: {
-    fontFamily: fontFamily.extrabold,
-    fontSize: fontSize.displayLg,
-    color: colors.brandDark,
-  },
-  title: {
-    fontFamily: fontFamily.extrabold,
-    fontSize: 30,
+  screen: { flex: 1, backgroundColor: colors.brandDark },
+  content: { flexGrow: 1, paddingHorizontal: 28 },
+  lockup: { flexDirection: "row", alignItems: "center", gap: 18 },
+  wordmark: {
+    fontFamily: fontFamily.display,
+    fontSize: 44,
     color: colors.textOnDark,
-    letterSpacing: -0.5,
-    marginTop: 26,
-    lineHeight: 36,
+    letterSpacing: 1,
   },
-  subtitle: {
-    fontFamily: fontFamily.medium,
-    fontSize: fontSize.lg,
-    color: colors.brandTan,
-    marginTop: 8,
+  rule: { width: 72, height: 1, backgroundColor: colors.brandBronze, marginTop: 22 },
+  tagline: {
+    fontFamily: fontFamily.display,
+    fontSize: fontSize.hero,
+    lineHeight: 38,
+    color: colors.textOnDark,
+    marginTop: 22,
+    maxWidth: 300,
   },
-  form: {
-    marginTop: 44,
-    gap: 14,
-  },
+  form: { marginTop: 44, gap: 16 },
   label: {
-    fontFamily: fontFamily.bold,
-    fontSize: fontSize.sm,
-    letterSpacing: 0.7,
+    fontFamily: fontFamily.semibold,
+    fontSize: fontSize.smMd,
+    letterSpacing: 1.4,
+    textTransform: "uppercase",
     color: colors.brandTan,
     marginBottom: 8,
   },
   inputWrap: {
-    height: 52,
-    borderRadius: radii.lg,
+    height: 50,
+    borderRadius: radii.md,
     backgroundColor: colors.brandDeep,
     borderWidth: 1,
     borderColor: colors.brandBorderDark,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    paddingHorizontal: 16,
+    paddingHorizontal: 15,
   },
   input: {
     flex: 1,
-    fontFamily: fontFamily.bold,
-    fontSize: fontSize.xl,
+    fontFamily: fontFamily.medium,
+    fontSize: fontSize.lg,
     color: colors.textOnDark,
     padding: 0,
   },
   error: {
     marginTop: 14,
-    fontFamily: fontFamily.semibold,
+    fontFamily: fontFamily.medium,
     fontSize: fontSize.baseMd,
-    color: "#E8836B",
+    color: "#D98C7A",
   },
   faceIdRow: {
     flexDirection: "row",
@@ -221,25 +193,19 @@ const styles = StyleSheet.create({
     marginTop: 22,
   },
   faceIdText: {
-    fontFamily: fontFamily.bold,
-    fontSize: fontSize.lg,
-    color: colors.brandTan,
-  },
-  footer: {
-    marginTop: "auto",
-    alignItems: "center",
-    paddingTop: 40,
-  },
-  footerName: {
     fontFamily: fontFamily.semibold,
-    fontSize: fontSize.base,
+    fontSize: fontSize.md,
+    letterSpacing: 0.3,
     color: colors.brandTan,
   },
+  footer: { marginTop: "auto", alignItems: "center", paddingTop: 40 },
+  footerName: { fontFamily: fontFamily.semibold, fontSize: fontSize.base, color: colors.brandTan },
   footerNotice: {
-    fontFamily: fontFamily.medium,
+    fontFamily: fontFamily.regular,
     fontSize: fontSize.smMd,
     color: colors.brandTan,
     marginTop: 6,
     textAlign: "center",
+    lineHeight: 17,
   },
 });

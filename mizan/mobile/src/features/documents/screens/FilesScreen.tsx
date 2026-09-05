@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
   },
   headerRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  title: { flex: 1, fontFamily: fontFamily.extrabold, fontSize: fontSize.displayLg, letterSpacing: -0.3, color: colors.textPrimary },
+  title: { flex: 1, fontFamily: fontFamily.display, fontSize: fontSize.displayLg, letterSpacing: 0.2, color: colors.textPrimary },
   scanBtn: {
     flexDirection: "row",
     alignItems: "center",

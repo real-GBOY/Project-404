@@ -2,8 +2,9 @@ import { View, Text, StyleSheet } from "react-native";
 import { colors } from "@/theme/tokens";
 import { fontFamily, fontSize } from "@/theme/typography";
 
-/** The uppercase bronze/gray label + hairline rule pattern that introduces
- *  every card group in the design (e.g. "NEXT HEARING", "OPEN DEADLINES"). */
+/** The uppercase Slate micro-label (12 / 0.2em) + hairline rule that
+ *  introduces every card group (e.g. "NEXT HEARING", "OPEN DEADLINES").
+ *  Mizan Identity §04: labels are Slate Blue, Public Sans. */
 export function SectionHeader({
   label,
   withRule = false,
@@ -31,10 +32,10 @@ const styles = StyleSheet.create({
     marginBottom: 9,
   },
   label: {
-    fontFamily: fontFamily.extrabold,
-    fontSize: fontSize.sm,
-    letterSpacing: 0.9,
-    color: colors.textSecondary,
+    fontFamily: fontFamily.semibold,
+    fontSize: fontSize.smMd,
+    letterSpacing: 1.4,
+    color: colors.brandBronzeLabel,
     textTransform: "uppercase",
   },
   labelDanger: {

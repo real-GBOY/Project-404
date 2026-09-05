@@ -137,7 +137,7 @@ export interface IconProps {
   style?: ComponentProps<typeof MaterialIcons>["style"];
 }
 
-export function Icon({ name, size = 22, color = "#16161D", style }: IconProps) {
+export function Icon({ name, size = 22, color = "#16233A", style }: IconProps) {
   const materialName = MATERIAL[name];
   if (materialName) {
     return <MaterialIcons name={materialName} size={size} color={color} style={style} />;

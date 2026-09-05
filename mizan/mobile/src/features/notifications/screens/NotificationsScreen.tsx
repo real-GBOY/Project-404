@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
   body: { flex: 1, minWidth: 0 },
   titleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   title: { flex: 1, fontFamily: fontFamily.extrabold, fontSize: fontSize.mdLg, color: colors.textPrimary },
-  dot: { width: 7, height: 7, borderRadius: radii.pill, backgroundColor: colors.brandBronze },
+  dot: { width: 7, height: 7, backgroundColor: colors.brandBronze },
   desc: { fontFamily: fontFamily.medium, fontSize: fontSize.baseMd, color: colors.textSecondary, lineHeight: 18, marginTop: 3 },
   time: { fontFamily: fontFamily.semibold, fontSize: fontSize.base, color: colors.textSecondary, marginTop: 7 },
 });

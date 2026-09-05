@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet } from "react-native";
-import { colors } from "@/theme/tokens";
+import { colors, radii } from "@/theme/tokens";
 import { fontFamily, fontSize } from "@/theme/typography";
 import { Icon, type IconName } from "./Icon";
 
@@ -32,16 +32,16 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   iconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 18,
+    width: 54,
+    height: 54,
+    borderRadius: radii.smMd,
     backgroundColor: colors.bgSunk,
     alignItems: "center",
     justifyContent: "center",
   },
   title: {
-    fontFamily: fontFamily.bold,
-    fontSize: fontSize.md,
+    fontFamily: fontFamily.display,
+    fontSize: fontSize.xxl,
     color: colors.textPrimary,
     textAlign: "center",
   },

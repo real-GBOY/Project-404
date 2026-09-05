@@ -1,93 +1,104 @@
 /**
- * Design tokens for Mizan Mobile — values lifted directly from the Claude
- * Design source file (`Mizan Mobile App.dc.html`), not the web app's
- * Navy/Brass tokens. `docs/system-architecture.md` explicitly allows web and
- * mobile to run different UI systems sharing only types/contracts, and this
- * design file is the stated source of truth for how mobile looks — same
- * brand family (Mizan name, "M" mark), its own warm brown/bronze token set.
+ * Design tokens for Mizan Mobile — the "Mizan Identity" visual system
+ * (Claude Design: `Mizan Identity.dc.html`), the same institutional identity
+ * the web app runs (`mizan/web/src/styles/tokens.css`).
+ *
+ *   Court Navy  #16233A  primary ink · the mark · headers · primary buttons
+ *   Slate Blue  #31456B  interactive states · links · secondary labels
+ *   Brass       #B99A5B  accent only — never a surface, never body text
+ *   Paper       #F5F3EF  default background — warm, not white
+ *   Card        #FAF9F6  raised surfaces: case cards, panels, tables
+ *
+ *   Spectral    display — page & case titles, never UI controls or data
+ *   Public Sans interface — tables, forms, labels, filters, notifications
+ *   Amiri       wordmark & Arabic display  ·  IBM Plex Sans Arabic — Arabic UI
+ *
+ * Token NAMES are kept stable so screen code barely moves — only the values.
  */
 
 export const colors = {
-  // Backgrounds
-  bg: "#F7F3EF", // screen background (cream)
-  bgSunk: "#F5F0EA", // search bars / recessed fields
-  surface: "#FFFFFF", // cards
-  surfaceMuted: "#FBF8F4",
+  // Surfaces — hairlines on warm paper
+  bg: "#F5F3EF", // Paper
+  bgSunk: "#F2EFE8", // row hover, search field
+  surface: "#FAF9F6", // Card — raised surfaces
+  surfaceMuted: "#F6F3EC", // nested cards
 
-  // Brand — dark brown / bronze
-  brandDarkest: "#2E1A12",
-  brandDark: "#3B2418", // headers, primary buttons, sign-in background
-  brandDeep: "#4A2D1F", // secondary dark surfaces (inputs on dark, badges)
-  brandBorderDark: "#5B3928", // borders on dark inputs, dark hairlines
-  brandBronze: "#A67C52", // CTA accent on dark, icon accent
-  brandBronzeText: "#24140E", // text on bronze buttons
-  brandTan: "#D1BBA8", // secondary text on dark backgrounds
-  brandCream: "#F1E8D9", // avatar / icon chip backgrounds
-  brandCreamBorder: "#D4B98F", // matter-reference badge border, amber banner border
-  brandAmberBannerBg: "#F1E8D9",
-  brandAmberBannerText: "#2E1A12",
-  brandAmberBannerSubtext: "#5B3928",
-  brandBronzeLabel: "#8A5F32", // uppercase bronze labels (flow tags, ref text)
+  // Brand — Court Navy ramp
+  brandDarkest: "#0B1422",
+  brandDark: "#16233A", // headers, primary buttons, sign-in panel
+  brandDeep: "#21304A", // hover / secondary dark surfaces
+  brandBorderDark: "#2C3B54", // hairlines on navy
+  brandBronze: "#B99A5B", // Brass — accent only
+  brandBronzeText: "#16233A", // navy text on a brass surface
+  brandTan: "rgba(245,243,239,0.66)", // muted Paper — labels/subtitles on navy panels
+  brandCream: "#F0EADB", // surface-sand: date chips, avatar tiles, active nav
+  brandCreamBorder: "#CBB086", // matter-number chip / sand callout border
+  brandAmberBannerBg: "#F0EADB",
+  brandAmberBannerText: "#16233A",
+  brandAmberBannerSubtext: "#5B4A2C",
+  brandBronzeLabel: "#31456B", // uppercase section labels — Slate per the identity
 
-  // Text
-  textPrimary: "#16161D",
-  textSecondary: "#6B5D53",
-  textMuted: "#7A6E64",
-  textOnDark: "#F7F3EF",
-  textOnDarkMuted: "#D1BBA8",
-  chatText: "#2A2A38",
-  chatTextAlt: "#33333F",
-  financeSecondary: "#55556B",
+  // Text ramp
+  textPrimary: "#16233A",
+  textSecondary: "#47597A",
+  textMuted: "#7B869A",
+  textOnDark: "#F5F3EF", // Paper on navy
+  textOnDarkMuted: "rgba(245,243,239,0.62)",
+  chatText: "#29344A",
+  chatTextAlt: "#3D4A63",
+  financeSecondary: "#6A7690",
 
   // Borders / dividers
-  border: "#E8DFD6",
-  borderHairline: "#F2EBE4",
-  borderSectionRule: "#E3D9CF",
-  borderNeutral: "#D6C8BB",
-  chevronMuted: "#C7BAAE",
-  chipInactiveBg: "#EFE7DE",
-  chipInactiveText: "#5B3928",
-  iconMuted: "#B6A797",
-  placeholderIcon: "#A0938A",
+  border: "#E4E0D6",
+  borderHairline: "#F0EDE4",
+  borderSectionRule: "#EEEAE0",
+  borderNeutral: "#DAD5C8",
+  chevronMuted: "#AEB6C4",
+  chipInactiveBg: "#F0EADB",
+  chipInactiveText: "#47597A",
+  iconMuted: "#98A1B3",
+  placeholderIcon: "#98A1B3",
 
-  // Status — danger / overdue
-  dangerBg: "#FBEBE7",
-  dangerText: "#A33D2A",
-  dangerAccent: "#C0503C",
+  // Status — Overdue
+  dangerBg: "#F5E7E3",
+  dangerText: "#8C3B2E",
+  dangerAccent: "#A8412F",
 
-  // Status — warning / amber
-  warningBg: "#FAF0DF",
-  warningText: "#8A6420",
-  warningAccent: "#C08A3C",
+  // Status — Due soon
+  warningBg: "#F2EDE0",
+  warningText: "#7A6A3C",
+  warningAccent: "#B99A5B",
 
-  // Status — success
-  successBg: "#E7F7EF",
-  successText: "#067647",
+  // Status — Filed
+  successBg: "#E6EFE9",
+  successText: "#2F5C47",
 
-  // Status — info (active)
-  infoBg: "#EAF0FA",
-  infoText: "#28517F",
+  // Status — Slate (info / active)
+  infoBg: "#E8ECF3",
+  infoText: "#31456B",
 
-  // Status — neutral tan (hearing set, procedural, etc.)
-  neutralTanBg: "#F1E8D9",
-  neutralTanText: "#4A2D1F",
+  // Status — Closed (neutral)
+  neutralTanBg: "#EDEAE2",
+  neutralTanText: "#575D54",
 
   white: "#FFFFFF",
   black: "#000000",
 } as const;
 
+/** Institutional radii — tightened, never pill-shaped for surfaces
+ *  (matches `mizan/web` tokens.css). */
 export const radii = {
-  xs: 7,
-  sm: 8,
-  smMd: 10,
-  md: 12,
-  mdLg: 13,
-  lg: 14,
-  lgXl: 16,
-  xl: 18,
-  xxl: 20,
-  sheet: 26,
-  pill: 999,
+  xs: 3, // checkbox, chip, badge
+  sm: 4,
+  smMd: 5, // small controls, disc icons
+  md: 6, // buttons, inputs, nav items
+  mdLg: 7, // logo tile, tab group
+  lg: 7,
+  lgXl: 8, // the card
+  xl: 8,
+  xxl: 8,
+  sheet: 14, // bottom sheet
+  pill: 999, // toggles and true pills only
 } as const;
 
 export const spacing = {
@@ -114,7 +125,5 @@ export const spacing = {
 } as const;
 
 export const screen = {
-  /** Design frame width the mock was authored against — layouts use flex/%
-   *  so this is a reference, not a hard breakpoint. */
   referenceWidth: 402,
 };

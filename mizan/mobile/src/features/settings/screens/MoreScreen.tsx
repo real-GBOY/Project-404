@@ -12,6 +12,7 @@ import { formatFileSize } from "@/lib/format";
 import { colors, radii } from "@/theme/tokens";
 import { fontFamily, fontSize } from "@/theme/typography";
 import { Avatar } from "@/components/ui/Avatar";
+import { Logo } from "@/components/ui/Logo";
 import { Card } from "@/components/ui/Card";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { Icon, type IconName } from "@/components/ui/Icon";
@@ -59,17 +60,24 @@ export default function MoreScreen() {
   return (
     <View style={styles.screen}>
       <StatusBar style="light" />
-      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
-        <Avatar name={user?.displayName ?? user?.email ?? "?"} size={52} round dark />
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={styles.name} numberOfLines={1}>
-            {user?.displayName ?? user?.email}
-          </Text>
-          {subtitle ? (
-            <Text style={styles.role} numberOfLines={1}>
-              {subtitle}
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+        <View style={styles.brandRow}>
+          <Logo size={22} tone="reversed" />
+          <Text style={styles.wordmark}>{t("common:appName")}</Text>
+          <Text style={styles.headerTab}>{t("title")}</Text>
+        </View>
+        <View style={styles.identity}>
+          <Avatar name={user?.displayName ?? user?.email ?? "?"} size={52} round />
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={styles.name} numberOfLines={1}>
+              {user?.displayName ?? user?.email}
             </Text>
-          ) : null}
+            {subtitle ? (
+              <Text style={styles.role} numberOfLines={1}>
+                {subtitle}
+              </Text>
+            ) : null}
+          </View>
         </View>
       </View>
 
@@ -188,15 +196,23 @@ function Row({
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
     backgroundColor: colors.brandDark,
     paddingHorizontal: 20,
     paddingBottom: 22,
   },
-  name: { fontFamily: fontFamily.extrabold, fontSize: fontSize.xxl, color: colors.textOnDark },
-  role: { fontFamily: fontFamily.semibold, fontSize: fontSize.base, color: colors.brandTan, marginTop: 3 },
+  brandRow: { flexDirection: "row", alignItems: "center", gap: 11, marginBottom: 20 },
+  wordmark: { fontFamily: fontFamily.display, fontSize: fontSize.displayMd, color: colors.textOnDark, letterSpacing: 0.4 },
+  headerTab: {
+    marginStart: "auto",
+    fontFamily: fontFamily.semibold,
+    fontSize: fontSize.sm,
+    letterSpacing: 1.6,
+    textTransform: "uppercase",
+    color: colors.brandTan,
+  },
+  identity: { flexDirection: "row", alignItems: "center", gap: 14 },
+  name: { fontFamily: fontFamily.display, fontSize: fontSize.displayMd, color: colors.textOnDark, letterSpacing: 0.2 },
+  role: { fontFamily: fontFamily.regular, fontSize: fontSize.baseMd, color: colors.brandTan, marginTop: 3 },
   content: { padding: 20, gap: 14, paddingBottom: 40 },
   row: { flexDirection: "row", alignItems: "center", gap: 13, paddingHorizontal: 15, paddingVertical: 14 },
   rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.borderHairline },

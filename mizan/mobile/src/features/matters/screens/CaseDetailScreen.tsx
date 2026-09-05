@@ -92,14 +92,14 @@ export default function CaseDetailScreen() {
       <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
         <View style={styles.headerRow}>
           <Pressable onPress={() => router.back()} hitSlop={10}>
-            <Icon name="arrow_back" size={24} color={colors.brandCream} />
+            <Icon name="arrow_back" size={24} color={colors.textOnDark} />
           </Pressable>
           <Text style={styles.headerRef}>{matter.reference}</Text>
           <Pressable onPress={() => router.push("/assistant")} hitSlop={8}>
-            <Icon name="auto_awesome" size={23} color={colors.brandCream} />
+            <Icon name="auto_awesome" size={23} color={colors.textOnDark} />
           </Pressable>
           <Pressable onPress={() => {}} hitSlop={8}>
-            <Icon name="more_vert" size={23} color={colors.brandCream} />
+            <Icon name="more_vert" size={23} color={colors.textOnDark} />
           </Pressable>
         </View>
         <Text style={styles.headerTitle}>{matter.title}</Text>
@@ -367,11 +367,11 @@ const styles = StyleSheet.create({
   header: { backgroundColor: colors.brandDark, paddingHorizontal: 20, paddingBottom: 16 },
   headerRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   headerRef: { flex: 1, fontFamily: fontFamily.mono, fontWeight: "700", fontSize: fontSize.lg, color: colors.textOnDark },
-  headerTitle: { fontFamily: fontFamily.extrabold, fontSize: fontSize.xxl, lineHeight: 23, color: colors.textOnDark, marginTop: 14 },
+  headerTitle: { fontFamily: fontFamily.display, fontSize: fontSize.displayMd, lineHeight: 25, color: colors.textOnDark, marginTop: 14, letterSpacing: 0.2 },
   headerSubtitle: { fontFamily: fontFamily.medium, fontSize: fontSize.baseMd, color: colors.brandTan, marginTop: 6 },
   headerChips: { flexDirection: "row", gap: 8, marginTop: 14, flexWrap: "wrap" },
-  darkChip: { paddingHorizontal: 11, paddingVertical: 5, borderRadius: radii.pill, backgroundColor: colors.brandDeep },
-  darkChipText: { fontFamily: fontFamily.bold, fontSize: fontSize.smMd, color: colors.brandCream },
+  darkChip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radii.smMd, backgroundColor: colors.brandDeep },
+  darkChipText: { fontFamily: fontFamily.medium, fontSize: fontSize.smMd, color: colors.textOnDark },
   tabBar: { backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.border },
   tabBarContent: { paddingHorizontal: 20, gap: 22 },
   tabItem: { paddingVertical: 13 },
@@ -387,7 +387,7 @@ const styles = StyleSheet.create({
   rowSub: { fontFamily: fontFamily.medium, fontSize: fontSize.base, color: colors.textSecondary, marginTop: 3 },
   deadlineRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 15, paddingVertical: 13 },
   rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.borderHairline },
-  accent: { width: 3, alignSelf: "stretch", borderRadius: radii.pill },
+  accent: { width: 3, alignSelf: "stretch" },
   checkbox: { width: 22, height: 22, borderWidth: 2, borderColor: colors.borderNeutral, borderRadius: radii.xs },
   checkboxDone: { backgroundColor: colors.brandBronze, borderColor: colors.brandBronze },
   strike: { textDecorationLine: "line-through", color: colors.textSecondary },
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
   timelineDot: { width: 30, height: 30, borderRadius: radii.pill, backgroundColor: colors.brandCream, alignItems: "center", justifyContent: "center" },
   timelineLine: { width: 1.5, flex: 1, backgroundColor: colors.chipInactiveBg, minHeight: 12 },
   noteBody: { fontFamily: fontFamily.medium, fontSize: fontSize.md, color: colors.chatTextAlt, lineHeight: 20 },
-  sheetTitle: { fontFamily: fontFamily.extrabold, fontSize: fontSize.display, color: colors.textPrimary, letterSpacing: -0.2 },
+  sheetTitle: { fontFamily: fontFamily.display, fontSize: fontSize.display, color: colors.textPrimary, letterSpacing: 0.2 },
   noteInput: {
     marginTop: 12,
     minHeight: 100,

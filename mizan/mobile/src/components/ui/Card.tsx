@@ -2,8 +2,8 @@ import { View, type ViewProps, StyleSheet } from "react-native";
 import { colors, radii } from "@/theme/tokens";
 
 export interface CardProps extends ViewProps {
-  /** matches the design's context-dependent radii (16 list cards, 18 grouped
-   *  cards, 20 hero/summary cards). */
+  /** institutional radius from `theme/tokens` — all ≤ 8px in the Mizan
+   *  Identity system; surfaces are never pill-shaped. */
   radius?: keyof typeof radii;
   padded?: boolean;
 }

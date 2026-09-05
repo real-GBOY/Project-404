@@ -29,15 +29,15 @@ export function Avatar({
         {
           width: size,
           height: size,
-          borderRadius: round ? radii.pill : radii.md,
-          backgroundColor: dark ? colors.brandTan : colors.brandCream,
+          borderRadius: round ? radii.pill : radii.smMd,
+          backgroundColor: colors.brandCream,
         },
       ]}
     >
       <Text
         style={[
           styles.text,
-          { fontSize: Math.max(11, size * 0.34), color: dark ? colors.brandDark : colors.brandDeep },
+          { fontSize: Math.max(11, size * 0.34), color: colors.brandDark },
         ]}
       >
         {initials(name)}
@@ -52,6 +52,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   text: {
-    fontFamily: fontFamily.extrabold,
+    fontFamily: fontFamily.semibold,
+    letterSpacing: 0.3,
   },
 });

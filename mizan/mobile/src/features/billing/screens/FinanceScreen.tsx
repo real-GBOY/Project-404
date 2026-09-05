@@ -70,7 +70,7 @@ export default function FinanceScreen() {
           <Text style={styles.heroValue}>{moneyOrText(s?.c)}</Text>
           <View style={styles.heroTiles}>
             <View style={styles.heroTile}>
-              <Text style={[styles.heroTileValue, { color: "#E8B49A" }]}>
+              <Text style={[styles.heroTileValue, { color: colors.brandBronze }]}>
                 {Object.keys(overdueAmount).length
                   ? Object.entries(overdueAmount)
                       .map(([currency, amount]) => formatMoney({ currency, amount: amount.toFixed(0) }))

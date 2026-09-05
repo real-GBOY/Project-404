@@ -114,14 +114,14 @@ const styles = StyleSheet.create({
   },
   title: {
     flex: 1,
-    fontFamily: fontFamily.extrabold,
-    fontSize: fontSize.xxl,
-    letterSpacing: -0.3,
+    fontFamily: fontFamily.display,
+    fontSize: fontSize.displayMd,
+    letterSpacing: 0.2,
   },
   titleLarge: {
     flex: 1,
-    fontFamily: fontFamily.extrabold,
-    fontSize: fontSize.display,
-    letterSpacing: -0.3,
+    fontFamily: fontFamily.display,
+    fontSize: fontSize.displayLg,
+    letterSpacing: 0.2,
   },
 });

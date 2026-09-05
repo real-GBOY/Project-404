@@ -47,6 +47,7 @@ export default {
 
   auth: {
     firm: "Tawfik & Partners",
+    tagline: "One place to run the firm.",
     firmEmailLabel: "FIRM EMAIL",
     passwordLabel: "PASSWORD",
     signIn: "Sign in",

@@ -7,14 +7,24 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { I18nextProvider } from "react-i18next";
+import { useFonts } from "expo-font";
 import {
-  useFonts,
-  PlusJakartaSans_400Regular,
-  PlusJakartaSans_500Medium,
-  PlusJakartaSans_600SemiBold,
-  PlusJakartaSans_700Bold,
-  PlusJakartaSans_800ExtraBold,
-} from "@expo-google-fonts/plus-jakarta-sans";
+  Spectral_300Light,
+  Spectral_400Regular,
+  Spectral_500Medium,
+  Spectral_400Regular_Italic,
+} from "@expo-google-fonts/spectral";
+import {
+  PublicSans_400Regular,
+  PublicSans_500Medium,
+  PublicSans_600SemiBold,
+} from "@expo-google-fonts/public-sans";
+import { Amiri_400Regular, Amiri_700Bold } from "@expo-google-fonts/amiri";
+import {
+  IBMPlexSansArabic_400Regular,
+  IBMPlexSansArabic_500Medium,
+  IBMPlexSansArabic_600SemiBold,
+} from "@expo-google-fonts/ibm-plex-sans-arabic";
 import { queryClient } from "@/lib/api/query-client";
 import { AuthProvider } from "@/lib/auth/auth-provider";
 import { initI18n, dirFor, i18n, type Locale } from "@/lib/i18n";
@@ -26,11 +36,18 @@ void SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
-    PlusJakartaSans_400Regular,
-    PlusJakartaSans_500Medium,
-    PlusJakartaSans_600SemiBold,
-    PlusJakartaSans_700Bold,
-    PlusJakartaSans_800ExtraBold,
+    Spectral_300Light,
+    Spectral_400Regular,
+    Spectral_500Medium,
+    Spectral_400Regular_Italic,
+    PublicSans_400Regular,
+    PublicSans_500Medium,
+    PublicSans_600SemiBold,
+    Amiri_400Regular,
+    Amiri_700Bold,
+    IBMPlexSansArabic_400Regular,
+    IBMPlexSansArabic_500Medium,
+    IBMPlexSansArabic_600SemiBold,
   });
   const [i18nReady, setI18nReady] = useState(false);
 

@@ -152,8 +152,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 14,
   },
-  avatar: { width: 32, height: 32, borderRadius: radii.pill, backgroundColor: "#7A5138" },
-  smallAvatar: { width: 26, height: 26, borderRadius: radii.pill, backgroundColor: "#7A5138" },
+  avatar: { width: 32, height: 32, borderRadius: radii.pill, backgroundColor: colors.brandDeep },
+  smallAvatar: { width: 26, height: 26, borderRadius: radii.pill, backgroundColor: colors.brandDeep },
   headerTitle: { fontFamily: fontFamily.extrabold, fontSize: fontSize.xl, color: colors.textPrimary },
   headerSub: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.textSecondary },
   previewBanner: {
@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   chipsRow: { gap: 8, paddingBottom: 11 },
-  suggestChip: { borderWidth: 1, borderColor: colors.borderSectionRule, borderRadius: radii.pill, paddingHorizontal: 13, paddingVertical: 8 },
+  suggestChip: { borderWidth: 1, borderColor: colors.borderNeutral, borderRadius: radii.smMd, paddingHorizontal: 13, paddingVertical: 8 },
   suggestChipText: { fontFamily: fontFamily.semibold, fontSize: fontSize.base, color: colors.textPrimary },
   inputRow: {
     flexDirection: "row",

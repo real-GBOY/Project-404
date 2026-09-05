@@ -28,25 +28,29 @@ export function Chip({
 
 const styles = StyleSheet.create({
   base: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: radii.pill,
+    paddingHorizontal: 13,
+    paddingVertical: 6,
+    borderRadius: radii.smMd,
+    borderWidth: 1,
   },
   active: {
     backgroundColor: colors.brandDark,
+    borderColor: colors.brandDark,
   },
   inactive: {
-    backgroundColor: colors.chipInactiveBg,
+    backgroundColor: "transparent",
+    borderColor: colors.borderNeutral,
   },
   label: {
-    fontSize: fontSize.baseMd,
+    fontSize: fontSize.base,
+    letterSpacing: 0.2,
   },
   labelActive: {
-    fontFamily: fontFamily.bold,
+    fontFamily: fontFamily.semibold,
     color: colors.textOnDark,
   },
   labelInactive: {
-    fontFamily: fontFamily.semibold,
-    color: colors.chipInactiveText,
+    fontFamily: fontFamily.medium,
+    color: colors.textSecondary,
   },
 });

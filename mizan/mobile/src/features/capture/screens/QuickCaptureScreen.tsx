@@ -158,7 +158,7 @@ export default function QuickCaptureScreen() {
 }
 
 const styles = StyleSheet.create({
-  title: { fontFamily: fontFamily.extrabold, fontSize: fontSize.display, color: colors.textPrimary, letterSpacing: -0.2 },
+  title: { fontFamily: fontFamily.display, fontSize: fontSize.display, color: colors.textPrimary, letterSpacing: 0.2 },
   subtitle: { fontFamily: fontFamily.medium, fontSize: fontSize.baseMd, color: colors.textSecondary, marginTop: 5 },
   option: {
     flexDirection: "row",

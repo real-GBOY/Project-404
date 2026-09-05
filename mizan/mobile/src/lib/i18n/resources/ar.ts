@@ -42,6 +42,7 @@ export default {
 
   auth: {
     firm: "توفيق وشركاه",
+    tagline: "مكانٌ واحد لإدارة المكتب.",
     firmEmailLabel: "البريد الإلكتروني للمكتب",
     passwordLabel: "كلمة المرور",
     signIn: "تسجيل الدخول",

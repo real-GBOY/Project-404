@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet } from "react-native";
 import type { ErrorBoundaryProps } from "expo-router";
-import { colors } from "@/theme/tokens";
+import { colors, radii } from "@/theme/tokens";
 import { fontFamily, fontSize } from "@/theme/typography";
 import { Icon } from "@/components/ui/Icon";
 import { PrimaryButton } from "@/components/ui/Button";
@@ -24,14 +24,14 @@ export function ErrorScreen({ error, retry }: ErrorBoundaryProps) {
 const styles = StyleSheet.create({
   wrap: { flex: 1, alignItems: "center", justifyContent: "center", padding: 32, backgroundColor: colors.bg, gap: 8 },
   iconWrap: {
-    width: 60,
-    height: 60,
-    borderRadius: 18,
+    width: 58,
+    height: 58,
+    borderRadius: radii.smMd,
     backgroundColor: colors.dangerBg,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 6,
   },
-  title: { fontFamily: fontFamily.extrabold, fontSize: fontSize.display, color: colors.textPrimary },
+  title: { fontFamily: fontFamily.display, fontSize: fontSize.displayMd, color: colors.textPrimary },
   detail: { fontFamily: fontFamily.medium, fontSize: fontSize.md, color: colors.textSecondary, textAlign: "center", lineHeight: 20 },
 });

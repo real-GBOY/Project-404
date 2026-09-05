@@ -140,8 +140,8 @@ export function IconButton({
 
 const styles = StyleSheet.create({
   base: {
-    height: 52,
-    borderRadius: radii.lg,
+    height: 50,
+    borderRadius: radii.md,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -157,16 +157,18 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brandDark,
   },
   primaryLabel: {
-    fontFamily: fontFamily.extrabold,
-    fontSize: fontSize.xl,
+    fontFamily: fontFamily.semibold,
+    fontSize: fontSize.lg,
+    letterSpacing: 0.2,
     color: colors.textOnDark,
   },
   bronze: {
     backgroundColor: colors.brandBronze,
   },
   bronzeLabel: {
-    fontFamily: fontFamily.extrabold,
-    fontSize: fontSize.xl,
+    fontFamily: fontFamily.semibold,
+    fontSize: fontSize.lg,
+    letterSpacing: 0.2,
     color: colors.brandBronzeText,
   },
   secondary: {
@@ -175,7 +177,7 @@ const styles = StyleSheet.create({
     borderColor: colors.borderNeutral,
   },
   secondaryLabel: {
-    fontFamily: fontFamily.bold,
+    fontFamily: fontFamily.semibold,
     fontSize: fontSize.md,
     color: colors.brandDark,
   },
