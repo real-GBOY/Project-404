@@ -3,16 +3,18 @@ import type { Money } from "@/types/api";
 
 /**
  * Locale-aware formatting — ported from mizan/web/src/lib/format/index.ts
- * (plain `Intl` APIs, no external date/number library; Hermes supports the
- * `Intl` surface these use). Egypt-first: `ar-EG` / `en-EG`, `Africa/Cairo`,
- * EGP default currency.
+ * (plain `Intl` APIs, no external date/number library). Egypt-first:
+ * `ar-EG` / `en-EG`, `Africa/Cairo`, EGP default currency.
  */
 const REGION = "EG";
 const TZ = "Africa/Cairo";
 
+function lang(): "ar" | "en" {
+  return (i18n.resolvedLanguage ?? "en").split("-")[0] === "ar" ? "ar" : "en";
+}
+
 function intlLocale(): string {
-  const lang = (i18n.resolvedLanguage ?? "en").split("-")[0];
-  return `${lang}-${REGION}`;
+  return `${lang()}-${REGION}`;
 }
 
 export function formatDate(
@@ -52,12 +54,52 @@ export function formatMoneyList(amounts: Money[]): string[] {
   return amounts.map(formatMoney);
 }
 
-/** Relative time, e.g. "in 3 days" / "5h ago". Uses `Intl.RelativeTimeFormat`. */
+type RelativeUnit = "year" | "month" | "week" | "day" | "hour" | "minute";
+
+/** English noun forms: [singular, plural]. */
+const EN_UNIT: Record<RelativeUnit, [string, string]> = {
+  year: ["year", "years"],
+  month: ["month", "months"],
+  week: ["week", "weeks"],
+  day: ["day", "days"],
+  hour: ["hour", "hours"],
+  minute: ["minute", "minutes"],
+};
+
+const EN_DAY_IDIOM: Record<-1 | 0 | 1, string> = { [-1]: "yesterday", 0: "today", 1: "tomorrow" };
+const AR_DAY_IDIOM: Record<-1 | 0 | 1, string> = { [-1]: "أمس", 0: "اليوم", 1: "غدًا" };
+
+/** Arabic noun forms by CLDR plural category: [one, two, few (3-10), many/other (11+ and 0)]. */
+const AR_UNIT: Record<RelativeUnit, [string, string, string, string]> = {
+  year: ["سنة", "سنتين", "سنوات", "سنة"],
+  month: ["شهر", "شهرين", "أشهر", "شهر"],
+  week: ["أسبوع", "أسبوعين", "أسابيع", "أسبوع"],
+  day: ["يوم", "يومين", "أيام", "يوم"],
+  hour: ["ساعة", "ساعتين", "ساعات", "ساعة"],
+  minute: ["دقيقة", "دقيقتين", "دقائق", "دقيقة"],
+};
+
+/** CLDR Arabic cardinal-plural category for a non-negative integer. */
+function arPluralIndex(n: number): 0 | 1 | 2 | 3 {
+  if (n === 1) return 0;
+  if (n === 2) return 1;
+  const mod100 = n % 100;
+  if (mod100 >= 3 && mod100 <= 10) return 2;
+  return 3; // 0, 11-99, 100+ — "many/other", singular accusative noun in MSA
+}
+
+/**
+ * Relative time, e.g. "in 3 days" / "5h ago". Hand-rolled for this app's two
+ * locales (`en`, `ar`) rather than `Intl.RelativeTimeFormat` — Hermes doesn't
+ * implement it on every platform (and a `@formatjs` polyfill hit unrelated
+ * Metro/Hermes module-resolution issues), so this avoids the whole class of
+ * environment bugs. Only "day" gets the yesterday/today/tomorrow idiom (the
+ * dominant real usage here — case deadlines); every other unit is numeric.
+ */
 export function formatRelative(value: Date | string | number): string {
-  const rtf = new Intl.RelativeTimeFormat(intlLocale(), { numeric: "auto" });
   const diffMs = new Date(value).getTime() - Date.now();
   const abs = Math.abs(diffMs);
-  const units: [Intl.RelativeTimeFormatUnit, number][] = [
+  const units: [RelativeUnit, number][] = [
     ["year", 31_536_000_000],
     ["month", 2_592_000_000],
     ["week", 604_800_000],
@@ -65,12 +107,25 @@ export function formatRelative(value: Date | string | number): string {
     ["hour", 3_600_000],
     ["minute", 60_000],
   ];
-  for (const [unit, ms] of units) {
-    if (abs >= ms || unit === "minute") {
-      return rtf.format(Math.round(diffMs / ms), unit);
-    }
+  const [unit, ms] = units.find(([, unitMs]) => abs >= unitMs) ?? units[units.length - 1];
+  const count = Math.round(diffMs / ms);
+
+  if (unit === "day" && count >= -1 && count <= 1) {
+    return lang() === "ar" ? AR_DAY_IDIOM[count as -1 | 0 | 1] : EN_DAY_IDIOM[count as -1 | 0 | 1];
   }
-  return rtf.format(0, "minute");
+  if (count === 0) return lang() === "ar" ? "الآن" : "now";
+
+  const n = Math.abs(count);
+  if (lang() === "ar") {
+    const noun = AR_UNIT[unit][arPluralIndex(n)];
+    // Arabic drops the numeral for 1/2 — the noun's singular/dual form already
+    // carries the count ("منذ يومين", not "منذ 2 يومين").
+    const withCount = n <= 2 ? noun : `${n} ${noun}`;
+    return count < 0 ? `منذ ${withCount}` : `خلال ${withCount}`;
+  }
+  const [singular, plural] = EN_UNIT[unit];
+  const noun = n === 1 ? singular : plural;
+  return count < 0 ? `${n} ${noun} ago` : `in ${n} ${noun}`;
 }
 
 /** Human file size, e.g. "284 KB" / "1.2 MB". */

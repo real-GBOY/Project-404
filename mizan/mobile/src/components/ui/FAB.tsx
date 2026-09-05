@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet } from "react-native";
 import { router } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, radii } from "@/theme/tokens";
 import { Icon } from "./Icon";
 
@@ -9,12 +10,17 @@ import { Icon } from "./Icon";
  * off-canvas in every screenshot) — this is the minimal, reusable affordance
  * needed to make that described interaction reachable, anchored above the
  * tab bar on every tab screen.
+ *
+ * Default `bottom` clears the floating pill tab bar (app/(tabs)/_layout.tsx:
+ * margin 12 + height 64) with a 16px gap, above the safe area.
  */
-export function FAB({ bottom = 84 }: { bottom?: number }) {
+export function FAB({ bottom }: { bottom?: number }) {
+  const insets = useSafeAreaInsets();
+  const resolvedBottom = bottom ?? insets.bottom + 12 + 64 + 16;
   return (
     <Pressable
       onPress={() => router.push("/capture")}
-      style={({ pressed }) => [styles.base, { bottom }, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.base, { bottom: resolvedBottom }, pressed && styles.pressed]}
       accessibilityRole="button"
       accessibilityLabel="Quick capture"
     >

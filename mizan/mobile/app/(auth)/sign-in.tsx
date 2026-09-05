@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { StatusBar } from "expo-status-bar";
+import { router } from "expo-router";
 import { useAuth } from "@/lib/auth/use-auth";
 import { isApiError } from "@/lib/api/api-error";
 import { colors, radii } from "@/theme/tokens";
@@ -38,7 +39,11 @@ export default function SignInScreen() {
     setLoading(true);
     try {
       const outcome = await login(email.trim(), password);
-      if (outcome.hasNoOrg) setError(t("noOrganization"));
+      if (outcome.hasNoOrg) {
+        setError(t("noOrganization"));
+      } else {
+        router.replace("/(tabs)/today");
+      }
     } catch (err) {
       setError(isApiError(err) && err.isUnauthorized ? t("invalidCredentials") : t("invalidCredentials"));
     } finally {
