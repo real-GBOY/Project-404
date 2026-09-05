@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { View, Text, ScrollView, Pressable, ActivityIndicator, StyleSheet, Alert } from "react-native";
+import { View, Text, ScrollView, Pressable, ActivityIndicator, StyleSheet, Alert, RefreshControl } from "react-native";
+import { useRefresh } from "@/lib/use-refresh";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { formatDate, formatFileSize } from "@/lib/format";
@@ -29,8 +30,9 @@ export default function FilesScreen() {
   const [scanSheet, setScanSheet] = useState(false);
   const [pendingImage, setPendingImage] = useState<Awaited<ReturnType<typeof capturePhoto>>>(null);
 
-  const { data, isLoading } = useDocumentList({ q: query || undefined });
+  const { data, isLoading, refetch } = useDocumentList({ q: query || undefined });
   const offline = useOfflineDocuments();
+  const { refreshing, onRefresh } = useRefresh(refetch, offline.refetch);
   const storageUsed = useOfflineStorageUsed();
   const { pin, unpin } = useOfflinePinning();
   const { upload } = useDocumentMutations();
@@ -82,7 +84,10 @@ export default function FilesScreen() {
           <ActivityIndicator color={colors.brandDark} />
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.list}>
+        <ScrollView
+          contentContainerStyle={styles.list}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brandDark} />}
+        >
           {(offline.data ?? []).length > 0 ? (
             <View style={styles.offlineBanner}>
               <Icon name="offline_pin" size={21} color={colors.brandDeep} />

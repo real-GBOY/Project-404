@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { View, Text, ScrollView, Pressable, ActivityIndicator, StyleSheet } from "react-native";
+import { View, Text, ScrollView, Pressable, ActivityIndicator, StyleSheet, RefreshControl } from "react-native";
+import { useRefresh } from "@/lib/use-refresh";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -40,6 +41,7 @@ export default function TasksScreen() {
 
   const mineList = useTaskList({ mine: filter === "assignedToMe", status: filter === "done" ? "done" : "all" });
   const { complete } = useTaskMutations();
+  const { refreshing, onRefresh } = useRefresh(mineList.refetch);
 
   const groups = useMemo(() => {
     let items = mineList.data?.items ?? [];
@@ -58,8 +60,8 @@ export default function TasksScreen() {
     overdue: (n) => t("overdue", { count: n }),
     today: (n) => t("today", { count: n }),
     thisWeek: (n) => t("thisWeek", { count: n }),
-    upcoming: (n) => `${t("common:time.tomorrow", { ns: "common" })} +`,
-    done: (n) => t("filters.done"),
+    upcoming: (n) => t("upcoming", { count: n }),
+    done: () => t("filters.done"),
   };
   const nonEmpty = order.filter((k) => (groups[k] ?? []).length > 0);
 
@@ -84,7 +86,10 @@ export default function TasksScreen() {
       ) : nonEmpty.length === 0 ? (
         <EmptyState icon="task_alt" title={t("empty")} />
       ) : (
-        <ScrollView contentContainerStyle={styles.list}>
+        <ScrollView
+          contentContainerStyle={styles.list}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brandDark} />}
+        >
           {nonEmpty.map((key) => (
             <View key={key}>
               <SectionHeader label={labelFor[key](groups[key].length)} withRule tone={key === "overdue" ? "danger" : "default"} />

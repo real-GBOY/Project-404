@@ -106,6 +106,7 @@ export default {
     checkedIn: "Checked in {{time}}",
     checkInLocalNotice: "Not tracked by the server yet — noted locally on this device.",
     recordOutcome: "Record the outcome",
+    recordedOutcome: "Recorded outcome",
     adjourn: "Adjourned to a new date",
     pleadingsHeard: "Pleadings heard",
     judgmentIssued: "Judgment issued",
@@ -123,6 +124,7 @@ export default {
     overdue: "Overdue · {{count}}",
     today: "Today · {{count}}",
     thisWeek: "This week · {{count}}",
+    upcoming: "Upcoming · {{count}}",
     empty: "No tasks here.",
   },
   calendar: {

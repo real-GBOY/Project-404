@@ -134,26 +134,38 @@ export default function HearingScreen() {
           />
         </Card>
 
-        {checkedInAt ? (
-          <View style={styles.checkedIn}>
-            <Icon name="check_circle" size={20} color={colors.successText} />
+        {hearing.status === "decided" ? (
+          <View style={styles.decidedCard}>
+            <Icon name="balance" size={20} color={colors.brandDeep} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.checkedInText}>{t("checkedIn", { time: formatTime(checkedInAt) })}</Text>
-              <Text style={styles.checkedInNotice}>{t("checkInLocalNotice")}</Text>
+              <Text style={styles.decidedLabel}>{t("recordedOutcome")}</Text>
+              <Text style={styles.decidedText}>{hearing.outcome ?? t("judgmentIssued")}</Text>
             </View>
           </View>
         ) : (
-          <BronzeButton label={t("checkIn")} icon="how_to_reg" onPress={() => checkIn.mutate()} />
-        )}
+          <>
+            {checkedInAt ? (
+              <View style={styles.checkedIn}>
+                <Icon name="check_circle" size={20} color={colors.successText} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.checkedInText}>{t("checkedIn", { time: formatTime(checkedInAt) })}</Text>
+                  <Text style={styles.checkedInNotice}>{t("checkInLocalNotice")}</Text>
+                </View>
+              </View>
+            ) : (
+              <BronzeButton label={t("checkIn")} icon="how_to_reg" onPress={() => checkIn.mutate()} />
+            )}
 
-        <View>
-          <SectionHeader label={t("recordOutcome")} />
-          <Card radius="lgXl" padded={false}>
-            <OutcomeRow icon="event_repeat" label={t("adjourn")} onPress={() => setAdjournSheet(true)} />
-            <OutcomeRow icon="record_voice_over" label={t("pleadingsHeard")} onPress={() => confirmOutcome(t("pleadingsHeard"))} />
-            <OutcomeRow icon="balance" label={t("judgmentIssued")} onPress={() => confirmOutcome(t("judgmentIssued"))} isLast />
-          </Card>
-        </View>
+            <View>
+              <SectionHeader label={t("recordOutcome")} />
+              <Card radius="lgXl" padded={false}>
+                <OutcomeRow icon="event_repeat" label={t("adjourn")} onPress={() => setAdjournSheet(true)} />
+                <OutcomeRow icon="record_voice_over" label={t("pleadingsHeard")} onPress={() => confirmOutcome(t("pleadingsHeard"))} />
+                <OutcomeRow icon="balance" label={t("judgmentIssued")} onPress={() => confirmOutcome(t("judgmentIssued"))} isLast />
+              </Card>
+            </View>
+          </>
+        )}
 
         <Pressable style={styles.dictateBanner} onPress={() => setNoteSheet(true)}>
           <Icon name="mic" size={20} color={colors.brandDeep} />
@@ -261,6 +273,24 @@ const styles = StyleSheet.create({
   },
   checkedInText: { fontFamily: fontFamily.bold, fontSize: fontSize.md, color: colors.successText },
   checkedInNotice: { fontFamily: fontFamily.medium, fontSize: fontSize.base, color: colors.textSecondary, marginTop: 2 },
+  decidedCard: {
+    flexDirection: "row",
+    gap: 11,
+    alignItems: "flex-start",
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.lgXl,
+    padding: 15,
+  },
+  decidedLabel: {
+    fontFamily: fontFamily.extrabold,
+    fontSize: fontSize.sm,
+    letterSpacing: 0.6,
+    color: colors.textSecondary,
+    textTransform: "uppercase",
+  },
+  decidedText: { fontFamily: fontFamily.bold, fontSize: fontSize.md, color: colors.textPrimary, marginTop: 4, lineHeight: 19 },
   outcomeRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 15, paddingVertical: 14 },
   rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.borderHairline },
   outcomeLabel: { flex: 1, fontFamily: fontFamily.bold, fontSize: fontSize.mdLg, color: colors.textPrimary },

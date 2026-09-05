@@ -7,6 +7,9 @@ export interface TeamMember {
   title: string;
   role: string;
   department: string;
+  barAdmission: string;
+  email: string;
+  phone: string | null;
   status: "active" | "inactive";
 }
 

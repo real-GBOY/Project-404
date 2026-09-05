@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Pressable, ActivityIndicator, StyleSheet, Linking } from "react-native";
+import { View, Text, ScrollView, Pressable, ActivityIndicator, StyleSheet, Linking, RefreshControl } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
@@ -14,6 +14,7 @@ import { MatterRefBadge } from "@/components/ui/MatterRefBadge";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FAB } from "@/components/ui/FAB";
+import { useRefresh } from "@/lib/use-refresh";
 import { useDashboard } from "../hooks";
 import { useUnreadNotificationsCount } from "@/features/notifications/hooks";
 import { useTaskMutations } from "@/features/tasks/hooks";
@@ -32,6 +33,7 @@ export default function TodayScreen() {
   const { data, isLoading, isError, refetch } = useDashboard();
   const unread = useUnreadNotificationsCount();
   const { complete } = useTaskMutations();
+  const { refreshing, onRefresh } = useRefresh(refetch);
 
   const name = user?.displayName?.split(" ")[0] ?? user?.email ?? "";
 
@@ -77,7 +79,11 @@ export default function TodayScreen() {
           </Pressable>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brandDark} />}
+        >
           {data.upcomingHearings[0] ? (
             <View>
               <SectionHeader label={t("nextHearing")} withRule />

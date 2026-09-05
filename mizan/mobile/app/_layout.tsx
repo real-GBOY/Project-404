@@ -20,6 +20,8 @@ import { AuthProvider } from "@/lib/auth/auth-provider";
 import { initI18n, dirFor, i18n, type Locale } from "@/lib/i18n";
 import { colors } from "@/theme/tokens";
 
+export { ErrorScreen as ErrorBoundary } from "@/components/ErrorScreen";
+
 void SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 export default function RootLayout() {

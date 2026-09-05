@@ -11,18 +11,18 @@ export const useMatterList = (p: MatterListParams) =>
   });
 
 export const useMatter = (id: string) =>
-  useQuery({ queryKey: matterKeys.detail(id), queryFn: ({ signal }) => api.getMatter(id, signal) });
+  useQuery({ queryKey: matterKeys.detail(id), queryFn: ({ signal }) => api.getMatter(id, signal), enabled: !!id });
 
 export const useMatterParticipants = (id: string) =>
-  useQuery({ queryKey: matterKeys.tab(id, "participants"), queryFn: ({ signal }) => api.getParticipants(id, signal) });
+  useQuery({ queryKey: matterKeys.tab(id, "participants"), queryFn: ({ signal }) => api.getParticipants(id, signal), enabled: !!id });
 export const useMatterUpdates = (id: string) =>
-  useQuery({ queryKey: matterKeys.tab(id, "updates"), queryFn: ({ signal }) => api.getUpdates(id, signal) });
+  useQuery({ queryKey: matterKeys.tab(id, "updates"), queryFn: ({ signal }) => api.getUpdates(id, signal), enabled: !!id });
 export const useMatterNotes = (id: string) =>
-  useQuery({ queryKey: matterKeys.tab(id, "notes"), queryFn: ({ signal }) => api.getNotes(id, signal) });
+  useQuery({ queryKey: matterKeys.tab(id, "notes"), queryFn: ({ signal }) => api.getNotes(id, signal), enabled: !!id });
 export const useMatterFinancials = (id: string) =>
-  useQuery({ queryKey: matterKeys.tab(id, "financials"), queryFn: ({ signal }) => api.getMatterFinancials(id, signal) });
+  useQuery({ queryKey: matterKeys.tab(id, "financials"), queryFn: ({ signal }) => api.getMatterFinancials(id, signal), enabled: !!id });
 export const useMatterActivity = (id: string) =>
-  useQuery({ queryKey: matterKeys.tab(id, "activity"), queryFn: ({ signal }) => api.getMatterActivity(id, signal) });
+  useQuery({ queryKey: matterKeys.tab(id, "activity"), queryFn: ({ signal }) => api.getMatterActivity(id, signal), enabled: !!id });
 
 export function useMatterMutations(id?: string) {
   const qc = useQueryClient();

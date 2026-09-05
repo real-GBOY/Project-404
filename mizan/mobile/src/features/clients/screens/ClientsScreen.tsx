@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { View, Text, SectionList, Pressable, ActivityIndicator, StyleSheet, Linking } from "react-native";
+import { View, Text, SectionList, Pressable, ActivityIndicator, StyleSheet, Linking, RefreshControl } from "react-native";
+import { useRefresh } from "@/lib/use-refresh";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -19,7 +20,8 @@ export default function ClientsScreen() {
   const { t } = useTranslation("clients");
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState("");
-  const { data, isLoading } = useClientList({ q: query || undefined, status: "active", sort: "name" });
+  const { data, isLoading, refetch } = useClientList({ q: query || undefined, status: "active", sort: "name" });
+  const { refreshing, onRefresh } = useRefresh(refetch);
 
   const sections = useMemo(() => {
     const items = [...(data?.items ?? [])].sort((a, b) => a.name.localeCompare(b.name));
@@ -57,6 +59,7 @@ export default function ClientsScreen() {
           keyExtractor={(c) => c.id}
           contentContainerStyle={styles.list}
           stickySectionHeadersEnabled={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brandDark} />}
           renderSectionHeader={({ section }) => <Text style={styles.sectionHeader}>{section.title}</Text>}
           renderItem={({ item, index, section }) => (
             <View

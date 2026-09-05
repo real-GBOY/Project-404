@@ -36,7 +36,12 @@ export default function MoreScreen() {
   const finance = useFinanceSummary("invoices");
   const storage = useOfflineStorageUsed();
 
-  const role = memberships[0]?.membershipRole;
+  // The /team row for the signed-in user carries a nicer title + bar
+  // admission than the raw membership role ("owner").
+  const meMember = team.data?.items.find((m) => m.email === user?.email);
+  const subtitle = [meMember?.title ?? memberships[0]?.membershipRole, meMember?.barAdmission]
+    .filter(Boolean)
+    .join(" · ");
   const overdue = finance.data?.overdue ?? 0;
 
   const switchLocale = async (next: Locale) => {
@@ -60,9 +65,9 @@ export default function MoreScreen() {
           <Text style={styles.name} numberOfLines={1}>
             {user?.displayName ?? user?.email}
           </Text>
-          {role || firm.data?.firmName ? (
+          {subtitle ? (
             <Text style={styles.role} numberOfLines={1}>
-              {[role, firm.data?.firmName].filter(Boolean).join(" · ")}
+              {subtitle}
             </Text>
           ) : null}
         </View>

@@ -24,8 +24,8 @@ export default function SignInScreen() {
   const insets = useSafeAreaInsets();
   const { login, unlockWithBiometrics, biometricAvailable, hasStoredSession, user } = useAuth();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState(process.env.EXPO_PUBLIC_DEMO_EMAIL ?? "");
+  const [password, setPassword] = useState(process.env.EXPO_PUBLIC_DEMO_PASSWORD ?? "");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

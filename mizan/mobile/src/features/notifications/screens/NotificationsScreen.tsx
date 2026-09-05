@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { View, Text, FlatList, Pressable, ActivityIndicator, StyleSheet } from "react-native";
+import { View, Text, FlatList, Pressable, ActivityIndicator, StyleSheet, RefreshControl } from "react-native";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { colors, radii } from "@/theme/tokens";
@@ -9,6 +9,7 @@ import { Chip } from "@/components/ui/Chip";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Icon } from "@/components/ui/Icon";
 import { formatRelative } from "@/lib/format";
+import { useRefresh } from "@/lib/use-refresh";
 import { useNotifications, useNotificationMutations } from "../hooks";
 import { categoryForNotification, iconForNotification, toneForNotification, type NotificationCategory } from "../presentation";
 import type { AppNotification } from "../types";
@@ -50,8 +51,9 @@ function navigateFromHref(href: string) {
 export default function NotificationsScreen() {
   const { t } = useTranslation("notifications");
   const [filter, setFilter] = useState<"all" | NotificationCategory>("all");
-  const { data, isLoading, isError } = useNotifications({});
+  const { data, isLoading, isError, refetch } = useNotifications({});
   const { markRead, markAllRead } = useNotificationMutations();
+  const { refreshing, onRefresh } = useRefresh(refetch);
 
   const items = useMemo(() => {
     const all = data?.items ?? [];
@@ -124,6 +126,7 @@ export default function NotificationsScreen() {
           keyExtractor={(n) => n.id}
           renderItem={renderItem}
           contentContainerStyle={styles.list}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brandDark} />}
         />
       )}
     </View>

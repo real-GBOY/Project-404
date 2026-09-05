@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { View, Text, ScrollView, Pressable, ActivityIndicator, StyleSheet } from "react-native";
+import { View, Text, ScrollView, Pressable, ActivityIndicator, StyleSheet, RefreshControl } from "react-native";
+import { useRefresh } from "@/lib/use-refresh";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -32,7 +33,8 @@ export default function CalendarScreen() {
   const now = new Date();
   const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
   const to = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59).toISOString();
-  const { data, isLoading } = useCalendarRange(from, to);
+  const { data, isLoading, refetch } = useCalendarRange(from, to);
+  const { refreshing, onRefresh } = useRefresh(refetch);
 
   const items = useMemo(
     () => [...(data?.items ?? [])].sort((a, b) => (a.at < b.at ? -1 : 1)),
@@ -96,7 +98,10 @@ export default function CalendarScreen() {
       ) : grouped.length === 0 ? (
         <EmptyState icon="calendar_month" title={t("empty")} />
       ) : (
-        <ScrollView contentContainerStyle={styles.list}>
+        <ScrollView
+          contentContainerStyle={styles.list}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brandDark} />}
+        >
           {grouped.map(([key, dayItems]) => (
             <View key={key}>
               <View style={styles.dayHeader}>

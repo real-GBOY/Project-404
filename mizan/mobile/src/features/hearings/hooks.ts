@@ -13,7 +13,7 @@ export const useHearingList = (p: HearingListParams) =>
   });
 
 export const useHearing = (id: string) =>
-  useQuery({ queryKey: hearingKeys.detail(id), queryFn: ({ signal }) => api.getHearing(id, signal) });
+  useQuery({ queryKey: hearingKeys.detail(id), queryFn: ({ signal }) => api.getHearing(id, signal), enabled: !!id });
 
 export function useHearingMutations(matterId?: string) {
   const qc = useQueryClient();

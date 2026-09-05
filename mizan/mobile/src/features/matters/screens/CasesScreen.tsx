@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { View, Text, FlatList, Pressable, ActivityIndicator, StyleSheet } from "react-native";
+import { View, Text, FlatList, Pressable, ActivityIndicator, StyleSheet, RefreshControl } from "react-native";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -17,6 +17,7 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FAB } from "@/components/ui/FAB";
 import { notAvailableYet } from "@/lib/not-available";
+import { useRefresh } from "@/lib/use-refresh";
 import { useMatterList } from "../hooks";
 import { matterDisplayStatus, MATTER_STATUS_LABEL, MATTER_STATUS_TONE } from "../presentation";
 import type { MatterListItem } from "../types";
@@ -29,7 +30,8 @@ export default function CasesScreen() {
   const { user } = useAuth();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("mine");
-  const { data, isLoading } = useMatterList({ q: query || undefined, status: "all", sort: "-openedAt" });
+  const { data, isLoading, refetch } = useMatterList({ q: query || undefined, status: "all", sort: "-openedAt" });
+  const { refreshing, onRefresh } = useRefresh(refetch);
 
   const items = useMemo(() => {
     const all = data?.items ?? [];
@@ -77,6 +79,7 @@ export default function CasesScreen() {
           keyExtractor={(m) => m.id}
           renderItem={({ item }) => <MatterCard matter={item} />}
           contentContainerStyle={styles.list}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brandDark} />}
         />
       )}
       <FAB />

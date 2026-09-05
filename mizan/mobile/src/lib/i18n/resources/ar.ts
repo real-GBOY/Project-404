@@ -101,6 +101,7 @@ export default {
     checkedIn: "تم تسجيل الحضور {{time}}",
     checkInLocalNotice: "لا يتم تتبعه من الخادم بعد — تم تدوينه محليًا على هذا الجهاز فقط.",
     recordOutcome: "تسجيل نتيجة الجلسة",
+    recordedOutcome: "النتيجة المسجلة",
     adjourn: "تأجيل إلى موعد جديد",
     pleadingsHeard: "تم سماع المرافعات",
     judgmentIssued: "صدر الحكم",
@@ -118,6 +119,7 @@ export default {
     overdue: "متأخرة · {{count}}",
     today: "اليوم · {{count}}",
     thisWeek: "هذا الأسبوع · {{count}}",
+    upcoming: "قادمة · {{count}}",
     empty: "لا توجد مهام هنا.",
   },
   calendar: {
