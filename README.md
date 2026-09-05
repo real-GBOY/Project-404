@@ -1,4 +1,4 @@
-# AURIC
+# Project-404
 
 NestJS 11 · Fastify · PostgreSQL + RLS · Kysely · TypeScript · MIT
 
@@ -8,12 +8,12 @@ This repository is two things with a hard seam between them:
 
 | | | |
 |---|---|---|
-| **`core/`** | **AURIC Core** — a versioned, reusable platform: identity, RBAC, multi-tenancy, files, audit, notifications, an event/outbox system, localization, observability. It knows nothing about any business domain. | 11 capabilities · v0.1 shipped |
-| **`mizan/`** | **Mizan** (codename *Project 404*) — a multi-tenant law-firm management system. **Project #1**: the first application built on Core, and the proof that Core's contracts hold under a real product. | backend domain complete · web F0–F16 · **202 tests green** |
+| **`core/`** | **Project-404 Core** — a versioned, reusable platform: identity, RBAC, multi-tenancy, files, audit, notifications, an event/outbox system, localization, observability. It knows nothing about any business domain. | 11 capabilities · v0.1 shipped |
+| **`mizan/`** | **Mizan** — a multi-tenant law-firm management system. **Project #1**: the first application built on Core, and the proof that Core's contracts hold under a real product. | backend domain complete · web F0–F16 · **202 tests green** |
 
 **Run it:** `docker compose up --build` → API on `http://localhost:3000/api`, interactive docs on `http://localhost:3000/api/docs`.
 
-> **AURIC is not a law-firm ERP.** It is the foundation. Mizan is the ERP, *powered by* AURIC Core. The next client after Mizan will not re-implement auth, tenancy, permissions, file storage, an audit trail, or an outbox — that is the entire point.
+> **Project-404 is not a law-firm ERP.** It is the foundation. Mizan is the ERP, *powered by* Project-404 Core. The next client after Mizan will not re-implement auth, tenancy, permissions, file storage, an audit trail, or an outbox — that is the entire point.
 
 ---
 
@@ -31,7 +31,7 @@ This repository is two things with a hard seam between them:
                          │
                          │   core/contracts interfaces + DI tokens only — never a Core table
                          ▼
-   AURIC CORE       core/
+   PROJECT-404 CORE core/
                     identity · rbac · organizations · tenancy · files
                     audit · notifications · events · localization
                     observability · http · kernel
@@ -43,7 +43,7 @@ This repository is two things with a hard seam between them:
 **Dependencies flow one way, and only one way:**
 
 ```
-AURIC CORE  ◀──  MIZAN BACKEND  ◀──  { mizan/web, mizan/mobile }
+PROJECT-404 CORE  ◀──  MIZAN BACKEND  ◀──  { mizan/web, mizan/mobile }
 ```
 
 - `core/` **must never** import from `mizan/`. Verified: `grep -rn "mizan/" core/` is empty. If a symbol in Core names a `Matter`, a `Hearing`, or an `Invoice`, it is in the wrong place.
@@ -57,7 +57,7 @@ The full contract — what each side owns, why there is no `modules/` or `client
 | Principle | How it shows up |
 |---|---|
 | **Modular monolith, not microservices** | One NestJS process. Feature `@Module`s, clean layer boundaries, no network hops between domains. |
-| **Rule of Three** | No capability is extracted into a reusable AURIC module until it has been built across **three** real client projects. Mizan is client #1 — nothing is extracted. |
+| **Rule of Three** | No capability is extracted into a reusable Project-404 module until it has been built across **three** real client projects. Mizan is client #1 — nothing is extracted. |
 | **The database is the security boundary** | Postgres row-level security + `organization_id NOT NULL` on every tenant table. A forgotten `WHERE` clause in application code cannot leak across tenants. Frontend `can()` is UX only. |
 | **Every use case owns its transaction** | `authenticate → validate → transaction → persist → publish event`. The event bus never opens a transaction. |
 | **Prisma owns schema, Kysely owns runtime** | Prisma defines tables + migration history and generates Kysely's types. No Prisma Client, no ORM at runtime — typed SQL only. |
@@ -68,7 +68,7 @@ The full contract — what each side owns, why there is no `modules/` or `client
 
 ## What's built
 
-### AURIC Core — `core/` ✅ v0.1 shipped
+### Project-404 Core — `core/` ✅ v0.1 shipped
 
 | Capability | Module | State |
 |---|---|---|
@@ -114,7 +114,7 @@ The entire product surface, cut over from the mock layer to the live API:
 
 ```
 auric/
-├── core/                     AURIC Foundation — reusable, versioned, domain-agnostic
+├── core/                     Project-404 Foundation — reusable, versioned, domain-agnostic
 │   ├── kernel/               config · db (pools + Kysely + unit-of-work + migrate runner) · logging · tenant · ids · clock · errors · DI tokens
 │   ├── contracts/            the provider interfaces every module is consumed through (Plan §4)
 │   ├── events/               in-process bus + outbox + worker + DLQ
@@ -244,7 +244,7 @@ Every reusable capability carries its **architectural contract** next to the cod
 
 | | |
 |---|---|
-| [`core/README.md`](core/README.md) | AURIC Core as a whole — the Core ↔ product boundary |
+| [`core/README.md`](core/README.md) | Project-404 Core as a whole — the Core ↔ product boundary |
 | `core/contracts/` · `core/kernel/` · `core/events/` | the foundation layer |
 | `core/identity/` · `core/rbac/` · `core/organizations/` | auth & access |
 | `core/files/` · `core/audit/` · `core/notifications/` | capabilities |
@@ -256,7 +256,7 @@ Every reusable capability carries its **architectural contract** next to the cod
 
 | Doc | Scope |
 |---|---|
-| [`Plan.md`](Plan.md) | the AURIC constitution / governing rules |
+| [`Plan.md`](Plan.md) | the Project-404 constitution / governing rules |
 | [`docs/system-architecture.md`](docs/system-architecture.md) | the canonical destination vision (50 sections) |
 | [`docs/mizan-project-one.md`](docs/mizan-project-one.md) | **Mizan = Project #1** — physical layout, the authoritative Core ↔ Mizan boundary, why there is no `modules/` / `client-00N/` yet |
 | [`docs/architecture.md`](docs/architecture.md) | Core v0.1 as-built |
