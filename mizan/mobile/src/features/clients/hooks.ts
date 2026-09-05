@@ -11,10 +11,22 @@ export const useClientList = (p: ClientListParams) =>
   });
 
 export const useClient = (id: string) =>
-  useQuery({ queryKey: clientKeys.detail(id), queryFn: ({ signal }) => api.getClient(id, signal), enabled: !!id });
+  useQuery({
+    queryKey: clientKeys.detail(id),
+    queryFn: ({ signal }) => api.getClient(id, signal),
+    enabled: !!id,
+  });
 
 export const useClientMatters = (id: string) =>
-  useQuery({ queryKey: clientKeys.tab(id, "matters"), queryFn: ({ signal }) => api.getClientMatters(id, signal), enabled: !!id });
+  useQuery({
+    queryKey: clientKeys.tab(id, "matters"),
+    queryFn: ({ signal }) => api.getClientMatters(id, signal),
+    enabled: !!id,
+  });
 
 export const useClientActivity = (id: string) =>
-  useQuery({ queryKey: clientKeys.tab(id, "activity"), queryFn: ({ signal }) => api.getClientActivity(id, signal), enabled: !!id });
+  useQuery({
+    queryKey: clientKeys.tab(id, "activity"),
+    queryFn: ({ signal }) => api.getClientActivity(id, signal),
+    enabled: !!id,
+  });

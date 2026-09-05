@@ -9,8 +9,14 @@ export default function CaptureLayout() {
       }}
     >
       <Stack.Screen name="index" options={{ animation: "none" }} />
-      <Stack.Screen name="log-time" options={{ presentation: "card", contentStyle: { backgroundColor: "#F7F3EF" } }} />
-      <Stack.Screen name="expense" options={{ presentation: "card", contentStyle: { backgroundColor: "#F7F3EF" } }} />
+      <Stack.Screen
+        name="log-time"
+        options={{ presentation: "card", contentStyle: { backgroundColor: "#F7F3EF" } }}
+      />
+      <Stack.Screen
+        name="expense"
+        options={{ presentation: "card", contentStyle: { backgroundColor: "#F7F3EF" } }}
+      />
     </Stack>
   );
 }

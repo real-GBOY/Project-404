@@ -9,14 +9,22 @@ export const billingKeys = {
 
 /** `GET /api/finance/summary?tab=invoices` — same positional a/b/c/d
  *  contract the web Finance page consumes. */
-export const getFinanceSummary = (tab: "invoices" | "payments" | "expenses", signal?: AbortSignal) =>
-  httpClient<FinanceSummary>("/finance/summary", { query: { tab }, signal });
+export const getFinanceSummary = (
+  tab: "invoices" | "payments" | "expenses",
+  signal?: AbortSignal,
+) => httpClient<FinanceSummary>("/finance/summary", { query: { tab }, signal });
 
 export const listInvoices = (status: string | undefined, signal?: AbortSignal) =>
-  httpClient<{ items: InvoiceListItem[]; total: number }>("/invoices", { query: { status }, signal });
+  httpClient<{ items: InvoiceListItem[]; total: number }>("/invoices", {
+    query: { status },
+    signal,
+  });
 
 export const listExpenses = (status: string | undefined, signal?: AbortSignal) =>
-  httpClient<{ items: ExpenseListItem[]; total: number }>("/expenses", { query: { status }, signal });
+  httpClient<{ items: ExpenseListItem[]; total: number }>("/expenses", {
+    query: { status },
+    signal,
+  });
 
 /** `POST /api/expenses` — JSON only; there is no receipt-OCR field on this
  *  endpoint (confirmed absent from the backend). */

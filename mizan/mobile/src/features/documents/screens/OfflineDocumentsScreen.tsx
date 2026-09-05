@@ -29,7 +29,7 @@ export default function OfflineDocumentsScreen() {
           keyExtractor={(e) => e.id}
           ListHeaderComponent={<Text style={styles.total}>{formatFileSize(used.data ?? 0)}</Text>}
           contentContainerStyle={styles.list}
-          renderItem={({ item, index }) => (
+          renderItem={({ item }) => (
             <Card radius="lgXl" padded={false}>
               <View style={styles.row}>
                 <Icon name="description" size={22} color={colors.iconMuted} />
@@ -38,7 +38,9 @@ export default function OfflineDocumentsScreen() {
                     {item.name}
                   </Text>
                   <View style={styles.meta}>
-                    {item.matterReference ? <MatterRefBadge reference={item.matterReference} small /> : null}
+                    {item.matterReference ? (
+                      <MatterRefBadge reference={item.matterReference} small />
+                    ) : null}
                     <Text style={styles.size}>{formatFileSize(item.sizeBytes)}</Text>
                   </View>
                 </View>
@@ -58,7 +60,12 @@ export default function OfflineDocumentsScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   list: { padding: 20 },
-  total: { fontFamily: fontFamily.extrabold, fontSize: fontSize.displayMd, color: colors.textPrimary, marginBottom: 14 },
+  total: {
+    fontFamily: fontFamily.extrabold,
+    fontSize: fontSize.displayMd,
+    color: colors.textPrimary,
+    marginBottom: 14,
+  },
   row: { flexDirection: "row", alignItems: "center", gap: 12, padding: 15 },
   name: { fontFamily: fontFamily.bold, fontSize: fontSize.md, color: colors.textPrimary },
   meta: { flexDirection: "row", alignItems: "center", gap: 7, marginTop: 5 },

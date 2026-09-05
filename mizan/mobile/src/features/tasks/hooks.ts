@@ -23,12 +23,17 @@ export function useTaskMutations(matterId?: string) {
   return {
     create: useMutation({ mutationFn: api.createTask, onSuccess: invalidate }),
     update: useMutation({
-      mutationFn: ({ id, ...body }: { id: string } & Record<string, unknown>) => api.updateTask(id, body),
+      mutationFn: ({ id, ...body }: { id: string } & Record<string, unknown>) =>
+        api.updateTask(id, body),
       onSuccess: invalidate,
     }),
-    complete: useMutation({ mutationFn: (id: string) => api.completeTask(id), onSuccess: invalidate }),
+    complete: useMutation({
+      mutationFn: (id: string) => api.completeTask(id),
+      onSuccess: invalidate,
+    }),
     assign: useMutation({
-      mutationFn: ({ id, assigneeId }: { id: string; assigneeId: string | null }) => api.assignTask(id, assigneeId),
+      mutationFn: ({ id, assigneeId }: { id: string; assigneeId: string | null }) =>
+        api.assignTask(id, assigneeId),
       onSuccess: invalidate,
     }),
   };

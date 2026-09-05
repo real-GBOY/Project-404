@@ -1,5 +1,14 @@
 import { useMemo, useState } from "react";
-import { View, Text, ScrollView, Pressable, ActivityIndicator, StyleSheet, Alert, RefreshControl } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  ActivityIndicator,
+  StyleSheet,
+  Alert,
+  RefreshControl,
+} from "react-native";
 import { useRefresh } from "@/lib/use-refresh";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -16,7 +25,13 @@ import { Icon } from "@/components/ui/Icon";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FAB } from "@/components/ui/FAB";
 import { MatterPickerSheet } from "@/features/matters/components/MatterPickerSheet";
-import { useDocumentList, useOfflineDocuments, useOfflineStorageUsed, useOfflinePinning, useDocumentMutations } from "../hooks";
+import {
+  useDocumentList,
+  useOfflineDocuments,
+  useOfflineStorageUsed,
+  useOfflinePinning,
+  useDocumentMutations,
+} from "../hooks";
 import { capturePhoto, documentFormData } from "../upload";
 import type { DocRow } from "../types";
 
@@ -39,8 +54,8 @@ export default function FilesScreen() {
 
   const offlineIds = useMemo(() => new Set((offline.data ?? []).map((e) => e.id)), [offline.data]);
 
-  const all = data?.items ?? [];
-  const review = all.filter((d) => d.status === "draft");
+  const all = useMemo(() => data?.items ?? [], [data?.items]);
+  const review = useMemo(() => all.filter((d) => d.status === "draft"), [all]);
   const list = useMemo(() => {
     if (filter === "offline") return all.filter((d) => offlineIds.has(d.id));
     if (filter === "review") return review;
@@ -73,9 +88,21 @@ export default function FilesScreen() {
           <SearchBar placeholder={t("searchPlaceholder")} value={query} onChangeText={setQuery} />
         </View>
         <View style={styles.chips}>
-          <Chip label={t("filters.recent")} active={filter === "recent"} onPress={() => setFilter("recent")} />
-          <Chip label={t("filters.offline")} active={filter === "offline"} onPress={() => setFilter("offline")} />
-          <Chip label={t("filters.review")} active={filter === "review"} onPress={() => setFilter("review")} />
+          <Chip
+            label={t("filters.recent")}
+            active={filter === "recent"}
+            onPress={() => setFilter("recent")}
+          />
+          <Chip
+            label={t("filters.offline")}
+            active={filter === "offline"}
+            onPress={() => setFilter("offline")}
+          />
+          <Chip
+            label={t("filters.review")}
+            active={filter === "review"}
+            onPress={() => setFilter("review")}
+          />
         </View>
       </View>
 
@@ -86,13 +113,21 @@ export default function FilesScreen() {
       ) : (
         <ScrollView
           contentContainerStyle={styles.list}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brandDark} />}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.brandDark}
+            />
+          }
         >
           {(offline.data ?? []).length > 0 ? (
             <View style={styles.offlineBanner}>
               <Icon name="offline_pin" size={21} color={colors.brandDeep} />
               <View style={{ flex: 1 }}>
-                <Text style={styles.offlineTitle}>{t("offlineBanner", { count: offline.data!.length })}</Text>
+                <Text style={styles.offlineTitle}>
+                  {t("offlineBanner", { count: offline.data!.length })}
+                </Text>
                 <Text style={styles.offlineSub}>{formatFileSize(storageUsed.data ?? 0)}</Text>
               </View>
             </View>
@@ -116,14 +151,19 @@ export default function FilesScreen() {
               <SectionHeader label={t(filter === "recent" ? "recent" : `filters.${filter}`)} />
               <Card radius="lgXl" padded={false}>
                 {list.map((doc, i) => (
-                  <Pressable key={doc.id} style={[styles.docRow, i < list.length - 1 && styles.rowBorder]}>
+                  <Pressable
+                    key={doc.id}
+                    style={[styles.docRow, i < list.length - 1 && styles.rowBorder]}
+                  >
                     <Icon name="description" size={22} color={colors.iconMuted} />
                     <View style={{ flex: 1, minWidth: 0 }}>
                       <Text style={styles.docName} numberOfLines={1}>
                         {doc.name}
                       </Text>
                       <Text style={styles.docMeta} numberOfLines={1}>
-                        {[doc.matterReference, formatFileSize(doc.sizeBytes)].filter(Boolean).join(" · ")}
+                        {[doc.matterReference, formatFileSize(doc.sizeBytes)]
+                          .filter(Boolean)
+                          .join(" · ")}
                       </Text>
                     </View>
                     <Pressable onPress={() => togglePin(doc)} hitSlop={8}>
@@ -152,7 +192,9 @@ export default function FilesScreen() {
             matterId: matter.id,
             category: "Evidence",
           });
-          upload.mutate(form, { onError: () => Alert.alert(t("common:state.error", { ns: "common" })) });
+          upload.mutate(form, {
+            onError: () => Alert.alert(t("common:state.error", { ns: "common" })),
+          });
           setPendingImage(null);
         }}
       />
@@ -189,7 +231,13 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
   },
   headerRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  title: { flex: 1, fontFamily: fontFamily.display, fontSize: fontSize.displayLg, letterSpacing: 0.2, color: colors.textPrimary },
+  title: {
+    flex: 1,
+    fontFamily: fontFamily.display,
+    fontSize: fontSize.displayLg,
+    letterSpacing: 0.2,
+    color: colors.textPrimary,
+  },
   scanBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -213,12 +261,37 @@ const styles = StyleSheet.create({
     borderRadius: radii.lgXl,
     padding: 14,
   },
-  offlineTitle: { fontFamily: fontFamily.extrabold, fontSize: fontSize.md, color: colors.brandAmberBannerText },
-  offlineSub: { fontFamily: fontFamily.medium, fontSize: fontSize.smMd, color: colors.brandAmberBannerSubtext, marginTop: 2 },
-  docRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 15, paddingVertical: 13 },
+  offlineTitle: {
+    fontFamily: fontFamily.extrabold,
+    fontSize: fontSize.md,
+    color: colors.brandAmberBannerText,
+  },
+  offlineSub: {
+    fontFamily: fontFamily.medium,
+    fontSize: fontSize.smMd,
+    color: colors.brandAmberBannerSubtext,
+    marginTop: 2,
+  },
+  docRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 15,
+    paddingVertical: 13,
+  },
   rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.borderHairline },
-  docName: { fontFamily: fontFamily.bold, fontSize: fontSize.md, color: colors.textPrimary, lineHeight: 18 },
-  docMeta: { fontFamily: fontFamily.semibold, fontSize: fontSize.sm, color: colors.textSecondary, marginTop: 3 },
+  docName: {
+    fontFamily: fontFamily.bold,
+    fontSize: fontSize.md,
+    color: colors.textPrimary,
+    lineHeight: 18,
+  },
+  docMeta: {
+    fontFamily: fontFamily.semibold,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginTop: 3,
+  },
   thumb: {
     width: 40,
     height: 48,

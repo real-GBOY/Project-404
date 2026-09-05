@@ -5,7 +5,7 @@ import type { ApiErrorBody } from "@/types/api";
 export class ApiError extends Error {
   readonly status: number;
   readonly code: string;
-  readonly fields: Array<{ path: string; message: string }>;
+  readonly fields: { path: string; message: string }[];
 
   constructor(status: number, body: Partial<ApiErrorBody> | null) {
     super(body?.message ?? `Request failed (${status})`);

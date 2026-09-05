@@ -20,8 +20,8 @@ This repository is two things with a hard seam between them:
 ## Architecture
 
 ```
-   CLIENTS          mizan/web  ·  mizan/mobile (Phase 2)
-                    React 19 + Vite      React Native
+   CLIENTS          mizan/web            ·  mizan/mobile
+                    React 19 + Vite         Expo / React Native
                          │
                          │   HTTP / JSON only — the clients share no code with the server
                          ▼
@@ -104,9 +104,20 @@ The entire product surface, cut over from the mock layer to the live API:
 - Stack: Vite 6 · React 19 · TypeScript · Tailwind v4 (semantic tokens) · Radix · TanStack Query v5 · React Router v7 · react-hook-form + Zod · i18next (EN default, AR one switch away, RTL).
 - Permission-aware nav, actions, and routes from the exact keys `/api/me` returns. Code-split feature routes, split vendor chunks. The web app talks only to the real backend; the MSW layer moved to `src/test/` and is Vitest-only.
 
+### Mizan mobile — `mizan/mobile/` ✅ all 18 design screens, on the real backend
+
+The native client — a **separate client of the same API** as `mizan/web/` (rule 16: shares API contracts, never UI components).
+
+`today` (dashboard) · `cases` (+ detail, hearings, tasks) · `calendar` · `files` (+ offline pinning) · `clients` (+ profile) · `finance` · quick-capture hub (expense → real upload + expense, log-time → real `/time-entries`) · "Ask Mizan" (honest "not connected" preview) · `more` (settings, audit log, locale switch) · `notifications`
+
+- **~8,700 LOC** across **129 files** · **14** feature slices · **24** expo-router files · zero `any` in app code.
+- Expo SDK 57 · React Native 0.86 · React 19 · New Architecture · Expo Router · TanStack Query v5 · i18next (EN/AR, full RTL via `I18nManager.forceRTL` + restart).
+- API + auth layer is a near-verbatim port of the web client: one `httpClient`, single-flight `401` refresh, tokens in `expo-secure-store` (Keychain/Keystore), biometric unlock. Response types lifted from the web slices — both clients break at compile time if the contract moves.
+- `tsc` · `eslint` · `prettier --check` · `expo export` (iOS/Android/web) · `expo-doctor` 21/21 all green. Full write-up in [`mizan/mobile/PROJECT_OVERVIEW.md`](mizan/mobile/PROJECT_OVERVIEW.md).
+
 ### Continuous integration
 
-**GitHub Actions** on every push and PR (`.github/workflows/ci.yml`): backend `typecheck · lint · format:check · test` (against a Postgres service, RLS enforced) `· build`; web `lint · typecheck · test · build`; and the production Docker image builds.
+**GitHub Actions** on every push and PR (`.github/workflows/ci.yml`): backend `typecheck · lint · format:check · test` (against a Postgres service, RLS enforced) `· build`; web `lint · typecheck · test · build`; mobile `lint · typecheck · format:check · expo-doctor · export`; and the production Docker image builds.
 
 ---
 
@@ -126,7 +137,7 @@ auric/
 ├── mizan/                    Project #1 — the Mizan law-firm application
 │   ├── backend/app/          composition root · layered seed · law-firm domain (lawfirm/)
 │   ├── web/                  standalone Vite package (mizan-web) — HTTP API only, no repo imports
-│   └── mobile/               Phase 2 (placeholder)
+│   └── mobile/               standalone Expo package (mizan-mobile) — HTTP API only, no repo imports
 │
 ├── prisma/                   schema (mirrors every table) + migration history — Core + lawfirm
 ├── scripts/                  migrate · provision-db · build
@@ -251,6 +262,7 @@ Every reusable capability carries its **architectural contract** next to the cod
 | `core/localization/` · `core/observability/` · `core/http/` · `core/bootstrap/` | cross-cutting |
 | [`mizan/README.md`](mizan/README.md) · [`mizan/backend/app/README.md`](mizan/backend/app/README.md) | **Mizan** (Project #1) — the Core ↔ Mizan boundary |
 | [`mizan/web/README.md`](mizan/web/README.md) | **Mizan** web client — API-only, imports no repo code |
+| [`mizan/mobile/README.md`](mizan/mobile/README.md) · [`mizan/mobile/PROJECT_OVERVIEW.md`](mizan/mobile/PROJECT_OVERVIEW.md) | **Mizan** mobile client (Expo / RN) — API-only, imports no repo code |
 
 ### Docs
 

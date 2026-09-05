@@ -1,5 +1,13 @@
 import { useMemo } from "react";
-import { View, Text, ScrollView, Pressable, ActivityIndicator, StyleSheet, RefreshControl } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  ActivityIndicator,
+  StyleSheet,
+  RefreshControl,
+} from "react-native";
 import { useRefresh } from "@/lib/use-refresh";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
@@ -82,7 +90,9 @@ export default function CalendarScreen() {
                   {d.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase()}
                 </Text>
                 <View style={[styles.weekCell, isToday && styles.weekCellToday]}>
-                  <Text style={[styles.weekNum, isToday && styles.weekNumToday]}>{d.getDate()}</Text>
+                  <Text style={[styles.weekNum, isToday && styles.weekNumToday]}>
+                    {d.getDate()}
+                  </Text>
                 </View>
                 {has ? <View style={styles.weekDot} /> : <View style={{ height: 7 }} />}
               </View>
@@ -100,13 +110,23 @@ export default function CalendarScreen() {
       ) : (
         <ScrollView
           contentContainerStyle={styles.list}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brandDark} />}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.brandDark}
+            />
+          }
         >
           {grouped.map(([key, dayItems]) => (
             <View key={key}>
               <View style={styles.dayHeader}>
                 <Text style={styles.dayHeaderText}>
-                  {formatDate(dayItems[0].at, { weekday: "short", day: "numeric", month: "short" }).toUpperCase()}
+                  {formatDate(dayItems[0].at, {
+                    weekday: "short",
+                    day: "numeric",
+                    month: "short",
+                  }).toUpperCase()}
                 </Text>
                 <View style={styles.rule} />
               </View>
@@ -153,11 +173,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   headerRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  title: { flex: 1, fontFamily: fontFamily.display, fontSize: fontSize.displayLg, letterSpacing: 0.2, color: colors.textPrimary },
+  title: {
+    flex: 1,
+    fontFamily: fontFamily.display,
+    fontSize: fontSize.displayLg,
+    letterSpacing: 0.2,
+    color: colors.textPrimary,
+  },
   week: { flexDirection: "row", justifyContent: "space-between", marginTop: 16, paddingBottom: 14 },
   weekCol: { width: 42, alignItems: "center" },
   weekLabel: { fontFamily: fontFamily.bold, fontSize: fontSize.xs, color: colors.textSecondary },
-  weekCell: { width: 36, height: 36, marginTop: 6, borderRadius: radii.md, alignItems: "center", justifyContent: "center" },
+  weekCell: {
+    width: 36,
+    height: 36,
+    marginTop: 6,
+    borderRadius: radii.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   weekCellToday: { backgroundColor: colors.brandDark },
   weekNum: { fontFamily: fontFamily.bold, fontSize: fontSize.lg, color: colors.chipInactiveText },
   weekNumToday: { fontFamily: fontFamily.extrabold, color: colors.textOnDark },
@@ -165,7 +198,12 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
   list: { padding: 20, gap: 16, paddingBottom: 100 },
   dayHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 },
-  dayHeaderText: { fontFamily: fontFamily.extrabold, fontSize: fontSize.sm, letterSpacing: 0.8, color: colors.textSecondary },
+  dayHeaderText: {
+    fontFamily: fontFamily.extrabold,
+    fontSize: fontSize.sm,
+    letterSpacing: 0.8,
+    color: colors.textSecondary,
+  },
   rule: { flex: 1, height: 1, backgroundColor: colors.borderSectionRule },
   eventCard: {
     flexDirection: "row",
@@ -178,6 +216,15 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   eventAccent: { width: 3, alignSelf: "stretch" },
-  eventTitle: { fontFamily: fontFamily.extrabold, fontSize: fontSize.mdLg, color: colors.textPrimary },
-  eventSub: { fontFamily: fontFamily.medium, fontSize: fontSize.base, color: colors.textSecondary, marginTop: 3 },
+  eventTitle: {
+    fontFamily: fontFamily.extrabold,
+    fontSize: fontSize.mdLg,
+    color: colors.textPrimary,
+  },
+  eventSub: {
+    fontFamily: fontFamily.medium,
+    fontSize: fontSize.base,
+    color: colors.textSecondary,
+    marginTop: 3,
+  },
 });

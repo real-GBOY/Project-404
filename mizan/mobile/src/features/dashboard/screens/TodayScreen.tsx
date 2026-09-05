@@ -1,4 +1,13 @@
-import { View, Text, ScrollView, Pressable, ActivityIndicator, StyleSheet, Linking, RefreshControl } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  ActivityIndicator,
+  StyleSheet,
+  Linking,
+  RefreshControl,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
@@ -88,7 +97,13 @@ export default function TodayScreen() {
         <ScrollView
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brandDark} />}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.brandDark}
+            />
+          }
         >
           {data.upcomingHearings[0] ? (
             <View>
@@ -102,7 +117,11 @@ export default function TodayScreen() {
               <SectionHeader label={t("urgentDeadlines")} withRule />
               <Card radius="lgXl" padded={false}>
                 {data.urgentDeadlines.map((d, i) => (
-                  <DeadlineRow key={d.id} deadline={d} isLast={i === data.urgentDeadlines.length - 1} />
+                  <DeadlineRow
+                    key={d.id}
+                    deadline={d}
+                    isLast={i === data.urgentDeadlines.length - 1}
+                  />
                 ))}
               </Card>
             </View>
@@ -133,7 +152,15 @@ export default function TodayScreen() {
   );
 }
 
-function StatTile({ value, label, accent = false }: { value: number; label: string; accent?: boolean }) {
+function StatTile({
+  value,
+  label,
+  accent = false,
+}: {
+  value: number;
+  label: string;
+  accent?: boolean;
+}) {
   return (
     <View style={styles.statTile}>
       <Text style={[styles.statValue, accent && { color: colors.brandBronze }]}>{value}</Text>
@@ -169,7 +196,9 @@ function NextHearingCard({ hearing }: { hearing: DashboardHearing }) {
           <Pressable
             style={styles.directionsPill}
             onPress={() =>
-              Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hearing.court)}`)
+              Linking.openURL(
+                `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hearing.court)}`,
+              )
             }
           >
             <Icon name="directions" size={16} color={colors.textOnDark} />
@@ -183,13 +212,24 @@ function NextHearingCard({ hearing }: { hearing: DashboardHearing }) {
 
 function DeadlineRow({ deadline, isLast }: { deadline: DashboardDeadline; isLast: boolean }) {
   const { t } = useTranslation("dashboard");
-  const dueDays = Math.max(0, Math.ceil((new Date(deadline.dueAt).getTime() - Date.now()) / 86_400_000));
+  const dueDays = Math.max(
+    0,
+    Math.ceil((new Date(deadline.dueAt).getTime() - Date.now()) / 86_400_000),
+  );
   return (
     <Pressable
       onPress={() => router.push(`/case/${deadline.matterId}`)}
       style={[styles.deadlineRow, !isLast && styles.rowBorder]}
     >
-      <View style={[styles.accentBar, { backgroundColor: deadline.severity === "critical" ? colors.dangerAccent : colors.warningAccent }]} />
+      <View
+        style={[
+          styles.accentBar,
+          {
+            backgroundColor:
+              deadline.severity === "critical" ? colors.dangerAccent : colors.warningAccent,
+          },
+        ]}
+      />
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={styles.rowTitle} numberOfLines={1}>
           {deadline.title}
@@ -198,12 +238,23 @@ function DeadlineRow({ deadline, isLast }: { deadline: DashboardDeadline; isLast
           {deadline.matterTitle} · {deadline.matterNumber}
         </Text>
       </View>
-      <StatusBadge label={t("dueIn", { count: dueDays })} tone={deadline.severity === "critical" ? "danger" : "warning"} />
+      <StatusBadge
+        label={t("dueIn", { count: dueDays })}
+        tone={deadline.severity === "critical" ? "danger" : "warning"}
+      />
     </Pressable>
   );
 }
 
-function TaskRow({ task, isLast, onToggle }: { task: DashboardTask; isLast: boolean; onToggle: () => void }) {
+function TaskRow({
+  task,
+  isLast,
+  onToggle,
+}: {
+  task: DashboardTask;
+  isLast: boolean;
+  onToggle: () => void;
+}) {
   return (
     <View style={[styles.taskRow, !isLast && styles.rowBorder]}>
       <Pressable onPress={onToggle} style={styles.checkbox} hitSlop={6} />
@@ -213,12 +264,17 @@ function TaskRow({ task, isLast, onToggle }: { task: DashboardTask; isLast: bool
         </Text>
         {task.matterTitle || task.dueAt ? (
           <Text style={styles.rowSubtitle} numberOfLines={1}>
-            {[task.matterTitle, task.dueAt ? formatDate(task.dueAt) : null].filter(Boolean).join(" · ")}
+            {[task.matterTitle, task.dueAt ? formatDate(task.dueAt) : null]
+              .filter(Boolean)
+              .join(" · ")}
           </Text>
         ) : null}
       </View>
       {task.priority !== "low" ? (
-        <StatusBadge label={task.priority === "high" ? "High" : "Normal"} tone={task.priority === "high" ? "danger" : "neutral"} />
+        <StatusBadge
+          label={task.priority === "high" ? "High" : "Normal"}
+          tone={task.priority === "high" ? "danger" : "neutral"}
+        />
       ) : null}
     </View>
   );
@@ -234,7 +290,12 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: radii.xxl,
   },
   brandRow: { flexDirection: "row", alignItems: "center", gap: 11, marginBottom: 18 },
-  wordmark: { fontFamily: fontFamily.display, fontSize: fontSize.displayMd, color: colors.textOnDark, letterSpacing: 0.4 },
+  wordmark: {
+    fontFamily: fontFamily.display,
+    fontSize: fontSize.displayMd,
+    color: colors.textOnDark,
+    letterSpacing: 0.4,
+  },
   headerTab: {
     marginStart: "auto",
     fontFamily: fontFamily.semibold,
@@ -245,8 +306,18 @@ const styles = StyleSheet.create({
   },
   headerRow: { flexDirection: "row", alignItems: "flex-end", gap: 12 },
   headerText: { flex: 1, minWidth: 0 },
-  headerDate: { fontFamily: fontFamily.display, fontSize: fontSize.displayMd, color: colors.textOnDark, letterSpacing: 0.2 },
-  headerGreeting: { fontFamily: fontFamily.regular, fontSize: fontSize.lg, color: colors.brandTan, marginTop: 3 },
+  headerDate: {
+    fontFamily: fontFamily.display,
+    fontSize: fontSize.displayMd,
+    color: colors.textOnDark,
+    letterSpacing: 0.2,
+  },
+  headerGreeting: {
+    fontFamily: fontFamily.regular,
+    fontSize: fontSize.lg,
+    color: colors.brandTan,
+    marginTop: 3,
+  },
   bell: {
     width: 40,
     height: 40,
@@ -274,26 +345,105 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     padding: 13,
   },
-  statValue: { fontFamily: fontFamily.display, fontSize: fontSize.heroLg, color: colors.textOnDark },
-  statLabel: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.brandTan, marginTop: 3 },
+  statValue: {
+    fontFamily: fontFamily.display,
+    fontSize: fontSize.heroLg,
+    color: colors.textOnDark,
+  },
+  statLabel: {
+    fontFamily: fontFamily.regular,
+    fontSize: fontSize.sm,
+    color: colors.brandTan,
+    marginTop: 3,
+  },
   center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
   retry: { fontFamily: fontFamily.bold, color: colors.brandBronzeLabel },
   content: { padding: 20, gap: 18, paddingBottom: 100 },
   hearingTop: { flexDirection: "row", alignItems: "center", gap: 12 },
-  dateChip: { backgroundColor: colors.brandCream, borderRadius: radii.lg, paddingHorizontal: 12, paddingVertical: 9, alignItems: "center" },
-  dateChipMonth: { fontFamily: fontFamily.extrabold, fontSize: fontSize.xs, color: colors.brandBronzeLabel, letterSpacing: 0.5 },
-  dateChipDay: { fontFamily: fontFamily.extrabold, fontSize: fontSize.displayMd, color: colors.brandDark, lineHeight: 21 },
-  hearingTitle: { fontFamily: fontFamily.extrabold, fontSize: fontSize.lgMd, lineHeight: 19, color: colors.textPrimary },
-  hearingCourt: { fontFamily: fontFamily.medium, fontSize: fontSize.base, color: colors.textSecondary, marginTop: 4 },
-  hearingDivider: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 14, paddingTop: 13, borderTopWidth: 1, borderTopColor: colors.borderHairline },
+  dateChip: {
+    backgroundColor: colors.brandCream,
+    borderRadius: radii.lg,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    alignItems: "center",
+  },
+  dateChipMonth: {
+    fontFamily: fontFamily.extrabold,
+    fontSize: fontSize.xs,
+    color: colors.brandBronzeLabel,
+    letterSpacing: 0.5,
+  },
+  dateChipDay: {
+    fontFamily: fontFamily.extrabold,
+    fontSize: fontSize.displayMd,
+    color: colors.brandDark,
+    lineHeight: 21,
+  },
+  hearingTitle: {
+    fontFamily: fontFamily.extrabold,
+    fontSize: fontSize.lgMd,
+    lineHeight: 19,
+    color: colors.textPrimary,
+  },
+  hearingCourt: {
+    fontFamily: fontFamily.medium,
+    fontSize: fontSize.base,
+    color: colors.textSecondary,
+    marginTop: 4,
+  },
+  hearingDivider: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginTop: 14,
+    paddingTop: 13,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderHairline,
+  },
   hearingTime: { fontFamily: fontFamily.bold, fontSize: fontSize.baseMd, color: colors.brandDark },
-  directionsPill: { marginStart: "auto", flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 11, paddingVertical: 5, borderRadius: radii.smMd, backgroundColor: colors.brandDark },
-  directionsText: { fontFamily: fontFamily.bold, fontSize: fontSize.base, color: colors.textOnDark },
-  deadlineRow: { flexDirection: "row", alignItems: "center", gap: 12, padding: 13, paddingHorizontal: 15 },
-  taskRow: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14, paddingHorizontal: 15 },
+  directionsPill: {
+    marginStart: "auto",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 11,
+    paddingVertical: 5,
+    borderRadius: radii.smMd,
+    backgroundColor: colors.brandDark,
+  },
+  directionsText: {
+    fontFamily: fontFamily.bold,
+    fontSize: fontSize.base,
+    color: colors.textOnDark,
+  },
+  deadlineRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 13,
+    paddingHorizontal: 15,
+  },
+  taskRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 14,
+    paddingHorizontal: 15,
+  },
   rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.borderHairline },
   accentBar: { width: 3, alignSelf: "stretch" },
-  checkbox: { width: 22, height: 22, borderWidth: 2, borderColor: colors.borderNeutral, borderRadius: radii.xs },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderWidth: 2,
+    borderColor: colors.borderNeutral,
+    borderRadius: radii.xs,
+  },
   rowTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.md, color: colors.textPrimary },
-  rowSubtitle: { fontFamily: fontFamily.medium, fontSize: fontSize.smMd, color: colors.textSecondary, marginTop: 2 },
+  rowSubtitle: {
+    fontFamily: fontFamily.medium,
+    fontSize: fontSize.smMd,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
 });

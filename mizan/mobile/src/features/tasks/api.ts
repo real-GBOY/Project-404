@@ -23,7 +23,8 @@ export const createTask = (body: {
 export const updateTask = (id: string, body: Partial<Omit<TaskRow, "id">>) =>
   httpClient<TaskRow>(`/tasks/${id}`, { method: "PATCH", body });
 
-export const completeTask = (id: string) => httpClient<TaskRow>(`/tasks/${id}/complete`, { method: "POST" });
+export const completeTask = (id: string) =>
+  httpClient<TaskRow>(`/tasks/${id}/complete`, { method: "POST" });
 
 export const assignTask = (id: string, assigneeId: string | null) =>
   httpClient<TaskRow>(`/tasks/${id}/assign`, { method: "POST", body: { assigneeId } });

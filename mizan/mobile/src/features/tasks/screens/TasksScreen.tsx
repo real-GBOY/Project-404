@@ -1,5 +1,13 @@
 import { useMemo, useState } from "react";
-import { View, Text, ScrollView, Pressable, ActivityIndicator, StyleSheet, RefreshControl } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  ActivityIndicator,
+  StyleSheet,
+  RefreshControl,
+} from "react-native";
 import { useRefresh } from "@/lib/use-refresh";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
@@ -39,7 +47,10 @@ export default function TasksScreen() {
   const { user } = useAuth();
   const [filter, setFilter] = useState<Filter>("assignedToMe");
 
-  const mineList = useTaskList({ mine: filter === "assignedToMe", status: filter === "done" ? "done" : "all" });
+  const mineList = useTaskList({
+    mine: filter === "assignedToMe",
+    status: filter === "done" ? "done" : "all",
+  });
   const { complete } = useTaskMutations();
   const { refreshing, onRefresh } = useRefresh(mineList.refetch);
 
@@ -73,9 +84,21 @@ export default function TasksScreen() {
           <IconButton icon="add" onPress={() => notAvailableYet(t("title"))} />
         </View>
         <View style={styles.chips}>
-          <Chip label={t("filters.assignedToMe")} active={filter === "assignedToMe"} onPress={() => setFilter("assignedToMe")} />
-          <Chip label={t("filters.delegated")} active={filter === "delegated"} onPress={() => setFilter("delegated")} />
-          <Chip label={t("filters.done")} active={filter === "done"} onPress={() => setFilter("done")} />
+          <Chip
+            label={t("filters.assignedToMe")}
+            active={filter === "assignedToMe"}
+            onPress={() => setFilter("assignedToMe")}
+          />
+          <Chip
+            label={t("filters.delegated")}
+            active={filter === "delegated"}
+            onPress={() => setFilter("delegated")}
+          />
+          <Chip
+            label={t("filters.done")}
+            active={filter === "done"}
+            onPress={() => setFilter("done")}
+          />
         </View>
       </View>
 
@@ -88,11 +111,21 @@ export default function TasksScreen() {
       ) : (
         <ScrollView
           contentContainerStyle={styles.list}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brandDark} />}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.brandDark}
+            />
+          }
         >
           {nonEmpty.map((key) => (
             <View key={key}>
-              <SectionHeader label={labelFor[key](groups[key].length)} withRule tone={key === "overdue" ? "danger" : "default"} />
+              <SectionHeader
+                label={labelFor[key](groups[key].length)}
+                withRule
+                tone={key === "overdue" ? "danger" : "default"}
+              />
               <Card radius="lgXl" padded={false}>
                 {groups[key].map((tk, i) => (
                   <TaskItem
@@ -111,15 +144,29 @@ export default function TasksScreen() {
   );
 }
 
-function TaskItem({ task, isLast, onToggle }: { task: TaskRow; isLast: boolean; onToggle: () => void }) {
+function TaskItem({
+  task,
+  isLast,
+  onToggle,
+}: {
+  task: TaskRow;
+  isLast: boolean;
+  onToggle: () => void;
+}) {
   return (
     <Pressable
       style={[styles.row, !isLast && styles.rowBorder]}
       onPress={() => task.matterId && router.push(`/case/${task.matterId}`)}
     >
-      <Pressable onPress={onToggle} hitSlop={6} style={[styles.checkbox, task.status === "done" && styles.checkboxDone]} />
+      <Pressable
+        onPress={onToggle}
+        hitSlop={6}
+        style={[styles.checkbox, task.status === "done" && styles.checkboxDone]}
+      />
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Text style={[styles.taskTitle, task.status === "done" && styles.strike]}>{task.title}</Text>
+        <Text style={[styles.taskTitle, task.status === "done" && styles.strike]}>
+          {task.title}
+        </Text>
         <View style={styles.metaRow}>
           {task.matterReference ? <MatterRefBadge reference={task.matterReference} small /> : null}
           {task.priority === "high" ? (
@@ -145,15 +192,39 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
   },
   headerRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  title: { flex: 1, fontFamily: fontFamily.display, fontSize: fontSize.displayLg, letterSpacing: 0.2, color: colors.textPrimary },
+  title: {
+    flex: 1,
+    fontFamily: fontFamily.display,
+    fontSize: fontSize.displayLg,
+    letterSpacing: 0.2,
+    color: colors.textPrimary,
+  },
   chips: { flexDirection: "row", gap: 8, marginTop: 13 },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
   list: { padding: 20, gap: 16, paddingBottom: 40 },
-  row: { flexDirection: "row", alignItems: "flex-start", gap: 12, paddingHorizontal: 15, paddingVertical: 14 },
+  row: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+    paddingHorizontal: 15,
+    paddingVertical: 14,
+  },
   rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.borderHairline },
-  checkbox: { width: 22, height: 22, borderWidth: 2, borderColor: colors.borderNeutral, borderRadius: radii.xs, marginTop: 1 },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderWidth: 2,
+    borderColor: colors.borderNeutral,
+    borderRadius: radii.xs,
+    marginTop: 1,
+  },
   checkboxDone: { backgroundColor: colors.brandBronze, borderColor: colors.brandBronze },
-  taskTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.mdLg, lineHeight: 19, color: colors.textPrimary },
+  taskTitle: {
+    fontFamily: fontFamily.bold,
+    fontSize: fontSize.mdLg,
+    lineHeight: 19,
+    color: colors.textPrimary,
+  },
   strike: { textDecorationLine: "line-through", color: colors.textSecondary },
   metaRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8 },
   due: { fontFamily: fontFamily.semibold, fontSize: fontSize.smMd, color: colors.textSecondary },

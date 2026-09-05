@@ -1,11 +1,19 @@
 import { useMemo, useState } from "react";
-import { View, Text, FlatList, Pressable, ActivityIndicator, StyleSheet, RefreshControl } from "react-native";
+import {
+  View,
+  Text,
+  FlatList,
+  Pressable,
+  ActivityIndicator,
+  StyleSheet,
+  RefreshControl,
+} from "react-native";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/lib/auth/use-auth";
 import { formatDate } from "@/lib/format";
-import { colors, radii } from "@/theme/tokens";
+import { colors } from "@/theme/tokens";
 import { fontFamily, fontSize } from "@/theme/typography";
 import { Icon } from "@/components/ui/Icon";
 import { IconButton } from "@/components/ui/Button";
@@ -30,7 +38,11 @@ export default function CasesScreen() {
   const { user } = useAuth();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("mine");
-  const { data, isLoading, refetch } = useMatterList({ q: query || undefined, status: "all", sort: "-openedAt" });
+  const { data, isLoading, refetch } = useMatterList({
+    q: query || undefined,
+    status: "all",
+    sort: "-openedAt",
+  });
   const { refreshing, onRefresh } = useRefresh(refetch);
 
   const items = useMemo(() => {
@@ -60,10 +72,26 @@ export default function CasesScreen() {
           <SearchBar placeholder={t("searchPlaceholder")} value={query} onChangeText={setQuery} />
         </View>
         <View style={styles.chips}>
-          <Chip label={t("filters.mine")} active={filter === "mine"} onPress={() => setFilter("mine")} />
-          <Chip label={t("filters.active")} active={filter === "active"} onPress={() => setFilter("active")} />
-          <Chip label={t("filters.hearingSet")} active={filter === "hearingSet"} onPress={() => setFilter("hearingSet")} />
-          <Chip label={t("filters.onHold")} active={filter === "onHold"} onPress={() => setFilter("onHold")} />
+          <Chip
+            label={t("filters.mine")}
+            active={filter === "mine"}
+            onPress={() => setFilter("mine")}
+          />
+          <Chip
+            label={t("filters.active")}
+            active={filter === "active"}
+            onPress={() => setFilter("active")}
+          />
+          <Chip
+            label={t("filters.hearingSet")}
+            active={filter === "hearingSet"}
+            onPress={() => setFilter("hearingSet")}
+          />
+          <Chip
+            label={t("filters.onHold")}
+            active={filter === "onHold"}
+            onPress={() => setFilter("onHold")}
+          />
         </View>
       </View>
 
@@ -79,7 +107,13 @@ export default function CasesScreen() {
           keyExtractor={(m) => m.id}
           renderItem={({ item }) => <MatterCard matter={item} />}
           contentContainerStyle={styles.list}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brandDark} />}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.brandDark}
+            />
+          }
         />
       )}
       <FAB />
@@ -113,8 +147,15 @@ function MatterCard({ matter }: { matter: MatterListItem }) {
             size={17}
             color={status === "onHold" ? colors.dangerAccent : colors.brandBronze}
           />
-          <Text style={[styles.cardFooterText, status === "onHold" && { color: colors.dangerText }]} numberOfLines={1}>
-            {matter.nextHearingAt ? t("nextHearing", { date: formatDate(matter.nextHearingAt, { day: "numeric", month: "short" }) }) : matter.status}
+          <Text
+            style={[styles.cardFooterText, status === "onHold" && { color: colors.dangerText }]}
+            numberOfLines={1}
+          >
+            {matter.nextHearingAt
+              ? t("nextHearing", {
+                  date: formatDate(matter.nextHearingAt, { day: "numeric", month: "short" }),
+                })
+              : matter.status}
           </Text>
           <Text style={styles.leadLawyer} numberOfLines={1}>
             {matter.leadLawyer}
@@ -135,16 +176,56 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
   },
   headerRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  title: { flex: 1, fontFamily: fontFamily.display, fontSize: fontSize.displayLg, letterSpacing: 0.2, color: colors.textPrimary },
+  title: {
+    flex: 1,
+    fontFamily: fontFamily.display,
+    fontSize: fontSize.displayLg,
+    letterSpacing: 0.2,
+    color: colors.textPrimary,
+  },
   count: { fontFamily: fontFamily.bold, fontSize: fontSize.baseMd, color: colors.textSecondary },
   chips: { flexDirection: "row", gap: 8, marginTop: 13 },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
   list: { padding: 20, gap: 12, paddingBottom: 100 },
   cardTop: { flexDirection: "row", alignItems: "center", gap: 9 },
-  practiceArea: { marginStart: "auto", fontFamily: fontFamily.bold, fontSize: fontSize.sm, color: colors.textSecondary },
-  matterTitle: { fontFamily: fontFamily.display, fontSize: fontSize.xl, lineHeight: 20, marginTop: 10, color: colors.textPrimary, letterSpacing: 0.2 },
-  matterCourt: { fontFamily: fontFamily.medium, fontSize: fontSize.base, color: colors.textSecondary, marginTop: 4 },
-  cardDivider: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 13, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.borderHairline },
-  cardFooterText: { fontFamily: fontFamily.bold, fontSize: fontSize.baseMd, color: colors.textPrimary },
-  leadLawyer: { marginStart: "auto", fontFamily: fontFamily.semibold, fontSize: fontSize.smMd, color: colors.textSecondary },
+  practiceArea: {
+    marginStart: "auto",
+    fontFamily: fontFamily.bold,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+  },
+  matterTitle: {
+    fontFamily: fontFamily.display,
+    fontSize: fontSize.xl,
+    lineHeight: 20,
+    marginTop: 10,
+    color: colors.textPrimary,
+    letterSpacing: 0.2,
+  },
+  matterCourt: {
+    fontFamily: fontFamily.medium,
+    fontSize: fontSize.base,
+    color: colors.textSecondary,
+    marginTop: 4,
+  },
+  cardDivider: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginTop: 13,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderHairline,
+  },
+  cardFooterText: {
+    fontFamily: fontFamily.bold,
+    fontSize: fontSize.baseMd,
+    color: colors.textPrimary,
+  },
+  leadLawyer: {
+    marginStart: "auto",
+    fontFamily: fontFamily.semibold,
+    fontSize: fontSize.smMd,
+    color: colors.textSecondary,
+  },
 });

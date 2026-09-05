@@ -8,7 +8,9 @@ import { colors } from "@/theme/tokens";
 export function StickyFooterBar({ children, gap = 10 }: { children: ReactNode; gap?: number }) {
   const insets = useSafeAreaInsets();
   return (
-    <View style={[styles.wrap, { paddingBottom: Math.max(insets.bottom, 12), gap }]}>{children}</View>
+    <View style={[styles.wrap, { paddingBottom: Math.max(insets.bottom, 12), gap }]}>
+      {children}
+    </View>
   );
 }
 

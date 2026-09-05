@@ -2,7 +2,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as api from "./api";
 import { documentKeys } from "./api";
 import type { DocListParams, DocRow } from "./types";
-import { listOfflineDocuments, pinDocumentOffline, unpinDocumentOffline, getOfflineTotalBytes } from "./offline";
+import {
+  listOfflineDocuments,
+  pinDocumentOffline,
+  unpinDocumentOffline,
+  getOfflineTotalBytes,
+} from "./offline";
 
 export const useDocumentList = (p: DocListParams) =>
   useQuery({
@@ -29,8 +34,14 @@ export function useOfflinePinning() {
     qc.invalidateQueries({ queryKey: offlineKeys.bytes });
   };
   return {
-    pin: useMutation({ mutationFn: (doc: DocRow) => pinDocumentOffline(doc), onSuccess: invalidate }),
-    unpin: useMutation({ mutationFn: (id: string) => unpinDocumentOffline(id), onSuccess: invalidate }),
+    pin: useMutation({
+      mutationFn: (doc: DocRow) => pinDocumentOffline(doc),
+      onSuccess: invalidate,
+    }),
+    unpin: useMutation({
+      mutationFn: (id: string) => unpinDocumentOffline(id),
+      onSuccess: invalidate,
+    }),
   };
 }
 

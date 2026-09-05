@@ -11,12 +11,7 @@ export interface CardProps extends ViewProps {
 export function Card({ radius = "lgXl", padded = true, style, children, ...rest }: CardProps) {
   return (
     <View
-      style={[
-        styles.base,
-        { borderRadius: radii[radius] },
-        padded && styles.padded,
-        style,
-      ]}
+      style={[styles.base, { borderRadius: radii[radius] }, padded && styles.padded, style]}
       {...rest}
     >
       {children}

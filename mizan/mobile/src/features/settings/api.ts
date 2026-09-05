@@ -6,7 +6,11 @@ export const settingsKeys = {
   audit: (q: string) => ["audit-logs", q] as const,
 };
 
-export const getSettings = (signal?: AbortSignal) => httpClient<LawFirmSettings>("/lawfirm/settings", { signal });
+export const getSettings = (signal?: AbortSignal) =>
+  httpClient<LawFirmSettings>("/lawfirm/settings", { signal });
 
 export const getAuditLogs = (q: string, signal?: AbortSignal) =>
-  httpClient<{ items: AuditEntry[]; total: number }>("/lawfirm/audit-logs", { query: { q: q || undefined }, signal });
+  httpClient<{ items: AuditEntry[]; total: number }>("/lawfirm/audit-logs", {
+    query: { q: q || undefined },
+    signal,
+  });

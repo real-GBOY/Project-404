@@ -8,7 +8,12 @@ import type { AuthUser, MeResponse, OrganizationMembership } from "@/types/auth"
 import { authEvents } from "./auth-events";
 import { tokenStore } from "./token-store";
 import { sessionCache } from "./session-cache";
-import { AuthContext, type AuthContextValue, type AuthStatus, type LoginOutcome } from "./auth-context";
+import {
+  AuthContext,
+  type AuthContextValue,
+  type AuthStatus,
+  type LoginOutcome,
+} from "./auth-context";
 
 const BIOMETRIC_KEY = "mizan.biometric-enabled";
 

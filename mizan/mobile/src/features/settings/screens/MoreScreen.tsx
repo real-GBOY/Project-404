@@ -9,7 +9,7 @@ import { setLocale, type Locale } from "@/lib/i18n";
 import { useDir } from "@/lib/i18n/use-dir";
 import { restartForDirectionChange } from "@/lib/i18n/restart";
 import { formatFileSize } from "@/lib/format";
-import { colors, radii } from "@/theme/tokens";
+import { colors } from "@/theme/tokens";
 import { fontFamily, fontSize } from "@/theme/typography";
 import { Avatar } from "@/components/ui/Avatar";
 import { Logo } from "@/components/ui/Logo";
@@ -18,7 +18,6 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { Toggle } from "@/components/ui/Toggle";
 import { notAvailableYet } from "@/lib/not-available";
-import { useFirmSettings } from "../hooks";
 import { useTeamList } from "@/features/team/hooks";
 import { useFinanceSummary } from "@/features/billing/hooks";
 import { useOfflineStorageUsed } from "@/features/documents/hooks";
@@ -29,10 +28,10 @@ export default function MoreScreen() {
   const { t } = useTranslation("settings");
   const { t: tb } = useTranslation("billing");
   const insets = useSafeAreaInsets();
-  const { user, memberships, logout, biometricEnabled, biometricAvailable, setBiometricEnabled } = useAuth();
+  const { user, memberships, logout, biometricEnabled, biometricAvailable, setBiometricEnabled } =
+    useAuth();
   const { locale } = useDir();
 
-  const firm = useFirmSettings();
   const team = useTeamList();
   const finance = useFinanceSummary("invoices");
   const storage = useOfflineStorageUsed();
@@ -94,7 +93,11 @@ export default function MoreScreen() {
             <Row
               icon="receipt_long"
               label={t("finance")}
-              trailing={overdue > 0 ? <Text style={styles.trailingDanger}>{tb("overdue", { count: overdue })}</Text> : null}
+              trailing={
+                overdue > 0 ? (
+                  <Text style={styles.trailingDanger}>{tb("overdue", { count: overdue })}</Text>
+                ) : null
+              }
               onPress={() => router.push("/finance")}
               isLast
             />
@@ -111,7 +114,9 @@ export default function MoreScreen() {
               trailing={
                 <Toggle
                   value={biometricEnabled}
-                  onValueChange={(v) => (biometricAvailable ? setBiometricEnabled(v) : notAvailableYet(t("faceIdUnlock")))}
+                  onValueChange={(v) =>
+                    biometricAvailable ? setBiometricEnabled(v) : notAvailableYet(t("faceIdUnlock"))
+                  }
                 />
               }
             />
@@ -134,15 +139,24 @@ export default function MoreScreen() {
           <Card radius="lgXl" padded={false}>
             <Row
               label="English"
-              trailing={locale === "en" ? <Icon name="check" size={21} color={colors.brandBronze} /> : null}
+              trailing={
+                locale === "en" ? <Icon name="check" size={21} color={colors.brandBronze} /> : null
+              }
               onPress={() => switchLocale("en")}
             />
             <Row
               label="العربية — Arabic"
-              trailing={locale === "ar" ? <Icon name="check" size={21} color={colors.brandBronze} /> : null}
+              trailing={
+                locale === "ar" ? <Icon name="check" size={21} color={colors.brandBronze} /> : null
+              }
               onPress={() => switchLocale("ar")}
             />
-            <Row icon="shield" label={t("auditLog")} chevron onPress={() => router.push("/settings/audit-log")} />
+            <Row
+              icon="shield"
+              label={t("auditLog")}
+              chevron
+              onPress={() => router.push("/settings/audit-log")}
+            />
             <Row
               icon="logout"
               iconColor={colors.dangerText}
@@ -201,7 +215,12 @@ const styles = StyleSheet.create({
     paddingBottom: 22,
   },
   brandRow: { flexDirection: "row", alignItems: "center", gap: 11, marginBottom: 20 },
-  wordmark: { fontFamily: fontFamily.display, fontSize: fontSize.displayMd, color: colors.textOnDark, letterSpacing: 0.4 },
+  wordmark: {
+    fontFamily: fontFamily.display,
+    fontSize: fontSize.displayMd,
+    color: colors.textOnDark,
+    letterSpacing: 0.4,
+  },
   headerTab: {
     marginStart: "auto",
     fontFamily: fontFamily.semibold,
@@ -211,13 +230,42 @@ const styles = StyleSheet.create({
     color: colors.brandTan,
   },
   identity: { flexDirection: "row", alignItems: "center", gap: 14 },
-  name: { fontFamily: fontFamily.display, fontSize: fontSize.displayMd, color: colors.textOnDark, letterSpacing: 0.2 },
-  role: { fontFamily: fontFamily.regular, fontSize: fontSize.baseMd, color: colors.brandTan, marginTop: 3 },
+  name: {
+    fontFamily: fontFamily.display,
+    fontSize: fontSize.displayMd,
+    color: colors.textOnDark,
+    letterSpacing: 0.2,
+  },
+  role: {
+    fontFamily: fontFamily.regular,
+    fontSize: fontSize.baseMd,
+    color: colors.brandTan,
+    marginTop: 3,
+  },
   content: { padding: 20, gap: 14, paddingBottom: 40 },
-  row: { flexDirection: "row", alignItems: "center", gap: 13, paddingHorizontal: 15, paddingVertical: 14 },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 13,
+    paddingHorizontal: 15,
+    paddingVertical: 14,
+  },
   rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.borderHairline },
   rowLabel: { fontFamily: fontFamily.bold, fontSize: fontSize.mdLg, color: colors.textPrimary },
-  rowSub: { fontFamily: fontFamily.medium, fontSize: fontSize.smMd, color: colors.textSecondary, marginTop: 2 },
-  trailingMuted: { fontFamily: fontFamily.semibold, fontSize: fontSize.baseMd, color: colors.textSecondary },
-  trailingDanger: { fontFamily: fontFamily.bold, fontSize: fontSize.base, color: colors.dangerText },
+  rowSub: {
+    fontFamily: fontFamily.medium,
+    fontSize: fontSize.smMd,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  trailingMuted: {
+    fontFamily: fontFamily.semibold,
+    fontSize: fontSize.baseMd,
+    color: colors.textSecondary,
+  },
+  trailingDanger: {
+    fontFamily: fontFamily.bold,
+    fontSize: fontSize.base,
+    color: colors.dangerText,
+  },
 });

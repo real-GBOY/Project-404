@@ -1,5 +1,13 @@
 import { useMemo, useState } from "react";
-import { View, Text, FlatList, Pressable, ActivityIndicator, StyleSheet, RefreshControl } from "react-native";
+import {
+  View,
+  Text,
+  FlatList,
+  Pressable,
+  ActivityIndicator,
+  StyleSheet,
+  RefreshControl,
+} from "react-native";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { colors, radii } from "@/theme/tokens";
@@ -11,7 +19,12 @@ import { Icon } from "@/components/ui/Icon";
 import { formatRelative } from "@/lib/format";
 import { useRefresh } from "@/lib/use-refresh";
 import { useNotifications, useNotificationMutations } from "../hooks";
-import { categoryForNotification, iconForNotification, toneForNotification, type NotificationCategory } from "../presentation";
+import {
+  categoryForNotification,
+  iconForNotification,
+  toneForNotification,
+  type NotificationCategory,
+} from "../presentation";
 import type { AppNotification } from "../types";
 
 const TONE_BG: Record<string, string> = {
@@ -107,7 +120,12 @@ export default function NotificationsScreen() {
       >
         <View style={styles.chips}>
           {FILTERS.map((f) => (
-            <Chip key={f.key} label={t(f.labelKey)} active={filter === f.key} onPress={() => setFilter(f.key)} />
+            <Chip
+              key={f.key}
+              label={t(f.labelKey)}
+              active={filter === f.key}
+              onPress={() => setFilter(f.key)}
+            />
           ))}
         </View>
       </TopBar>
@@ -126,7 +144,13 @@ export default function NotificationsScreen() {
           keyExtractor={(n) => n.id}
           renderItem={renderItem}
           contentContainerStyle={styles.list}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brandDark} />}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.brandDark}
+            />
+          }
         />
       )}
     </View>
@@ -135,7 +159,11 @@ export default function NotificationsScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  markAllText: { fontFamily: fontFamily.bold, fontSize: fontSize.baseMd, color: colors.brandBronzeLabel },
+  markAllText: {
+    fontFamily: fontFamily.bold,
+    fontSize: fontSize.baseMd,
+    color: colors.brandBronzeLabel,
+  },
   chips: { flexDirection: "row", gap: 8, marginTop: 14 },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
   list: { padding: 20, gap: 11 },
@@ -158,8 +186,24 @@ const styles = StyleSheet.create({
   },
   body: { flex: 1, minWidth: 0 },
   titleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  title: { flex: 1, fontFamily: fontFamily.extrabold, fontSize: fontSize.mdLg, color: colors.textPrimary },
+  title: {
+    flex: 1,
+    fontFamily: fontFamily.extrabold,
+    fontSize: fontSize.mdLg,
+    color: colors.textPrimary,
+  },
   dot: { width: 7, height: 7, backgroundColor: colors.brandBronze },
-  desc: { fontFamily: fontFamily.medium, fontSize: fontSize.baseMd, color: colors.textSecondary, lineHeight: 18, marginTop: 3 },
-  time: { fontFamily: fontFamily.semibold, fontSize: fontSize.base, color: colors.textSecondary, marginTop: 7 },
+  desc: {
+    fontFamily: fontFamily.medium,
+    fontSize: fontSize.baseMd,
+    color: colors.textSecondary,
+    lineHeight: 18,
+    marginTop: 3,
+  },
+  time: {
+    fontFamily: fontFamily.semibold,
+    fontSize: fontSize.base,
+    color: colors.textSecondary,
+    marginTop: 7,
+  },
 });

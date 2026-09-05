@@ -5,7 +5,7 @@ const { getDefaultConfig } = require("expo/metro-config");
 const projectRoot = __dirname;
 const config = getDefaultConfig(projectRoot);
 
-// `mizan/mobile` sits inside the AURIC repo, whose root `node_modules` carries
+// `mizan/mobile` sits inside the Project-404 repo, whose root `node_modules` carries
 // its own (different) copy of `react` for web tooling. Pin the singletons that
 // must not be duplicated in the native bundle to this app's own copies, while
 // leaving normal hierarchical resolution intact for everything else.

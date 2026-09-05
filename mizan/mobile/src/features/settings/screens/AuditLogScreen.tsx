@@ -54,5 +54,10 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   action: { fontFamily: fontFamily.bold, fontSize: fontSize.md, color: colors.textPrimary },
-  meta: { fontFamily: fontFamily.medium, fontSize: fontSize.base, color: colors.textSecondary, marginTop: 3 },
+  meta: {
+    fontFamily: fontFamily.medium,
+    fontSize: fontSize.base,
+    color: colors.textSecondary,
+    marginTop: 3,
+  },
 });

@@ -1,6 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth/use-auth";
-import { listNotifications, markNotificationRead, markAllNotificationsRead, notificationKeys } from "./api";
+import {
+  listNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+  notificationKeys,
+} from "./api";
 import type { NotificationListParams } from "./types";
 
 export function useNotifications(params: NotificationListParams = {}) {

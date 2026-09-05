@@ -82,6 +82,33 @@ jobs:
       - name: build
         run: npm run build
 
+  mobile:
+    name: mizan/mobile
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mizan/mobile
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mizan/mobile/package-lock.json
+
+      - run: npm ci
+      - name: lint
+        run: npm run lint
+      - name: typecheck
+        run: npm run typecheck
+      - name: format check
+        run: npm run format:check
+      - name: expo-doctor
+        run: npx --yes expo-doctor
+      - name: export (web bundle)
+        run: npx expo export --platform web
+
   docker:
     name: docker image builds
     runs-on: ubuntu-latest

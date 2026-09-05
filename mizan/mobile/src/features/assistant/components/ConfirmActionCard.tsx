@@ -50,8 +50,17 @@ export function ConfirmActionCard({
         ))}
       </View>
       <View style={styles.footer}>
-        <PrimaryButton label={confirmLabel} icon="check" onPress={onConfirm} style={{ height: 44 }} />
-        <SecondaryButton label={t("common:actions.cancel", { ns: "common" })} onPress={onCancel} style={{ height: 44 }} />
+        <PrimaryButton
+          label={confirmLabel}
+          icon="check"
+          onPress={onConfirm}
+          style={{ height: 44 }}
+        />
+        <SecondaryButton
+          label={t("common:actions.cancel", { ns: "common" })}
+          onPress={onCancel}
+          style={{ height: 44 }}
+        />
         <Text style={styles.notice}>{t("nothingSavedYet")}</Text>
       </View>
     </View>
@@ -59,15 +68,51 @@ export function ConfirmActionCard({
 }
 
 const styles = StyleSheet.create({
-  card: { borderWidth: 1, borderColor: colors.brandCreamBorder, backgroundColor: colors.surfaceMuted, borderRadius: radii.xl, overflow: "hidden", marginTop: 11 },
-  header: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.borderHairline },
-  title: { flex: 1, fontFamily: fontFamily.extrabold, fontSize: fontSize.baseMd, color: colors.textPrimary },
-  badge: { backgroundColor: colors.brandCream, borderRadius: radii.xs, paddingHorizontal: 8, paddingVertical: 3 },
+  card: {
+    borderWidth: 1,
+    borderColor: colors.brandCreamBorder,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radii.xl,
+    overflow: "hidden",
+    marginTop: 11,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderHairline,
+  },
+  title: {
+    flex: 1,
+    fontFamily: fontFamily.extrabold,
+    fontSize: fontSize.baseMd,
+    color: colors.textPrimary,
+  },
+  badge: {
+    backgroundColor: colors.brandCream,
+    borderRadius: radii.xs,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
   badgeText: { fontFamily: fontFamily.extrabold, fontSize: 10, color: colors.brandDeep },
   grid: { flexDirection: "row", flexWrap: "wrap", padding: 14, gap: 13 },
   gridItem: { width: "45%", flexGrow: 1 },
-  fieldLabel: { fontFamily: fontFamily.extrabold, fontSize: 10, letterSpacing: 0.4, color: colors.textSecondary, marginBottom: 3 },
+  fieldLabel: {
+    fontFamily: fontFamily.extrabold,
+    fontSize: 10,
+    letterSpacing: 0.4,
+    color: colors.textSecondary,
+    marginBottom: 3,
+  },
   fieldValue: { fontFamily: fontFamily.bold, fontSize: fontSize.baseMd, color: colors.textPrimary },
   footer: { padding: 14, borderTopWidth: 1, borderTopColor: colors.borderHairline, gap: 9 },
-  notice: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.textSecondary, textAlign: "center" },
+  notice: {
+    fontFamily: fontFamily.medium,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    textAlign: "center",
+  },
 });

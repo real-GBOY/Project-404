@@ -7,7 +7,10 @@ import { fontFamily, fontSize } from "@/theme/typography";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { PrimaryButton } from "@/components/ui/Button";
-import { MatterPickerSheet, type PickedMatter } from "@/features/matters/components/MatterPickerSheet";
+import {
+  MatterPickerSheet,
+  type PickedMatter,
+} from "@/features/matters/components/MatterPickerSheet";
 import { useMatterMutations } from "@/features/matters/hooks";
 import { useDocumentMutations } from "@/features/documents/hooks";
 import { capturePhoto, documentFormData } from "@/features/documents/upload";
@@ -69,7 +72,14 @@ export default function QuickCaptureScreen() {
     }
   };
 
-  const OPTIONS: { icon: IconName; bg: string; fg: string; title: string; subtitle: string; onPress: () => void }[] = [
+  const OPTIONS: {
+    icon: IconName;
+    bg: string;
+    fg: string;
+    title: string;
+    subtitle: string;
+    onPress: () => void;
+  }[] = [
     {
       icon: "timer",
       bg: colors.brandDark,
@@ -133,11 +143,17 @@ export default function QuickCaptureScreen() {
         ) : null}
       </BottomSheet>
 
-      <MatterPickerSheet visible={pickerOpen} onClose={() => setPickerOpen(false)} onPick={onPickMatter} />
+      <MatterPickerSheet
+        visible={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onPick={onPickMatter}
+      />
 
       <BottomSheet visible={!!noteMatter} onClose={close}>
         <Text style={styles.title}>{t("addNote")}</Text>
-        <Text style={styles.subtitle}>{noteMatter ? `${noteMatter.reference} · ${noteMatter.title}` : ""}</Text>
+        <Text style={styles.subtitle}>
+          {noteMatter ? `${noteMatter.reference} · ${noteMatter.title}` : ""}
+        </Text>
         <TextInput
           value={noteText}
           onChangeText={setNoteText}
@@ -158,8 +174,18 @@ export default function QuickCaptureScreen() {
 }
 
 const styles = StyleSheet.create({
-  title: { fontFamily: fontFamily.display, fontSize: fontSize.display, color: colors.textPrimary, letterSpacing: 0.2 },
-  subtitle: { fontFamily: fontFamily.medium, fontSize: fontSize.baseMd, color: colors.textSecondary, marginTop: 5 },
+  title: {
+    fontFamily: fontFamily.display,
+    fontSize: fontSize.display,
+    color: colors.textPrimary,
+    letterSpacing: 0.2,
+  },
+  subtitle: {
+    fontFamily: fontFamily.medium,
+    fontSize: fontSize.baseMd,
+    color: colors.textSecondary,
+    marginTop: 5,
+  },
   option: {
     flexDirection: "row",
     alignItems: "center",
@@ -170,11 +196,31 @@ const styles = StyleSheet.create({
     borderRadius: radii.lgXl,
     padding: 15,
   },
-  optionIcon: { width: 42, height: 42, borderRadius: radii.mdLg, alignItems: "center", justifyContent: "center" },
-  optionTitle: { fontFamily: fontFamily.extrabold, fontSize: fontSize.lg, color: colors.textPrimary },
-  optionSub: { fontFamily: fontFamily.medium, fontSize: fontSize.base, color: colors.textSecondary, marginTop: 2 },
+  optionIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: radii.mdLg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  optionTitle: {
+    fontFamily: fontFamily.extrabold,
+    fontSize: fontSize.lg,
+    color: colors.textPrimary,
+  },
+  optionSub: {
+    fontFamily: fontFamily.medium,
+    fontSize: fontSize.base,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
   historyRow: { flexDirection: "row", alignItems: "center", gap: 9, marginTop: 14 },
-  historyText: { flex: 1, fontFamily: fontFamily.bold, fontSize: fontSize.base, color: colors.chipInactiveText },
+  historyText: {
+    flex: 1,
+    fontFamily: fontFamily.bold,
+    fontSize: fontSize.base,
+    color: colors.chipInactiveText,
+  },
   noteInput: {
     marginTop: 12,
     minHeight: 100,

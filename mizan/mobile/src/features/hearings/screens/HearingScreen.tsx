@@ -54,14 +54,13 @@ export default function HearingScreen() {
     );
   }
 
-  const d = new Date(hearing.scheduledAt);
-
   const confirmOutcome = (label: string) =>
     Alert.alert(t("recordOutcome"), label, [
       { text: t("common:actions.cancel", { ns: "common" }), style: "cancel" },
       {
         text: t("common:actions.confirm", { ns: "common" }),
-        onPress: () => outcome.mutate({ id: hearingId, outcome: label }, { onSuccess: () => router.back() }),
+        onPress: () =>
+          outcome.mutate({ id: hearingId, outcome: label }, { onSuccess: () => router.back() }),
       },
     ]);
 
@@ -104,7 +103,12 @@ export default function HearingScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.heroCard}>
           <Text style={styles.heroDate}>
-            {formatDate(hearing.scheduledAt, { weekday: "long", day: "numeric", month: "long", year: "numeric" }).toUpperCase()}
+            {formatDate(hearing.scheduledAt, {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            }).toUpperCase()}
           </Text>
           <Text style={styles.heroTime}>{formatTime(hearing.scheduledAt)}</Text>
           <Text style={styles.heroMatter}>{hearing.matterTitle}</Text>
@@ -148,7 +152,9 @@ export default function HearingScreen() {
               <View style={styles.checkedIn}>
                 <Icon name="check_circle" size={20} color={colors.successText} />
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.checkedInText}>{t("checkedIn", { time: formatTime(checkedInAt) })}</Text>
+                  <Text style={styles.checkedInText}>
+                    {t("checkedIn", { time: formatTime(checkedInAt) })}
+                  </Text>
                 </View>
               </View>
             ) : (
@@ -166,9 +172,22 @@ export default function HearingScreen() {
             <View>
               <SectionHeader label={t("recordOutcome")} />
               <Card radius="lgXl" padded={false}>
-                <OutcomeRow icon="event_repeat" label={t("adjourn")} onPress={() => setAdjournSheet(true)} />
-                <OutcomeRow icon="record_voice_over" label={t("pleadingsHeard")} onPress={() => confirmOutcome(t("pleadingsHeard"))} />
-                <OutcomeRow icon="balance" label={t("judgmentIssued")} onPress={() => confirmOutcome(t("judgmentIssued"))} isLast />
+                <OutcomeRow
+                  icon="event_repeat"
+                  label={t("adjourn")}
+                  onPress={() => setAdjournSheet(true)}
+                />
+                <OutcomeRow
+                  icon="record_voice_over"
+                  label={t("pleadingsHeard")}
+                  onPress={() => confirmOutcome(t("pleadingsHeard"))}
+                />
+                <OutcomeRow
+                  icon="balance"
+                  label={t("judgmentIssued")}
+                  onPress={() => confirmOutcome(t("judgmentIssued"))}
+                  isLast
+                />
               </Card>
             </View>
           </>
@@ -216,13 +235,25 @@ export default function HearingScreen() {
           placeholderTextColor={colors.textSecondary}
           style={[styles.input, { minHeight: 100, textAlignVertical: "top", marginTop: 12 }]}
         />
-        <PrimaryButton label={t("common:actions.save", { ns: "common" })} onPress={saveNote} style={{ marginTop: 12 }} />
+        <PrimaryButton
+          label={t("common:actions.save", { ns: "common" })}
+          onPress={saveNote}
+          style={{ marginTop: 12 }}
+        />
       </BottomSheet>
     </View>
   );
 }
 
-function InfoRow({ icon, title, subtitle }: { icon: Parameters<typeof Icon>[0]["name"]; title: string; subtitle: string }) {
+function InfoRow({
+  icon,
+  title,
+  subtitle,
+}: {
+  icon: Parameters<typeof Icon>[0]["name"];
+  title: string;
+  subtitle: string;
+}) {
   return (
     <View style={styles.infoRow}>
       <Icon name={icon} size={20} color={colors.brandBronze} />
@@ -259,17 +290,67 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.bg },
   content: { padding: 20, gap: 14, paddingBottom: 40 },
   heroCard: { backgroundColor: colors.brandDark, borderRadius: radii.xxl, padding: 18 },
-  heroDate: { fontFamily: fontFamily.bold, fontSize: fontSize.base, color: colors.brandTan, letterSpacing: 0.5 },
-  heroTime: { fontFamily: fontFamily.extrabold, fontSize: fontSize.heroLg, color: colors.textOnDark, letterSpacing: -0.5, marginTop: 6 },
-  heroMatter: { fontFamily: fontFamily.display, fontSize: fontSize.xxl, color: colors.textOnDark, marginTop: 12, lineHeight: 22, letterSpacing: 0.2 },
-  heroDivider: { flexDirection: "row", alignItems: "center", gap: 9, marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: colors.brandDeep },
-  heroRefBadge: { backgroundColor: colors.brandDeep, borderRadius: radii.sm, paddingHorizontal: 9, paddingVertical: 4 },
-  heroRefText: { fontFamily: fontFamily.mono, fontWeight: "700", fontSize: fontSize.sm, color: colors.textOnDark },
-  purposePill: { backgroundColor: colors.brandBronze, borderRadius: radii.smMd, paddingHorizontal: 10, paddingVertical: 4 },
-  purposePillText: { fontFamily: fontFamily.extrabold, fontSize: fontSize.sm, color: colors.brandBronzeText },
+  heroDate: {
+    fontFamily: fontFamily.bold,
+    fontSize: fontSize.base,
+    color: colors.brandTan,
+    letterSpacing: 0.5,
+  },
+  heroTime: {
+    fontFamily: fontFamily.extrabold,
+    fontSize: fontSize.heroLg,
+    color: colors.textOnDark,
+    letterSpacing: -0.5,
+    marginTop: 6,
+  },
+  heroMatter: {
+    fontFamily: fontFamily.display,
+    fontSize: fontSize.xxl,
+    color: colors.textOnDark,
+    marginTop: 12,
+    lineHeight: 22,
+    letterSpacing: 0.2,
+  },
+  heroDivider: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 9,
+    marginTop: 14,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: colors.brandDeep,
+  },
+  heroRefBadge: {
+    backgroundColor: colors.brandDeep,
+    borderRadius: radii.sm,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+  },
+  heroRefText: {
+    fontFamily: fontFamily.mono,
+    fontWeight: "700",
+    fontSize: fontSize.sm,
+    color: colors.textOnDark,
+  },
+  purposePill: {
+    backgroundColor: colors.brandBronze,
+    borderRadius: radii.smMd,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  purposePillText: {
+    fontFamily: fontFamily.extrabold,
+    fontSize: fontSize.sm,
+    color: colors.brandBronzeText,
+  },
   infoRow: { flexDirection: "row", gap: 12, alignItems: "flex-start" },
   infoTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.md, color: colors.textPrimary },
-  infoSub: { fontFamily: fontFamily.medium, fontSize: fontSize.base, color: colors.textSecondary, marginTop: 3 },
+  infoSub: {
+    fontFamily: fontFamily.medium,
+    fontSize: fontSize.base,
+    color: colors.textSecondary,
+    marginTop: 3,
+  },
   checkedIn: {
     flexDirection: "row",
     gap: 11,
@@ -296,10 +377,27 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textTransform: "uppercase",
   },
-  decidedText: { fontFamily: fontFamily.bold, fontSize: fontSize.md, color: colors.textPrimary, marginTop: 4, lineHeight: 19 },
-  outcomeRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 15, paddingVertical: 14 },
+  decidedText: {
+    fontFamily: fontFamily.bold,
+    fontSize: fontSize.md,
+    color: colors.textPrimary,
+    marginTop: 4,
+    lineHeight: 19,
+  },
+  outcomeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 15,
+    paddingVertical: 14,
+  },
   rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.borderHairline },
-  outcomeLabel: { flex: 1, fontFamily: fontFamily.bold, fontSize: fontSize.mdLg, color: colors.textPrimary },
+  outcomeLabel: {
+    flex: 1,
+    fontFamily: fontFamily.bold,
+    fontSize: fontSize.mdLg,
+    color: colors.textPrimary,
+  },
   dictateBanner: {
     flexDirection: "row",
     gap: 11,
@@ -309,9 +407,24 @@ const styles = StyleSheet.create({
     borderRadius: radii.lgXl,
     padding: 14,
   },
-  dictateTitle: { fontFamily: fontFamily.extrabold, fontSize: fontSize.md, color: colors.brandAmberBannerText },
-  dictateBody: { fontFamily: fontFamily.medium, fontSize: fontSize.base, color: colors.brandAmberBannerSubtext, marginTop: 3, lineHeight: 18 },
-  sheetTitle: { fontFamily: fontFamily.display, fontSize: fontSize.display, color: colors.textPrimary, letterSpacing: 0.2 },
+  dictateTitle: {
+    fontFamily: fontFamily.extrabold,
+    fontSize: fontSize.md,
+    color: colors.brandAmberBannerText,
+  },
+  dictateBody: {
+    fontFamily: fontFamily.medium,
+    fontSize: fontSize.base,
+    color: colors.brandAmberBannerSubtext,
+    marginTop: 3,
+    lineHeight: 18,
+  },
+  sheetTitle: {
+    fontFamily: fontFamily.display,
+    fontSize: fontSize.display,
+    color: colors.textPrimary,
+    letterSpacing: 0.2,
+  },
   fieldLabel: {
     fontFamily: fontFamily.extrabold,
     fontSize: fontSize.sm,

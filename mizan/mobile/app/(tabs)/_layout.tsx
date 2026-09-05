@@ -21,7 +21,9 @@ export default function TabsLayout() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const tab = (icon: IconName, labelKey: string) => ({
-    tabBarIcon: ({ color }: { color: ColorValue }) => <Icon name={icon} size={25} color={color as string} />,
+    tabBarIcon: ({ color }: { color: ColorValue }) => (
+      <Icon name={icon} size={25} color={color as string} />
+    ),
     tabBarLabel: ({ focused, color }: { focused: boolean; color: ColorValue }) => (
       <Text
         style={{

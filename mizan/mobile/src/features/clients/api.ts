@@ -18,7 +18,13 @@ export const clientKeys = {
 
 export function listClients(params: ClientListParams, signal?: AbortSignal): Promise<ClientList> {
   return httpClient<ClientList>("/clients", {
-    query: { q: params.q, status: params.status, type: params.type, sort: params.sort, page: params.page },
+    query: {
+      q: params.q,
+      status: params.status,
+      type: params.type,
+      sort: params.sort,
+      page: params.page,
+    },
     signal,
   });
 }

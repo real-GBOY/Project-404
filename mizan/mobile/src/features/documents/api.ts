@@ -12,9 +12,11 @@ export const listDocuments = (p: DocListParams, signal?: AbortSignal) =>
     signal,
   });
 
-export const uploadDocument = (form: FormData) => httpClient<DocRow>("/documents", { method: "POST", form });
+export const uploadDocument = (form: FormData) =>
+  httpClient<DocRow>("/documents", { method: "POST", form });
 
-export const deleteDocument = (id: string) => httpClient<void>(`/documents/${id}`, { method: "DELETE" });
+export const deleteDocument = (id: string) =>
+  httpClient<void>(`/documents/${id}`, { method: "DELETE" });
 
 /** Absolute, auth-header-free URL — `expo-file-system` attaches the bearer
  *  token itself (see `useOfflineDocuments`), unlike web's `<a href>` which

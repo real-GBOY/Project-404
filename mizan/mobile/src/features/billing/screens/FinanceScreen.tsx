@@ -30,7 +30,12 @@ export default function FinanceScreen() {
   const overdue = useMemo(() => {
     const now = Date.now();
     return (invoices.data?.items ?? [])
-      .filter((i) => (i.status === "issued" || i.status === "sent") && i.dueAt && new Date(i.dueAt).getTime() < now)
+      .filter(
+        (i) =>
+          (i.status === "issued" || i.status === "sent") &&
+          i.dueAt &&
+          new Date(i.dueAt).getTime() < now,
+      )
       .sort((a, b) => new Date(a.dueAt!).getTime() - new Date(b.dueAt!).getTime());
   }, [invoices.data]);
 
@@ -64,11 +69,15 @@ export default function FinanceScreen() {
               <Text style={[styles.heroTileValue, { color: colors.brandBronze }]}>
                 {Object.keys(overdueAmount).length
                   ? Object.entries(overdueAmount)
-                      .map(([currency, amount]) => formatMoney({ currency, amount: amount.toFixed(0) }))
+                      .map(([currency, amount]) =>
+                        formatMoney({ currency, amount: amount.toFixed(0) }),
+                      )
                       .join(" · ")
                   : "—"}
               </Text>
-              <Text style={styles.heroTileLabel}>{t("overdue", { count: s?.overdue ?? overdue.length })}</Text>
+              <Text style={styles.heroTileLabel}>
+                {t("overdue", { count: s?.overdue ?? overdue.length })}
+              </Text>
             </View>
             <View style={styles.heroTile}>
               <Text style={styles.heroTileValue}>{moneyOrText(unbilled.data?.totals)}</Text>
@@ -82,8 +91,13 @@ export default function FinanceScreen() {
             <SectionHeader label={t("myUnbilledTime")} />
             <Card radius="lgXl" padded={false}>
               {unbilledByMatter.map((m, i) => (
-                <View key={m.matterId} style={[styles.unbilledRow, i < unbilledByMatter.length - 1 && styles.rowBorder]}>
-                  {m.matterReference ? <MatterRefBadge reference={m.matterReference} small /> : null}
+                <View
+                  key={m.matterId}
+                  style={[styles.unbilledRow, i < unbilledByMatter.length - 1 && styles.rowBorder]}
+                >
+                  {m.matterReference ? (
+                    <MatterRefBadge reference={m.matterReference} small />
+                  ) : null}
                   <Text style={styles.unbilledHrs}>{m.hours.toFixed(1)} hrs</Text>
                   <Text style={styles.unbilledValue}>
                     {m.value.length ? formatMoneyList(m.value).join(" · ") : "—"}
@@ -101,7 +115,10 @@ export default function FinanceScreen() {
               {overdue.map((inv, i) => {
                 const days = Math.floor((Date.now() - new Date(inv.dueAt!).getTime()) / 86_400_000);
                 return (
-                  <View key={inv.id} style={[styles.invoiceRow, i < overdue.length - 1 && styles.rowBorder]}>
+                  <View
+                    key={inv.id}
+                    style={[styles.invoiceRow, i < overdue.length - 1 && styles.rowBorder]}
+                  >
                     <View style={{ flex: 1, minWidth: 0 }}>
                       <Text style={styles.invoiceNumber}>{inv.number}</Text>
                       <Text style={styles.invoiceClient} numberOfLines={1}>
@@ -135,20 +152,75 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.bg },
   content: { padding: 20, gap: 14, paddingBottom: 40 },
   hero: { backgroundColor: colors.brandDark, borderRadius: radii.xxl, padding: 18 },
-  heroLabel: { fontFamily: fontFamily.bold, fontSize: fontSize.smMd, color: colors.brandTan, letterSpacing: 0.5 },
-  heroValue: { fontFamily: fontFamily.extrabold, fontSize: fontSize.hero, color: colors.textOnDark, letterSpacing: -0.5, marginTop: 6 },
+  heroLabel: {
+    fontFamily: fontFamily.bold,
+    fontSize: fontSize.smMd,
+    color: colors.brandTan,
+    letterSpacing: 0.5,
+  },
+  heroValue: {
+    fontFamily: fontFamily.extrabold,
+    fontSize: fontSize.hero,
+    color: colors.textOnDark,
+    letterSpacing: -0.5,
+    marginTop: 6,
+  },
   heroTiles: { flexDirection: "row", gap: 10, marginTop: 16 },
   heroTile: { flex: 1, backgroundColor: colors.brandDeep, borderRadius: radii.mdLg, padding: 12 },
-  heroTileValue: { fontFamily: fontFamily.extrabold, fontSize: fontSize.xl, color: colors.textOnDark },
-  heroTileLabel: { fontFamily: fontFamily.semibold, fontSize: fontSize.xs, color: colors.brandTan, marginTop: 2 },
+  heroTileValue: {
+    fontFamily: fontFamily.extrabold,
+    fontSize: fontSize.xl,
+    color: colors.textOnDark,
+  },
+  heroTileLabel: {
+    fontFamily: fontFamily.semibold,
+    fontSize: fontSize.xs,
+    color: colors.brandTan,
+    marginTop: 2,
+  },
   rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.borderHairline },
-  unbilledRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 15, paddingVertical: 13 },
-  unbilledHrs: { flex: 1, fontFamily: fontFamily.semibold, fontSize: fontSize.baseMd, color: colors.financeSecondary },
-  unbilledValue: { fontFamily: fontFamily.extrabold, fontSize: fontSize.md, color: colors.textPrimary },
-  invoiceRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 15, paddingVertical: 13 },
-  invoiceNumber: { fontFamily: fontFamily.mono, fontWeight: "700", fontSize: fontSize.base, color: colors.brandAmberBannerText },
-  invoiceClient: { fontFamily: fontFamily.semibold, fontSize: fontSize.base, color: colors.textSecondary, marginTop: 4 },
-  invoiceAmount: { fontFamily: fontFamily.extrabold, fontSize: fontSize.md, color: colors.textPrimary },
+  unbilledRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 15,
+    paddingVertical: 13,
+  },
+  unbilledHrs: {
+    flex: 1,
+    fontFamily: fontFamily.semibold,
+    fontSize: fontSize.baseMd,
+    color: colors.financeSecondary,
+  },
+  unbilledValue: {
+    fontFamily: fontFamily.extrabold,
+    fontSize: fontSize.md,
+    color: colors.textPrimary,
+  },
+  invoiceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 15,
+    paddingVertical: 13,
+  },
+  invoiceNumber: {
+    fontFamily: fontFamily.mono,
+    fontWeight: "700",
+    fontSize: fontSize.base,
+    color: colors.brandAmberBannerText,
+  },
+  invoiceClient: {
+    fontFamily: fontFamily.semibold,
+    fontSize: fontSize.base,
+    color: colors.textSecondary,
+    marginTop: 4,
+  },
+  invoiceAmount: {
+    fontFamily: fontFamily.extrabold,
+    fontSize: fontSize.md,
+    color: colors.textPrimary,
+  },
   lockBanner: {
     flexDirection: "row",
     alignItems: "center",
@@ -159,5 +231,11 @@ const styles = StyleSheet.create({
     borderRadius: radii.lgXl,
     padding: 14,
   },
-  lockText: { flex: 1, fontFamily: fontFamily.medium, fontSize: fontSize.base, color: colors.brandAmberBannerSubtext, lineHeight: 18 },
+  lockText: {
+    flex: 1,
+    fontFamily: fontFamily.medium,
+    fontSize: fontSize.base,
+    color: colors.brandAmberBannerSubtext,
+    lineHeight: 18,
+  },
 });

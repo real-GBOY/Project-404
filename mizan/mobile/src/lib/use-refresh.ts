@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 /** Wire one or more query `refetch` fns to a `<RefreshControl>`. */
-export function useRefresh(...refetchers: Array<() => Promise<unknown>>) {
+export function useRefresh(...refetchers: (() => Promise<unknown>)[]) {
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = async () => {
     setRefreshing(true);

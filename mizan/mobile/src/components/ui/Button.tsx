@@ -14,7 +14,15 @@ interface BaseProps {
 }
 
 /** The solid dark-brown CTA (Sign in, Save time entry, Confirm & submit, …). */
-export function PrimaryButton({ label, onPress, disabled, loading, icon, style, fullWidth = true }: BaseProps) {
+export function PrimaryButton({
+  label,
+  onPress,
+  disabled,
+  loading,
+  icon,
+  style,
+  fullWidth = true,
+}: BaseProps) {
   return (
     <Pressable
       onPress={onPress}
@@ -42,7 +50,15 @@ export function PrimaryButton({ label, onPress, disabled, loading, icon, style, 
 }
 
 /** The bronze accent CTA used on dark screens (sign-in, hearing check-in). */
-export function BronzeButton({ label, onPress, disabled, loading, icon, style, fullWidth = true }: BaseProps) {
+export function BronzeButton({
+  label,
+  onPress,
+  disabled,
+  loading,
+  icon,
+  style,
+  fullWidth = true,
+}: BaseProps) {
   return (
     <Pressable
       onPress={onPress}
@@ -70,7 +86,15 @@ export function BronzeButton({ label, onPress, disabled, loading, icon, style, f
 }
 
 /** The outlined secondary button (Cancel, Email, …). */
-export function SecondaryButton({ label, onPress, disabled, loading, icon, style, fullWidth = true }: BaseProps) {
+export function SecondaryButton({
+  label,
+  onPress,
+  disabled,
+  loading,
+  icon,
+  style,
+  fullWidth = true,
+}: BaseProps) {
   return (
     <Pressable
       onPress={onPress}

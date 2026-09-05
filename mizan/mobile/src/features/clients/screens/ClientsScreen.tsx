@@ -1,5 +1,14 @@
 import { useMemo, useState } from "react";
-import { View, Text, SectionList, Pressable, ActivityIndicator, StyleSheet, Linking, RefreshControl } from "react-native";
+import {
+  View,
+  Text,
+  SectionList,
+  Pressable,
+  ActivityIndicator,
+  StyleSheet,
+  Linking,
+  RefreshControl,
+} from "react-native";
 import { useRefresh } from "@/lib/use-refresh";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
@@ -20,7 +29,11 @@ export default function ClientsScreen() {
   const { t } = useTranslation("clients");
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState("");
-  const { data, isLoading, refetch } = useClientList({ q: query || undefined, status: "active", sort: "name" });
+  const { data, isLoading, refetch } = useClientList({
+    q: query || undefined,
+    status: "active",
+    sort: "name",
+  });
   const { refreshing, onRefresh } = useRefresh(refetch);
 
   const sections = useMemo(() => {
@@ -59,8 +72,16 @@ export default function ClientsScreen() {
           keyExtractor={(c) => c.id}
           contentContainerStyle={styles.list}
           stickySectionHeadersEnabled={false}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brandDark} />}
-          renderSectionHeader={({ section }) => <Text style={styles.sectionHeader}>{section.title}</Text>}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.brandDark}
+            />
+          }
+          renderSectionHeader={({ section }) => (
+            <Text style={styles.sectionHeader}>{section.title}</Text>
+          )}
           renderItem={({ item, index, section }) => (
             <View
               style={[
@@ -108,7 +129,13 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
   },
   headerRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  title: { flex: 1, fontFamily: fontFamily.display, fontSize: fontSize.displayLg, letterSpacing: 0.2, color: colors.textPrimary },
+  title: {
+    flex: 1,
+    fontFamily: fontFamily.display,
+    fontSize: fontSize.displayLg,
+    letterSpacing: 0.2,
+    color: colors.textPrimary,
+  },
   count: { fontFamily: fontFamily.bold, fontSize: fontSize.baseMd, color: colors.textSecondary },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
   list: { padding: 20, paddingBottom: 100 },
@@ -120,11 +147,35 @@ const styles = StyleSheet.create({
     marginBottom: 9,
     marginTop: 14,
   },
-  rowWrap: { backgroundColor: colors.surface, borderLeftWidth: 1, borderRightWidth: 1, borderColor: colors.border },
-  rowFirst: { borderTopWidth: 1, borderTopLeftRadius: radii.lgXl, borderTopRightRadius: radii.lgXl },
-  rowLast: { borderBottomWidth: 1, borderBottomLeftRadius: radii.lgXl, borderBottomRightRadius: radii.lgXl },
-  row: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 15, paddingVertical: 13 },
+  rowWrap: {
+    backgroundColor: colors.surface,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: colors.border,
+  },
+  rowFirst: {
+    borderTopWidth: 1,
+    borderTopLeftRadius: radii.lgXl,
+    borderTopRightRadius: radii.lgXl,
+  },
+  rowLast: {
+    borderBottomWidth: 1,
+    borderBottomLeftRadius: radii.lgXl,
+    borderBottomRightRadius: radii.lgXl,
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 15,
+    paddingVertical: 13,
+  },
   rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.borderHairline },
   name: { fontFamily: fontFamily.bold, fontSize: fontSize.mdLg, color: colors.textPrimary },
-  sub: { fontFamily: fontFamily.semibold, fontSize: fontSize.smMd, color: colors.textSecondary, marginTop: 2 },
+  sub: {
+    fontFamily: fontFamily.semibold,
+    fontSize: fontSize.smMd,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
 });

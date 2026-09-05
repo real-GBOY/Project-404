@@ -1,10 +1,5 @@
 import { httpClient } from "@/lib/api/http-client";
-import type {
-  CreateTimeEntryBody,
-  TimeEntry,
-  TimeEntryListParams,
-  UnbilledSummary,
-} from "./types";
+import type { CreateTimeEntryBody, TimeEntry, TimeEntryListParams, UnbilledSummary } from "./types";
 
 export const timeKeys = {
   all: ["time-entries"] as const,

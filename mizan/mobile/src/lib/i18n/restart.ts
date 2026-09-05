@@ -11,9 +11,6 @@ export async function restartForDirectionChange(): Promise<void> {
   try {
     await Updates.reloadAsync();
   } catch {
-    Alert.alert(
-      "Restart required",
-      "Close and reopen Mizan to apply the new text direction.",
-    );
+    Alert.alert("Restart required", "Close and reopen Mizan to apply the new text direction.");
   }
 }

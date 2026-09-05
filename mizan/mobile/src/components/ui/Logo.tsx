@@ -29,7 +29,9 @@ export function Logo({
   return (
     <Svg width={size} height={size} viewBox="0 0 100 100" fill="none">
       <Path d="M50 26 V 78" stroke={stroke} strokeWidth={sw} strokeLinecap="round" />
-      {showBase ? <Path d="M36 81 H 64" stroke={stroke} strokeWidth={sw} strokeLinecap="round" /> : null}
+      {showBase ? (
+        <Path d="M36 81 H 64" stroke={stroke} strokeWidth={sw} strokeLinecap="round" />
+      ) : null}
       <Path
         d={showBase ? "M16 32 H 84" : "M16 34 H 84"}
         stroke={stroke}
@@ -38,8 +40,20 @@ export function Logo({
       />
       <Path d="M16 32 V 42" stroke={stroke} strokeWidth={sw} strokeLinecap="round" />
       <Path d="M84 32 V 42" stroke={stroke} strokeWidth={sw} strokeLinecap="round" />
-      <Circle cx={16} cy={showBase ? 53 : 56} r={showBase ? 11 : 12} stroke={stroke} strokeWidth={sw} />
-      <Circle cx={84} cy={showBase ? 53 : 56} r={showBase ? 11 : 12} stroke={stroke} strokeWidth={sw} />
+      <Circle
+        cx={16}
+        cy={showBase ? 53 : 56}
+        r={showBase ? 11 : 12}
+        stroke={stroke}
+        strokeWidth={sw}
+      />
+      <Circle
+        cx={84}
+        cy={showBase ? 53 : 56}
+        r={showBase ? 11 : 12}
+        stroke={stroke}
+        strokeWidth={sw}
+      />
       {showPivot && showBase ? <Circle cx={50} cy={22} r={4.5} fill={colors.brandBronze} /> : null}
     </Svg>
   );

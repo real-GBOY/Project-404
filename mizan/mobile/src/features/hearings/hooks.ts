@@ -13,7 +13,11 @@ export const useHearingList = (p: HearingListParams) =>
   });
 
 export const useHearing = (id: string) =>
-  useQuery({ queryKey: hearingKeys.detail(id), queryFn: ({ signal }) => api.getHearing(id, signal), enabled: !!id });
+  useQuery({
+    queryKey: hearingKeys.detail(id),
+    queryFn: ({ signal }) => api.getHearing(id, signal),
+    enabled: !!id,
+  });
 
 export function useHearingMutations(matterId?: string) {
   const qc = useQueryClient();
@@ -25,11 +29,13 @@ export function useHearingMutations(matterId?: string) {
 
   return {
     adjourn: useMutation({
-      mutationFn: ({ id, ...body }: { id: string; newDate: string; reason?: string }) => api.adjournHearing(id, body),
+      mutationFn: ({ id, ...body }: { id: string; newDate: string; reason?: string }) =>
+        api.adjournHearing(id, body),
       onSuccess: invalidate,
     }),
     outcome: useMutation({
-      mutationFn: ({ id, outcome }: { id: string; outcome: string }) => api.recordOutcome(id, { outcome }),
+      mutationFn: ({ id, outcome }: { id: string; outcome: string }) =>
+        api.recordOutcome(id, { outcome }),
       onSuccess: invalidate,
     }),
   };

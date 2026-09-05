@@ -46,16 +46,15 @@ export function TopBar({
   const fg = dark ? colors.textOnDark : colors.brandDark;
 
   return (
-    <View
-      style={[
-        styles.wrap,
-        { paddingTop: insets.top + 10 },
-        dark ? styles.dark : styles.light,
-      ]}
-    >
+    <View style={[styles.wrap, { paddingTop: insets.top + 10 }, dark ? styles.dark : styles.light]}>
       <View style={styles.row}>
         {onBack ? (
-          <Pressable onPress={onBack} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back">
+          <Pressable
+            onPress={onBack}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+          >
             <Icon
               name="arrow_back"
               size={24}
@@ -65,18 +64,17 @@ export function TopBar({
           </Pressable>
         ) : null}
         {onClose ? (
-          <Pressable onPress={onClose} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close">
+          <Pressable
+            onPress={onClose}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+          >
             <Icon name="close" size={24} color={fg} />
           </Pressable>
         ) : null}
         {title ? (
-          <Text
-            style={[
-              large ? styles.titleLarge : styles.title,
-              { color: fg },
-            ]}
-            numberOfLines={1}
-          >
+          <Text style={[large ? styles.titleLarge : styles.title, { color: fg }]} numberOfLines={1}>
             {title}
           </Text>
         ) : (

@@ -84,11 +84,19 @@ export default function RootLayout() {
           <QueryClientProvider client={queryClient}>
             <AuthProvider>
               <StatusBar style="dark" />
-              <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
+              <Stack
+                screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}
+              >
                 <Stack.Screen name="(auth)" />
                 <Stack.Screen name="(tabs)" />
-                <Stack.Screen name="capture" options={{ presentation: "transparentModal", animation: "fade" }} />
-                <Stack.Screen name="assistant/index" options={{ presentation: "fullScreenModal" }} />
+                <Stack.Screen
+                  name="capture"
+                  options={{ presentation: "transparentModal", animation: "fade" }}
+                />
+                <Stack.Screen
+                  name="assistant/index"
+                  options={{ presentation: "fullScreenModal" }}
+                />
               </Stack>
             </AuthProvider>
           </QueryClientProvider>

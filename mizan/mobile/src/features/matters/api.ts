@@ -19,13 +19,22 @@ export const matterKeys = {
 
 export const listMatters = (p: MatterListParams, signal?: AbortSignal) =>
   httpClient<MatterList>("/matters", {
-    query: { q: p.q, status: p.status, practiceArea: p.practiceArea, clientId: p.clientId, sort: p.sort, page: p.page },
+    query: {
+      q: p.q,
+      status: p.status,
+      practiceArea: p.practiceArea,
+      clientId: p.clientId,
+      sort: p.sort,
+      page: p.page,
+    },
     signal,
   });
 
-export const getMatter = (id: string, signal?: AbortSignal) => httpClient<Matter>(`/matters/${id}`, { signal });
+export const getMatter = (id: string, signal?: AbortSignal) =>
+  httpClient<Matter>(`/matters/${id}`, { signal });
 
-export const closeMatter = (id: string) => httpClient<Matter>(`/matters/${id}/close`, { method: "POST" });
+export const closeMatter = (id: string) =>
+  httpClient<Matter>(`/matters/${id}/close`, { method: "POST" });
 
 export const getParticipants = (id: string, signal?: AbortSignal) =>
   httpClient<MatterParticipant[]>(`/matters/${id}/participants`, { signal });
@@ -36,7 +45,8 @@ export const getUpdates = (id: string, signal?: AbortSignal) =>
 export const addUpdate = (id: string, body: { body: string; documentIds?: string[] }) =>
   httpClient<MatterUpdate>(`/matters/${id}/updates`, { method: "POST", body });
 
-export const getNotes = (id: string, signal?: AbortSignal) => httpClient<MatterNote[]>(`/matters/${id}/notes`, { signal });
+export const getNotes = (id: string, signal?: AbortSignal) =>
+  httpClient<MatterNote[]>(`/matters/${id}/notes`, { signal });
 
 export const addNote = (id: string, body: { body: string }) =>
   httpClient<MatterNote>(`/matters/${id}/notes`, { method: "POST", body });

@@ -21,7 +21,6 @@ import { Icon } from "@/components/ui/Icon";
 import { Card } from "@/components/ui/Card";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { MatterRefBadge } from "@/components/ui/MatterRefBadge";
 import { StickyFooterBar } from "@/components/ui/StickyFooterBar";
 import { PrimaryButton, IconButton } from "@/components/ui/Button";
 import { BottomSheet } from "@/components/ui/BottomSheet";
@@ -115,10 +114,16 @@ export default function CaseDetailScreen() {
       </View>
 
       <View style={styles.tabBar}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabBarContent}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.tabBarContent}
+        >
           {TABS.map((tk) => (
             <Pressable key={tk} onPress={() => setTab(tk)} style={styles.tabItem}>
-              <Text style={[styles.tabLabel, tab === tk && styles.tabLabelActive]}>{t(`tabs.${tk}`)}</Text>
+              <Text style={[styles.tabLabel, tab === tk && styles.tabLabelActive]}>
+                {t(`tabs.${tk}`)}
+              </Text>
               {tab === tk ? <View style={styles.tabUnderline} /> : null}
             </Pressable>
           ))}
@@ -141,7 +146,12 @@ export default function CaseDetailScreen() {
           style={{ flex: 1, height: 46 }}
         />
         <IconButton icon="photo_camera" variant="outline" size={46} onPress={captureDocument} />
-        <IconButton icon="note_add" variant="outline" size={46} onPress={() => setNoteSheet(true)} />
+        <IconButton
+          icon="note_add"
+          variant="outline"
+          size={46}
+          onPress={() => setNoteSheet(true)}
+        />
       </StickyFooterBar>
 
       <BottomSheet visible={noteSheet} onClose={() => setNoteSheet(false)}>
@@ -154,7 +164,11 @@ export default function CaseDetailScreen() {
           placeholderTextColor={colors.textSecondary}
           style={styles.noteInput}
         />
-        <PrimaryButton label={t("common:actions.save", { ns: "common" })} onPress={saveNote} style={{ marginTop: 12 }} />
+        <PrimaryButton
+          label={t("common:actions.save", { ns: "common" })}
+          onPress={saveNote}
+          style={{ marginTop: 12 }}
+        />
       </BottomSheet>
     </View>
   );
@@ -175,7 +189,9 @@ function OverviewTab({ id }: { id: string }) {
   const updates = useMatterUpdates(id);
 
   const nextHearing = hearings.data?.items?.[0];
-  const deadlines = (tasks.data?.items ?? []).filter((tk) => tk.dueAt).sort((a, b) => (a.dueAt! < b.dueAt! ? -1 : 1));
+  const deadlines = (tasks.data?.items ?? [])
+    .filter((tk) => tk.dueAt)
+    .sort((a, b) => (a.dueAt! < b.dueAt! ? -1 : 1));
 
   return (
     <ScrollView contentContainerStyle={styles.tabContent}>
@@ -186,7 +202,8 @@ function OverviewTab({ id }: { id: string }) {
             <View style={{ flex: 1 }}>
               <Text style={styles.rowTitle}>{nextHearing.purpose || t("tabs.hearings")}</Text>
               <Text style={styles.rowSub}>
-                {formatTime(nextHearing.scheduledAt)} · {nextHearing.court} · {nextHearing.leadLawyer}
+                {formatTime(nextHearing.scheduledAt)} · {nextHearing.court} ·{" "}
+                {nextHearing.leadLawyer}
               </Text>
             </View>
           </View>
@@ -198,8 +215,16 @@ function OverviewTab({ id }: { id: string }) {
           <SectionHeader label={t("openDeadlines")} />
           <Card radius="lgXl" padded={false}>
             {deadlines.map((tk, i) => (
-              <View key={tk.id} style={[styles.deadlineRow, i < deadlines.length - 1 && styles.rowBorder]}>
-                <View style={[styles.accent, { backgroundColor: tk.overdue ? colors.dangerAccent : colors.warningAccent }]} />
+              <View
+                key={tk.id}
+                style={[styles.deadlineRow, i < deadlines.length - 1 && styles.rowBorder]}
+              >
+                <View
+                  style={[
+                    styles.accent,
+                    { backgroundColor: tk.overdue ? colors.dangerAccent : colors.warningAccent },
+                  ]}
+                />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.rowTitle}>{tk.title}</Text>
                   <Text style={styles.rowSub}>{tk.assignee ?? formatDate(tk.dueAt!)}</Text>
@@ -249,7 +274,9 @@ function DateChip({ iso }: { iso: string }) {
   const d = new Date(iso);
   return (
     <View style={styles.dateChip}>
-      <Text style={styles.dateChipMonth}>{d.toLocaleDateString("en-US", { month: "short" }).toUpperCase()}</Text>
+      <Text style={styles.dateChipMonth}>
+        {d.toLocaleDateString("en-US", { month: "short" }).toUpperCase()}
+      </Text>
       <Text style={styles.dateChipDay}>{d.getDate()}</Text>
     </View>
   );
@@ -260,7 +287,8 @@ function HearingsTab({ id }: { id: string }) {
   const { t } = useTranslation("matters");
   if (isLoading) return <Loading />;
   const items = data?.items ?? [];
-  if (items.length === 0) return <EmptyState icon="gavel" title={t("common:state.empty", { ns: "common" })} />;
+  if (items.length === 0)
+    return <EmptyState icon="gavel" title={t("common:state.empty", { ns: "common" })} />;
   return (
     <ScrollView contentContainerStyle={styles.tabContent}>
       {items.map((h) => (
@@ -288,7 +316,8 @@ function TasksTab({ id }: { id: string }) {
   const { t } = useTranslation("matters");
   if (isLoading) return <Loading />;
   const items = data?.items ?? [];
-  if (items.length === 0) return <EmptyState icon="task_alt" title={t("common:state.empty", { ns: "common" })} />;
+  if (items.length === 0)
+    return <EmptyState icon="task_alt" title={t("common:state.empty", { ns: "common" })} />;
   return (
     <ScrollView contentContainerStyle={styles.tabContent}>
       <Card radius="lgXl" padded={false}>
@@ -296,7 +325,9 @@ function TasksTab({ id }: { id: string }) {
           <View key={tk.id} style={[styles.deadlineRow, i < items.length - 1 && styles.rowBorder]}>
             <View style={[styles.checkbox, tk.status === "done" && styles.checkboxDone]} />
             <View style={{ flex: 1 }}>
-              <Text style={[styles.rowTitle, tk.status === "done" && styles.strike]}>{tk.title}</Text>
+              <Text style={[styles.rowTitle, tk.status === "done" && styles.strike]}>
+                {tk.title}
+              </Text>
               {tk.dueAt ? <Text style={styles.rowSub}>{formatDate(tk.dueAt)}</Text> : null}
             </View>
             {tk.priority === "high" ? <StatusBadge label="High" tone="danger" /> : null}
@@ -312,7 +343,8 @@ function FilesTab({ id }: { id: string }) {
   const { t } = useTranslation("matters");
   if (isLoading) return <Loading />;
   const items = data?.items ?? [];
-  if (items.length === 0) return <EmptyState icon="description" title={t("common:state.empty", { ns: "common" })} />;
+  if (items.length === 0)
+    return <EmptyState icon="description" title={t("common:state.empty", { ns: "common" })} />;
   return (
     <ScrollView contentContainerStyle={styles.tabContent}>
       <Card radius="lgXl" padded={false}>
@@ -338,7 +370,8 @@ function NotesTab({ id }: { id: string }) {
   const { t } = useTranslation("matters");
   if (isLoading) return <Loading />;
   const items = data ?? [];
-  if (items.length === 0) return <EmptyState icon="note_add" title={t("common:state.empty", { ns: "common" })} />;
+  if (items.length === 0)
+    return <EmptyState icon="note_add" title={t("common:state.empty", { ns: "common" })} />;
   return (
     <ScrollView contentContainerStyle={styles.tabContent}>
       {items.map((n) => (
@@ -366,37 +399,129 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.bg },
   header: { backgroundColor: colors.brandDark, paddingHorizontal: 20, paddingBottom: 16 },
   headerRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  headerRef: { flex: 1, fontFamily: fontFamily.mono, fontWeight: "700", fontSize: fontSize.lg, color: colors.textOnDark },
-  headerTitle: { fontFamily: fontFamily.display, fontSize: fontSize.displayMd, lineHeight: 25, color: colors.textOnDark, marginTop: 14, letterSpacing: 0.2 },
-  headerSubtitle: { fontFamily: fontFamily.medium, fontSize: fontSize.baseMd, color: colors.brandTan, marginTop: 6 },
+  headerRef: {
+    flex: 1,
+    fontFamily: fontFamily.mono,
+    fontWeight: "700",
+    fontSize: fontSize.lg,
+    color: colors.textOnDark,
+  },
+  headerTitle: {
+    fontFamily: fontFamily.display,
+    fontSize: fontSize.displayMd,
+    lineHeight: 25,
+    color: colors.textOnDark,
+    marginTop: 14,
+    letterSpacing: 0.2,
+  },
+  headerSubtitle: {
+    fontFamily: fontFamily.medium,
+    fontSize: fontSize.baseMd,
+    color: colors.brandTan,
+    marginTop: 6,
+  },
   headerChips: { flexDirection: "row", gap: 8, marginTop: 14, flexWrap: "wrap" },
-  darkChip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radii.smMd, backgroundColor: colors.brandDeep },
-  darkChipText: { fontFamily: fontFamily.medium, fontSize: fontSize.smMd, color: colors.textOnDark },
-  tabBar: { backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.border },
+  darkChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radii.smMd,
+    backgroundColor: colors.brandDeep,
+  },
+  darkChipText: {
+    fontFamily: fontFamily.medium,
+    fontSize: fontSize.smMd,
+    color: colors.textOnDark,
+  },
+  tabBar: {
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
   tabBarContent: { paddingHorizontal: 20, gap: 22 },
   tabItem: { paddingVertical: 13 },
-  tabLabel: { fontFamily: fontFamily.semibold, fontSize: fontSize.mdLg, color: colors.textSecondary },
+  tabLabel: {
+    fontFamily: fontFamily.semibold,
+    fontSize: fontSize.mdLg,
+    color: colors.textSecondary,
+  },
   tabLabelActive: { fontFamily: fontFamily.extrabold, color: colors.brandDark },
-  tabUnderline: { position: "absolute", bottom: 0, left: 0, right: 0, height: 2.5, backgroundColor: colors.brandBronze, borderRadius: 2 },
+  tabUnderline: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 2.5,
+    backgroundColor: colors.brandBronze,
+    borderRadius: 2,
+  },
   tabContent: { padding: 20, gap: 14, paddingBottom: 40 },
   hearingRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  dateChip: { backgroundColor: colors.brandCream, borderRadius: radii.md, paddingHorizontal: 11, paddingVertical: 8, alignItems: "center" },
-  dateChipMonth: { fontFamily: fontFamily.extrabold, fontSize: fontSize.xs, color: colors.brandBronzeLabel },
-  dateChipDay: { fontFamily: fontFamily.extrabold, fontSize: fontSize.xxl, color: colors.brandDark, lineHeight: 19 },
+  dateChip: {
+    backgroundColor: colors.brandCream,
+    borderRadius: radii.md,
+    paddingHorizontal: 11,
+    paddingVertical: 8,
+    alignItems: "center",
+  },
+  dateChipMonth: {
+    fontFamily: fontFamily.extrabold,
+    fontSize: fontSize.xs,
+    color: colors.brandBronzeLabel,
+  },
+  dateChipDay: {
+    fontFamily: fontFamily.extrabold,
+    fontSize: fontSize.xxl,
+    color: colors.brandDark,
+    lineHeight: 19,
+  },
   rowTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.md, color: colors.textPrimary },
-  rowSub: { fontFamily: fontFamily.medium, fontSize: fontSize.base, color: colors.textSecondary, marginTop: 3 },
-  deadlineRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 15, paddingVertical: 13 },
+  rowSub: {
+    fontFamily: fontFamily.medium,
+    fontSize: fontSize.base,
+    color: colors.textSecondary,
+    marginTop: 3,
+  },
+  deadlineRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 15,
+    paddingVertical: 13,
+  },
   rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.borderHairline },
   accent: { width: 3, alignSelf: "stretch" },
-  checkbox: { width: 22, height: 22, borderWidth: 2, borderColor: colors.borderNeutral, borderRadius: radii.xs },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderWidth: 2,
+    borderColor: colors.borderNeutral,
+    borderRadius: radii.xs,
+  },
   checkboxDone: { backgroundColor: colors.brandBronze, borderColor: colors.brandBronze },
   strike: { textDecorationLine: "line-through", color: colors.textSecondary },
   timelineRow: { flexDirection: "row", gap: 12 },
   timelineGutter: { alignItems: "center" },
-  timelineDot: { width: 30, height: 30, borderRadius: radii.pill, backgroundColor: colors.brandCream, alignItems: "center", justifyContent: "center" },
+  timelineDot: {
+    width: 30,
+    height: 30,
+    borderRadius: radii.pill,
+    backgroundColor: colors.brandCream,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   timelineLine: { width: 1.5, flex: 1, backgroundColor: colors.chipInactiveBg, minHeight: 12 },
-  noteBody: { fontFamily: fontFamily.medium, fontSize: fontSize.md, color: colors.chatTextAlt, lineHeight: 20 },
-  sheetTitle: { fontFamily: fontFamily.display, fontSize: fontSize.display, color: colors.textPrimary, letterSpacing: 0.2 },
+  noteBody: {
+    fontFamily: fontFamily.medium,
+    fontSize: fontSize.md,
+    color: colors.chatTextAlt,
+    lineHeight: 20,
+  },
+  sheetTitle: {
+    fontFamily: fontFamily.display,
+    fontSize: fontSize.display,
+    color: colors.textPrimary,
+    letterSpacing: 0.2,
+  },
   noteInput: {
     marginTop: 12,
     minHeight: 100,

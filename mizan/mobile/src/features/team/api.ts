@@ -15,4 +15,5 @@ export interface TeamMember {
 
 export const teamKeys = { all: ["team"] as const };
 
-export const listTeam = (signal?: AbortSignal) => httpClient<{ items: TeamMember[] }>("/team", { signal });
+export const listTeam = (signal?: AbortSignal) =>
+  httpClient<{ items: TeamMember[] }>("/team", { signal });

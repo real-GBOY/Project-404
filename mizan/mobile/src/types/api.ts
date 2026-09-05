@@ -8,7 +8,7 @@ export interface ApiErrorBody {
   code: string;
   message: string;
   details?: {
-    fields?: Array<{ path: string; message: string }>;
+    fields?: { path: string; message: string }[];
   } & Record<string, unknown>;
 }
 

@@ -45,7 +45,9 @@ export default function SignInScreen() {
         router.replace("/(tabs)/today");
       }
     } catch (err) {
-      setError(isApiError(err) && err.isUnauthorized ? t("invalidCredentials") : t("invalidCredentials"));
+      setError(
+        isApiError(err) && err.isUnauthorized ? t("invalidCredentials") : t("invalidCredentials"),
+      );
     } finally {
       setLoading(false);
     }
@@ -60,7 +62,10 @@ export default function SignInScreen() {
   return (
     <View style={styles.screen}>
       <StatusBar style="light" />
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
         <ScrollView
           contentContainerStyle={[
             styles.content,

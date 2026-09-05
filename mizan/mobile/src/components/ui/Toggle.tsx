@@ -10,12 +10,22 @@ const PAD = 3;
 
 /** The pill switch used in Log Time (billable), Expense (recharge to
  *  client), and Settings (Face ID). RTL-mirrored (knob starts opposite side). */
-export function Toggle({ value, onValueChange }: { value: boolean; onValueChange: (v: boolean) => void }) {
+export function Toggle({
+  value,
+  onValueChange,
+}: {
+  value: boolean;
+  onValueChange: (v: boolean) => void;
+}) {
   const { isRtl } = useDir();
   const anim = useRef(new Animated.Value(value ? 1 : 0)).current;
 
   useEffect(() => {
-    Animated.timing(anim, { toValue: value ? 1 : 0, duration: 150, useNativeDriver: false }).start();
+    Animated.timing(anim, {
+      toValue: value ? 1 : 0,
+      duration: 150,
+      useNativeDriver: false,
+    }).start();
   }, [value, anim]);
 
   const travel = WIDTH - KNOB - PAD * 2;
@@ -31,7 +41,9 @@ export function Toggle({ value, onValueChange }: { value: boolean; onValueChange
       accessibilityState={{ checked: value }}
       hitSlop={8}
     >
-      <View style={[styles.track, { backgroundColor: value ? colors.brandDark : colors.borderNeutral }]}>
+      <View
+        style={[styles.track, { backgroundColor: value ? colors.brandDark : colors.borderNeutral }]}
+      >
         <Animated.View style={[styles.knob, { transform: [{ translateX: translate }] }]} />
       </View>
     </Pressable>

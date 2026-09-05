@@ -1,5 +1,14 @@
 import { useState } from "react";
-import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, Alert, Image } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Alert,
+  Image,
+} from "react-native";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { colors, radii } from "@/theme/tokens";
@@ -9,7 +18,10 @@ import { PrimaryButton } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { Toggle } from "@/components/ui/Toggle";
 import { MatterRefBadge } from "@/components/ui/MatterRefBadge";
-import { MatterPickerSheet, type PickedMatter } from "@/features/matters/components/MatterPickerSheet";
+import {
+  MatterPickerSheet,
+  type PickedMatter,
+} from "@/features/matters/components/MatterPickerSheet";
 import { useFirmSettings } from "@/features/settings/hooks";
 import { capturePhoto, documentFormData } from "@/features/documents/upload";
 import { useDocumentMutations } from "@/features/documents/hooks";
@@ -94,7 +106,9 @@ export default function ExpenseScreen() {
               <Text style={styles.photoActionText}>{t("retake")}</Text>
             </Pressable>
             <Pressable onPress={takePhoto}>
-              <Text style={[styles.photoActionText, { color: colors.brandBronzeLabel }]}>{t("addPage")}</Text>
+              <Text style={[styles.photoActionText, { color: colors.brandBronzeLabel }]}>
+                {t("addPage")}
+              </Text>
             </Pressable>
           </View>
         </View>
@@ -143,10 +157,19 @@ export default function ExpenseScreen() {
           </View>
         </View>
 
-        <PrimaryButton label={t("confirmSubmit")} icon="check" onPress={submit} loading={record.isPending} />
+        <PrimaryButton
+          label={t("confirmSubmit")}
+          icon="check"
+          onPress={submit}
+          loading={record.isPending}
+        />
       </ScrollView>
 
-      <MatterPickerSheet visible={matterPicker} onClose={() => setMatterPicker(false)} onPick={setMatter} />
+      <MatterPickerSheet
+        visible={matterPicker}
+        onClose={() => setMatterPicker(false)}
+        onPick={setMatter}
+      />
     </View>
   );
 }
@@ -154,15 +177,48 @@ export default function ExpenseScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { padding: 20, gap: 16, paddingBottom: 40 },
-  photoCard: { borderRadius: radii.xxl, overflow: "hidden", borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
+  photoCard: {
+    borderRadius: radii.xxl,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
   photo: { height: 186, width: "100%" },
-  photoPlaceholder: { height: 186, backgroundColor: colors.bgSunk, alignItems: "center", justifyContent: "center", gap: 9 },
+  photoPlaceholder: {
+    height: 186,
+    backgroundColor: colors.bgSunk,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 9,
+  },
   photoHint: { fontFamily: fontFamily.mono, fontSize: fontSize.xs, color: colors.textSecondary },
-  photoActions: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 12, paddingHorizontal: 15 },
+  photoActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 12,
+    paddingHorizontal: 15,
+  },
   photoAction: { flexDirection: "row", alignItems: "center", gap: 10 },
-  photoActionText: { fontFamily: fontFamily.bold, fontSize: fontSize.baseMd, color: colors.textPrimary },
-  fieldCard: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lgXl, overflow: "hidden" },
-  field: { paddingHorizontal: 15, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.borderHairline },
+  photoActionText: {
+    fontFamily: fontFamily.bold,
+    fontSize: fontSize.baseMd,
+    color: colors.textPrimary,
+  },
+  fieldCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.lgXl,
+    overflow: "hidden",
+  },
+  field: {
+    paddingHorizontal: 15,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderHairline,
+  },
   fieldLast: { borderBottomWidth: 0 },
   fieldLabel: {
     fontFamily: fontFamily.extrabold,
@@ -173,12 +229,41 @@ const styles = StyleSheet.create({
     marginBottom: 7,
   },
   amountRow: { flexDirection: "row", alignItems: "baseline", gap: 8 },
-  currencyPrefix: { fontFamily: fontFamily.bold, fontSize: fontSize.displayMd, color: colors.textSecondary },
-  amountInput: { flex: 1, fontFamily: fontFamily.extrabold, fontSize: fontSize.displayLg, color: colors.textPrimary, padding: 0 },
-  textInput: { fontFamily: fontFamily.bold, fontSize: fontSize.mdLg, color: colors.textPrimary, padding: 0 },
+  currencyPrefix: {
+    fontFamily: fontFamily.bold,
+    fontSize: fontSize.displayMd,
+    color: colors.textSecondary,
+  },
+  amountInput: {
+    flex: 1,
+    fontFamily: fontFamily.extrabold,
+    fontSize: fontSize.displayLg,
+    color: colors.textPrimary,
+    padding: 0,
+  },
+  textInput: {
+    fontFamily: fontFamily.bold,
+    fontSize: fontSize.mdLg,
+    color: colors.textPrimary,
+    padding: 0,
+  },
   fieldValueRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  fieldValue: { flex: 1, fontFamily: fontFamily.semibold, fontSize: fontSize.md, color: colors.textPrimary },
+  fieldValue: {
+    flex: 1,
+    fontFamily: fontFamily.semibold,
+    fontSize: fontSize.md,
+    color: colors.textPrimary,
+  },
   rechargeRow: { flexDirection: "row", alignItems: "center" },
-  rechargeTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.mdLg, color: colors.textPrimary },
-  rechargeSub: { fontFamily: fontFamily.medium, fontSize: fontSize.smMd, color: colors.textSecondary, marginTop: 2 },
+  rechargeTitle: {
+    fontFamily: fontFamily.bold,
+    fontSize: fontSize.mdLg,
+    color: colors.textPrimary,
+  },
+  rechargeSub: {
+    fontFamily: fontFamily.medium,
+    fontSize: fontSize.smMd,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
 });

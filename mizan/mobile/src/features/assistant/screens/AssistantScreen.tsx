@@ -44,7 +44,11 @@ export default function AssistantScreen() {
   const send = (text: string) => {
     const value = text.trim();
     if (!value) return;
-    setConversation((c) => [...c, { role: "user", text: value }, { role: "assistant", text: t("notConnected") }]);
+    setConversation((c) => [
+      ...c,
+      { role: "user", text: value },
+      { role: "assistant", text: t("notConnected") },
+    ]);
     setInput("");
   };
 
@@ -69,7 +73,10 @@ export default function AssistantScreen() {
         <Text style={styles.previewText}>{t("notConnected")}</Text>
       </View>
 
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
         <ScrollView contentContainerStyle={styles.conversation}>
           {conversation.map((b, i) => {
             if (b.role === "user") {
@@ -111,7 +118,11 @@ export default function AssistantScreen() {
         </ScrollView>
 
         <View style={[styles.composer, { paddingBottom: Math.max(insets.bottom, 16) + 8 }]}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsRow}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipsRow}
+          >
             {SUGGESTIONS.map((s) => (
               <Pressable key={s} style={styles.suggestChip} onPress={() => send(s)}>
                 <Text style={styles.suggestChipText}>{s}</Text>
@@ -153,8 +164,17 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
   },
   avatar: { width: 32, height: 32, borderRadius: radii.pill, backgroundColor: colors.brandDeep },
-  smallAvatar: { width: 26, height: 26, borderRadius: radii.pill, backgroundColor: colors.brandDeep },
-  headerTitle: { fontFamily: fontFamily.extrabold, fontSize: fontSize.xl, color: colors.textPrimary },
+  smallAvatar: {
+    width: 26,
+    height: 26,
+    borderRadius: radii.pill,
+    backgroundColor: colors.brandDeep,
+  },
+  headerTitle: {
+    fontFamily: fontFamily.extrabold,
+    fontSize: fontSize.xl,
+    color: colors.textPrimary,
+  },
   headerSub: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.textSecondary },
   previewBanner: {
     flexDirection: "row",
@@ -164,7 +184,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 9,
   },
-  previewText: { flex: 1, fontFamily: fontFamily.semibold, fontSize: fontSize.sm, color: colors.brandAmberBannerSubtext },
+  previewText: {
+    flex: 1,
+    fontFamily: fontFamily.semibold,
+    fontSize: fontSize.sm,
+    color: colors.brandAmberBannerSubtext,
+  },
   conversation: { padding: 20, gap: 16 },
   userRow: { alignItems: "flex-end" },
   userBubble: {
@@ -181,7 +206,13 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   assistantRow: { flexDirection: "row", gap: 10 },
-  assistantText: { flex: 1, fontFamily: fontFamily.medium, fontSize: fontSize.mdLg, lineHeight: 22, color: colors.chatText },
+  assistantText: {
+    flex: 1,
+    fontFamily: fontFamily.medium,
+    fontSize: fontSize.mdLg,
+    lineHeight: 22,
+    color: colors.chatText,
+  },
   composer: {
     backgroundColor: colors.surface,
     borderTopWidth: 1,
@@ -190,8 +221,18 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   chipsRow: { gap: 8, paddingBottom: 11 },
-  suggestChip: { borderWidth: 1, borderColor: colors.borderNeutral, borderRadius: radii.smMd, paddingHorizontal: 13, paddingVertical: 8 },
-  suggestChipText: { fontFamily: fontFamily.semibold, fontSize: fontSize.base, color: colors.textPrimary },
+  suggestChip: {
+    borderWidth: 1,
+    borderColor: colors.borderNeutral,
+    borderRadius: radii.smMd,
+    paddingHorizontal: 13,
+    paddingVertical: 8,
+  },
+  suggestChipText: {
+    fontFamily: fontFamily.semibold,
+    fontSize: fontSize.base,
+    color: colors.textPrimary,
+  },
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -202,6 +243,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 11,
   },
-  input: { flex: 1, fontFamily: fontFamily.medium, fontSize: fontSize.mdLg, color: colors.textPrimary, padding: 0 },
-  sendBtn: { width: 34, height: 34, borderRadius: radii.smMd, backgroundColor: colors.brandDark, alignItems: "center", justifyContent: "center" },
+  input: {
+    flex: 1,
+    fontFamily: fontFamily.medium,
+    fontSize: fontSize.mdLg,
+    color: colors.textPrimary,
+    padding: 0,
+  },
+  sendBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: radii.smMd,
+    backgroundColor: colors.brandDark,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });

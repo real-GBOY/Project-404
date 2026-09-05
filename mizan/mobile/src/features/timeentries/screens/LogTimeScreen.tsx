@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, Alert } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useTranslation } from "react-i18next";
@@ -10,7 +10,10 @@ import { Icon } from "@/components/ui/Icon";
 import { Toggle } from "@/components/ui/Toggle";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { MatterRefBadge } from "@/components/ui/MatterRefBadge";
-import { MatterPickerSheet, type PickedMatter } from "@/features/matters/components/MatterPickerSheet";
+import {
+  MatterPickerSheet,
+  type PickedMatter,
+} from "@/features/matters/components/MatterPickerSheet";
 import { useMatter } from "@/features/matters/hooks";
 import { useFirmSettings } from "@/features/settings/hooks";
 import { formatMoney } from "@/lib/format";
@@ -55,7 +58,11 @@ export default function LogTimeScreen() {
 
   useEffect(() => {
     if (presetMatter && !matter) {
-      setMatter({ id: presetMatter.id, reference: presetMatter.reference, title: presetMatter.title });
+      setMatter({
+        id: presetMatter.id,
+        reference: presetMatter.reference,
+        title: presetMatter.title,
+      });
     }
   }, [presetMatter, matter]);
 
@@ -128,9 +135,7 @@ export default function LogTimeScreen() {
         <View style={styles.timerCard}>
           <Text style={styles.timer}>{hms(seconds)}</Text>
           <Text style={styles.timerSub}>
-            {startedAt
-              ? `${t("logTimeSubtitle")}`
-              : t("logTimeSubtitle")}
+            {startedAt ? `${t("logTimeSubtitle")}` : t("logTimeSubtitle")}
           </Text>
           <View style={styles.timerButtons}>
             <BronzeButton
@@ -150,7 +155,11 @@ export default function LogTimeScreen() {
           {PRESETS.map((h) => {
             const active = Math.abs(seconds - h * 3600) < 1;
             return (
-              <Pressable key={h} style={[styles.preset, active && styles.presetActive]} onPress={() => applyPreset(h)}>
+              <Pressable
+                key={h}
+                style={[styles.preset, active && styles.presetActive]}
+                onPress={() => applyPreset(h)}
+              >
                 <Text style={[styles.presetText, active && styles.presetTextActive]}>{h} h</Text>
               </Pressable>
             );
@@ -238,11 +247,31 @@ export default function LogTimeScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  saveLink: { fontFamily: fontFamily.extrabold, fontSize: fontSize.md, color: colors.textSecondary },
+  saveLink: {
+    fontFamily: fontFamily.extrabold,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
+  },
   content: { padding: 20, gap: 16, paddingBottom: 40 },
-  timerCard: { backgroundColor: colors.brandDark, borderRadius: radii.xxl, padding: 22, alignItems: "center" },
-  timer: { fontFamily: fontFamily.mono, fontWeight: "700", fontSize: fontSize.timer, color: colors.textOnDark, letterSpacing: -0.5 },
-  timerSub: { fontFamily: fontFamily.semibold, fontSize: fontSize.base, color: colors.brandTan, marginTop: 6 },
+  timerCard: {
+    backgroundColor: colors.brandDark,
+    borderRadius: radii.xxl,
+    padding: 22,
+    alignItems: "center",
+  },
+  timer: {
+    fontFamily: fontFamily.mono,
+    fontWeight: "700",
+    fontSize: fontSize.timer,
+    color: colors.textOnDark,
+    letterSpacing: -0.5,
+  },
+  timerSub: {
+    fontFamily: fontFamily.semibold,
+    fontSize: fontSize.base,
+    color: colors.brandTan,
+    marginTop: 6,
+  },
   timerButtons: { flexDirection: "row", gap: 10, marginTop: 18, alignSelf: "stretch" },
   stopBtn: {
     flex: 1,
@@ -276,7 +305,12 @@ const styles = StyleSheet.create({
     borderRadius: radii.lgXl,
     overflow: "hidden",
   },
-  field: { paddingHorizontal: 15, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.borderHairline },
+  field: {
+    paddingHorizontal: 15,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderHairline,
+  },
   fieldLast: { borderBottomWidth: 0 },
   fieldLabel: {
     fontFamily: fontFamily.extrabold,
@@ -287,7 +321,12 @@ const styles = StyleSheet.create({
     marginBottom: 7,
   },
   fieldValueRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  fieldValue: { flex: 1, fontFamily: fontFamily.semibold, fontSize: fontSize.md, color: colors.textPrimary },
+  fieldValue: {
+    flex: 1,
+    fontFamily: fontFamily.semibold,
+    fontSize: fontSize.md,
+    color: colors.textPrimary,
+  },
   narrativeInput: {
     fontFamily: fontFamily.medium,
     fontSize: fontSize.md,
@@ -308,9 +347,22 @@ const styles = StyleSheet.create({
     borderRadius: radii.lgXl,
     padding: 15,
   },
-  billableTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.mdLg, color: colors.textPrimary },
-  billableSub: { fontFamily: fontFamily.medium, fontSize: fontSize.smMd, color: colors.textSecondary, marginTop: 2 },
-  sheetTitle: { fontFamily: fontFamily.display, fontSize: fontSize.display, color: colors.textPrimary },
+  billableTitle: {
+    fontFamily: fontFamily.bold,
+    fontSize: fontSize.mdLg,
+    color: colors.textPrimary,
+  },
+  billableSub: {
+    fontFamily: fontFamily.medium,
+    fontSize: fontSize.smMd,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  sheetTitle: {
+    fontFamily: fontFamily.display,
+    fontSize: fontSize.display,
+    color: colors.textPrimary,
+  },
   activityRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -319,5 +371,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.borderHairline,
   },
-  activityLabel: { fontFamily: fontFamily.bold, fontSize: fontSize.mdLg, color: colors.textPrimary },
+  activityLabel: {
+    fontFamily: fontFamily.bold,
+    fontSize: fontSize.mdLg,
+    color: colors.textPrimary,
+  },
 });

@@ -4,7 +4,13 @@ import { fontFamily, fontSize } from "@/theme/typography";
 
 /** The monospace matter-reference chip ("TP-2025-0055") — sand fill, brass
  *  hairline border, Court Navy monospace text (Mizan Identity chip tokens). */
-export function MatterRefBadge({ reference, small = false }: { reference: string; small?: boolean }) {
+export function MatterRefBadge({
+  reference,
+  small = false,
+}: {
+  reference: string;
+  small?: boolean;
+}) {
   return (
     <View style={[styles.base, small && styles.small]}>
       <Text style={[styles.text, small && styles.textSmall]}>{reference}</Text>

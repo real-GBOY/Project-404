@@ -56,7 +56,14 @@ export interface MatterFinancials {
   collected: Money[];
   outstanding: Money[];
   expenses: Money[];
-  invoices: { id: string; number: string; status: string; currency: string; total: number; balance: number }[];
+  invoices: {
+    id: string;
+    number: string;
+    status: string;
+    currency: string;
+    total: number;
+    balance: number;
+  }[];
 }
 
 export interface Matter {

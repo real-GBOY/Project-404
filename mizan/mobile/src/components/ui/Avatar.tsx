@@ -15,12 +15,10 @@ export function Avatar({
   name,
   size = 38,
   round = false,
-  dark = false,
 }: {
   name: string;
   size?: number;
   round?: boolean;
-  dark?: boolean;
 }) {
   return (
     <View
@@ -34,12 +32,7 @@ export function Avatar({
         },
       ]}
     >
-      <Text
-        style={[
-          styles.text,
-          { fontSize: Math.max(11, size * 0.34), color: colors.brandDark },
-        ]}
-      >
+      <Text style={[styles.text, { fontSize: Math.max(11, size * 0.34), color: colors.brandDark }]}>
         {initials(name)}
       </Text>
     </View>

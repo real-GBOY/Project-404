@@ -13,11 +13,15 @@ export const listHearings = (p: HearingListParams, signal?: AbortSignal) =>
     signal,
   });
 
-export const getHearing = (id: string, signal?: AbortSignal) => httpClient<HearingRow>(`/hearings/${id}`, { signal });
+export const getHearing = (id: string, signal?: AbortSignal) =>
+  httpClient<HearingRow>(`/hearings/${id}`, { signal });
 
 /** "Adjourned to a new date" outcome action. */
 export const adjournHearing = (id: string, body: { newDate: string; reason?: string }) =>
-  httpClient<{ adjourned: HearingRow; next: HearingRow }>(`/hearings/${id}/adjourn`, { method: "POST", body });
+  httpClient<{ adjourned: HearingRow; next: HearingRow }>(`/hearings/${id}/adjourn`, {
+    method: "POST",
+    body,
+  });
 
 /** "Pleadings heard" / "Judgment issued" outcome actions (free-text field). */
 export const recordOutcome = (id: string, body: { outcome: string }) =>

@@ -16,13 +16,25 @@ export function ErrorScreen({ error, retry }: ErrorBoundaryProps) {
       <Text style={styles.detail} numberOfLines={4}>
         {error?.message ?? "An unexpected error occurred."}
       </Text>
-      <PrimaryButton label="Try again" onPress={retry} fullWidth={false} style={{ marginTop: 20, paddingHorizontal: 28 }} />
+      <PrimaryButton
+        label="Try again"
+        onPress={retry}
+        fullWidth={false}
+        style={{ marginTop: 20, paddingHorizontal: 28 }}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1, alignItems: "center", justifyContent: "center", padding: 32, backgroundColor: colors.bg, gap: 8 },
+  wrap: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 32,
+    backgroundColor: colors.bg,
+    gap: 8,
+  },
   iconWrap: {
     width: 58,
     height: 58,
@@ -32,6 +44,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 6,
   },
-  title: { fontFamily: fontFamily.display, fontSize: fontSize.displayMd, color: colors.textPrimary },
-  detail: { fontFamily: fontFamily.medium, fontSize: fontSize.md, color: colors.textSecondary, textAlign: "center", lineHeight: 20 },
+  title: {
+    fontFamily: fontFamily.display,
+    fontSize: fontSize.displayMd,
+    color: colors.textPrimary,
+  },
+  detail: {
+    fontFamily: fontFamily.medium,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
+    textAlign: "center",
+    lineHeight: 20,
+  },
 });
