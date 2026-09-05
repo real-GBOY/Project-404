@@ -30,17 +30,33 @@ async function main() {
   app.setGlobalPrefix("api");
   app.enableShutdownHooks();
 
-  // Cross-site access for a separately-hosted frontend (e.g. Vercel). Off unless
-  // AURIC_CORS_ORIGINS is set — the default deployment serves the SPA same-origin
-  // behind nginx. Auth is Bearer-token only, so no credentialed CORS.
-  if (config.corsOrigins.length > 0) {
+  // Cross-site access for a separately-hosted frontend (e.g. Vercel) and for
+  // local development of the web/mobile clients (Expo/Vite dev servers on
+  // localhost). Off entirely only when neither applies — the default nginx
+  // deployment serves the SPA same-origin. Auth is Bearer-token only, so no
+  // credentialed CORS.
+  const isDev = config.nodeEnv !== "production";
+  if (config.corsOrigins.length > 0 || isDev) {
     // An `*.example.com` entry becomes a host-suffix RegExp (Vercel previews);
     // anything else is matched literally.
-    const origin = config.corsOrigins.map((o) =>
+    const configured = config.corsOrigins.map((o) =>
       o.startsWith("*.") ? new RegExp(`${o.slice(1).replace(/[.]/g, "\\$&")}$`) : o,
     );
+    // Any localhost / loopback / private-LAN origin, on any port — covers
+    // `expo start --web`, Vite, and a phone browser pointed at the dev host.
+    const devOrigin =
+      /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\]|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|192\.168\.\d+\.\d+)(:\d+)?$/;
+
     app.enableCors({
-      origin,
+      origin: (origin, cb) => {
+        // Non-browser callers (curl, native apps, same-origin) send no Origin.
+        if (!origin) return cb(null, true);
+        if (devOrigin.test(origin)) return cb(null, true);
+        const allowed = configured.some((o) =>
+          o instanceof RegExp ? o.test(origin) : o === origin,
+        );
+        cb(null, allowed);
+      },
       methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
       allowedHeaders: ["authorization", "content-type"],
       maxAge: 86_400,
