@@ -22,3 +22,7 @@ export const adjournHearing = (id: string, body: { newDate: string; reason?: str
 /** "Pleadings heard" / "Judgment issued" outcome actions (free-text field). */
 export const recordOutcome = (id: string, body: { outcome: string }) =>
   httpClient<HearingRow>(`/hearings/${id}/outcome`, { method: "POST", body });
+
+/** "Check in at court" — server-recorded attendance, idempotent. */
+export const checkInHearing = (id: string) =>
+  httpClient<HearingRow>(`/hearings/${id}/check-in`, { method: "POST" });

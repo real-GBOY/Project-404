@@ -13,6 +13,7 @@ export interface HearingRow {
   status: HearingStatus;
   purpose: string;
   outcome: string | null;
+  checkedInAt: string | null;
 }
 
 export interface HearingListParams {

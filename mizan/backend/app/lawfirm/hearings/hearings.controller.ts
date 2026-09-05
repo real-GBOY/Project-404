@@ -97,6 +97,13 @@ export class HearingsController {
     return this.service.adjourn(id, body.newDate, body.reason, user.userId);
   }
 
+  @Post(":id/check-in")
+  @HttpCode(200)
+  @RequirePermission("update", "hearing")
+  checkIn(@Param("id") id: string, @CurrentUser() user: Principal) {
+    return this.service.checkIn(id, user.userId);
+  }
+
   @Post(":id/outcome")
   @RequirePermission("update", "hearing")
   outcome(

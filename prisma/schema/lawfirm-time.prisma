@@ -1,0 +1,34 @@
+// mizan/backend/app/lawfirm/time — billable/non-billable time entries logged
+// against a matter. Feeds the mobile Log Time screen and the Finance
+// "unbilled time" roll-up. Rate + currency are snapshotted from firm settings
+// at log time (README §6 — financial figures are server-authoritative).
+
+model lawfirm_time_entries {
+  id              String   @id
+  organization_id String
+  matter_id       String
+  user_id         String
+  activity        String
+  narrative       String?
+  /// @kyselyType(number)
+  minutes         Int
+  billable        Boolean  @default(true)
+  /// @kyselyType(string)
+  hourly_rate     Decimal? @db.Decimal(14, 2)
+  /// @kyselyType('EGP' | 'AED' | 'USD' | 'SAR')
+  currency        String   @default("EGP")
+  /// @kyselyType('unbilled' | 'billed')
+  status          String   @default("unbilled")
+  logged_at       DateTime @db.Timestamptz(6)
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  lawfirm_matters lawfirm_matters @relation(fields: [organization_id, matter_id], references: [organization_id, id], onDelete: Cascade, onUpdate: NoAction, map: "lawfirm_time_entries_matter_fk")
+
+  @@unique([organization_id, id], map: "lawfirm_time_entries_org_id_uq")
+  @@index([organization_id], map: "lawfirm_time_entries_org_idx")
+  @@index([organization_id, matter_id], map: "lawfirm_time_entries_matter_idx")
+  @@index([organization_id, user_id], map: "lawfirm_time_entries_user_idx")
+  @@index([organization_id, status], map: "lawfirm_time_entries_status_idx")
+  @@map("lawfirm_time_entries")
+}

@@ -149,11 +149,18 @@ export default function HearingScreen() {
                 <Icon name="check_circle" size={20} color={colors.successText} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.checkedInText}>{t("checkedIn", { time: formatTime(checkedInAt) })}</Text>
-                  <Text style={styles.checkedInNotice}>{t("checkInLocalNotice")}</Text>
                 </View>
               </View>
             ) : (
-              <BronzeButton label={t("checkIn")} icon="how_to_reg" onPress={() => checkIn.mutate()} />
+              <BronzeButton
+                label={t("checkIn")}
+                icon="how_to_reg"
+                onPress={() =>
+                  checkIn.mutate(undefined, {
+                    onError: () => Alert.alert(t("common:state.error", { ns: "common" })),
+                  })
+                }
+              />
             )}
 
             <View>
@@ -272,7 +279,6 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   checkedInText: { fontFamily: fontFamily.bold, fontSize: fontSize.md, color: colors.successText },
-  checkedInNotice: { fontFamily: fontFamily.medium, fontSize: fontSize.base, color: colors.textSecondary, marginTop: 2 },
   decidedCard: {
     flexDirection: "row",
     gap: 11,

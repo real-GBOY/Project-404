@@ -20,6 +20,7 @@ export type LawfirmIdPrefix =
   | "mnt" // matter note
   | "hrg" // hearing
   | "tsk" // task
+  | "tme" // time entry
   | "cdoc" // case document
   | "inv" // invoice
   | "ifl" // invoice fee line

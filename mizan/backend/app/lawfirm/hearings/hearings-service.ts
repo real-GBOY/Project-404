@@ -169,6 +169,25 @@ export class HearingsService {
     };
   }
 
+  /** "Check in at court" — records attendance once; idempotent. */
+  async checkIn(id: string, actorId: string) {
+    const hearing = await this.uow.transaction(async () => {
+      const existing = await this.repo.findById(id);
+      if (!existing) throw NotFound("hearing.not_found", "Hearing not found.");
+      if (existing.checkedInAt) return existing;
+      const updated = (await this.repo.update(id, { checkedInAt: this.clock.now() }))!;
+      await this.activity.record({
+        actorId,
+        action: "hearing.checked_in",
+        targetType: "hearing",
+        targetId: id,
+        targetLabel: existing.purpose,
+      });
+      return updated;
+    });
+    return readInTenant(() => this.view(hearing));
+  }
+
   async recordOutcome(id: string, outcome: string, actorId: string) {
     const hearing = await this.uow.transaction(async () => {
       const existing = await this.repo.findById(id);
@@ -205,6 +224,7 @@ export class HearingsService {
       status: h.status,
       purpose: h.purpose,
       outcome: h.outcome,
+      checkedInAt: h.checkedInAt?.toISOString() ?? null,
     };
   }
 }

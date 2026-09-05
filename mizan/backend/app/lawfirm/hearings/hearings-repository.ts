@@ -13,6 +13,7 @@ export interface HearingRow {
   status: HearingStatus;
   purpose: string;
   outcome: string | null;
+  checkedInAt: Date | null;
 }
 
 export interface MatterContext {
@@ -121,6 +122,7 @@ export class HearingsRepository {
       purpose: string;
       status: HearingStatus;
       outcome: string | null;
+      checkedInAt: Date | null;
     }>,
   ): Promise<HearingRow | null> {
     const set: Record<string, unknown> = {};
@@ -129,6 +131,7 @@ export class HearingsRepository {
     if (patch.purpose !== undefined) set.purpose = patch.purpose;
     if (patch.status !== undefined) set.status = patch.status;
     if (patch.outcome !== undefined) set.outcome = patch.outcome;
+    if (patch.checkedInAt !== undefined) set.checked_in_at = patch.checkedInAt;
     if (Object.keys(set).length > 0) {
       await currentExecutor()
         .updateTable("lawfirm_hearings")
@@ -148,6 +151,7 @@ export class HearingsRepository {
     status: HearingStatus;
     purpose: string;
     outcome: string | null;
+    checked_in_at: Date | string | null;
   }): HearingRow {
     return {
       id: r.id,
@@ -157,6 +161,7 @@ export class HearingsRepository {
       status: r.status,
       purpose: r.purpose,
       outcome: r.outcome,
+      checkedInAt: r.checked_in_at ? new Date(r.checked_in_at) : null,
     };
   }
 }

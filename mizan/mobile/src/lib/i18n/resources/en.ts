@@ -36,7 +36,6 @@ export default {
       empty: "Nothing here yet.",
       offline: "You're offline. Showing the last saved data.",
       notAvailableYet: "Not available yet",
-      savedLocally: "Saved on this device — not yet synced",
     },
     time: {
       today: "Today",
@@ -105,7 +104,6 @@ export default {
     title: "Hearing",
     checkIn: "Check in at court",
     checkedIn: "Checked in {{time}}",
-    checkInLocalNotice: "Not tracked by the server yet — noted locally on this device.",
     recordOutcome: "Record the outcome",
     recordedOutcome: "Recorded outcome",
     adjourn: "Adjourned to a new date",
@@ -180,6 +178,7 @@ export default {
     dictateInstead: "Dictate instead",
     billable: "Billable",
     saveEntry: "Save time entry",
+    timeEntryLogged: "Time entry logged",
     newExpense: "New expense",
     amount: "Amount",
     description: "Description",

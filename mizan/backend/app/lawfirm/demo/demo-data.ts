@@ -554,6 +554,69 @@ export const DEMO_TASKS = [
   },
 ] as const;
 
+/**
+ * Unbilled time logged by the demo admin (Mahmoud Nayel / usr_dev). `rate` is
+ * the snapshot the log-time flow takes from firm settings (Managing Partner
+ * rate, EGP). Feeds the mobile Log Time list + Finance "unbilled time" roll-up.
+ */
+export const DEMO_TIME_ENTRIES = [
+  {
+    matterKey: "mat_5",
+    userKey: "usr_dev",
+    activity: "Legal research",
+    narrative: "Reviewed ICC emergency-arbitrator precedents for the logistics dispute.",
+    minutes: 150,
+    billable: true,
+    rate: 4500,
+    currency: "EGP",
+    loggedDays: -2,
+  },
+  {
+    matterKey: "mat_5",
+    userKey: "usr_dev",
+    activity: "Drafting",
+    narrative: "First draft of the statement of claim.",
+    minutes: 210,
+    billable: true,
+    rate: 4500,
+    currency: "EGP",
+    loggedDays: -1,
+  },
+  {
+    matterKey: "mat_8",
+    userKey: "usr_dev",
+    activity: "Client meeting",
+    narrative: "Call with Delta Bank compliance on the new lending rules.",
+    minutes: 45,
+    billable: true,
+    rate: 4500,
+    currency: "EGP",
+    loggedDays: -3,
+  },
+  {
+    matterKey: "mat_8",
+    userKey: "usr_dev",
+    activity: "Correspondence",
+    narrative: "Follow-up memo to the client.",
+    minutes: 30,
+    billable: false,
+    rate: 4500,
+    currency: "EGP",
+    loggedDays: -3,
+  },
+  {
+    matterKey: "mat_2",
+    userKey: "usr_dev",
+    activity: "Document review",
+    narrative: "Title due-diligence bundle, first pass.",
+    minutes: 120,
+    billable: true,
+    rate: 4500,
+    currency: "EGP",
+    loggedDays: -5,
+  },
+] as const;
+
 export const DEMO_DOCUMENTS = [
   {
     name: "Statement of Defence — Al-Nour.pdf",

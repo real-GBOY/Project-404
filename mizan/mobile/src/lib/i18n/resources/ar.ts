@@ -31,7 +31,6 @@ export default {
       empty: "لا يوجد شيء هنا بعد.",
       offline: "أنت غير متصل. تُعرض آخر بيانات محفوظة.",
       notAvailableYet: "غير متاح بعد",
-      savedLocally: "تم الحفظ على هذا الجهاز — لم تتم المزامنة بعد",
     },
     time: {
       today: "اليوم",
@@ -100,7 +99,6 @@ export default {
     title: "الجلسة",
     checkIn: "تسجيل الحضور بالمحكمة",
     checkedIn: "تم تسجيل الحضور {{time}}",
-    checkInLocalNotice: "لا يتم تتبعه من الخادم بعد — تم تدوينه محليًا على هذا الجهاز فقط.",
     recordOutcome: "تسجيل نتيجة الجلسة",
     recordedOutcome: "النتيجة المسجلة",
     adjourn: "تأجيل إلى موعد جديد",
@@ -175,6 +173,7 @@ export default {
     dictateInstead: "الإملاء بدلاً من ذلك",
     billable: "قابل للفوترة",
     saveEntry: "حفظ سجل الوقت",
+    timeEntryLogged: "تم تسجيل الوقت",
     newExpense: "مصروف جديد",
     amount: "المبلغ",
     description: "الوصف",

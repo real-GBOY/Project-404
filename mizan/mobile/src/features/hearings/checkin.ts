@@ -1,33 +1,26 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import * as api from "./api";
+import { hearingKeys } from "./api";
+import { useHearing } from "./hooks";
+import { dashboardKeys } from "@/features/dashboard/api";
 
 /**
- * "Check in at court" has no backend endpoint (confirmed absent) — this
- * records the check-in locally on the device and is presented as exactly
- * that, not a synced state.
+ * "Check in at court" — server-recorded now (`POST /hearings/:id/check-in`).
+ * `checkedInAt` comes straight off the hearing detail; the mutation is
+ * idempotent server-side.
  */
-const key = (hearingId: string) => `mizan.hearing-checkin.${hearingId}`;
-
 export function useCheckIn(hearingId: string) {
   const qc = useQueryClient();
-  const queryKey = ["hearing-checkin", hearingId];
-
-  const query = useQuery({
-    queryKey,
-    queryFn: async () => {
-      const v = await AsyncStorage.getItem(key(hearingId));
-      return v ?? null;
-    },
-  });
+  const { data: hearing } = useHearing(hearingId);
 
   const mutation = useMutation({
-    mutationFn: async () => {
-      const now = new Date().toISOString();
-      await AsyncStorage.setItem(key(hearingId), now);
-      return now;
+    mutationFn: () => api.checkInHearing(hearingId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: hearingKeys.detail(hearingId) });
+      qc.invalidateQueries({ queryKey: hearingKeys.all });
+      qc.invalidateQueries({ queryKey: dashboardKeys.root });
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey }),
   });
 
-  return { checkedInAt: query.data ?? null, checkIn: mutation };
+  return { checkedInAt: hearing?.checkedInAt ?? null, checkIn: mutation };
 }

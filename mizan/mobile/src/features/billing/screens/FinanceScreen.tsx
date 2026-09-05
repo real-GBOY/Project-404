@@ -13,7 +13,7 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { MatterRefBadge } from "@/components/ui/MatterRefBadge";
 import { Icon } from "@/components/ui/Icon";
 import { useFinanceSummary, useInvoices } from "../hooks";
-import { usePendingTimeEntries } from "@/features/timeentries/local";
+import { useUnbilledSummary } from "@/features/timeentries/hooks";
 
 function moneyOrText(v: Money[] | string | undefined): string {
   if (v == null) return "—";
@@ -25,7 +25,7 @@ export default function FinanceScreen() {
   const { t } = useTranslation("billing");
   const summary = useFinanceSummary("invoices");
   const invoices = useInvoices();
-  const pending = usePendingTimeEntries();
+  const unbilled = useUnbilledSummary(true);
 
   const overdue = useMemo(() => {
     const now = Date.now();
@@ -39,16 +39,7 @@ export default function FinanceScreen() {
     return acc;
   }, {});
 
-  const unbilledByMatter = useMemo(() => {
-    const map = new Map<string, { reference: string; seconds: number; value: number; currency: string }>();
-    for (const e of pending.data ?? []) {
-      const cur = map.get(e.matterId) ?? { reference: e.matterReference, seconds: 0, value: 0, currency: e.currency };
-      cur.seconds += e.seconds;
-      if (e.billable && e.hourlyRate) cur.value += (e.seconds / 3600) * e.hourlyRate;
-      map.set(e.matterId, cur);
-    }
-    return [...map.values()];
-  }, [pending.data]);
+  const unbilledByMatter = unbilled.data?.items ?? [];
 
   if (summary.isLoading) {
     return (
@@ -80,7 +71,7 @@ export default function FinanceScreen() {
               <Text style={styles.heroTileLabel}>{t("overdue", { count: s?.overdue ?? overdue.length })}</Text>
             </View>
             <View style={styles.heroTile}>
-              <Text style={styles.heroTileValue}>{moneyOrText(s?.d)}</Text>
+              <Text style={styles.heroTileValue}>{moneyOrText(unbilled.data?.totals)}</Text>
               <Text style={styles.heroTileLabel}>{t("unbilledTime")}</Text>
             </View>
           </View>
@@ -91,11 +82,11 @@ export default function FinanceScreen() {
             <SectionHeader label={t("myUnbilledTime")} />
             <Card radius="lgXl" padded={false}>
               {unbilledByMatter.map((m, i) => (
-                <View key={m.reference + i} style={[styles.unbilledRow, i < unbilledByMatter.length - 1 && styles.rowBorder]}>
-                  <MatterRefBadge reference={m.reference} small />
-                  <Text style={styles.unbilledHrs}>{(m.seconds / 3600).toFixed(1)} hrs</Text>
+                <View key={m.matterId} style={[styles.unbilledRow, i < unbilledByMatter.length - 1 && styles.rowBorder]}>
+                  {m.matterReference ? <MatterRefBadge reference={m.matterReference} small /> : null}
+                  <Text style={styles.unbilledHrs}>{m.hours.toFixed(1)} hrs</Text>
                   <Text style={styles.unbilledValue}>
-                    {m.value ? formatMoney({ currency: m.currency, amount: m.value.toFixed(0) }) : "—"}
+                    {m.value.length ? formatMoneyList(m.value).join(" · ") : "—"}
                   </Text>
                 </View>
               ))}

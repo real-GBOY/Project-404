@@ -28,6 +28,7 @@ model lawfirm_matters {
   lawfirm_invoices         lawfirm_invoices[]
   lawfirm_expenses         lawfirm_expenses[]
   lawfirm_calendar_events  lawfirm_calendar_events[]
+  lawfirm_time_entries     lawfirm_time_entries[]
 
   @@unique([organization_id, id], map: "lawfirm_matters_org_id_uq")
   @@unique([organization_id, reference], map: "lawfirm_matters_reference_uq")

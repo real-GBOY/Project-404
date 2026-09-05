@@ -14,6 +14,8 @@ import { ClientsService } from "@app/lawfirm/clients/clients-service.js";
 import { MattersService } from "@app/lawfirm/matters/matters-service.js";
 import { HearingsService } from "@app/lawfirm/hearings/hearings-service.js";
 import { TasksService } from "@app/lawfirm/tasks/tasks-service.js";
+import { TimeService } from "@app/lawfirm/time/time-service.js";
+import { SettingsService } from "@app/lawfirm/settings/settings-service.js";
 import { DocumentsService } from "@app/lawfirm/documents/documents-service.js";
 import { CalendarService } from "@app/lawfirm/calendar/calendar-service.js";
 import { TeamService } from "@app/lawfirm/staff/team-service.js";
@@ -106,6 +108,68 @@ suite("lawfirm feature areas", () => {
       svc(TasksService).list({ mine: true, actorId: firm.adminId }),
     );
     expect(mine.items.every((k) => k.assigneeId === firm.adminId)).toBe(true);
+  });
+
+  it("time entries: log → list(mine) → summary rolls up → patch → delete", async () => {
+    await asUser(firm.adminId, firm.orgId, () =>
+      svc(SettingsService).update(
+        { standardRates: [{ role: "Partner", hourlyRate: 3000, currency: "EGP" }] },
+        firm.adminId,
+      ),
+    );
+
+    const e = await asUser(firm.adminId, firm.orgId, () =>
+      svc(TimeService).create(
+        { matterId, activity: "Drafting", minutes: 90, billable: true },
+        firm.adminId,
+      ),
+    );
+    expect(e.hours).toBe(1.5);
+    expect(e.hourlyRate).toBe(3000);
+    expect(e.value).toEqual([{ currency: "EGP", amount: "4500" }]);
+
+    const mine = await asUser(firm.adminId, firm.orgId, () =>
+      svc(TimeService).list({ mine: true, actorId: firm.adminId }),
+    );
+    expect(mine.items.some((x) => x.id === e.id)).toBe(true);
+
+    const summary = await asUser(firm.adminId, firm.orgId, () =>
+      svc(TimeService).summary({ actorId: firm.adminId }),
+    );
+    const row = summary.items.find((x) => x.matterId === matterId)!;
+    expect(row.minutes).toBe(90);
+    expect(summary.totals).toEqual([{ currency: "EGP", amount: "4500" }]);
+
+    const patched = await asUser(firm.adminId, firm.orgId, () =>
+      svc(TimeService).update(e.id, { minutes: 120 }),
+    );
+    expect(patched.minutes).toBe(120);
+
+    await asUser(firm.adminId, firm.orgId, () => svc(TimeService).remove(e.id));
+    const after = await asUser(firm.adminId, firm.orgId, () =>
+      svc(TimeService).list({ actorId: firm.adminId }),
+    );
+    expect(after.items.some((x) => x.id === e.id)).toBe(false);
+  });
+
+  it("hearings: check-in stamps checkedInAt and is idempotent", async () => {
+    const h = await asUser(firm.adminId, firm.orgId, () =>
+      svc(HearingsService).create(
+        { matterId, purpose: "Directions", scheduledAt: "2026-06-12T09:00:00Z" },
+        firm.adminId,
+      ),
+    );
+    expect(h.checkedInAt).toBeNull();
+    const first = await asUser(firm.adminId, firm.orgId, () =>
+      svc(HearingsService).checkIn(h.id, firm.adminId),
+    );
+    expect(first.checkedInAt).not.toBeNull();
+    const second = await asUser(firm.adminId, firm.orgId, () =>
+      svc(HearingsService).checkIn(h.id, firm.adminId),
+    );
+    expect(second.checkedInAt).toBe(first.checkedInAt);
+    const fetched = await asUser(firm.adminId, firm.orgId, () => svc(HearingsService).get(h.id));
+    expect(fetched.checkedInAt).toBe(first.checkedInAt);
   });
 
   it("documents: metadata-only upload + summary", async () => {
@@ -296,15 +360,17 @@ suite("lawfirm feature areas", () => {
   });
 
   it("tenant isolation: firm B sees none of firm A's data", async () => {
-    const [bMatters, bHearings, bTasks, bDocs] = await Promise.all([
+    const [bMatters, bHearings, bTasks, bDocs, bTime] = await Promise.all([
       asUser(firmB.adminId, firmB.orgId, () => svc(MattersService).list({})),
       asUser(firmB.adminId, firmB.orgId, () => svc(HearingsService).list({})),
       asUser(firmB.adminId, firmB.orgId, () => svc(TasksService).list({ actorId: firmB.adminId })),
       asUser(firmB.adminId, firmB.orgId, () => svc(DocumentsService).list({})),
+      asUser(firmB.adminId, firmB.orgId, () => svc(TimeService).list({ actorId: firmB.adminId })),
     ]);
     expect(bMatters.items).toHaveLength(0);
     expect(bHearings.items).toHaveLength(0);
     expect(bTasks.items).toHaveLength(0);
     expect(bDocs.items).toHaveLength(0);
+    expect(bTime.items).toHaveLength(0);
   });
 });

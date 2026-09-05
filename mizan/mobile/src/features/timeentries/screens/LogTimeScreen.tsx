@@ -14,7 +14,7 @@ import { MatterPickerSheet, type PickedMatter } from "@/features/matters/compone
 import { useMatter } from "@/features/matters/hooks";
 import { useFirmSettings } from "@/features/settings/hooks";
 import { formatMoney } from "@/lib/format";
-import { useSaveTimeEntry } from "../local";
+import { useTimeEntryMutations } from "../hooks";
 import { useSetLastUsedMatter } from "@/features/capture/lastUsed";
 
 const PRESETS = [0.5, 1, 1.5, 3];
@@ -38,7 +38,7 @@ export default function LogTimeScreen() {
   const params = useLocalSearchParams<{ matterId?: string }>();
   const { data: presetMatter } = useMatter(params.matterId ? String(params.matterId) : "");
   const { data: settings } = useFirmSettings();
-  const save = useSaveTimeEntry();
+  const { create: save } = useTimeEntryMutations();
   const setLastUsed = useSetLastUsedMatter();
 
   const [seconds, setSeconds] = useState(0);
@@ -96,21 +96,18 @@ export default function LogTimeScreen() {
     save.mutate(
       {
         matterId: matter.id,
-        matterReference: matter.reference,
-        matterTitle: matter.title,
         activity,
-        narrative: narrative.trim(),
-        seconds,
+        narrative: narrative.trim() || undefined,
+        minutes: Math.max(1, Math.round(seconds / 60)),
         billable,
-        hourlyRate: rate,
-        currency,
       },
       {
         onSuccess: () => {
-          Alert.alert(t("saveEntry"), t("common:state.savedLocally", { ns: "common" }), [
+          Alert.alert(t("saveEntry"), t("timeEntryLogged"), [
             { text: "OK", onPress: () => router.back() },
           ]);
         },
+        onError: () => Alert.alert(t("common:state.error", { ns: "common" })),
       },
     );
   };
@@ -209,7 +206,6 @@ export default function LogTimeScreen() {
         </View>
 
         <PrimaryButton label={t("saveEntry")} onPress={onSave} loading={save.isPending} />
-        <Text style={styles.localNote}>{t("common:state.savedLocally", { ns: "common" })}</Text>
       </ScrollView>
 
       <MatterPickerSheet
@@ -314,7 +310,6 @@ const styles = StyleSheet.create({
   },
   billableTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.mdLg, color: colors.textPrimary },
   billableSub: { fontFamily: fontFamily.medium, fontSize: fontSize.smMd, color: colors.textSecondary, marginTop: 2 },
-  localNote: { fontFamily: fontFamily.medium, fontSize: fontSize.base, color: colors.textSecondary, textAlign: "center" },
   sheetTitle: { fontFamily: fontFamily.display, fontSize: fontSize.display, color: colors.textPrimary },
   activityRow: {
     flexDirection: "row",

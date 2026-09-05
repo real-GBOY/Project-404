@@ -197,6 +197,7 @@ export type lawfirm_hearings = {
     status: Generated<'scheduled' | 'adjourned' | 'decided'>;
     purpose: string;
     outcome: string | null;
+    checked_in_at: Timestamp | null;
     created_at: Generated<Timestamp>;
     updated_at: Generated<Timestamp>;
 };
@@ -378,6 +379,34 @@ export type lawfirm_tasks = {
     created_at: Generated<Timestamp>;
     updated_at: Generated<Timestamp>;
 };
+export type lawfirm_time_entries = {
+    id: string;
+    organization_id: string;
+    matter_id: string;
+    user_id: string;
+    activity: string;
+    narrative: string | null;
+    /**
+     * @kyselyType(number)
+     */
+    minutes: number;
+    billable: Generated<boolean>;
+    /**
+     * @kyselyType(string)
+     */
+    hourly_rate: string | null;
+    /**
+     * @kyselyType('EGP' | 'AED' | 'USD' | 'SAR')
+     */
+    currency: Generated<'EGP' | 'AED' | 'USD' | 'SAR'>;
+    /**
+     * @kyselyType('unbilled' | 'billed')
+     */
+    status: Generated<'unbilled' | 'billed'>;
+    logged_at: Timestamp;
+    created_at: Generated<Timestamp>;
+    updated_at: Generated<Timestamp>;
+};
 export type notification_templates = {
     id: string;
     key: string;
@@ -555,6 +584,7 @@ export type Database = {
     lawfirm_settings: lawfirm_settings;
     lawfirm_staff_profiles: lawfirm_staff_profiles;
     lawfirm_tasks: lawfirm_tasks;
+    lawfirm_time_entries: lawfirm_time_entries;
     notification_templates: notification_templates;
     notifications: notifications;
     organization_members: organization_members;

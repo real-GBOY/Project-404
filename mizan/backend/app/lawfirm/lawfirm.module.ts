@@ -4,6 +4,7 @@ import { ClientsModule } from "@app/lawfirm/clients/clients.module.js";
 import { MattersModule } from "@app/lawfirm/matters/matters.module.js";
 import { HearingsModule } from "@app/lawfirm/hearings/hearings.module.js";
 import { TasksModule } from "@app/lawfirm/tasks/tasks.module.js";
+import { TimeModule } from "@app/lawfirm/time/time.module.js";
 import { DocumentsModule } from "@app/lawfirm/documents/documents.module.js";
 import { BillingModule } from "@app/lawfirm/billing/billing.module.js";
 import { CalendarModule } from "@app/lawfirm/calendar/calendar.module.js";
@@ -29,6 +30,7 @@ import { SettingsModule } from "@app/lawfirm/settings/settings.module.js";
     MattersModule,
     HearingsModule,
     TasksModule,
+    TimeModule,
     DocumentsModule,
     BillingModule,
     CalendarModule,

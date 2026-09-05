@@ -24,6 +24,7 @@ import {
   DEMO_PAYMENTS,
   DEMO_TASKS,
   DEMO_TEAM,
+  DEMO_TIME_ENTRIES,
   DEMO_UPDATES,
 } from "./demo-data.js";
 
@@ -340,6 +341,26 @@ export class DemoSeeder {
               due_at: t.days === null ? null : at(t.days),
               created_at: at(t.createdDays),
               completed_at: t.completedDays === null ? null : at(t.completedDays),
+            })
+            .execute();
+        }
+
+        for (const e of DEMO_TIME_ENTRIES) {
+          await ex
+            .insertInto("lawfirm_time_entries")
+            .values({
+              id: lawfirmId("tme"),
+              organization_id: orgId,
+              matter_id: matterId.get(e.matterKey)!,
+              user_id: userId.get(e.userKey)!,
+              activity: e.activity,
+              narrative: e.narrative,
+              minutes: e.minutes,
+              billable: e.billable,
+              hourly_rate: String(e.rate),
+              currency: e.currency,
+              status: "unbilled",
+              logged_at: at(e.loggedDays),
             })
             .execute();
         }

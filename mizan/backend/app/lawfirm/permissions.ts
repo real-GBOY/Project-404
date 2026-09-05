@@ -3,6 +3,7 @@ import { clientPermissions } from "@app/lawfirm/clients/permissions.js";
 import { matterPermissions } from "@app/lawfirm/matters/permissions.js";
 import { hearingPermissions } from "@app/lawfirm/hearings/permissions.js";
 import { taskPermissions } from "@app/lawfirm/tasks/permissions.js";
+import { timePermissions } from "@app/lawfirm/time/permissions.js";
 import { documentPermissions } from "@app/lawfirm/documents/permissions.js";
 import { billingPermissions } from "@app/lawfirm/billing/permissions.js";
 import { staffPermissions } from "@app/lawfirm/staff/permissions.js";
@@ -20,6 +21,7 @@ export const LAWFIRM_PERMISSIONS: PermissionDefinition[] = [
   ...matterPermissions,
   ...hearingPermissions,
   ...taskPermissions,
+  ...timePermissions,
   ...documentPermissions,
   ...billingPermissions,
   ...staffPermissions,
