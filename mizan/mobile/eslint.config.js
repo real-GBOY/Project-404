@@ -2,11 +2,19 @@
 // a few house rules kept in sync with mizan/web/eslint.config.js.
 const { defineConfig } = require("eslint/config");
 const expoConfig = require("eslint-config-expo/flat");
+const globals = require("globals");
 
 module.exports = defineConfig([
   expoConfig,
   {
-    ignores: ["dist/*", ".expo/*", "node_modules/*", "expo-env.d.ts"],
+    ignores: ["dist/*", ".expo/*", "node_modules/*", "coverage/*", "expo-env.d.ts"],
+  },
+  {
+    files: ["**/*.test.{ts,tsx}", "jest.setup.js"],
+    languageOptions: { globals: globals.jest },
+    // `jest.mock(...)` calls must sit above the imports they intercept (Jest
+    // hoists them); that is the idiomatic order, not a mistake.
+    rules: { "import/first": "off" },
   },
   {
     files: ["**/*.{ts,tsx}"],

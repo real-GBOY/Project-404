@@ -104,6 +104,8 @@ jobs:
         run: npm run typecheck
       - name: format check
         run: npm run format:check
+      - name: test
+        run: npm test
       - name: expo-doctor
         run: npx --yes expo-doctor
       - name: export (web bundle)
