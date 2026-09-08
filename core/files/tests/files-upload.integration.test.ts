@@ -35,12 +35,14 @@ suite("files — presigned upload lifecycle", () => {
 
   beforeAll(async () => {
     storageDir = await mkdtemp(join(tmpdir(), "auric-files-"));
-    setConfigForTests({ fileStoragePath: storageDir });
+    // Pin the local driver — this suite tests the loopback upload path, and a
+    // developer .env may set AURIC_FILE_STORAGE_DRIVER=r2.
+    setConfigForTests({ fileStorageDriver: "local", fileStoragePath: storageDir });
 
     core = await createTestCore();
     // createTestCore → applyTestConfig merges over the cached config without
-    // touching fileStoragePath, so the temp dir above survives.
-    setConfigForTests({ fileStoragePath: storageDir });
+    // touching these, so the temp dir + driver above survive.
+    setConfigForTests({ fileStorageDriver: "local", fileStoragePath: storageDir });
 
     const id = get(core, IdentityService);
     const orgs = get(core, OrganizationService);

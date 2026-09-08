@@ -42,6 +42,7 @@ import {
 } from "@/components/tables/list-card";
 import { useDocumentDownload, useDocumentList, useDocumentMutations } from "../hooks/use-documents";
 import { EditDocumentDialog, UploadDocumentDialog } from "../components/document-dialogs";
+import { DocumentPreviewDialog } from "../components/document-preview-dialog";
 import { CATEGORIES, type DocRow, type DocumentsSummary } from "../api/documents.api";
 
 const STATUS_TONE: Record<string, PillTone> = {
@@ -69,6 +70,7 @@ export function DocumentsListPage() {
   const { remove } = useDocumentMutations();
   const download = useDocumentDownload();
   const [uploading, setUploading] = useState(false);
+  const [previewing, setPreviewing] = useState<DocRow | null>(null);
   const [editing, setEditing] = useState<DocRow | null>(null);
   const [deleting, setDeleting] = useState<DocRow | null>(null);
   const canManage = can("upload:document");
@@ -170,9 +172,7 @@ export function DocumentsListPage() {
                   <DocThumb
                     key={d.id}
                     name={d.name}
-                    onClick={() =>
-                      d.matterId && navigate(`/matters/${d.matterId}?tab=documents`)
-                    }
+                    onClick={() => setPreviewing(d)}
                     meta={`${d.category} · ${formatFileSize(d.sizeBytes)} · ${formatDate(d.uploadedAt)}`}
                     pill={
                       <span className="flex items-center gap-2">
@@ -225,6 +225,9 @@ export function DocumentsListPage() {
                           <Icon name="more_vert" size={16} />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
+                          <DropdownMenuItem icon="visibility" onSelect={() => setPreviewing(d)}>
+                            {t("common:actions.view")}
+                          </DropdownMenuItem>
                           <DropdownMenuItem
                             icon="download"
                             onSelect={() => download.mutate({ id: d.id, name: d.name })}
@@ -257,6 +260,7 @@ export function DocumentsListPage() {
       </ListCard>
 
       <UploadDocumentDialog open={uploading} onOpenChange={setUploading} />
+      <DocumentPreviewDialog doc={previewing} onOpenChange={(o) => !o && setPreviewing(null)} />
       <EditDocumentDialog doc={editing} onOpenChange={(o) => !o && setEditing(null)} />
       <ConfirmDialog
         open={!!deleting}

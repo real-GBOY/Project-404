@@ -54,6 +54,47 @@ describe("DocumentsListPage", () => {
     server.events.removeAllListeners("request:start");
   });
 
+  it("previews a PDF inline in a dialog without downloading it", async () => {
+    const viewed: string[] = [];
+    server.events.on("request:start", ({ request }) => {
+      const u = new URL(request.url);
+      if (/^\/api\/documents\/[^/]+\/view$/.test(u.pathname)) viewed.push(u.pathname);
+    });
+
+    const { user } = renderApp(<DocumentsListPage />, {
+      path: "/documents?view=grid",
+      perms: ["read:document"],
+    });
+
+    const card = await screen.findByRole("button", { name: /Statement of Defence/ });
+    await user.click(card);
+
+    const dialog = await screen.findByRole("dialog");
+    const frame = await waitFor(() => {
+      const el = dialog.querySelector("iframe");
+      if (!el) throw new Error("no iframe yet");
+      return el as HTMLIFrameElement;
+    });
+    expect(frame).toHaveAttribute("src", "blob:mock/preview");
+    expect(viewed).toContain("/api/documents/doc_1/view");
+
+    server.events.removeAllListeners("request:start");
+  });
+
+  it("offers a download instead of an inline frame for a non-viewable type", async () => {
+    const { user } = renderApp(<DocumentsListPage />, {
+      path: "/documents?view=grid",
+      perms: ["read:document"],
+    });
+
+    await user.click(await screen.findByRole("button", { name: /Distribution Agreement v3/ }));
+
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText(/Inline preview isn't available/i)).toBeInTheDocument();
+    expect(dialog.querySelector("iframe")).toBeNull();
+    expect(within(dialog).getByRole("button", { name: "Download" })).toBeInTheDocument();
+  });
+
   it("keeps the dialog open and surfaces an error when confirm fails", async () => {
     server.use(
       http.post("/api/documents/:id/confirm", () =>

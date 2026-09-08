@@ -20,7 +20,8 @@
       "confirm": "Confirm",
       "view": "View",
       "download": "Download",
-      "upload": "Upload"
+      "upload": "Upload",
+      "close": "Close"
     },
     "table": {
       "of_total": "{{from}}–{{to}} of {{total}}",
@@ -781,6 +782,15 @@
       "added_by": "Added by",
       "date": "Date",
       "status": "Status"
+    },
+    "preview": {
+      "title": "Preview",
+      "loading": "Loading preview…",
+      "failed": "Couldn't load the preview.",
+      "no_file": "No file is attached to this document.",
+      "pending": "This document's upload hasn't been confirmed yet.",
+      "unsupported_type": "Inline preview isn't available for this file type. Download it to open.",
+      "open_new_tab": "Open in new tab"
     },
     "filter": "Filter"
   },

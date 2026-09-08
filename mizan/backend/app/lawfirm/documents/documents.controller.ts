@@ -142,6 +142,23 @@ export class DocumentsController {
       .send(content);
   }
 
+  /**
+   * GET /documents/:id/view — the same bytes as `/download`, but served
+   * `inline` so the browser renders the file (a PDF in particular) instead of
+   * saving it. The web client fetches this with the bearer token and shows it
+   * in an <iframe>; nothing here is public.
+   */
+  @Get(":id/view")
+  @RequirePermission("read", "document")
+  async view(@Param("id") id: string, @Res() reply: FastifyReply) {
+    const { content, filename, contentType } = await this.service.content(id);
+    reply
+      .header("Content-Type", contentType)
+      .header("Content-Disposition", `inline; filename="${encodeURIComponent(filename)}"`)
+      .header("Cache-Control", "private, max-age=60")
+      .send(content);
+  }
+
   @Patch(":id")
   @RequirePermission("update", "document")
   update(@Param("id") id: string, @Body(ZodBody(updateSchema)) body: z.infer<typeof updateSchema>) {

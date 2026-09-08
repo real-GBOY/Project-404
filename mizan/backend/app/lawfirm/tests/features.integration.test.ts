@@ -21,6 +21,7 @@ import { TasksService } from "@app/lawfirm/tasks/tasks-service.js";
 import { TimeService } from "@app/lawfirm/time/time-service.js";
 import { SettingsService } from "@app/lawfirm/settings/settings-service.js";
 import { DocumentsService } from "@app/lawfirm/documents/documents-service.js";
+import { DocumentsController } from "@app/lawfirm/documents/documents.controller.js";
 import { FileStorageService } from "@core/files/infrastructure/file-storage.js";
 import { CalendarService } from "@app/lawfirm/calendar/calendar-service.js";
 import { TeamService } from "@app/lawfirm/staff/team-service.js";
@@ -43,9 +44,11 @@ suite("lawfirm feature areas", () => {
 
   beforeAll(async () => {
     storageDir = await mkdtemp(join(tmpdir(), "mizan-files-"));
-    setConfigForTests({ fileStoragePath: storageDir });
+    // Pin the local disk driver — this suite exercises the loopback upload
+    // route, and a developer .env may point AURIC_FILE_STORAGE_DRIVER at r2.
+    setConfigForTests({ fileStorageDriver: "local", fileStoragePath: storageDir });
     app = await createMizanTestApp({ clock });
-    setConfigForTests({ fileStoragePath: storageDir });
+    setConfigForTests({ fileStorageDriver: "local", fileStoragePath: storageDir });
     firm = await seedFirm(app, "Firm A");
     firmB = await seedFirm(app, "Firm B");
     await asUser(firm.adminId, firm.orgId, async () => {
@@ -255,7 +258,7 @@ suite("lawfirm feature areas", () => {
     ).rejects.toThrow(/not a member of this firm/);
   });
 
-  it("documents: presigned upload — createUpload → write bytes → confirm → download", async () => {
+  it("documents: presigned upload — createUpload → write bytes → confirm → download → view", async () => {
     const bytes = Buffer.from("%PDF-1.7 pleading body\n");
 
     const { document, upload } = await asUser(firm.adminId, firm.orgId, () =>
@@ -294,6 +297,27 @@ suite("lawfirm feature areas", () => {
     );
     expect(content.equals(bytes)).toBe(true);
     expect(contentType).toBe("application/pdf");
+
+    // `GET /documents/:id/view` serves the same bytes but `inline`, so the
+    // browser renders the PDF instead of downloading it.
+    const headers: Record<string, string> = {};
+    let sent: Buffer | undefined;
+    const reply = {
+      header(k: string, v: string) {
+        headers[k] = v;
+        return reply;
+      },
+      send(body: Buffer) {
+        sent = body;
+        return reply;
+      },
+    };
+    await asUser(firm.adminId, firm.orgId, () =>
+      svc(DocumentsController).view(document.id, reply as never),
+    );
+    expect(headers["Content-Type"]).toBe("application/pdf");
+    expect(headers["Content-Disposition"]).toMatch(/^inline;/);
+    expect(sent?.equals(bytes)).toBe(true);
 
     // Removing the document also removes the underlying stored file — no orphan.
     await asUser(firm.adminId, firm.orgId, () => svc(DocumentsService).remove(document.id));

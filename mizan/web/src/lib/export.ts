@@ -47,11 +47,11 @@ export function exportStamp(d = new Date()): string {
 }
 
 /**
- * Fetch a binary endpoint with the bearer token and save the response as a file.
- * Used for attachment routes (`.../download`) that can't go through `httpClient`
- * (which parses JSON) and can't be a plain `<a href>` (no cookie auth).
+ * Fetch a binary endpoint with the bearer token. For routes that can't go
+ * through `httpClient` (which parses JSON) and can't be a plain `<a href>` /
+ * `<iframe src>` (no cookie auth). Throws `ApiError` on a non-2xx response.
  */
-export async function downloadFromApi(path: string, fallbackName: string): Promise<void> {
+async function fetchBinaryFromApi(path: string): Promise<Response> {
   const token = tokenStore.getAccess();
   const res = await fetch(`${API_BASE}${path}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -65,8 +65,23 @@ export async function downloadFromApi(path: string, fallbackName: string): Promi
     }
     throw new ApiError(res.status, body);
   }
+  return res;
+}
+
+/** Fetch a binary endpoint with the bearer token and save the response as a file. */
+export async function downloadFromApi(path: string, fallbackName: string): Promise<void> {
+  const res = await fetchBinaryFromApi(path);
   const disposition = res.headers.get("content-disposition") ?? "";
   const match = /filename\*?=(?:UTF-8''|")?([^";]+)/i.exec(disposition);
   const filename = match ? decodeURIComponent(match[1]) : fallbackName;
   triggerDownload(await res.blob(), filename);
+}
+
+/**
+ * Fetch a binary endpoint with the bearer token and return it as a Blob —
+ * for showing a file inline (an `<iframe>` fed an object URL) rather than
+ * saving it. The caller owns the Blob and must revoke any object URL it makes.
+ */
+export async function fetchBlobFromApi(path: string): Promise<Blob> {
+  return (await fetchBinaryFromApi(path)).blob();
 }

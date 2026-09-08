@@ -81,6 +81,11 @@ Element.prototype.hasPointerCapture ??= vi.fn(() => false);
 Element.prototype.setPointerCapture ??= vi.fn();
 Element.prototype.releasePointerCapture ??= vi.fn();
 
+// jsdom has no object-URL support — the document preview creates one for its
+// <iframe>. Hand back a stable fake and make revoke a no-op.
+URL.createObjectURL ??= vi.fn(() => "blob:mock/preview");
+URL.revokeObjectURL ??= vi.fn();
+
 if (!globalThis.ResizeObserver) {
   globalThis.ResizeObserver = class {
     observe() {}

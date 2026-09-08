@@ -73,6 +73,12 @@ export async function uploadDocumentPresigned(
 }
 
 export const downloadDocumentPath = (id: string) => `/documents/${id}/download`;
+/** Same bytes as the download route, served `inline` for viewing in a frame. */
+export const viewDocumentPath = (id: string) => `/documents/${id}/view`;
+
+/** MIME types the browser can render in an <iframe> without a plugin. */
+export const isInlineViewable = (mimeType: string) =>
+  mimeType === "application/pdf" || mimeType.startsWith("image/") || mimeType.startsWith("text/");
 
 export const updateDocument = (
   id: string,

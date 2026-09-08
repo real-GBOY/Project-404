@@ -170,6 +170,25 @@ export const documentHandlers = [
     return HttpResponse.json({ document: view(d) });
   }),
 
+  // Inline view — the real API streams the stored bytes with
+  // `Content-Disposition: inline`. The mock returns a tiny stand-in payload.
+  http.get("/api/documents/:id/view", ({ params }) => {
+    const d = find(params.id as string);
+    if (!d) return notFound();
+    if (!d.fileId || d.fileId.endsWith("-placeholder")) {
+      return HttpResponse.json(
+        { code: "document.no_file", message: "This document has no file attached." },
+        { status: 400 },
+      );
+    }
+    return new HttpResponse(new Blob([`%PDF-1.4 ${d.name}`], { type: d.mimeType }), {
+      headers: {
+        "Content-Type": d.mimeType,
+        "Content-Disposition": `inline; filename="${encodeURIComponent(d.name)}"`,
+      },
+    });
+  }),
+
   http.get("/api/documents/:id", ({ params }) => {
     const d = find(params.id as string);
     return d ? HttpResponse.json(view(d)) : notFound();
