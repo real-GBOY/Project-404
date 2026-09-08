@@ -60,7 +60,10 @@ if (!docId || !upload?.url)
   die("create response missing document.id / upload.url", JSON.stringify(created));
 
 const absolute = /^https?:\/\//i.test(upload.url);
-const putUrl = absolute ? upload.url : `${API_BASE.replace(/\/api$/, "")}${upload.url}`;
+// The local driver returns an API-base-relative path (`/files/:id/bytes`), the
+// same thing the web client feeds to `withApiBase()` — so prefix the full API
+// base, `/api` included. R2 returns an absolute presigned URL, used as-is.
+const putUrl = absolute ? upload.url : `${API_BASE}${upload.url}`;
 ok(`presigned create → doc ${docId} (${absolute ? "R2 presigned URL" : "local loopback"})`);
 
 // 3. PUT the bytes — mirror the web client: no bearer for the absolute (R2) URL
