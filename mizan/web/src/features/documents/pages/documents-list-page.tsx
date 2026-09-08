@@ -187,12 +187,7 @@ export function DocumentsListPage() {
               <>
                 <ColumnHeader columns={[...columns]} />
                 {data.items.map((d) => (
-                  <ListRow
-                    key={d.id}
-                    onClick={() =>
-                      d.matterId && navigate(`/matters/${d.matterId}?tab=documents`)
-                    }
-                  >
+                  <ListRow key={d.id} onClick={() => setPreviewing(d)}>
                     <Cell col={columns[0]} className="flex items-center gap-[11px]">
                       <Icon
                         name={d.mimeType.includes("word") ? "description" : "picture_as_pdf"}
@@ -202,7 +197,19 @@ export function DocumentsListPage() {
                       <span className="truncate text-[13px] font-bold text-foreground">{d.name}</span>
                     </Cell>
                     <Cell col={columns[1]}>
-                      {d.matterReference ? <MatterChip>{d.matterReference}</MatterChip> : "—"}
+                      {d.matterReference ? (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (d.matterId) navigate(`/matters/${d.matterId}?tab=documents`);
+                          }}
+                        >
+                          <MatterChip>{d.matterReference}</MatterChip>
+                        </button>
+                      ) : (
+                        "—"
+                      )}
                     </Cell>
                     <Cell col={columns[2]} className="truncate">
                       {d.category}
@@ -224,7 +231,7 @@ export function DocumentsListPage() {
                         >
                           <Icon name="more_vert" size={16} />
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent>
+                        <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
                           <DropdownMenuItem icon="visibility" onSelect={() => setPreviewing(d)}>
                             {t("common:actions.view")}
                           </DropdownMenuItem>
