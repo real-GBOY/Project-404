@@ -34,6 +34,13 @@ const jsonCreate = z.object({
   matterId: z.string().nullish(),
   category: z.string().trim().max(80).optional(),
 });
+const presignCreate = z.object({
+  name: z.string().trim().min(1).max(400),
+  matterId: z.string().nullish(),
+  category: z.string().trim().max(80).optional(),
+  contentType: z.string().trim().min(1).max(200),
+  byteSize: z.number().int().positive(),
+});
 const updateSchema = z.object({
   name: z.string().trim().min(1).max(400).optional(),
   category: z.string().trim().max(80).optional(),
@@ -84,11 +91,39 @@ export class DocumentsController {
         user.userId,
       );
     }
-    const body = jsonCreate.parse(req.body ?? {});
+    const raw = (req.body ?? {}) as Record<string, unknown>;
+    // JSON with `contentType` + `byteSize` → presigned direct upload. The client
+    // then PUTs the bytes to `upload.url` and calls POST /documents/:id/confirm.
+    if (raw.contentType !== undefined || raw.byteSize !== undefined) {
+      const body = presignCreate.parse(raw);
+      return this.service.createUpload(
+        {
+          name: body.name,
+          matterId: body.matterId ?? null,
+          category: body.category ?? "Other",
+          contentType: body.contentType,
+          byteSize: body.byteSize,
+        },
+        user.userId,
+      );
+    }
+    const body = jsonCreate.parse(raw);
     return this.service.upload(
       { name: body.name, matterId: body.matterId ?? null, category: body.category ?? "Other" },
       user.userId,
     );
+  }
+
+  /**
+   * POST /documents/:id/confirm — finalize a presigned document upload:
+   * confirms the underlying file (HEAD) and records the upload activity.
+   */
+  @Post(":id/confirm")
+  @HttpCode(200)
+  @RequirePermission("upload", "document")
+  async confirm(@Param("id") id: string, @CurrentUser() user: Principal) {
+    const document = await this.service.confirmUpload(id, user.userId);
+    return { document };
   }
 
   @Get(":id")

@@ -13,7 +13,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Icon } from "@/components/ui/icon";
 import { Combobox } from "@/components/ui/combobox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { FormField } from "@/components/forms/form-field";
 import { useMatterFormOptions } from "@/features/matters/hooks/use-matters";
 import { useDocumentMutations } from "../hooks/use-documents";
@@ -112,12 +118,19 @@ export function UploadDocumentDialog({
             loading={upload.isPending}
             onClick={async () => {
               if (!file) return;
-              const fd = new FormData();
-              fd.set("file", file);
-              fd.set("name", file.name);
-              fd.set("category", category);
-              if (matter) fd.set("matterId", matter);
-              await upload.mutateAsync(fd);
+              try {
+                // Not "done" until the confirm step inside the mutation resolves.
+                await upload.mutateAsync({
+                  file,
+                  name: file.name,
+                  matterId: matter,
+                  category,
+                  contentType: file.type || "application/octet-stream",
+                  byteSize: file.size,
+                });
+              } catch {
+                return; // onError toasts; keep the dialog open to retry.
+              }
               reset();
               onOpenChange(false);
             }}

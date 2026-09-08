@@ -4,6 +4,7 @@ import { CONFIG, FILE_STORAGE, STORAGE_ADAPTER } from "@core/kernel/tokens.js";
 import { RbacModule } from "@core/rbac/rbac.module.js";
 import { FileRepository } from "@core/files/infrastructure/file-repository.js";
 import { LocalDiskAdapter } from "@core/files/infrastructure/storage-adapter.js";
+import { R2Adapter } from "@core/files/infrastructure/r2-adapter.js";
 import { FileStorageService } from "@core/files/infrastructure/file-storage.js";
 import { FilesController } from "@core/files/api/files.controller.js";
 
@@ -23,7 +24,20 @@ import { FilesController } from "@core/files/api/files.controller.js";
     {
       provide: STORAGE_ADAPTER,
       inject: [CONFIG],
-      useFactory: (config: AuricConfig) => new LocalDiskAdapter(config.fileStoragePath),
+      useFactory: (config: AuricConfig) => {
+        if (config.fileStorageDriver === "r2") {
+          return new R2Adapter({
+            accountId: config.r2AccountId!,
+            accessKeyId: config.r2AccessKeyId!,
+            secretAccessKey: config.r2SecretAccessKey!,
+            bucket: config.r2Bucket!,
+            endpoint: config.r2Endpoint,
+            publicBaseUrl: config.r2PublicBaseUrl,
+            presignTtlSeconds: config.filePresignTtlSeconds,
+          });
+        }
+        return new LocalDiskAdapter(config.fileStoragePath);
+      },
     },
   ],
   exports: [FILE_STORAGE],

@@ -80,6 +80,15 @@ export type files = {
      * @kyselyType(Json<Record<string, unknown>>)
      */
     metadata: Json<Record<string, unknown>> | null;
+    /**
+     * Upload lifecycle. A presigned upload inserts a `pending` row; the confirm
+     * step verifies the object landed (HEAD) and flips it to `stored`. The
+     * server-side buffer-upload path writes bytes first, so it inserts `stored`
+     * directly — hence that is the default.
+     * @kyselyType('pending' | 'stored')
+     */
+    status: Generated<'pending' | 'stored'>;
+    committed_at: Timestamp | null;
     created_at: Generated<Timestamp>;
     deleted_at: Timestamp | null;
 };

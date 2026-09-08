@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as api from "./api";
 import { documentKeys } from "./api";
 import type { DocListParams, DocRow } from "./types";
+import type { CapturedImage, DocumentUploadFields } from "./upload";
 import {
   listOfflineDocuments,
   pinDocumentOffline,
@@ -49,7 +50,8 @@ export function useDocumentMutations() {
   const qc = useQueryClient();
   return {
     upload: useMutation({
-      mutationFn: (form: FormData) => api.uploadDocument(form),
+      mutationFn: ({ image, ...fields }: DocumentUploadFields & { image: CapturedImage }) =>
+        api.uploadDocumentPresigned(image, fields),
       onSuccess: () => qc.invalidateQueries({ queryKey: documentKeys.all }),
     }),
   };

@@ -1,6 +1,21 @@
 import { createHash } from "node:crypto";
-import { mkdir, readFile, writeFile, unlink } from "node:fs/promises";
+import { mkdir, readFile, writeFile, unlink, stat } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
+
+/**
+ * A short-lived upload target the client `PUT`s the raw file bytes to directly,
+ * bypassing the API process. For `r2` this is a presigned S3 URL on the bucket
+ * endpoint; for `local` it is the API's own authenticated loopback route
+ * (`PUT /api/files/:id/bytes`).
+ */
+export interface PresignedUpload {
+  url: string;
+  method: "PUT";
+  /** Headers the client MUST echo on the PUT (empty for both current drivers). */
+  headers: Record<string, string>;
+  /** After this instant the URL/route no longer accepts the upload. */
+  expiresAt: Date;
+}
 
 /**
  * The physical bytes store. The Employee/domain modules never see this — they
@@ -14,6 +29,20 @@ export interface StorageAdapter {
   remove(key: string): Promise<void>;
   /** A URL the client can fetch. Local driver returns an API path. */
   url(key: string): Promise<string>;
+  /**
+   * Issue a direct-to-storage upload target for `key`. Optional — a driver that
+   * cannot presign omits it and callers fall back to a proxied upload.
+   */
+  presignPut?(
+    key: string,
+    opts: { contentType: string; contentLength?: number; expiresIn: number },
+  ): Promise<PresignedUpload>;
+  /**
+   * Object existence + size/etag, without fetching the bytes. Used by the
+   * confirm step to verify a direct upload actually landed. `null` when the
+   * object does not exist. Optional — same rationale as `presignPut`.
+   */
+  head?(key: string): Promise<{ size: number; etag: string | null } | null>;
 }
 
 export function sha256(buf: Buffer): string {
@@ -54,6 +83,37 @@ export class LocalDiskAdapter implements StorageAdapter {
 
   async url(key: string): Promise<string> {
     return `/api/files/content/${encodeURIComponent(key)}`;
+  }
+
+  /**
+   * Local dev/test has no object store to presign against, so the "upload
+   * target" is the API's own authenticated loopback route
+   * (`PUT /api/files/:id/bytes`). The URL is returned **relative to the API
+   * base** (no `/api` prefix — the global prefix lives in `main.ts`, and a
+   * cross-origin client resolves it against its own `VITE_API_BASE`). The file
+   * id is the last segment of the storage key (see `storageKeyFor`).
+   */
+  async presignPut(
+    key: string,
+    opts: { contentType: string; contentLength?: number; expiresIn: number },
+  ): Promise<PresignedUpload> {
+    const fileId = key.split("/").pop() ?? key;
+    return {
+      url: `/files/${encodeURIComponent(fileId)}/bytes`,
+      method: "PUT",
+      headers: {},
+      expiresAt: new Date(Date.now() + opts.expiresIn * 1000),
+    };
+  }
+
+  async head(key: string): Promise<{ size: number; etag: string | null } | null> {
+    try {
+      const s = await stat(this.pathFor(key));
+      return { size: s.size, etag: null };
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code === "ENOENT") return null;
+      throw err;
+    }
   }
 }
 

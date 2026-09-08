@@ -23,7 +23,7 @@ import {
   type PickedMatter,
 } from "@/features/matters/components/MatterPickerSheet";
 import { useFirmSettings } from "@/features/settings/hooks";
-import { capturePhoto, documentFormData } from "@/features/documents/upload";
+import { capturePhoto } from "@/features/documents/upload";
 import { useDocumentMutations } from "@/features/documents/hooks";
 import { useExpenseMutations } from "../hooks";
 import { formatDate } from "@/lib/format";
@@ -61,12 +61,12 @@ export default function ExpenseScreen() {
     // expense↔document linkage field on the backend, so these are two
     // independent real records).
     if (image) {
-      const form = documentFormData(image, {
+      upload.mutate({
+        image,
         name: `Receipt ${formatDate(new Date())}`,
         matterId: matter.id,
         category: "Receipt",
       });
-      upload.mutate(form);
     }
 
     record.mutate(

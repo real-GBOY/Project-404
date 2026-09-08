@@ -32,7 +32,7 @@ import {
   useOfflinePinning,
   useDocumentMutations,
 } from "../hooks";
-import { capturePhoto, documentFormData } from "../upload";
+import { capturePhoto } from "../upload";
 import type { DocRow } from "../types";
 
 type Filter = "recent" | "offline" | "review";
@@ -187,14 +187,17 @@ export default function FilesScreen() {
         onClose={() => setScanSheet(false)}
         onPick={(matter) => {
           if (!pendingImage) return;
-          const form = documentFormData(pendingImage, {
-            name: `Scan ${formatDate(new Date())}`,
-            matterId: matter.id,
-            category: "Evidence",
-          });
-          upload.mutate(form, {
-            onError: () => Alert.alert(t("common:state.error", { ns: "common" })),
-          });
+          upload.mutate(
+            {
+              image: pendingImage,
+              name: `Scan ${formatDate(new Date())}`,
+              matterId: matter.id,
+              category: "Evidence",
+            },
+            {
+              onError: () => Alert.alert(t("common:state.error", { ns: "common" })),
+            },
+          );
           setPendingImage(null);
         }}
       />

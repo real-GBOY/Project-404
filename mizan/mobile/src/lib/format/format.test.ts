@@ -19,7 +19,7 @@ describe("formatMoney", () => {
     // A currency marker of some kind wraps the grouped number; we don't pin the
     // exact ICU symbol, only that the amount is not rendered bare.
     expect(out).toMatch(/1,000/);
-    expect(out.replace(/[\s ]/g, "")).not.toBe("1,000");
+    expect(out.replace(/[\s\u00a0\u202f]/g, "")).not.toBe("1,000");
   });
 
   it("keeps 2dp only when the amount is non-integer", () => {

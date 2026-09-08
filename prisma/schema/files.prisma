@@ -18,10 +18,18 @@ model files {
   visibility      String    @default("private")
   /// @kyselyType(Json<Record<string, unknown>>)
   metadata        Json?
+  /// Upload lifecycle. A presigned upload inserts a `pending` row; the confirm
+  /// step verifies the object landed (HEAD) and flips it to `stored`. The
+  /// server-side buffer-upload path writes bytes first, so it inserts `stored`
+  /// directly — hence that is the default.
+  /// @kyselyType('pending' | 'stored')
+  status          String    @default("stored")
+  committed_at    DateTime? @db.Timestamptz(6)
   created_at      DateTime  @default(now()) @db.Timestamptz(6)
   deleted_at      DateTime? @db.Timestamptz(6)
 
   @@index([owner_id], map: "files_owner_idx")
   @@index([organization_id], map: "files_org_idx")
+  @@index([status], map: "files_status_idx")
   @@map("files")
 }

@@ -21,15 +21,8 @@ export async function capturePhoto(): Promise<CapturedImage | null> {
   };
 }
 
-/** Build the multipart body `POST /api/documents` expects. */
-export function documentFormData(
-  image: CapturedImage,
-  fields: { name: string; matterId: string; category: string },
-): FormData {
-  const form = new FormData();
-  form.append("file", { uri: image.uri, name: image.name, type: image.type } as unknown as Blob);
-  form.append("name", fields.name);
-  form.append("matterId", fields.matterId);
-  form.append("category", fields.category);
-  return form;
+export interface DocumentUploadFields {
+  name: string;
+  matterId: string;
+  category: string;
 }

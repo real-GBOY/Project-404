@@ -1,6 +1,10 @@
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { TestingModule } from "@nestjs/testing";
 import { fixedClock } from "@core/kernel/clock.js";
+import { setConfigForTests } from "@core/kernel/config.js";
 import {
   asUser,
   createMizanTestApp,
@@ -17,6 +21,7 @@ import { TasksService } from "@app/lawfirm/tasks/tasks-service.js";
 import { TimeService } from "@app/lawfirm/time/time-service.js";
 import { SettingsService } from "@app/lawfirm/settings/settings-service.js";
 import { DocumentsService } from "@app/lawfirm/documents/documents-service.js";
+import { FileStorageService } from "@core/files/infrastructure/file-storage.js";
 import { CalendarService } from "@app/lawfirm/calendar/calendar-service.js";
 import { TeamService } from "@app/lawfirm/staff/team-service.js";
 import { DashboardService } from "@app/lawfirm/dashboard/dashboard-service.js";
@@ -34,9 +39,13 @@ suite("lawfirm feature areas", () => {
   let matterId: string;
   const clock = fixedClock("2026-06-01T09:00:00.000Z");
   const svc = <T>(t: new (...a: never[]) => T) => get<T>(app, t);
+  let storageDir: string;
 
   beforeAll(async () => {
+    storageDir = await mkdtemp(join(tmpdir(), "mizan-files-"));
+    setConfigForTests({ fileStoragePath: storageDir });
     app = await createMizanTestApp({ clock });
+    setConfigForTests({ fileStoragePath: storageDir });
     firm = await seedFirm(app, "Firm A");
     firmB = await seedFirm(app, "Firm B");
     await asUser(firm.adminId, firm.orgId, async () => {
@@ -68,6 +77,7 @@ suite("lawfirm feature areas", () => {
 
   afterAll(async () => {
     await app?.close();
+    await rm(storageDir, { recursive: true, force: true });
   });
 
   it("hearings: schedule → adjourn chains a new scheduled session", async () => {
@@ -243,6 +253,47 @@ suite("lawfirm feature areas", () => {
     await expect(
       asUser(firm.adminId, firm.orgId, () => svc(TeamService).create({ userId: outsiderId })),
     ).rejects.toThrow(/not a member of this firm/);
+  });
+
+  it("documents: presigned upload — createUpload → write bytes → confirm → download", async () => {
+    const bytes = Buffer.from("%PDF-1.7 pleading body\n");
+
+    const { document, upload } = await asUser(firm.adminId, firm.orgId, () =>
+      svc(DocumentsService).createUpload(
+        {
+          name: "Motion to Dismiss.pdf",
+          matterId,
+          category: "Pleading",
+          contentType: "application/pdf",
+          byteSize: bytes.byteLength,
+        },
+        firm.adminId,
+      ),
+    );
+    expect(upload.method).toBe("PUT");
+    expect(upload.url).toMatch(/^\/files\/file_[\w-]+\/bytes$/);
+
+    // Before confirm the document is not downloadable.
+    await expect(
+      asUser(firm.adminId, firm.orgId, () => svc(DocumentsService).content(document.id)),
+    ).rejects.toThrow(/upload has not been confirmed/);
+
+    // What `PUT /api/files/:id/bytes` does under the hood:
+    const fileId = upload.url.split("/")[2];
+    await asUser(firm.adminId, firm.orgId, () =>
+      get(app, FileStorageService).writeBytes(fileId, bytes),
+    );
+
+    const confirmed = await asUser(firm.adminId, firm.orgId, () =>
+      svc(DocumentsService).confirmUpload(document.id, firm.adminId),
+    );
+    expect(confirmed.sizeBytes).toBe(bytes.byteLength);
+
+    const { content, contentType } = await asUser(firm.adminId, firm.orgId, () =>
+      svc(DocumentsService).content(document.id),
+    );
+    expect(content.equals(bytes)).toBe(true);
+    expect(contentType).toBe("application/pdf");
   });
 
   it("documents: content() reports when a metadata-only document has no file", async () => {

@@ -3,9 +3,16 @@
 ## 1. What it is
 
 Upload / download / delete / metadata for binary files (Plan §7.6), RBAC-gated,
-tenant-scoped, behind a swappable storage adapter. Ships a local-disk adapter;
-the `IFileStorage` contract is designed so an S3 adapter drops in with **no
-use-case change**.
+tenant-scoped, behind a swappable storage adapter. Ships two adapters — local
+disk (dev/tests) and **Cloudflare R2** — behind one `IFileStorage` contract, so
+switching drivers is a config flag with **no use-case change**.
+
+Uploads use a **presigned-URL flow**: the client asks the API for a short-lived
+upload URL, `PUT`s the bytes straight to storage (never through the API
+process), then calls `confirm`, which HEADs the object and marks the file
+`stored`. `presign ≠ upload complete`; `confirm` is not a status flip, it
+verifies the object exists. The old single-request multipart `POST /api/files`
+stays for server-side / small uploads.
 
 ## 2. Why it exists
 
@@ -23,13 +30,39 @@ signed-URL or streamed download — belong in Core once.
 
 ## 4. Responsibilities
 
-- `FileStorageService` (`IFileStorage`): `upload`, `getUrl`, `getContent`,
-  `delete`.
+- `FileStorageService` (`IFileStorage`): `upload` (buffer), `createUpload` +
+  `confirmUpload` (presigned), `writeBytes` (local loopback), `getUrl`,
+  `getContent`, `delete`.
 - `FileRepository` — the `files` table (id, storageKey, contentType, byteSize,
-  originalName, ownerId, visibility, metadata).
-- `LocalDiskAdapter` (`STORAGE_ADAPTER`) — actually writes/reads bytes; the piece
-  an S3 adapter replaces.
+  originalName, ownerId, visibility, metadata, `status`, `committed_at`).
+- `StorageAdapter` implementations (`STORAGE_ADAPTER`) — actually move bytes:
+  - `LocalDiskAdapter` — filesystem under `AURIC_FILE_STORAGE_PATH`; `presignPut`
+    returns the API's own authenticated loopback route.
+  - `R2Adapter` — Cloudflare R2 over its S3 API, signed with the hand-rolled
+    SigV4 in `sigv4.ts` (no AWS SDK).
 - Permission checks on the HTTP surface.
+
+### The presigned upload flow
+
+```
+client                         API                         storage (R2 / local disk)
+  │  POST /api/files/uploads     │                            │
+  │ ───────────────────────────▶ │  insert file row `pending`  │
+  │                              │  adapter.presignPut(key) ──▶│
+  │ ◀─────────────────────────── │  { fileId, upload }         │
+  │                              │                            │
+  │  PUT upload.url  (raw bytes) ──────────────────────────────▶│  (r2: presigned S3 URL,
+  │ ◀──────────────────────────────────────────────────── 204  │   no auth header;
+  │                              │                            │   local: /api/files/:id/bytes,
+  │  POST /api/files/:id/confirm  │                            │   bearer-authenticated)
+  │ ───────────────────────────▶ │  adapter.head(key) ───────▶ │
+  │                              │  markStored(realSize,etag)  │
+  │ ◀─────────────────────────── │  { file }  (now `stored`)   │
+```
+
+`status` starts `pending`; a pending file 404s / rejects on download and
+`getUrl`. `confirm` is idempotent. The buffer `upload()` path writes bytes
+first, so it inserts `stored` directly — that is the column default.
 
 ## 5. What it owns
 
@@ -50,8 +83,35 @@ the storage-key scheme (`<org>/<id>/<name>`), and the local-disk layout under
 ## 7. Public surface
 
 - `FilesModule` — exports token `FILE_STORAGE` (`IFileStorage`).
-- HTTP (`/api/files`): `POST /` (multipart), `GET /:id`, `GET /:id/metadata`,
-  `DELETE /:id`.
+- HTTP (`/api/files`):
+  - `POST /uploads` — begin a presigned upload → `{ fileId, upload }` (`upload:file`)
+  - `PUT /:id/bytes` — local-driver loopback: raw `application/octet-stream` body → 204
+  - `POST /:id/confirm` — finalize → `{ file }`
+  - `POST /` — legacy single-request multipart upload
+  - `GET /:id`, `GET /:id/metadata`, `DELETE /:id`
+- See `http/09-files.http` for a runnable end-to-end example.
+
+### Configuration
+
+| Env var | Required | Default | Notes |
+|---|---|---|---|
+| `AURIC_FILE_STORAGE_DRIVER` | — | `local` | `local` or `r2` |
+| `AURIC_FILE_PRESIGN_TTL_SECONDS` | — | `900` | upload/download URL lifetime |
+| `AURIC_FILE_MAX_UPLOAD_BYTES` | — | `26214400` | 25 MiB hard cap |
+| `AURIC_FILE_ALLOWED_MIME_TYPES` | — | *(empty = any)* | comma-separated allowlist |
+| `AURIC_R2_ACCOUNT_ID` | r2 | — | R2 overview page |
+| `AURIC_R2_ACCESS_KEY_ID` | r2 | — | R2 → *Manage R2 API Tokens* |
+| `AURIC_R2_SECRET_ACCESS_KEY` | r2 | — | shown once when the token is created |
+| `AURIC_R2_BUCKET` | r2 | — | bucket name |
+| `AURIC_R2_ENDPOINT` | — | `https://<account>.r2.cloudflarestorage.com` | override only if needed |
+| `AURIC_R2_PUBLIC_BASE_URL` | — | — | custom domain / `r2.dev` for `visibility:"public"` files |
+
+Starting with `driver=r2` and any of the four required R2 vars missing fails
+config validation at boot. **Never** commit real credentials — they live only in
+`.env` / the deployment secret store.
+
+For browser uploads straight to R2, the bucket needs a CORS rule allowing `PUT`
+from the web origin (R2 dashboard → bucket → *Settings* → *CORS policy*).
 
 ## 8. How to use
 
@@ -85,11 +145,23 @@ files. Depends on nothing above it in Core.
 5. Large files stream — `getContent` returns a `Buffer` today, but callers must
    not assume the whole file fits in memory forever (an S3 adapter will stream).
 
-## 11. Example — adding an S3 adapter (future)
+## 11. Adding another storage driver
 
-Implement `StorageAdapter` (put/get/delete by key), bind it to `STORAGE_ADAPTER`
-via a config flag. `FileStorageService`, the `files` table, every controller, and
-all of Mizan stay untouched.
+Implement `StorageAdapter` (`put`/`get`/`remove`/`url`, plus optional
+`presignPut`/`head` for the direct-upload flow), bind it to `STORAGE_ADAPTER` in
+`files.module.ts` behind a `fileStorageDriver` value. `FileStorageService`, the
+`files` table, every controller, and all of Mizan stay untouched — `R2Adapter`
+was added exactly this way.
+
+### Manual R2 check
+
+1. Create a bucket + an API token (R2 → *Manage R2 API Tokens*), put the four
+   `AURIC_R2_*` vars in `.env`, set `AURIC_FILE_STORAGE_DRIVER=r2`.
+2. Run `http/09-files.http`: `POST /files/uploads`, then `PUT` the returned
+   absolute `upload.url` with **no** `Authorization` header, then
+   `POST /files/:id/confirm`, then `GET /files/:id`.
+3. Confirm the object appears in the bucket and the file row is `stored` with the
+   real `byte_size`.
 
 ## 12. Testing expectations
 

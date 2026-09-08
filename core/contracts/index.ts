@@ -108,8 +108,42 @@ export interface FileRef {
   originalName: string;
 }
 
+/**
+ * A short-lived, direct-to-storage upload target. The client `PUT`s the raw
+ * bytes here (bypassing the API), then calls `confirmUpload`. For `r2` this is
+ * a presigned S3 URL; for `local` it is the API's own authenticated loopback
+ * route.
+ */
+export interface PresignedUpload {
+  url: string;
+  method: "PUT";
+  headers: Record<string, string>;
+  expiresAt: Date;
+}
+
+export interface CreateUploadInput {
+  originalName: string;
+  contentType: string;
+  byteSize: number;
+  ownerId?: string;
+  visibility?: "private" | "public";
+  metadata?: Record<string, unknown>;
+  checksumSha256?: string;
+}
+
 export interface IFileStorage {
   upload(file: FileInput): Promise<FileRef>;
+  /**
+   * Begin a presigned upload: validates the request, records a `pending` file,
+   * and returns where the client should PUT the bytes. The file is not usable
+   * until `confirmUpload`.
+   */
+  createUpload(input: CreateUploadInput): Promise<{ fileId: string; upload: PresignedUpload }>;
+  /**
+   * Finalize a presigned upload: HEADs the object in storage to confirm it
+   * landed, records its real size, and flips the file to `stored`.
+   */
+  confirmUpload(fileId: string): Promise<FileRef>;
   getUrl(fileRef: Pick<FileRef, "id">): Promise<string>;
   getContent(fileRef: Pick<FileRef, "id">): Promise<{ content: Buffer; ref: FileRef }>;
   delete(fileRef: Pick<FileRef, "id">): Promise<void>;

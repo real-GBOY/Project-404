@@ -1,0 +1,98 @@
+### Files — presigned upload flow  (core/files/api/files.controller.ts)
+###
+### Three steps, both storage drivers:
+###   1. POST /files/uploads            → { fileId, upload: { url, method, headers, expiresAt } }
+###   2. PUT  upload.url  (raw bytes)   → 204   (direct to storage; bypasses the API for r2)
+###   3. POST /files/:id/confirm        → { file }   (API HEADs the object, marks it `stored`)
+###
+### On the `local` driver upload.url is the API-base-relative loopback route
+### `/files/:id/bytes` (needs the bearer token). On `r2` it is an absolute
+### presigned S3 URL — PUT it with NO Authorization header.
+@baseUrl = http://localhost:3000/api
+
+### Log in — dev@auric.local already has the admin role
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "email": "dev@auric.local", "password": "correct horse battery staple" }
+
+###
+@token = {{login.response.body.tokens.accessToken}}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 1. Reserve the upload — records a `pending` file, returns where to PUT bytes
+# ─────────────────────────────────────────────────────────────────────────────
+# @name createUpload
+POST {{baseUrl}}/files/uploads
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "originalName": "sample.txt",
+  "contentType": "text/plain",
+  "byteSize": 42
+}
+
+###
+@fileId = {{createUpload.response.body.fileId}}
+@uploadUrl = {{createUpload.response.body.upload.url}}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 2a. LOCAL driver — PUT the bytes to the loopback route (bearer required).
+#     `{{baseUrl}}{{uploadUrl}}` → http://localhost:3000/api/files/<id>/bytes
+# ─────────────────────────────────────────────────────────────────────────────
+PUT {{baseUrl}}{{uploadUrl}}
+Authorization: Bearer {{token}}
+Content-Type: application/octet-stream
+
+< ./sample.txt
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 2b. R2 driver — PUT straight to the presigned S3 URL, NO Authorization header.
+#     (Uncomment when AURIC_FILE_STORAGE_DRIVER=r2; `uploadUrl` is absolute.)
+# ─────────────────────────────────────────────────────────────────────────────
+# PUT {{uploadUrl}}
+# Content-Type: application/octet-stream
+#
+# < ./sample.txt
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 3. Confirm — the API HEADs the object and flips the file to `stored`
+# ─────────────────────────────────────────────────────────────────────────────
+POST {{baseUrl}}/files/{{fileId}}/confirm
+Authorization: Bearer {{token}}
+
+### Metadata — status is now "stored", byte_size is the real object size
+GET {{baseUrl}}/files/{{fileId}}/metadata
+Authorization: Bearer {{token}}
+
+### Download the bytes
+GET {{baseUrl}}/files/{{fileId}}
+Authorization: Bearer {{token}}
+
+### Clean up
+DELETE {{baseUrl}}/files/{{fileId}}
+Authorization: Bearer {{token}}
+
+# ═════════════════════════════════════════════════════════════════════════════
+# NEGATIVE CHECKS
+# ═════════════════════════════════════════════════════════════════════════════
+### 400 — confirm before the bytes are uploaded  (files.upload_missing)
+# @name pendingUpload
+POST {{baseUrl}}/files/uploads
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "originalName": "never.txt", "contentType": "text/plain", "byteSize": 10 }
+
+###
+POST {{baseUrl}}/files/{{pendingUpload.response.body.fileId}}/confirm
+Authorization: Bearer {{token}}
+
+### 400 — byteSize over AURIC_FILE_MAX_UPLOAD_BYTES  (files.too_large)
+POST {{baseUrl}}/files/uploads
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "originalName": "huge.bin", "contentType": "application/octet-stream", "byteSize": 999999999 }

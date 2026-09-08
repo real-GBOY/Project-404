@@ -43,7 +43,8 @@ export function useDocumentMutations(matterId?: string) {
 
   return {
     upload: useMutation({
-      mutationFn: (form: FormData) => api.uploadDocument(form),
+      mutationFn: ({ file, ...input }: api.CreateDocumentUploadInput & { file: Blob }) =>
+        api.uploadDocumentPresigned(input, file),
       onSuccess: () => {
         invalidate();
         toast.success({ title: t("toasts.uploaded") });
@@ -51,7 +52,8 @@ export function useDocumentMutations(matterId?: string) {
       onError: fail,
     }),
     update: useMutation({
-      mutationFn: ({ id, ...body }: { id: string } & Partial<DocRow>) => api.updateDocument(id, body),
+      mutationFn: ({ id, ...body }: { id: string } & Partial<DocRow>) =>
+        api.updateDocument(id, body),
       onSuccess: () => {
         invalidate();
         toast.success({ title: t("toasts.updated") });

@@ -55,18 +55,21 @@ export default function CaseDetailScreen() {
     const result = await ImagePicker.launchCameraAsync({ quality: 0.7 });
     if (result.canceled || !result.assets[0]) return;
     const asset = result.assets[0];
-    const form = new FormData();
-    form.append("file", {
-      uri: asset.uri,
-      name: asset.fileName ?? `scan-${Date.now()}.jpg`,
-      type: asset.mimeType ?? "image/jpeg",
-    } as unknown as Blob);
-    form.append("name", asset.fileName ?? `Scan ${formatDate(new Date())}`);
-    form.append("matterId", id);
-    form.append("category", "Evidence");
-    upload.mutate(form, {
-      onError: () => Alert.alert(t("common:state.error", { ns: "common" })),
-    });
+    upload.mutate(
+      {
+        image: {
+          uri: asset.uri,
+          name: asset.fileName ?? `scan-${Date.now()}.jpg`,
+          type: asset.mimeType ?? "image/jpeg",
+        },
+        name: asset.fileName ?? `Scan ${formatDate(new Date())}`,
+        matterId: id,
+        category: "Evidence",
+      },
+      {
+        onError: () => Alert.alert(t("common:state.error", { ns: "common" })),
+      },
+    );
   };
 
   const saveNote = () => {

@@ -1,4 +1,5 @@
 import { httpClient } from "@/lib/api/http-client";
+import { putToPresignedUrl, type PresignedUpload } from "@/lib/api/upload";
 
 export type DocumentStatus = "draft" | "final" | "filed" | "signed";
 
@@ -41,13 +42,42 @@ export const listDocuments = (p: DocListParams, signal?: AbortSignal) =>
     signal,
   });
 
-export const uploadDocument = (form: FormData) =>
-  httpClient<DocRow>("/documents", { method: "POST", form });
+export interface CreateDocumentUploadInput {
+  name: string;
+  matterId: string | null;
+  category: string;
+  contentType: string;
+  byteSize: number;
+}
+
+/**
+ * Presigned document upload, three steps:
+ *   1. reserve the document + a pending file, get an upload URL
+ *   2. PUT the bytes straight to storage (R2, or the local loopback route)
+ *   3. confirm — the API HEADs the object and marks it stored
+ * The upload is not "done" until step 3 resolves.
+ */
+export async function uploadDocumentPresigned(
+  input: CreateDocumentUploadInput,
+  file: Blob,
+): Promise<DocRow> {
+  const { document, upload } = await httpClient<{ document: DocRow; upload: PresignedUpload }>(
+    "/documents",
+    { method: "POST", body: input },
+  );
+  await putToPresignedUrl(upload, file);
+  const confirmed = await httpClient<{ document: DocRow }>(`/documents/${document.id}/confirm`, {
+    method: "POST",
+  });
+  return confirmed.document;
+}
 
 export const downloadDocumentPath = (id: string) => `/documents/${id}/download`;
 
-export const updateDocument = (id: string, body: Partial<Pick<DocRow, "name" | "category" | "status">>) =>
-  httpClient<DocRow>(`/documents/${id}`, { method: "PATCH", body });
+export const updateDocument = (
+  id: string,
+  body: Partial<Pick<DocRow, "name" | "category" | "status">>,
+) => httpClient<DocRow>(`/documents/${id}`, { method: "PATCH", body });
 
 export const deleteDocument = (id: string) =>
   httpClient<void>(`/documents/${id}`, { method: "DELETE" });

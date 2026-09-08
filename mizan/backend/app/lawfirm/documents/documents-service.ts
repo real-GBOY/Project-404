@@ -1,7 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
 import type { UnitOfWork } from "@core/kernel/db/db.js";
 import { readInTenant } from "@core/kernel/db/db.js";
-import { NotFound, ValidationError } from "@core/kernel/errors.js";
+import { AppError, NotFound, ValidationError } from "@core/kernel/errors.js";
 import { CLOCK, FILE_STORAGE, UNIT_OF_WORK } from "@core/kernel/tokens.js";
 import type { Clock } from "@core/kernel/clock.js";
 import type { IFileStorage } from "@core/contracts/index.js";
@@ -21,6 +21,14 @@ export interface UploadInput {
   matterId: string | null;
   category: string;
   file?: { content: Buffer; originalName: string; contentType: string };
+}
+
+export interface CreateUploadInput {
+  name: string;
+  matterId: string | null;
+  category: string;
+  contentType: string;
+  byteSize: number;
 }
 
 @Injectable()
@@ -81,8 +89,81 @@ export class DocumentsService {
     if (!doc.fileId || doc.fileId.endsWith("-placeholder")) {
       throw ValidationError("document.no_file", "This document has no file attached.");
     }
-    const { content, ref } = await this.files.getContent({ id: doc.fileId });
-    return { content, filename: doc.name || ref.originalName, contentType: ref.contentType };
+    try {
+      const { content, ref } = await this.files.getContent({ id: doc.fileId });
+      return { content, filename: doc.name || ref.originalName, contentType: ref.contentType };
+    } catch (err) {
+      // The underlying file is still awaiting its direct upload / confirm.
+      if (err instanceof AppError && err.code === "files.upload_pending") {
+        throw ValidationError(
+          "document.upload_pending",
+          "This document's file upload has not been confirmed yet.",
+        );
+      }
+      throw err;
+    }
+  }
+
+  /**
+   * Begin a presigned upload for a new document: reserves the document row and
+   * a `pending` file, and hands back where the client should PUT the bytes.
+   * The document is not downloadable until `confirmUpload` runs.
+   */
+  async createUpload(input: CreateUploadInput, actorId: string) {
+    const { fileId, upload } = await this.files.createUpload({
+      originalName: input.name,
+      contentType: input.contentType,
+      byteSize: input.byteSize,
+      ownerId: actorId,
+      visibility: "private",
+    });
+
+    const doc = await this.uow.transaction(() =>
+      this.repo.create({
+        name: input.name,
+        matterId: input.matterId,
+        category: input.category,
+        fileId,
+        sizeBytes: input.byteSize,
+        mimeType: input.contentType,
+        uploadedById: actorId,
+      }),
+    );
+    const document = await readInTenant(() => this.view(doc));
+    return { document, upload };
+  }
+
+  /**
+   * Finalize a document's presigned upload: confirms the underlying file
+   * (HEAD against storage), reconciles size/mime if the object differs from
+   * what the client declared, and records the `document.uploaded` activity —
+   * on confirm, not on presign.
+   */
+  async confirmUpload(docId: string, actorId: string) {
+    const doc = await readInTenant(() => this.repo.findById(docId));
+    if (!doc) throw NotFound("document.not_found", "Document not found.");
+
+    const ref = await this.files.confirmUpload(doc.fileId);
+
+    const updated = await this.uow.transaction(async () => {
+      if (ref.byteSize !== doc.sizeBytes || ref.contentType !== doc.mimeType) {
+        await this.repo.setFileMeta(docId, {
+          sizeBytes: ref.byteSize,
+          mimeType: ref.contentType,
+        });
+      }
+      if (doc.matterId) {
+        await this.activity.record({
+          actorId,
+          action: "document.uploaded",
+          targetType: "document",
+          targetId: doc.id,
+          targetLabel: doc.name,
+        });
+      }
+      return (await this.repo.findById(docId))!;
+    });
+    return readInTenant(() => this.view(updated));
   }
 
   async upload(input: UploadInput, actorId: string) {

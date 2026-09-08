@@ -14,13 +14,22 @@ export interface FileRow {
   ownerId: string | null;
   visibility: "private" | "public";
   metadata: Record<string, unknown> | null;
+  status: "pending" | "stored";
+  committedAt: Date | null;
   createdAt: Date;
   deletedAt: Date | null;
 }
 
 @Injectable()
 export class FileRepository {
-  async insert(input: Omit<FileRow, "createdAt" | "deletedAt" | "organizationId">): Promise<void> {
+  async insert(
+    input: Omit<
+      FileRow,
+      "createdAt" | "deletedAt" | "committedAt" | "organizationId" | "status"
+    > & {
+      status?: "pending" | "stored";
+    },
+  ): Promise<void> {
     await currentExecutor()
       .insertInto("files")
       .values({
@@ -35,7 +44,29 @@ export class FileRepository {
         owner_id: input.ownerId,
         visibility: input.visibility,
         metadata: input.metadata ?? null,
+        status: input.status ?? "stored",
       })
+      .execute();
+  }
+
+  /**
+   * Atomically finalize a pending upload: record the object's real size/etag
+   * and flip it to `stored`. Called from the confirm step after a successful
+   * HEAD against the storage driver.
+   */
+  async markStored(
+    id: string,
+    input: { byteSize: number; checksum?: string; at: Date },
+  ): Promise<void> {
+    await currentExecutor()
+      .updateTable("files")
+      .set({
+        byte_size: input.byteSize,
+        ...(input.checksum ? { checksum_sha256: input.checksum } : {}),
+        status: "stored",
+        committed_at: input.at,
+      })
+      .where("id", "=", id)
       .execute();
   }
 
@@ -77,6 +108,8 @@ export class FileRepository {
     owner_id: string | null;
     visibility: string;
     metadata: unknown;
+    status: string;
+    committed_at: Date | null;
     created_at: Date;
     deleted_at: Date | null;
   }): FileRow {
@@ -92,6 +125,8 @@ export class FileRepository {
       ownerId: r.owner_id,
       visibility: r.visibility as "private" | "public",
       metadata: (r.metadata as Record<string, unknown> | null) ?? null,
+      status: (r.status as "pending" | "stored") ?? "stored",
+      committedAt: r.committed_at ? new Date(r.committed_at) : null,
       createdAt: new Date(r.created_at),
       deletedAt: r.deleted_at ? new Date(r.deleted_at) : null,
     };

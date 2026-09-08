@@ -2,10 +2,25 @@ import { tokenStore } from "@/lib/auth/token-store";
 import { authEvents } from "@/lib/auth/auth-events";
 import { ApiError } from "./api-error";
 
-const BASE = import.meta.env.VITE_API_BASE ?? "/api";
+export const API_BASE = import.meta.env.VITE_API_BASE ?? "/api";
 /** An absolute base (Vercel → VPS) must survive into the request URL; a relative
  *  one (`/api` — dev proxy, tests, the VPS-served bundle) stays same-origin. */
-const BASE_IS_ABSOLUTE = /^https?:\/\//i.test(BASE);
+export const API_BASE_IS_ABSOLUTE = /^https?:\/\//i.test(API_BASE);
+const BASE = API_BASE;
+const BASE_IS_ABSOLUTE = API_BASE_IS_ABSOLUTE;
+
+/** Prefix an API path (`/documents`) with the configured base. Absolute URLs
+ *  pass through untouched. */
+export function withApiBase(pathOrUrl: string): string {
+  if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
+  return buildUrl(pathOrUrl);
+}
+
+/** `{ Authorization }` for the current access token, or `{}` when signed out. */
+export function bearerHeaders(): Record<string, string> {
+  const token = tokenStore.getAccess();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 type QueryValue = string | number | boolean | null | undefined;
 

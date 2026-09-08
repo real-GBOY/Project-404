@@ -111,6 +111,16 @@ export class DocumentsRepository {
     return this.findById(id);
   }
 
+  /** Reconcile stored file metadata after a presigned upload is confirmed. */
+  async setFileMeta(id: string, input: { sizeBytes: number; mimeType: string }): Promise<void> {
+    await currentExecutor()
+      .updateTable("lawfirm_documents")
+      .set({ size_bytes: input.sizeBytes, mime_type: input.mimeType })
+      .where("organization_id", "=", this.org())
+      .where("id", "=", id)
+      .execute();
+  }
+
   async remove(id: string): Promise<void> {
     await currentExecutor()
       .deleteFrom("lawfirm_documents")

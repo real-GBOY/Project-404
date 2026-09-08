@@ -51,8 +51,32 @@ const schema = z.object({
         .filter(Boolean),
     ),
 
-  fileStorageDriver: z.enum(["local"]).default("local"),
+  // File storage. `local` writes to disk under `fileStoragePath`; `r2` talks to
+  // a Cloudflare R2 bucket over its S3-compatible API (§ core/files/README.md).
+  // The presigned-upload flow works on both — `local` presigns its own
+  // authenticated loopback route, `r2` issues real S3 presigned URLs.
+  fileStorageDriver: z.enum(["local", "r2"]).default("local"),
   fileStoragePath: z.string().default("./storage/files"),
+  r2AccountId: z.string().optional(),
+  r2AccessKeyId: z.string().optional(),
+  r2SecretAccessKey: z.string().optional(),
+  r2Bucket: z.string().optional(),
+  r2Endpoint: z.string().url().optional(),
+  r2PublicBaseUrl: z.string().url().optional(),
+  /** TTL for a presigned upload/download URL, seconds. */
+  filePresignTtlSeconds: z.coerce.number().int().positive().default(900),
+  /** Hard cap on a single upload, bytes. Matches the multipart limit (25 MiB). */
+  fileMaxUploadBytes: z.coerce.number().int().positive().default(26_214_400),
+  /** Allowed upload MIME types (comma-separated). Empty = allow any. */
+  fileAllowedMimeTypes: z
+    .string()
+    .default("")
+    .transform((s: string) =>
+      s
+        .split(",")
+        .map((x: string) => x.trim())
+        .filter(Boolean),
+    ),
 
   mailFrom: z.string().default("no-reply@auric.local"),
   smtpUrl: z.string().optional(),
@@ -82,6 +106,15 @@ function readEnv(): AuricConfig {
     supportedLocales: process.env.AURIC_SUPPORTED_LOCALES,
     fileStorageDriver: process.env.AURIC_FILE_STORAGE_DRIVER,
     fileStoragePath: process.env.AURIC_FILE_STORAGE_PATH,
+    r2AccountId: process.env.AURIC_R2_ACCOUNT_ID,
+    r2AccessKeyId: process.env.AURIC_R2_ACCESS_KEY_ID,
+    r2SecretAccessKey: process.env.AURIC_R2_SECRET_ACCESS_KEY,
+    r2Bucket: process.env.AURIC_R2_BUCKET,
+    r2Endpoint: process.env.AURIC_R2_ENDPOINT,
+    r2PublicBaseUrl: process.env.AURIC_R2_PUBLIC_BASE_URL,
+    filePresignTtlSeconds: process.env.AURIC_FILE_PRESIGN_TTL_SECONDS,
+    fileMaxUploadBytes: process.env.AURIC_FILE_MAX_UPLOAD_BYTES,
+    fileAllowedMimeTypes: process.env.AURIC_FILE_ALLOWED_MIME_TYPES,
     mailFrom: process.env.AURIC_MAIL_FROM,
     smtpUrl: process.env.AURIC_SMTP_URL,
     appName: process.env.AURIC_APP_NAME,
@@ -101,6 +134,21 @@ function readEnv(): AuricConfig {
   const cfg = parsed.data;
   if (cfg.nodeEnv === "production" && cfg.jwtSecret === "dev-only-insecure-change-me") {
     throw new Error("AURIC_JWT_SECRET must be set to a real secret in production.");
+  }
+  if (cfg.fileStorageDriver === "r2") {
+    const missing = (
+      [
+        ["AURIC_R2_ACCOUNT_ID", cfg.r2AccountId],
+        ["AURIC_R2_ACCESS_KEY_ID", cfg.r2AccessKeyId],
+        ["AURIC_R2_SECRET_ACCESS_KEY", cfg.r2SecretAccessKey],
+        ["AURIC_R2_BUCKET", cfg.r2Bucket],
+      ] as const
+    )
+      .filter(([, v]) => !v)
+      .map(([k]) => k);
+    if (missing.length > 0) {
+      throw new Error(`AURIC_FILE_STORAGE_DRIVER=r2 requires: ${missing.join(", ")}.`);
+    }
   }
   // Fall back to the owner URL so a single-role dev/test DB still runs.
   cfg.appDatabaseUrl ??= cfg.databaseUrl;

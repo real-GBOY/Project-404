@@ -13,7 +13,7 @@ import {
 } from "@/features/matters/components/MatterPickerSheet";
 import { useMatterMutations } from "@/features/matters/hooks";
 import { useDocumentMutations } from "@/features/documents/hooks";
-import { capturePhoto, documentFormData } from "@/features/documents/upload";
+import { capturePhoto } from "@/features/documents/upload";
 import { formatDate } from "@/lib/format";
 import { useLastUsedMatter, useSetLastUsedMatter } from "../lastUsed";
 
@@ -51,15 +51,18 @@ export default function QuickCaptureScreen() {
   const onPickMatter = (matter: PickedMatter) => {
     void setLastUsed(matter);
     if (action === "scan" && pendingImage) {
-      const form = documentFormData(pendingImage, {
-        name: `Scan ${formatDate(new Date())}`,
-        matterId: matter.id,
-        category: "Evidence",
-      });
-      upload.mutate(form, {
-        onSuccess: close,
-        onError: () => Alert.alert(t("common:state.error", { ns: "common" })),
-      });
+      upload.mutate(
+        {
+          image: pendingImage,
+          name: `Scan ${formatDate(new Date())}`,
+          matterId: matter.id,
+          category: "Evidence",
+        },
+        {
+          onSuccess: close,
+          onError: () => Alert.alert(t("common:state.error", { ns: "common" })),
+        },
+      );
       setPendingImage(null);
     } else if (action === "note") {
       setNoteMatter(matter);

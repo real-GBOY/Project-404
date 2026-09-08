@@ -27,6 +27,20 @@ async function main() {
     new FastifyAdapter({ bodyLimit: 1_048_576 }),
   );
   await app.register(multipart, { limits: { fileSize: 25 * 1024 * 1024, files: 1 } });
+
+  // Raw-body parser for the local storage driver's loopback upload route
+  // (`PUT /api/files/:id/bytes`). A per-parser `bodyLimit` lifts the global
+  // 1 MiB cap for octet-stream only — JSON, multipart, and every other route
+  // keep the tight default.
+  app
+    .getHttpAdapter()
+    .getInstance()
+    .addContentTypeParser(
+      "application/octet-stream",
+      { parseAs: "buffer", bodyLimit: config.fileMaxUploadBytes },
+      (_req, body, done) => done(null, body),
+    );
+
   app.setGlobalPrefix("api");
   app.enableShutdownHooks();
 
