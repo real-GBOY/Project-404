@@ -294,6 +294,14 @@ suite("lawfirm feature areas", () => {
     );
     expect(content.equals(bytes)).toBe(true);
     expect(contentType).toBe("application/pdf");
+
+    // Removing the document also removes the underlying stored file — no orphan.
+    await asUser(firm.adminId, firm.orgId, () => svc(DocumentsService).remove(document.id));
+    await expect(
+      asUser(firm.adminId, firm.orgId, () =>
+        get(app, FileStorageService).getContent({ id: fileId }),
+      ),
+    ).rejects.toThrow(/not found/i);
   });
 
   it("documents: content() reports when a metadata-only document has no file", async () => {

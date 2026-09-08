@@ -1,6 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
 import type { UnitOfWork } from "@core/kernel/db/db.js";
 import { readInTenant } from "@core/kernel/db/db.js";
+import { moduleLogger } from "@core/kernel/logging/logger.js";
 import { AppError, NotFound, ValidationError } from "@core/kernel/errors.js";
 import { CLOCK, FILE_STORAGE, UNIT_OF_WORK } from "@core/kernel/tokens.js";
 import type { Clock } from "@core/kernel/clock.js";
@@ -15,6 +16,8 @@ import {
 } from "./documents-repository.js";
 
 const DAY = 86_400_000;
+
+const log = moduleLogger("lawfirm-documents");
 
 export interface UploadInput {
   name: string;
@@ -220,11 +223,25 @@ export class DocumentsService {
   }
 
   async remove(id: string) {
-    await this.uow.transaction(async () => {
+    const fileId = await this.uow.transaction(async () => {
       const existing = await this.repo.findById(id);
       if (!existing) throw NotFound("document.not_found", "Document not found.");
       await this.repo.remove(id);
+      return existing.fileId;
     });
+
+    // Drop the underlying stored object too — otherwise deleting a document
+    // orphans its bytes in R2 / on disk forever. A metadata-only document has a
+    // `-placeholder` fileId and nothing to remove. Best-effort: the document is
+    // already gone, so a storage hiccup shouldn't fail the request.
+    if (fileId && !fileId.endsWith("-placeholder")) {
+      await this.files.delete({ id: fileId }).catch((err: unknown) => {
+        log.warn(
+          { err, fileId, documentId: id },
+          "document removed but its file could not be deleted",
+        );
+      });
+    }
   }
 
   private async view(d: DocumentRow) {
