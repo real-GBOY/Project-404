@@ -9,6 +9,6 @@ import { TasksService } from "./tasks-service.js";
   imports: [LawfirmSharedModule, IdentityModule, EventsModule],
   controllers: [TasksController],
   providers: [TasksRepository, TasksService],
-  exports: [TasksRepository],
+  exports: [TasksRepository, TasksService],
 })
 export class TasksModule {}

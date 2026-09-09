@@ -30,7 +30,9 @@ export type LawfirmIdPrefix =
   | "stf" // staff profile
   | "cal" // calendar event
   | "act" // activity entry
-  | "rmd"; // reminder
+  | "rmd" // reminder
+  | "conv" // assistant conversation
+  | "amsg"; // assistant message
 
 export function lawfirmId(prefix: LawfirmIdPrefix): string {
   return `${prefix}_${generate()}`;

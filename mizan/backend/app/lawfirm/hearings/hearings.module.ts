@@ -9,6 +9,6 @@ import { HearingsService } from "./hearings-service.js";
   imports: [LawfirmSharedModule, IdentityModule, AuditModule, EventsModule],
   controllers: [HearingsController],
   providers: [HearingsRepository, HearingsService],
-  exports: [HearingsRepository],
+  exports: [HearingsRepository, HearingsService],
 })
 export class HearingsModule {}

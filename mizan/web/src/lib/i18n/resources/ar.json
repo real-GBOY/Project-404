@@ -101,19 +101,43 @@
       "name": "اسأل ميزان",
       "open": "فتح مساعد ميزان",
       "send": "إرسال",
-      "demo_badge": "معاينة",
-      "demo_note": "معاينة للمساعد. لا يمكنه تنفيذ إجراءات أو قراءة بيانات مباشرة بعد.",
-      "demo_action_title": "للعرض التوضيحي فقط",
-      "demo_action_body": "«{{action}}» غير متاح في المعاينة — لا يمكن للمساعد تغيير بياناتك بعد.",
-      "input_placeholder": "اسأل عن الجلسات أو المهام أو الفوترة…",
+      "subtitle": "إجابات من بيانات مكتبك المباشرة، ضمن صلاحياتك.",
+      "input_placeholder": "اسأل عن الجلسات أو المهام أو العملاء أو الفوترة…",
       "try": "جرّب أن تسأل",
       "prompts": {
-        "upcoming_hearings": "ما الجلسات القادمة هذا الأسبوع؟",
-        "overdue_tasks": "أي من مهامي متأخرة؟",
-        "outstanding_invoices": "كم المبلغ المستحق عبر جميع العملاء؟"
+        "upcoming_hearings": "ما الجلسات لديّ هذا الأسبوع؟",
+        "overdue_tasks": "أظهر مهامي المتأخرة",
+        "outstanding_invoices": "ما الفواتير المتأخرة؟"
       },
       "new_chat": "محادثة جديدة",
-      "empty_title": "اسأل ميزان أي شيء"
+      "empty_title": "اسأل ميزان أي شيء",
+      "empty_hint": "يمكنني البحث في قضاياك وجلساتك ومهامك وعملائك وفوترتك، وإنشاء المهام أو تحديثها لك.",
+      "thinking": "جارٍ العمل…",
+      "error_generic": "حدث خطأ ما. حاول مرة أخرى.",
+      "retry": "إعادة المحاولة",
+      "tools": {
+        "get_client": "بحث عن عميل",
+        "search_clients": "بحث في العملاء",
+        "get_matter": "بحث عن قضية",
+        "search_matters": "بحث في القضايا",
+        "get_matter_summary": "تلخيص القضية",
+        "get_matter_activity": "قراءة نشاط القضية",
+        "get_matter_hearings": "قراءة جلسات القضية",
+        "get_matter_tasks": "قراءة مهام القضية",
+        "get_matter_documents": "قراءة مستندات القضية",
+        "get_hearings": "قراءة الجلسات",
+        "get_tasks": "قراءة المهام",
+        "get_calendar_events": "قراءة التقويم",
+        "get_invoice": "بحث عن فاتورة",
+        "get_client_invoices": "قراءة فواتير العميل",
+        "get_invoices": "قراءة الفواتير",
+        "get_payments": "قراءة المدفوعات",
+        "get_expenses": "قراءة المصروفات",
+        "get_dashboard_summary": "قراءة لوحة المعلومات",
+        "create_task": "إنشاء مهمة",
+        "update_task": "تحديث مهمة",
+        "assign_task": "إسناد مهمة"
+      }
     }
   },
   "auth": {

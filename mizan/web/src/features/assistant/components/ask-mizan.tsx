@@ -1,16 +1,19 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
+import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/cn";
 import { Icon } from "@/components/ui/icon";
 import { MizanMark } from "@/components/ui/logo";
-import { respondTo, type CannedTurn } from "../lib/canned";
+import { usePermissions } from "@/lib/permissions/use-permissions";
+import { isApiError } from "@/lib/api/api-error";
+import { sendChat, type CurrentContext, type ToolActivity } from "../api/assistant.api";
 
 interface Message {
   id: string;
   role: "user" | "assistant";
   text: string;
-  turn?: CannedTurn;
+  tools?: ToolActivity[];
 }
 
 let seq = 0;
@@ -18,26 +21,78 @@ const mid = () => `m${++seq}`;
 
 const GRADIENT_BORDER = "linear-gradient(115deg,#31456b,#b99a5b 50%,#16233a)";
 
+/** Turn `/matters/mat_123` into `{ screen: "matter", matterId: "mat_123" }`. */
+function contextFromPath(pathname: string): CurrentContext {
+  const seg = pathname.split("/").filter(Boolean);
+  if (seg[0] === "matters" && seg[1]) return { screen: "matter", matterId: seg[1] };
+  if (seg[0] === "clients" && seg[1]) return { screen: "client", clientId: seg[1] };
+  if (seg[0] === "billing" && seg[1] === "invoices" && seg[2]) {
+    return { screen: "invoice" };
+  }
+  return { screen: seg[0] ?? "dashboard" };
+}
+
 export function AskMizan() {
   const { t } = useTranslation("common");
+  const { can } = usePermissions();
+  const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
-  const [demoNotice, setDemoNotice] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const conversationId = useRef<string | undefined>(undefined);
+  const lastPrompt = useRef<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  function send(prompt: string) {
-    const text = prompt.trim();
-    if (!text) return;
-    const turn = respondTo(text);
-    setMessages((prev) => [
-      ...prev,
-      { id: mid(), role: "user", text },
-      { id: mid(), role: "assistant", text: turn.answer, turn },
-    ]);
-    setInput("");
-    setDemoNotice(null);
+  const currentContext = useMemo(() => contextFromPath(pathname), [pathname]);
+
+  if (!can("use:assistant")) return null;
+
+  const scrollDown = () =>
     queueMicrotask(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }));
+
+  async function run(prompt: string) {
+    const text = prompt.trim();
+    if (!text || pending) return;
+    lastPrompt.current = text;
+    setError(null);
+    setInput("");
+    setMessages((prev) => [...prev, { id: mid(), role: "user", text }]);
+    setPending(true);
+    scrollDown();
+
+    try {
+      const res = await sendChat({
+        conversationId: conversationId.current,
+        message: text,
+        currentContext,
+      });
+      conversationId.current = res.conversationId;
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: mid(),
+          role: "assistant",
+          text: res.message,
+          tools: res.toolActivity.length > 0 ? res.toolActivity : undefined,
+        },
+      ]);
+    } catch (err) {
+      setError(
+        isApiError(err) && err.message ? err.message : t("assistant.error_generic"),
+      );
+    } finally {
+      setPending(false);
+      scrollDown();
+    }
+  }
+
+  function reset() {
+    setMessages([]);
+    setError(null);
+    conversationId.current = undefined;
+    lastPrompt.current = null;
   }
 
   const prompts = [
@@ -47,7 +102,12 @@ export function AskMizan() {
   ];
 
   return (
-    <Dialog.Root open={open} onOpenChange={setOpen}>
+    <Dialog.Root
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+      }}
+    >
       <Dialog.Trigger
         aria-label={t("assistant.open")}
         className="flex h-9 items-center gap-[7px] rounded-pill border border-border-accent bg-surface-sand px-3.5 text-[13px] font-bold text-link hover:bg-surface-sand-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
@@ -71,16 +131,16 @@ export function AskMizan() {
                     {t("assistant.name")}
                   </Dialog.Title>
                   <Dialog.Description className="text-[11px] font-medium text-muted">
-                    {t("assistant.demo_note")}
+                    {t("assistant.subtitle")}
                   </Dialog.Description>
                 </div>
                 {messages.length > 0 && (
                   <button
                     type="button"
-                    onClick={() => setMessages([])}
+                    onClick={reset}
                     className="rounded-md px-2.5 py-1.5 text-[12px] font-bold text-muted hover:bg-divider-row hover:text-foreground"
                   >
-                    {t("assistant.new_chat", { defaultValue: "New chat" })}
+                    {t("assistant.new_chat")}
                   </button>
                 )}
                 <Dialog.Close
@@ -98,10 +158,10 @@ export function AskMizan() {
                       <MizanMark size={40} className="text-primary-foreground" />
                     </span>
                     <div className="font-display text-[22px] font-normal tracking-[0.01em] text-foreground">
-                      {t("assistant.empty_title", { defaultValue: "Ask Mizan anything" })}
+                      {t("assistant.empty_title")}
                     </div>
                     <p className="max-w-[420px] text-center text-[13px] font-medium text-muted-2 text-pretty">
-                      {t("assistant.demo_note")}
+                      {t("assistant.empty_hint")}
                     </p>
                   </div>
                 ) : (
@@ -119,68 +179,94 @@ export function AskMizan() {
                             <MizanMark size={16} className="text-primary-foreground" />
                           </span>
                           <div className="min-w-0 flex-1 pt-0.5">
-                            <p className="whitespace-pre-line text-[13.5px] font-medium leading-[1.62] text-foreground-body">
-                              {m.text}
-                            </p>
-                            {m.turn?.action && (
-                              <button
-                                type="button"
-                                onClick={() => setDemoNotice(m.turn!.action!.label)}
-                                className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-border-control bg-surface px-2.5 py-1.5 text-[11.5px] font-bold text-link"
-                              >
-                                <Icon name="bolt" size={14} />
-                                {m.turn.action.label}
-                              </button>
-                            )}
-                            {m.turn?.followUps && (
-                              <div className="mt-2 flex flex-wrap gap-1.5">
-                                {m.turn.followUps.map((f) => (
-                                  <button
-                                    key={f}
-                                    type="button"
-                                    onClick={() => send(f)}
-                                    className="rounded-pill border border-border bg-surface px-2.5 py-1 text-[11.5px] font-semibold text-link hover:bg-surface-sand"
+                            {m.tools && m.tools.length > 0 && (
+                              <div className="mb-1.5 flex flex-wrap gap-1.5">
+                                {m.tools.map((tool, i) => (
+                                  <span
+                                    key={`${m.id}-${i}`}
+                                    className={cn(
+                                      "inline-flex items-center gap-1 rounded-pill border px-2 py-[3px] text-[10.5px] font-bold",
+                                      tool.ok
+                                        ? "border-border bg-surface-sand text-link"
+                                        : "border-warning-surface bg-warning-surface text-warning",
+                                    )}
                                   >
-                                    {f}
-                                  </button>
+                                    <Icon
+                                      name={tool.ok ? "check" : "error_outline"}
+                                      size={12}
+                                    />
+                                    {t(`assistant.tools.${tool.name}`, {
+                                      defaultValue: tool.name.replace(/_/g, " "),
+                                    })}
+                                  </span>
                                 ))}
                               </div>
                             )}
+                            <p className="whitespace-pre-line text-[13.5px] font-medium leading-[1.62] text-foreground-body">
+                              {m.text}
+                            </p>
                           </div>
                         </div>
                       )}
                     </div>
                   ))
                 )}
-                {demoNotice && (
-                  <div className="flex items-start gap-2.5 rounded-[14px] border border-warning-surface bg-warning-surface px-3.5 py-3 text-[12.5px] text-warning">
-                    <Icon name="info" size={17} className="mt-px flex-none" />
-                    <span>
-                      <span className="font-extrabold">{t("assistant.demo_action_title")}</span> —{" "}
-                      {t("assistant.demo_action_body", { action: demoNotice })}
+
+                {pending && (
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex size-[26px] flex-none items-center justify-center rounded-full bg-primary">
+                      <MizanMark size={16} className="text-primary-foreground" />
                     </span>
+                    <span className="inline-flex gap-1">
+                      {[0, 1, 2].map((i) => (
+                        <span
+                          key={i}
+                          className="size-1.5 animate-pulse rounded-full bg-muted"
+                          style={{ animationDelay: `${i * 150}ms` }}
+                        />
+                      ))}
+                    </span>
+                    <span className="sr-only">{t("assistant.thinking")}</span>
+                  </div>
+                )}
+
+                {error && (
+                  <div className="flex items-start gap-2.5 rounded-[14px] border border-warning-surface bg-warning-surface px-3.5 py-3 text-[12.5px] text-warning">
+                    <Icon name="error_outline" size={17} className="mt-px flex-none" />
+                    <span className="flex-1">{error}</span>
+                    {lastPrompt.current && (
+                      <button
+                        type="button"
+                        onClick={() => lastPrompt.current && run(lastPrompt.current)}
+                        className="rounded-md border border-border-control bg-surface px-2 py-1 text-[11.5px] font-bold text-link"
+                      >
+                        {t("assistant.retry")}
+                      </button>
+                    )}
                   </div>
                 )}
                 <div ref={bottomRef} />
               </div>
 
               <div className="px-[18px] pb-4">
-                <div className="mb-2.5 flex flex-wrap gap-2">
-                  {prompts.map((key) => (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => send(t(key))}
-                      className="rounded-pill border border-border-control bg-surface px-3.5 py-1.5 text-[12px] font-semibold text-foreground-body hover:border-border-accent hover:bg-surface-sand hover:text-link"
-                    >
-                      {t(key)}
-                    </button>
-                  ))}
-                </div>
+                {messages.length === 0 && (
+                  <div className="mb-2.5 flex flex-wrap gap-2">
+                    {prompts.map((key) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => run(t(key))}
+                        className="rounded-pill border border-border-control bg-surface px-3.5 py-1.5 text-[12px] font-semibold text-foreground-body hover:border-border-accent hover:bg-surface-sand hover:text-link"
+                      >
+                        {t(key)}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
-                    send(input);
+                    run(input);
                   }}
                   className="flex items-center gap-2.5 rounded-[14px] border border-border-control py-[11px] pe-3 ps-[15px] shadow-input"
                 >
@@ -193,11 +279,11 @@ export function AskMizan() {
                   />
                   <button
                     type="submit"
-                    disabled={!input.trim()}
+                    disabled={!input.trim() || pending}
                     aria-label={t("assistant.send")}
                     className={cn(
                       "flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground",
-                      !input.trim() && "opacity-40",
+                      (!input.trim() || pending) && "opacity-40",
                     )}
                   >
                     <Icon name="send" size={18} />

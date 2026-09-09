@@ -101,19 +101,43 @@
       "name": "Ask Mizan",
       "open": "Open Ask Mizan",
       "send": "Send",
-      "demo_badge": "Preview",
-      "demo_note": "A preview of the assistant. It can't take actions or read live data yet.",
-      "demo_action_title": "Demonstration only",
-      "demo_action_body": "“{{action}}” isn't available in the preview — the assistant can't change your data yet.",
-      "input_placeholder": "Ask about hearings, tasks or billing…",
+      "subtitle": "Answers from your firm's live data, within your permissions.",
+      "input_placeholder": "Ask about hearings, tasks, clients or billing…",
       "try": "Try asking",
       "prompts": {
-        "upcoming_hearings": "What hearings are coming up this week?",
-        "overdue_tasks": "Which of my tasks are overdue?",
-        "outstanding_invoices": "How much is outstanding across all clients?"
+        "upcoming_hearings": "What hearings do I have this week?",
+        "overdue_tasks": "Show me my overdue tasks",
+        "outstanding_invoices": "What invoices are overdue?"
       },
       "new_chat": "New chat",
-      "empty_title": "Ask Mizan anything"
+      "empty_title": "Ask Mizan anything",
+      "empty_hint": "I can look up your matters, hearings, tasks, clients and billing, and create or update tasks for you.",
+      "thinking": "Working…",
+      "error_generic": "Something went wrong. Please try again.",
+      "retry": "Retry",
+      "tools": {
+        "get_client": "Looked up client",
+        "search_clients": "Searched clients",
+        "get_matter": "Looked up matter",
+        "search_matters": "Searched matters",
+        "get_matter_summary": "Summarized matter",
+        "get_matter_activity": "Read matter activity",
+        "get_matter_hearings": "Read matter hearings",
+        "get_matter_tasks": "Read matter tasks",
+        "get_matter_documents": "Read matter documents",
+        "get_hearings": "Read hearings",
+        "get_tasks": "Read tasks",
+        "get_calendar_events": "Read calendar",
+        "get_invoice": "Looked up invoice",
+        "get_client_invoices": "Read client invoices",
+        "get_invoices": "Read invoices",
+        "get_payments": "Read payments",
+        "get_expenses": "Read expenses",
+        "get_dashboard_summary": "Read dashboard",
+        "create_task": "Created task",
+        "update_task": "Updated task",
+        "assign_task": "Assigned task"
+      }
     }
   },
   "auth": {

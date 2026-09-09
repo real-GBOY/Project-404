@@ -9,6 +9,6 @@ import { ClientsService } from "./clients-service.js";
   imports: [LawfirmSharedModule, IdentityModule, AuditModule, EventsModule],
   controllers: [ClientsController],
   providers: [ClientsRepository, ClientsService],
-  exports: [ClientsRepository],
+  exports: [ClientsRepository, ClientsService],
 })
 export class ClientsModule {}

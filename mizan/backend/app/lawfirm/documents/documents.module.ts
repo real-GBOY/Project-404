@@ -9,6 +9,6 @@ import { DocumentsService } from "./documents-service.js";
   imports: [LawfirmSharedModule, FilesModule, IdentityModule],
   controllers: [DocumentsController],
   providers: [DocumentsRepository, DocumentsService],
-  exports: [DocumentsRepository],
+  exports: [DocumentsRepository, DocumentsService],
 })
 export class DocumentsModule {}

@@ -10,6 +10,7 @@ import { calendarHandlers } from "./calendar";
 import { billingHandlers } from "./billing";
 import { teamHandlers } from "./team";
 import { settingsHandlers } from "./settings";
+import { assistantHandlers } from "./assistant";
 
 /**
  * MSW request handlers for the **Vitest** suite only (`src/test/setup.ts`), one
@@ -30,4 +31,5 @@ export const handlers: RequestHandler[] = [
   ...billingHandlers,
   ...teamHandlers,
   ...settingsHandlers,
+  ...assistantHandlers,
 ];

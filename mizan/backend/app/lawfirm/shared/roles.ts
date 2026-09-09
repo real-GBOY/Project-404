@@ -92,6 +92,7 @@ export const LAWFIRM_ROLES: RoleSeed[] = [
       "create:event",
       "update:event",
       "delete:event",
+      "use:assistant",
     ),
   },
   {
@@ -125,6 +126,7 @@ export const LAWFIRM_ROLES: RoleSeed[] = [
       "read:calendar",
       "create:event",
       "update:event",
+      "use:assistant",
     ),
   },
   {
@@ -153,6 +155,7 @@ export const LAWFIRM_ROLES: RoleSeed[] = [
         "read:dashboard",
         "read:lawfirm_setting",
         "read:calendar",
+        "use:assistant",
       ),
       "read:audit_log",
     ],
@@ -161,6 +164,6 @@ export const LAWFIRM_ROLES: RoleSeed[] = [
     key: "read_only",
     name: "Read Only",
     description: "Can view everything, change nothing. For auditors and observers.",
-    permissionKeys: [...reads, "read:organization"],
+    permissionKeys: [...reads, "read:organization", "use:assistant"],
   },
 ];

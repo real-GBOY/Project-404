@@ -10,6 +10,7 @@ import { staffPermissions } from "@app/lawfirm/staff/permissions.js";
 import { settingsPermissions } from "@app/lawfirm/settings/permissions.js";
 import { dashboardPermissions } from "@app/lawfirm/dashboard/permissions.js";
 import { calendarPermissions } from "@app/lawfirm/calendar/permissions.js";
+import { assistantPermissions } from "@app/lawfirm/assistant/permissions.js";
 
 /**
  * Every permission the law-firm domain contributes to Core RBAC. Seeded by
@@ -28,4 +29,5 @@ export const LAWFIRM_PERMISSIONS: PermissionDefinition[] = [
   ...settingsPermissions,
   ...dashboardPermissions,
   ...calendarPermissions,
+  ...assistantPermissions,
 ];

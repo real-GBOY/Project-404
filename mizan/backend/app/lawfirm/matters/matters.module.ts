@@ -10,6 +10,6 @@ import { MattersService } from "./matters-service.js";
   imports: [LawfirmSharedModule, SettingsModule, IdentityModule, AuditModule, EventsModule],
   controllers: [MattersController],
   providers: [MattersRepository, MattersService],
-  exports: [MattersRepository],
+  exports: [MattersRepository, MattersService],
 })
 export class MattersModule {}

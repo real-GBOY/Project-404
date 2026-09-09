@@ -25,7 +25,9 @@ export { asSystem, asUser, get, hasTestDb };
  * then runs the layered seed (Core RBAC + law-firm permissions/roles).
  * The outbox worker does not autostart.
  */
-export async function createMizanTestApp(opts: { clock?: Clock } = {}): Promise<TestingModule> {
+export async function createMizanTestApp(
+  opts: { clock?: Clock; overrides?: Array<{ token: unknown; value: unknown }> } = {},
+): Promise<TestingModule> {
   applyTestConfig();
   await resetSchema();
   await migrateToLatest(TEST_DATABASE_URL);
@@ -36,6 +38,9 @@ export async function createMizanTestApp(opts: { clock?: Clock } = {}): Promise<
     .overrideProvider(REQUIRE_EMAIL_VERIFICATION)
     .useValue(false);
   if (opts.clock) builder.overrideProvider(CLOCK).useValue(opts.clock);
+  for (const o of opts.overrides ?? []) {
+    builder.overrideProvider(o.token as never).useValue(o.value);
+  }
 
   const moduleRef = await builder.compile();
   await moduleRef.init();

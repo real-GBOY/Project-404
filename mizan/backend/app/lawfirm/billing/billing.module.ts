@@ -10,6 +10,6 @@ import { BillingService } from "./billing-service.js";
   imports: [LawfirmSharedModule, SettingsModule, IdentityModule, AuditModule, EventsModule],
   controllers: [BillingController],
   providers: [BillingRepository, BillingService],
-  exports: [BillingRepository],
+  exports: [BillingRepository, BillingService],
 })
 export class BillingModule {}

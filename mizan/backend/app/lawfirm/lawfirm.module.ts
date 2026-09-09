@@ -12,6 +12,7 @@ import { StaffModule } from "@app/lawfirm/staff/staff.module.js";
 import { AdminModule } from "@app/lawfirm/admin/admin.module.js";
 import { DashboardModule } from "@app/lawfirm/dashboard/dashboard.module.js";
 import { SettingsModule } from "@app/lawfirm/settings/settings.module.js";
+import { AssistantModule } from "@app/lawfirm/assistant/assistant.module.js";
 
 /**
  * The Mizan law-firm product domain (Plan §10.1 `app/<domain>/`).
@@ -38,6 +39,7 @@ import { SettingsModule } from "@app/lawfirm/settings/settings.module.js";
     AdminModule,
     DashboardModule,
     SettingsModule,
+    AssistantModule,
   ],
 })
 export class LawfirmModule {}

@@ -1,0 +1,55 @@
+// mizan/backend/app/lawfirm/assistant — the Mizan Copilot.
+//
+// A deliberately small conversation store: one row per conversation, one row
+// per message (user / assistant / tool). Tool calls and results are kept as
+// JSON on the message so the agent loop can be replayed, and so the UI can
+// show "what the assistant did". No vector store, no embeddings — the Copilot
+// is an orchestration layer over the existing law-firm use cases (see
+// docs/assistant.md).
+//
+// Hand-written SQL (RLS, CHECKs, updated_at trigger) lives in
+// ../migrations/*_lawfirm_assistant; these models mirror the tables for the
+// Prisma -> Kysely type generator only.
+
+model lawfirm_ai_conversations {
+  id              String   @id
+  organization_id String
+  /// The Core user who owns the conversation. A conversation is private to its
+  /// owner within its tenant — never listed or loaded for anyone else.
+  user_id         String
+  title           String?
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  messages lawfirm_ai_messages[]
+
+  @@unique([organization_id, id], map: "lawfirm_ai_conversations_org_id_uq")
+  @@index([organization_id, user_id, updated_at], map: "lawfirm_ai_conversations_owner_idx")
+  @@map("lawfirm_ai_conversations")
+}
+
+model lawfirm_ai_messages {
+  id              String   @id
+  organization_id String
+  conversation_id String
+  /// @kyselyType('user' | 'assistant' | 'tool')
+  role            String
+  /// Assistant / user free text. NULL on an assistant turn that only requested
+  /// tool calls.
+  content         String?
+  /// Tool calls the assistant requested this turn: [{ id, name, arguments }].
+  /// @kyselyType(Json<Array<{ id: string; name: string; arguments: string }>>)
+  tool_calls      Json?
+  /// For role='tool': which assistant tool_call this row answers, and its name.
+  tool_call_id    String?
+  tool_name       String?
+  /// Non-sensitive bookkeeping: model, latency_ms, token usage, ok/error.
+  /// @kyselyType(Json<Record<string, unknown>>)
+  metadata        Json?
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  conversation lawfirm_ai_conversations @relation(fields: [organization_id, conversation_id], references: [organization_id, id], onDelete: Cascade, onUpdate: NoAction, map: "lawfirm_ai_messages_conversation_fk")
+
+  @@index([organization_id, conversation_id, created_at], map: "lawfirm_ai_messages_conversation_idx")
+  @@map("lawfirm_ai_messages")
+}

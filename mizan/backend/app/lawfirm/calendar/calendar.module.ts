@@ -11,6 +11,6 @@ import { CalendarService } from "./calendar-service.js";
   imports: [LawfirmSharedModule, HearingsModule, TasksModule, IdentityModule],
   controllers: [CalendarController],
   providers: [CalendarRepository, CalendarService],
-  exports: [CalendarRepository],
+  exports: [CalendarRepository, CalendarService],
 })
 export class CalendarModule {}
