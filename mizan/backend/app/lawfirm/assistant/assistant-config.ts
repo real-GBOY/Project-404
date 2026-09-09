@@ -29,6 +29,13 @@ const schema = z.object({
   maxHistoryMessages: z.coerce.number().int().positive().default(24),
   /** Upper bound on assistant output tokens per turn. */
   maxOutputTokens: z.coerce.number().int().positive().default(1500),
+  /**
+   * Keeps the assistant on-topic (Mizan / the firm's practice-management data).
+   *   strict      — a pre-flight scope check refuses off-topic requests outright
+   *   prompt_only — no pre-check; the system prompt is the only guard
+   *   off         — no scope restriction
+   */
+  scopeEnforcement: z.enum(["strict", "prompt_only", "off"]).default("strict"),
 });
 
 export type AssistantConfig = z.infer<typeof schema> & { enabled: boolean };
@@ -47,6 +54,7 @@ export function readAssistantConfig(env: NodeJS.ProcessEnv = process.env): Assis
     maxToolIterations: env.AI_MAX_TOOL_ITERATIONS,
     maxHistoryMessages: env.AI_MAX_HISTORY_MESSAGES,
     maxOutputTokens: env.AI_MAX_OUTPUT_TOKENS,
+    scopeEnforcement: env.AI_SCOPE_ENFORCEMENT,
   });
 
   if (!parsed.success) {

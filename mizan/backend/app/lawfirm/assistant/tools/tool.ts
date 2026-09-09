@@ -21,6 +21,22 @@ export interface ToolContext {
  *  - validates its arguments with a Zod schema,
  *  - delegates to an existing Mizan service — it never touches the database,
  *    SQL, or another module's tables directly.
+ *
+ * ─── Adding a tool is adding an AI-accessible API endpoint. Review it as one: ──
+ *  1. Permission     — a concrete `{ action, resource }` (never null).
+ *  2. Tenant         — the service scopes by organization_id AND the table is
+ *                      under RLS. If not, do not add the tool.
+ *  3. Resources      — it can only reach what the permission implies.
+ *  4. Sensitive data — the service's view shape excludes internal / credential /
+ *                      other-user PII fields. Never `JSON.stringify(rawRow)`.
+ *  5. Enforcement    — authorization lives in the *service*, not just here.
+ *  6. Mutation       — writes set `mutates: true` (⇒ model confirmation + a
+ *                      `lawfirm.assistant.write` audit row).
+ *  7. Audit          — covered by the per-turn `lawfirm.assistant.query` row.
+ *  8. Tests          — add a cross-tenant case + a permission-deny case to
+ *                      tests/assistant-security.test.ts.
+ * The invariant: no model output can make Mizan return or modify data the
+ * authenticated principal is not authorized to access. See docs/assistant.md.
  */
 export interface AssistantTool<S extends z.ZodTypeAny = z.ZodTypeAny> {
   name: string;

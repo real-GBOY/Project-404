@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -7,7 +7,8 @@ import { Icon } from "@/components/ui/icon";
 import { MizanMark } from "@/components/ui/logo";
 import { usePermissions } from "@/lib/permissions/use-permissions";
 import { isApiError } from "@/lib/api/api-error";
-import { sendChat, type CurrentContext, type ToolActivity } from "../api/assistant.api";
+import { sendChat, type ToolActivity } from "../api/assistant.api";
+import { contextFromPath } from "../lib/current-context";
 
 interface Message {
   id: string;
@@ -21,17 +22,6 @@ const mid = () => `m${++seq}`;
 
 const GRADIENT_BORDER = "linear-gradient(115deg,#31456b,#b99a5b 50%,#16233a)";
 
-/** Turn `/matters/mat_123` into `{ screen: "matter", matterId: "mat_123" }`. */
-function contextFromPath(pathname: string): CurrentContext {
-  const seg = pathname.split("/").filter(Boolean);
-  if (seg[0] === "matters" && seg[1]) return { screen: "matter", matterId: seg[1] };
-  if (seg[0] === "clients" && seg[1]) return { screen: "client", clientId: seg[1] };
-  if (seg[0] === "billing" && seg[1] === "invoices" && seg[2]) {
-    return { screen: "invoice" };
-  }
-  return { screen: seg[0] ?? "dashboard" };
-}
-
 export function AskMizan() {
   const { t } = useTranslation("common");
   const { can } = usePermissions();
@@ -44,8 +34,12 @@ export function AskMizan() {
   const conversationId = useRef<string | undefined>(undefined);
   const lastPrompt = useRef<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const currentContext = useMemo(() => contextFromPath(pathname), [pathname]);
+
+  // Drop an in-flight turn when the component goes away.
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   if (!can("use:assistant")) return null;
 
@@ -62,12 +56,19 @@ export function AskMizan() {
     setPending(true);
     scrollDown();
 
+    abortRef.current?.abort();
+    const ac = new AbortController();
+    abortRef.current = ac;
+
     try {
-      const res = await sendChat({
-        conversationId: conversationId.current,
-        message: text,
-        currentContext,
-      });
+      const res = await sendChat(
+        {
+          conversationId: conversationId.current,
+          message: text,
+          currentContext,
+        },
+        ac.signal,
+      );
       conversationId.current = res.conversationId;
       setMessages((prev) => [
         ...prev,
@@ -79,11 +80,13 @@ export function AskMizan() {
         },
       ]);
     } catch (err) {
-      setError(
-        isApiError(err) && err.message ? err.message : t("assistant.error_generic"),
-      );
+      if (ac.signal.aborted) return; // user closed / navigated away
+      setError(isApiError(err) && err.message ? err.message : t("assistant.error_generic"));
     } finally {
-      setPending(false);
+      if (abortRef.current === ac) {
+        abortRef.current = null;
+        setPending(false);
+      }
       scrollDown();
     }
   }
@@ -106,6 +109,10 @@ export function AskMizan() {
       open={open}
       onOpenChange={(o) => {
         setOpen(o);
+        if (!o) {
+          abortRef.current?.abort();
+          setPending(false);
+        }
       }}
     >
       <Dialog.Trigger

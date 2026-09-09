@@ -1,3 +1,10 @@
+/**
+ * Mizan Copilot — orchestration behaviour.
+ *
+ * The agent loop, conversation persistence, tool-result plumbing, error
+ * handling, and the scope gate (a product/UX restriction — NOT a security
+ * boundary). The access-control invariant lives in `assistant-security.test.ts`.
+ */
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { TestingModule } from "@nestjs/testing";
 import {
@@ -6,11 +13,14 @@ import {
   get,
   hasTestDb,
   seedFirm,
-  seedMember,
   type SeededFirm,
 } from "@app/lawfirm/tests/helpers.js";
-import { AI_CLIENT } from "@app/lawfirm/assistant/ai/ai-client.js";
-import { AiUpstreamError } from "@app/lawfirm/assistant/ai/ai-client.js";
+import { AI_CLIENT, AiUpstreamError } from "@app/lawfirm/assistant/ai/ai-client.js";
+import {
+  ASSISTANT_CONFIG,
+  readAssistantConfig,
+  type AssistantConfig,
+} from "@app/lawfirm/assistant/assistant-config.js";
 import { AssistantService } from "@app/lawfirm/assistant/assistant-service.js";
 import { ClientsService } from "@app/lawfirm/clients/clients-service.js";
 import { MattersService } from "@app/lawfirm/matters/matters-service.js";
@@ -22,9 +32,9 @@ const suite = hasTestDb ? describe : describe.skip;
 suite("lawfirm/assistant — Mizan Copilot", () => {
   let app: TestingModule;
   const ai = new ScriptedAiClient();
+  // Mutable so a test can flip scope enforcement, like `ai.script(...)`.
+  const cfg: AssistantConfig = { ...readAssistantConfig(), scopeEnforcement: "strict" };
   let firmA: SeededFirm;
-  let firmB: SeededFirm;
-  let readerId: string; // read_only member of firm A
   let matterA: { id: string; title: string };
 
   const svc = () => get<AssistantService>(app, AssistantService);
@@ -32,25 +42,20 @@ suite("lawfirm/assistant — Mizan Copilot", () => {
     userId: string,
     firm: SeededFirm,
     message: string,
-    extra: { conversationId?: string; currentContext?: Record<string, string> } = {},
+    extra: { conversationId?: string } = {},
   ) =>
     asUser(userId, firm.orgId, () =>
-      svc().chat({
-        userId,
-        organizationId: firm.orgId,
-        locale: "en",
-        message,
-        ...extra,
-      }),
+      svc().chat({ userId, organizationId: firm.orgId, locale: "en", message, ...extra }),
     );
 
   beforeAll(async () => {
     app = await createMizanTestApp({
-      overrides: [{ token: AI_CLIENT, value: ai }],
+      overrides: [
+        { token: AI_CLIENT, value: ai },
+        { token: ASSISTANT_CONFIG, value: cfg },
+      ],
     });
     firmA = await seedFirm(app, "Firm A");
-    firmB = await seedFirm(app, "Firm B");
-    readerId = await seedMember(app, firmA, "read_only", "Auditor");
 
     await asUser(firmA.adminId, firmA.orgId, async () => {
       const client = await get<ClientsService>(app, ClientsService).create(
@@ -81,7 +86,6 @@ suite("lawfirm/assistant — Mizan Copilot", () => {
     ai.script(); // reset
   });
 
-  // 1 ─ AI service: a plain turn round-trips and is persisted
   it("answers a plain question and persists the conversation", async () => {
     ai.script(say("I can help with hearings, tasks and billing."));
     const res = await chatAs(firmA.adminId, firmA, "What can you do?");
@@ -97,53 +101,6 @@ suite("lawfirm/assistant — Mizan Copilot", () => {
     expect(convo.messages[0].content).toBe("What can you do?");
   });
 
-  // 2 ─ Authentication / ownership: another user cannot touch your conversation
-  it("refuses a conversation that belongs to a different user", async () => {
-    ai.script(say("first"));
-    const { conversationId } = await chatAs(firmA.adminId, firmA, "hello");
-
-    ai.script(say("second"));
-    await expect(chatAs(readerId, firmA, "continue please", { conversationId })).rejects.toThrow(
-      /conversation was not found/i,
-    );
-
-    await expect(
-      asUser(readerId, firmA.orgId, () =>
-        svc().getConversation(readerId, firmA.orgId, conversationId),
-      ),
-    ).rejects.toThrow(/not found/i);
-  });
-
-  // 3 ─ Organization isolation: firm B cannot resume firm A's conversation
-  it("refuses another organization's conversation id", async () => {
-    ai.script(say("hi from A"));
-    const { conversationId } = await chatAs(firmA.adminId, firmA, "hello");
-
-    ai.script(say("hi from B"));
-    await expect(
-      chatAs(firmB.adminId, firmB, "what did we say?", { conversationId }),
-    ).rejects.toThrow(/not found/i);
-  });
-
-  // 4 ─ Tool authorization: a read-only user cannot drive a write tool
-  it("blocks a write tool the caller lacks permission for, and does not execute it", async () => {
-    ai.script(
-      callTool("create_task", { title: "Reader-made task", matterId: matterA.id }),
-      echoLastToolResult,
-    );
-    const res = await chatAs(readerId, firmA, "make a task to review the contract");
-
-    expect(res.toolActivity).toHaveLength(1);
-    expect(res.toolActivity[0]).toMatchObject({ name: "create_task", ok: false, mutates: true });
-    expect(res.toolActivity[0].error).toMatch(/permission/i);
-
-    const tasks = await asUser(firmA.adminId, firmA.orgId, () =>
-      get<TasksService>(app, TasksService).list({ actorId: firmA.adminId }),
-    );
-    expect(tasks.items.some((t) => t.title === "Reader-made task")).toBe(false);
-  });
-
-  // 5 ─ Tool argument validation
   it("rejects malformed tool arguments without calling the service", async () => {
     ai.script(callTool("create_task", { matterId: matterA.id }), echoLastToolResult); // no title
     const res = await chatAs(firmA.adminId, firmA, "add a task");
@@ -152,7 +109,6 @@ suite("lawfirm/assistant — Mizan Copilot", () => {
     expect(res.toolActivity[0].error).toMatch(/title/i);
   });
 
-  // 6 ─ Successful write: the task really exists afterwards
   it("creates a task through the Tasks use case and reports the real result", async () => {
     ai.script(
       callTool("create_task", {
@@ -186,7 +142,6 @@ suite("lawfirm/assistant — Mizan Copilot", () => {
     ).toBe(true);
   });
 
-  // 7 ─ Failed tool execution surfaces the real error, no crash
   it("surfaces a domain error from a tool and still returns an answer", async () => {
     ai.script(callTool("get_matter", { matterId: "mat_does_not_exist" }), echoLastToolResult);
     const res = await chatAs(firmA.adminId, firmA, "summarize matter mat_does_not_exist");
@@ -196,7 +151,6 @@ suite("lawfirm/assistant — Mizan Copilot", () => {
     expect(res.message).toMatch(/not found/i);
   });
 
-  // 8 ─ Upstream model/API failure fails safely
   it("maps an upstream failure to a safe error and leaves the conversation consistent", async () => {
     ai.fail(() => AiUpstreamError.unavailable("boom"));
     await expect(chatAs(firmA.adminId, firmA, "anything")).rejects.toMatchObject({
@@ -205,32 +159,6 @@ suite("lawfirm/assistant — Mizan Copilot", () => {
     ai.script(); // clear the failure mode
   });
 
-  // 9 ─ A user cannot use the AI to read another organization's data
-  it("a tool call runs in the caller's tenant — firm B cannot reach firm A's matter", async () => {
-    ai.script(callTool("get_matter", { matterId: matterA.id }), echoLastToolResult);
-    const res = await chatAs(firmB.adminId, firmB, `look up matter ${matterA.id}`);
-
-    expect(res.toolActivity[0]).toMatchObject({ ok: false });
-    expect(res.message).not.toContain(matterA.title);
-
-    // And firm B's own search sees none of firm A's matters.
-    ai.script(callTool("search_matters", {}), echoLastToolResult);
-    const search = await chatAs(firmB.adminId, firmB, "list our matters");
-    expect(search.message).not.toContain("Orion");
-  });
-
-  // 10 ─ The authenticated user's tenant/authz context is what tools use
-  it("the same tool returns each firm its own data", async () => {
-    ai.script(callTool("search_matters", { query: "Orion" }), echoLastToolResult);
-    const a = await chatAs(firmA.adminId, firmA, "find the Orion matter");
-    expect(a.message).toContain("Orion facility dispute");
-
-    ai.script(callTool("search_matters", { query: "Orion" }), echoLastToolResult);
-    const b = await chatAs(firmB.adminId, firmB, "find the Orion matter");
-    expect(b.message).not.toContain("Orion facility dispute");
-  });
-
-  // Bonus ─ multi-step: tool call then a natural-language answer, history preserved
   it("carries tool results into a final answer and keeps history", async () => {
     ai.script(
       callTool("get_tasks", { range: "overdue" }),
@@ -244,9 +172,67 @@ suite("lawfirm/assistant — Mizan Copilot", () => {
     const followUp = await chatAs(firmA.adminId, firmA, "and now?", {
       conversationId: res.conversationId,
     });
-    // The second request must have been given the prior turns.
     const lastReq = ai.requests.at(-1)!;
     expect(lastReq.messages.filter((m) => m.role === "user").length).toBeGreaterThanOrEqual(2);
     expect(followUp.conversationId).toBe(res.conversationId);
+  });
+
+  // ── Scope gate — a product/UX restriction, not a security boundary ────────
+  describe("scope gate", () => {
+    it("refuses an obviously off-topic request by heuristic — no model call at all", async () => {
+      const before = ai.requests.length;
+      ai.script(say("SHOULD NOT BE USED"));
+      const res = await chatAs(firmA.adminId, firmA, "write me a python script to sort a list");
+
+      expect(res.toolActivity).toEqual([]);
+      expect(res.message).toMatch(/only help with your firm's work inside Mizan/i);
+      expect(ai.requests.length).toBe(before);
+    });
+
+    it("refuses via the classifier when heuristics are inconclusive", async () => {
+      const before = ai.requests.length;
+      ai.script(say("OUT_OF_SCOPE"), say("SHOULD NOT BE USED"));
+      const res = await chatAs(
+        firmA.adminId,
+        firmA,
+        "recommend a nice place for the team dinner on Friday",
+      );
+
+      expect(res.message).toMatch(/can't help with that request/i);
+      expect(res.toolActivity).toEqual([]);
+      expect(ai.requests.length).toBe(before + 1);
+    });
+
+    it("lets an in-scope request through the classifier", async () => {
+      ai.script(say("IN_SCOPE"), callTool("get_dashboard_summary", {}), say("All quiet."));
+      const res = await chatAs(
+        firmA.adminId,
+        firmA,
+        "give me the rundown on where things stand for us",
+      );
+      expect(res.toolActivity[0]).toMatchObject({ name: "get_dashboard_summary", ok: true });
+      expect(res.message).toBe("All quiet.");
+    });
+
+    it("persists the refusal as an assistant turn", async () => {
+      ai.script(say("x"));
+      const res = await chatAs(firmA.adminId, firmA, "what is the capital of France?");
+      const convo = await asUser(firmA.adminId, firmA.orgId, () =>
+        svc().getConversation(firmA.adminId, firmA.orgId, res.conversationId),
+      );
+      expect(convo.messages.at(-1)).toMatchObject({ role: "assistant", content: res.message });
+    });
+
+    it("prompt_only mode skips the pre-check (system prompt is the only guard)", async () => {
+      cfg.scopeEnforcement = "prompt_only";
+      try {
+        ai.script(say("(model would refuse here per the system prompt)"));
+        const res = await chatAs(firmA.adminId, firmA, "write me a haiku about the sea");
+        expect(ai.requests.at(-1)!.messages.some((m) => m.role === "system")).toBe(true);
+        expect(res.message).toMatch(/model would refuse/);
+      } finally {
+        cfg.scopeEnforcement = "strict";
+      }
+    });
   });
 });

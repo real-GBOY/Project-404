@@ -56,6 +56,17 @@ provider can be added later as a second `AiClient` with no change to callers.
 
 ## Authorization — the core guarantee
 
+> **The invariant.** No sequence of model outputs — any tool, any arguments, in
+> any order, with any prompt or document content — can cause Mizan to return or
+> modify data the authenticated principal is not authorized to access. The LLM
+> chooses *which* tool and *what arguments*; it never decides *whether it is
+> allowed*. Every change to this module is measured against that sentence.
+>
+> The security boundary is the **tool registry + Mizan services + Postgres RLS**,
+> not the prompt. The system prompt and the scope guard are product/UX behaviour;
+> they are not relied on for access control. The dedicated regression suite for
+> the invariant is `tests/assistant-security.test.ts`.
+
 The assistant creates **no** identity of its own. Every request runs as the
 authenticated user in their active tenant:
 
@@ -67,10 +78,54 @@ authenticated user in their active tenant:
   The permission check is the same `IPermissionProvider` the HTTP guards use.
 - Tools delegate to existing services, which filter by `organization_id` and run
   under Postgres RLS. A user cannot use the assistant to read or change anything
-  they could not through the normal app. Proven by the integration tests
-  (`tests/assistant.integration.test.ts`): firm B cannot resume firm A's
-  conversation, cannot read firm A's matter through a tool, and a `read_only`
-  user's `create_task` call is refused and not executed.
+  they could not through the normal app.
+- The `POST /api/ai/chat` body (`assistant.schema.ts`) is `.strict()` — it
+  accepts only `{ conversationId?, message, currentContext? }`. A client-supplied
+  `userId` / `organizationId` / `role` / `permissions` is a 400, not silently
+  ignored. `currentContext.matterId` / `clientId` must match an id pattern (they
+  are disambiguation hints only, never an authorization input).
+
+### What the LLM can and cannot do
+
+The model's only output channel is `tool_calls`, dispatched by exact name against
+a fixed map of 21 tools. There is **no** `execute_sql` / `query` / generic search
+/ HTTP / repository tool. It **cannot** touch PostgreSQL, Kysely, Prisma, the
+filesystem, document file contents (no tool returns bytes or OCR), arbitrary
+endpoints, or another org's data. A jailbroken model gains nothing: the
+registry's `arg-validate → RBAC-check → org-scoped service` runs regardless of
+what the model "decides".
+
+Proven by the integration tests (`tests/assistant.integration.test.ts` →
+"security boundary"):
+
+| Scenario | Result |
+|---|---|
+| firm B resumes / reads firm A's conversation | denied (`not found`) |
+| firm B reads firm A's matter via `get_matter` / `search_matters` | denied — org-scoped service + RLS |
+| user without `read:matter` asks for a case summary | tool `auth.forbidden`; service never called |
+| user without `read:client` asks for client data | tool `auth.forbidden` |
+| `registry.run("execute_sql", …)` / any unknown name | `assistant.unknown_tool`; no such tool exists |
+| injection text in a matter `description` / client `note` | delivered as record **data**; a following "injected" tool call is still permission-checked and denied |
+| body with `organizationId` / `userId` / `role` | schema rejects (400) |
+| model emits a credential-shaped string | `response-guard.ts` redacts it before the user sees it (defence-in-depth, not the boundary) |
+
+### Prompt-injection posture
+
+Message roles are separated (system / user / assistant / tool). Document **body
+text is never retrieved** — the strongest mitigation. The system prompt's
+`## Trusted context vs. untrusted data` section tells the model that tool
+results, and any text inside them, are records to report on — never
+instructions. Short free-text fields (matter descriptions, client notes, task
+titles, activity labels) still reach the model as tool output, but cannot exceed
+the registry's enforcement.
+
+### Audit
+
+Every AI turn writes one `lawfirm.assistant.query` entry to Core `audit_logs`
+(`actorId`, `conversationId`, tool list + ok/err, resource ids touched, `refused`
+reason if any). A successful write tool additionally writes
+`lawfirm.assistant.write`. API keys are never in any prompt, tool result, log
+line, or audit row.
 
 There is no AI-specific bypass anywhere.
 
@@ -103,6 +158,41 @@ Each tool = name + description + Zod parameter schema + required
 `{action, resource}` permission + `execute(args, ctx)` that calls one existing
 service. Zod schemas are converted to JSON Schema for the upstream request by a
 tiny in-house converter (`tools/zod-to-json-schema.ts`) — no new dependency.
+
+### Adding a tool
+
+**Each tool is an AI-accessible API endpoint.** Review a new one exactly as you
+would review a new route — the checklist is also at the top of `tools/tool.ts`:
+
+1. **Permission** — what `{action, resource}` does it require? (never `null`)
+2. **Tenant** — does the underlying service scope by `organization_id` *and* is
+   the table under RLS? (if not, the tool is not safe to add)
+3. **Resources** — which records can it reach? Only what the permission implies?
+4. **Sensitive fields** — does the service view shape exclude internal fields,
+   credentials, other-user PII beyond names? No `JSON.stringify(rawRow)`.
+5. **Authorization enforcement** — is it in the *service*, not just the tool?
+   The tool's own `permissions.can()` check is necessary, not sufficient.
+6. **Mutation** — does it write? Then `mutates: true`, and the model must confirm
+   consequential writes (system prompt), and it lands in `lawfirm.assistant.write`.
+7. **Auditable** — the per-turn `lawfirm.assistant.query` row records it; a write
+   also gets its own row. Resource ids touched are captured from the args.
+8. **Test** — add a cross-tenant + a permission-deny case to
+   `tests/assistant-security.test.ts`.
+
+## Scope — the assistant stays inside Mizan
+
+Two layers keep the Copilot on-topic (the firm's practice-management data and
+Mizan how-to), configurable with `AI_SCOPE_ENFORCEMENT`:
+
+| value | behaviour |
+|---|---|
+| `strict` *(default)* | `ScopeGuard` runs a pre-flight check on every message. In-scope heuristics (firm entities, Mizan how-to, greetings — EN + AR) and an out-of-scope heuristic (coding, general knowledge, content generation) settle the common cases with no model call; a terse follow-up on an existing thread passes; anything left gets one minimal classifier call (`IN_SCOPE` / `OUT_OF_SCOPE`, ~250 tokens). Out-of-scope → a fixed refusal, persisted as the assistant turn, **no agent loop, no tools**. Fails open on a classifier error (the system prompt is the backstop). |
+| `prompt_only` | no pre-check; the system prompt's **## Scope** section is the only guard |
+| `off` | no restriction |
+
+The refusal is identical every time (`scope-guard.ts#outOfScopeReply`, localised),
+and the turn is logged as `assistant chat refused — out of scope` with the `via`
+reason. Covered by `tests/assistant.integration.test.ts` → "scope gate".
 
 ## Conversation model
 
@@ -191,9 +281,34 @@ every other call. Redeploy `mizan/web` to ship the wired-up "Ask Mizan".
 
 The existing "Ask Mizan" launcher in the top bar (`features/assistant/`), rewired
 from the canned stub to `POST /api/ai/chat`. Same visual shell; adds a loading
-state, error + retry, and tool-activity chips. Hidden entirely for a user
-without `use:assistant`. Conversation id is kept in component state for the
-session; "New chat" resets it.
+state, error + retry, and tool-activity chips. Conversation id is kept in
+component state for the session; "New chat" resets it. In-flight turns are
+cancelled (AbortController) when the dialog closes or unmounts.
+
+**Frontend security posture** (audited):
+
+- The client sends **only** `{ conversationId?, message, currentContext? }`
+  (`assistant.api.ts`). No `userId` / `organizationId` / `role` — identity is the
+  JWT, server-side. `httpClient` adds only `Authorization` + `content-type`.
+- **No XSS from model output.** The answer is rendered as `{text}` inside a
+  `<p>` — React auto-escapes. There is **no** `dangerouslySetInnerHTML`, no
+  markdown/HTML renderer anywhere in the web app, so a model that echoes
+  `<script>` from a poisoned document renders it as literal text. Tool names and
+  error strings are likewise escaped text.
+- `if (!can("use:assistant")) return null` hides the launcher — **UX only**; the
+  backend independently enforces the permission and every per-tool RBAC check.
+- `currentContext` is derived from the route (`lib/current-context.ts`) and
+  validated against an id / slug pattern; a malformed URL segment drops the hint
+  rather than sending prose. The backend re-validates and would reject it anyway.
+- `conversationId` is client-held and **server-validated for ownership** (owner +
+  org) on every use — tampering in devtools yields "not found".
+- The MSW handler for `/ai/chat` is Vitest-only; it is not in the production
+  bundle.
+- Pre-existing, not AI-specific: the refresh token lives in `localStorage`
+  (`token-store.ts`, flagged there as a hardening item). The AI feature adds no
+  new XSS surface, so it does not worsen this.
+
+Hidden entirely for a user without `use:assistant`.
 
 ## Not done / follow-ups
 

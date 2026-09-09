@@ -14,6 +14,8 @@ import {
   type MessageRow,
   type StoredToolCall,
 } from "./conversation-repository.js";
+import { guardResponse } from "./response-guard.js";
+import { ScopeGuard, outOfScopeReply } from "./scope-guard.js";
 import { buildSystemPrompt } from "./system-prompt.js";
 import { ToolRegistry } from "./tools/tool-registry.js";
 import type { ToolContext } from "./tools/tool.js";
@@ -52,6 +54,7 @@ export class AssistantService {
   constructor(
     private readonly conversations: ConversationRepository,
     private readonly registry: ToolRegistry,
+    private readonly scope: ScopeGuard,
     private readonly directory: LawfirmDirectory,
     @Inject(AI_CLIENT) private readonly ai: AiClient,
     @Inject(ASSISTANT_CONFIG) private readonly config: AssistantConfig,
@@ -117,6 +120,44 @@ export class AssistantService {
       }),
     );
 
+    // ── Scope gate — keep the assistant on Mizan's domain ──────────────────
+    const scope = await this.scope.check(message, history.length > 0);
+    if (!scope.inScope) {
+      const refusal = outOfScopeReply(input.locale);
+      await this.uow.transaction(async () => {
+        await this.conversations.appendMessage({
+          conversationId: conversation.id,
+          role: "assistant",
+          content: refusal,
+          metadata: { refused: "out_of_scope", scopeVia: scope.via },
+        });
+        await this.conversations.touch(conversation.id);
+      });
+      await this.recordQueryAudit(input.userId, conversation.id, correlationId, {
+        tools: [],
+        resourceIds: [],
+        refused: `scope:${scope.via}`,
+      });
+      this.observe({
+        correlationId,
+        input,
+        organizationId,
+        conversationId: conversation.id,
+        iterations: 0,
+        toolActivity: [],
+        usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+        latencyMs: Date.now() - startedAt,
+        ok: true,
+        refused: scope.via,
+      });
+      return {
+        conversationId: conversation.id,
+        message: refusal,
+        toolActivity: [],
+        usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+      };
+    }
+
     // ── Build the working transcript ───────────────────────────────────────
     const toolCtx: ToolContext = {
       userId: input.userId,
@@ -147,6 +188,7 @@ export class AssistantService {
       usage.totalTokens += u.totalTokens ?? 0;
     };
     const toolActivity: ToolActivity[] = [];
+    const resourceIds = new Set<string>();
     let iterations = 0;
     let finalText: string | null = null;
 
@@ -187,6 +229,7 @@ export class AssistantService {
 
         for (const call of resp.toolCalls) {
           const tool = this.registry.list().find((x) => x.name === call.name);
+          for (const rid of extractResourceIds(call.arguments)) resourceIds.add(rid);
           const result = await this.registry.run(call.name, call.arguments, toolCtx);
           const rendered = renderToolResult(result);
           await this.uow.transaction(() =>
@@ -247,10 +290,13 @@ export class AssistantService {
       throw err;
     }
 
-    const answer =
+    const rawAnswer =
       finalText && finalText.length > 0
         ? finalText
         : "I couldn't put together an answer for that. Try rephrasing?";
+    // Defence-in-depth only — nothing secret is ever in context (see response-guard.ts).
+    const guarded = guardResponse(rawAnswer, correlationId);
+    const answer = guarded.text;
 
     await this.uow.transaction(async () => {
       await this.conversations.appendMessage({
@@ -263,12 +309,20 @@ export class AssistantService {
           iterations,
           usage,
           latencyMs: Date.now() - startedAt,
+          ...(guarded.redacted.length > 0 ? { redacted: guarded.redacted } : {}),
         },
       });
       await this.conversations.touch(conversation.id);
     });
 
-    // A write tool that actually succeeded is an auditable action by this user.
+    // Access record: every AI turn that ran, and which resources it touched.
+    await this.recordQueryAudit(input.userId, conversation.id, correlationId, {
+      tools: toolActivity.map((a) => `${a.name}:${a.ok ? "ok" : "err"}`),
+      resourceIds: [...resourceIds],
+      ...(guarded.redacted.length > 0 ? { redacted: guarded.redacted } : {}),
+    });
+
+    // A write tool that actually succeeded is separately an auditable mutation.
     const writes = toolActivity.filter((a) => a.mutates && a.ok).map((a) => a.name);
     if (writes.length > 0) {
       await this.uow.transaction(() =>
@@ -295,6 +349,32 @@ export class AssistantService {
     });
 
     return { conversationId: conversation.id, message: answer, toolActivity, usage };
+  }
+
+  /** One `audit_logs` row per AI turn — who ran the assistant, what it invoked,
+   *  which records it touched. Best-effort: a logging failure must not fail chat. */
+  private async recordQueryAudit(
+    userId: string,
+    conversationId: string,
+    correlationId: string,
+    metadata: Record<string, unknown>,
+  ): Promise<void> {
+    try {
+      await this.uow.transaction(() =>
+        this.audit.record({
+          actorId: userId,
+          action: "lawfirm.assistant.query",
+          resourceType: "lawfirm_ai_conversation",
+          resourceId: conversationId,
+          metadata: { ...metadata, correlationId },
+        }),
+      );
+    } catch (err) {
+      log.warn(
+        { correlationId, err: err instanceof Error ? err.message : String(err) },
+        "assistant query audit failed",
+      );
+    }
   }
 
   /** The caller's recent conversations (id + title + timestamp only). */
@@ -363,6 +443,8 @@ export class AssistantService {
     latencyMs: number;
     ok: boolean;
     error?: unknown;
+    /** Set when the scope gate refused the request (its `via` value). */
+    refused?: string;
   }): void {
     const line = {
       correlationId: o.correlationId,
@@ -379,8 +461,11 @@ export class AssistantService {
       totalTokens: o.usage.totalTokens,
       latencyMs: o.latencyMs,
       ok: o.ok,
+      ...(o.refused ? { refused: o.refused } : {}),
     };
-    if (o.ok) {
+    if (o.refused) {
+      log.info(line, "assistant chat refused — out of scope");
+    } else if (o.ok) {
       log.info(line, "assistant chat completed");
     } else {
       log.warn(
@@ -394,6 +479,27 @@ export class AssistantService {
 function title(message: string): string {
   const trimmed = message.replace(/\s+/g, " ").trim();
   return trimmed.length > 80 ? `${trimmed.slice(0, 77)}…` : trimmed;
+}
+
+/** Pull Mizan-id-shaped values out of a tool call's raw JSON args, for the audit
+ *  trail. Purely observational — authorization never depends on this. */
+function extractResourceIds(rawArguments: string): string[] {
+  try {
+    const args = JSON.parse(rawArguments) as Record<string, unknown>;
+    const out: string[] = [];
+    for (const [key, value] of Object.entries(args)) {
+      if (
+        typeof value === "string" &&
+        /id$/i.test(key) &&
+        /^[a-z]{2,6}_[A-Za-z0-9_-]{6,40}$/.test(value)
+      ) {
+        out.push(value);
+      }
+    }
+    return out;
+  } catch {
+    return [];
+  }
 }
 
 function toAiMessage(m: MessageRow): AiMessage {

@@ -15,6 +15,7 @@ import { ASSISTANT_CONFIG, readAssistantConfig } from "./assistant-config.js";
 import { AssistantController } from "./assistant.controller.js";
 import { AssistantService } from "./assistant-service.js";
 import { ConversationRepository } from "./conversation-repository.js";
+import { ScopeGuard } from "./scope-guard.js";
 import { ReadTools } from "./tools/read-tools.js";
 import { ToolRegistry } from "./tools/tool-registry.js";
 import { WriteTools } from "./tools/write-tools.js";
@@ -50,6 +51,7 @@ import { WriteTools } from "./tools/write-tools.js";
     ReadTools,
     WriteTools,
     ToolRegistry,
+    ScopeGuard,
     ConversationRepository,
     AssistantService,
   ],
