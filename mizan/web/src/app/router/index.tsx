@@ -1,4 +1,4 @@
-import { lazy, type ComponentType } from "react";
+import { lazy, Suspense, type ComponentType } from "react";
 import { Route, Routes } from "react-router-dom";
 import { AppShell } from "@/app/layouts/app-shell";
 import { AuthLayout } from "@/app/layouts/auth-layout";
@@ -20,6 +20,7 @@ import { RequirePermission } from "./require-permission";
 const named = <M, K extends keyof M>(load: () => Promise<M>, key: K) =>
   lazy(() => load().then((m) => ({ default: m[key] as ComponentType })));
 
+const LandingPage = named(() => import("@/features/landing"), "LandingPage");
 const CaseWorkPage = named(() => import("./case-work-page"), "CaseWorkPage");
 const DashboardPage = named(() => import("@/features/dashboard"), "DashboardPage");
 const ClientsListPage = named(() => import("@/features/clients"), "ClientsListPage");
@@ -53,6 +54,15 @@ const LocaleSection = named(() => import("@/features/settings"), "LocaleSection"
 export function AppRouter() {
   return (
     <Routes>
+      <Route
+        path="/welcome"
+        element={
+          <Suspense fallback={<div style={{ minHeight: "100dvh", background: "#F5F3EF" }} />}>
+            <LandingPage />
+          </Suspense>
+        }
+      />
+
       <Route element={<AuthLayout />}>
         <Route element={<RedirectIfAuthed />}>
           <Route path="/login" element={<LoginPage />} />
