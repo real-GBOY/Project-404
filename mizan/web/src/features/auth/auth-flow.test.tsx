@@ -51,8 +51,16 @@ describe("auth flow (integration, MSW-backed)", () => {
     expect(await screen.findByRole("button", { name: "Sign in" })).toBeInTheDocument();
   });
 
+  it("shows the public landing page at the root for an anonymous visitor", async () => {
+    renderApp("/");
+    expect(
+      await screen.findByRole("heading", { name: /Run your firm with/i, level: 1 }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Sign in" })).not.toBeInTheDocument();
+  });
+
   it("signs in with a single organization and lands in the app shell", async () => {
-    const { user } = renderApp("/");
+    const { user } = renderApp("/dashboard");
     await signIn(user);
 
     // Dashboard placeholder + the permission-aware sidebar are now mounted.
@@ -80,7 +88,7 @@ describe("auth flow (integration, MSW-backed)", () => {
       ),
     );
 
-    const { user } = renderApp("/");
+    const { user } = renderApp("/dashboard");
     await signIn(user);
 
     expect(await screen.findByText("Choose an organization")).toBeInTheDocument();

@@ -25,7 +25,7 @@ export function TopBar({ onToggleSidebar }: TopBarProps) {
   // Nav-derived default when a page hasn't declared its own chrome.
   const fallback = useMemo(() => {
     const match = NAV_ITEMS.filter(
-      (i) => pathname === i.to || (i.to !== "/" && pathname.startsWith(i.to)),
+      (i) => pathname === i.to || pathname.startsWith(`${i.to}/`),
     ).sort((a, b) => b.to.length - a.to.length)[0];
     return { title: match ? t(`nav.${match.labelKey}`) : t("nav.dashboard") };
   }, [pathname, t]);

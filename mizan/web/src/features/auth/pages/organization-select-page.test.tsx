@@ -12,7 +12,7 @@ function Harness() {
   return (
     <Routes>
       <Route path="/login/organization" element={<OrganizationSelectPage />} />
-      <Route path="/" element={<div>dashboard</div>} />
+      <Route path="/dashboard" element={<div>dashboard</div>} />
     </Routes>
   );
 }

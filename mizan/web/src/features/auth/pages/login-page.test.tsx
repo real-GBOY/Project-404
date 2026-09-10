@@ -8,7 +8,7 @@ function Harness() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/" element={<div>dashboard</div>} />
+      <Route path="/dashboard" element={<div>dashboard</div>} />
       <Route path="/login/organization" element={<div>pick an org</div>} />
       <Route path="/login/forgot" element={<div>forgot form</div>} />
     </Routes>

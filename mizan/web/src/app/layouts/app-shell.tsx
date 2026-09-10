@@ -18,7 +18,7 @@ function Brand() {
   const { t } = useTranslation("common");
   return (
     <Link
-      to="/"
+      to="/dashboard"
       aria-label={t("shell.home")}
       className="flex items-center gap-3 border-b border-divider-brand px-[18px] pb-4 pt-[18px] transition-colors hover:bg-surface-subtle focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
     >

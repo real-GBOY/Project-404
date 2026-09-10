@@ -11,7 +11,7 @@ describe("RedirectIfAuthed", () => {
         <Route element={<RedirectIfAuthed />}>
           <Route path="/login" element={<div>login form</div>} />
         </Route>
-        <Route path="/" element={<div>app home</div>} />
+        <Route path="/dashboard" element={<div>app home</div>} />
       </Routes>
     );
   }

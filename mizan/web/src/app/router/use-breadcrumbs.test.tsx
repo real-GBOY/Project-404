@@ -9,7 +9,7 @@ function Probe() {
 
 describe("useBreadcrumbs", () => {
   it("returns just the dashboard at the root", () => {
-    renderApp(<Probe />, { path: "/" });
+    renderApp(<Probe />, { path: "/dashboard" });
     expect(screen.getByText("Dashboard")).toBeInTheDocument();
   });
 

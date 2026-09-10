@@ -26,7 +26,7 @@ export interface NavGroup {
 export const NAV: NavGroup[] = [
   {
     titleKey: null,
-    items: [{ to: "/", labelKey: "dashboard", icon: "dashboard", perm: "read:dashboard" }],
+    items: [{ to: "/dashboard", labelKey: "dashboard", icon: "dashboard", perm: "read:dashboard" }],
   },
   {
     titleKey: "workspace",

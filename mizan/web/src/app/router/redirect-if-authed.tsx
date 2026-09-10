@@ -16,6 +16,6 @@ export function RedirectIfAuthed() {
       </div>
     );
   }
-  if (status === "authed") return <Navigate to="/" replace />;
+  if (status === "authed") return <Navigate to="/dashboard" replace />;
   return <Outlet />;
 }

@@ -10,6 +10,7 @@ import {
   ResetPasswordPage,
   VerifyEmailPage,
 } from "@/features/auth";
+import { HomeRoute } from "./home-route";
 import { ProtectedRoute } from "./protected-route";
 import { RedirectIfAuthed } from "./redirect-if-authed";
 import { RequireOrganization } from "./require-organization";
@@ -55,11 +56,13 @@ export function AppRouter() {
   return (
     <Routes>
       <Route
-        path="/welcome"
+        path="/"
         element={
-          <Suspense fallback={<div style={{ minHeight: "100dvh", background: "#F5F3EF" }} />}>
-            <LandingPage />
-          </Suspense>
+          <HomeRoute>
+            <Suspense fallback={<div style={{ minHeight: "100dvh", background: "#F5F3EF" }} />}>
+              <LandingPage />
+            </Suspense>
+          </HomeRoute>
         }
       />
 
@@ -81,7 +84,7 @@ export function AppRouter() {
         <Route element={<RequireOrganization />}>
           <Route element={<AppShell />}>
             <Route
-              index
+              path="dashboard"
               element={
                 <RequirePermission perm="read:dashboard">
                   <DashboardPage />

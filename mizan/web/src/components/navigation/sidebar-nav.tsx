@@ -42,7 +42,7 @@ export function SidebarNav() {
   }, []);
 
   const isActive = (item: NavItem) => {
-    if (item.to === "/") return pathname === "/";
+    if (item.to === "/dashboard") return pathname === "/dashboard";
     if (pathname === item.to || pathname.startsWith(`${item.to}/`)) return true;
     return (item.match ?? []).some((p) => pathname === p || pathname.startsWith(`${p}/`));
   };

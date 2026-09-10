@@ -15,14 +15,14 @@ export function useBreadcrumbs(): Crumb[] {
 
   return useMemo(() => {
     const match = NAV_ITEMS.filter(
-      (item) => pathname === item.to || (item.to !== "/" && pathname.startsWith(item.to)),
+      (item) => pathname === item.to || pathname.startsWith(`${item.to}/`),
     ).sort((a, b) => b.to.length - a.to.length)[0];
 
-    if (!match || match.to === "/") {
+    if (!match || match.to === "/dashboard") {
       return [{ label: t("nav.dashboard") }];
     }
     return [
-      { label: t("nav.dashboard"), to: "/" },
+      { label: t("nav.dashboard"), to: "/dashboard" },
       { label: t(`nav.${match.labelKey}`) },
     ];
   }, [pathname, t]);
