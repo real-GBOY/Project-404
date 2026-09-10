@@ -110,6 +110,7 @@ export function LandingPage() {
   const [flow, setFlow] = useState(1);
   const [docIdx, setDocIdx] = useState(0);
   const [hoverModule, setHoverModule] = useState(-1);
+  const [menuOpen, setMenuOpen] = useState(false);
   const aiTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
@@ -119,6 +120,20 @@ export function LandingPage() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // Close the mobile menu on Escape or once the viewport is wide enough for the
+  // full nav row.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMenuOpen(false);
+    const onResize = () => window.innerWidth > 860 && setMenuOpen(false);
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("resize", onResize);
+    };
+  }, [menuOpen]);
 
   // Reveal-on-scroll: sections on screen at mount stay put; those below fade up.
   useEffect(() => {
@@ -225,6 +240,19 @@ export function LandingPage() {
         .mz-cta-navy:hover { background:#31456B !important; }
         .mz-cta-outline:hover { border-color:#16233A !important; background:rgba(22,35,58,0.04) !important; }
         .mz-rowhover:hover { background:#F5F3EF; }
+
+        /* Nav: full row on desktop, hamburger + drop-down panel on phones. */
+        .mz-nav-desktop { display:flex; align-items:center; gap:clamp(14px,2.2vw,30px); margin-inline-start:auto; }
+        .mz-nav-toggle { display:none; margin-inline-start:auto; }
+        .mz-nav-panel { display:flex; }
+        @media (max-width: 860px) {
+          .mz-nav-desktop { display:none; }
+          .mz-nav-toggle { display:inline-flex; }
+        }
+        @media (min-width: 861px) {
+          .mz-nav-panel { display:none; }
+        }
+
         @keyframes mzUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
         @keyframes mzIn { from { opacity:0; } to { opacity:1; } }
         @keyframes mzPulse { 0%,100% { opacity:0.35; } 50% { opacity:1; } }
@@ -243,11 +271,9 @@ export function LandingPage() {
               Mizan
             </span>
           </div>
-          <div
-            style={S(
-              "display:flex;align-items:center;gap:clamp(14px,2.2vw,30px);margin-inline-start:auto;flex-wrap:wrap;justify-content:flex-end",
-            )}
-          >
+
+          {/* Desktop: full nav row */}
+          <div className="mz-nav-desktop">
             {NAV_LINKS.map(([href, label]) => (
               <a
                 key={href}
@@ -266,7 +292,92 @@ export function LandingPage() {
               Request a demo
             </Link>
           </div>
+
+          {/* Phones: hamburger toggle */}
+          <button
+            type="button"
+            className="mz-nav-toggle"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((v) => !v)}
+            style={{
+              alignItems: "center",
+              justifyContent: "center",
+              width: 42,
+              height: 42,
+              flex: "0 0 42px",
+              background: "transparent",
+              border: `1px solid ${navRule}`,
+              color: navInk,
+              cursor: "pointer",
+            }}
+          >
+            <Sym name={menuOpen ? "close" : "menu"} size={22} color={navInk} />
+          </button>
         </div>
+
+        {/* Phones: drop-down panel */}
+        {menuOpen && (
+          <div
+            id="mz-nav-panel"
+            className="mz-nav-panel"
+            style={{
+              position: "absolute",
+              top: "100%",
+              left: 0,
+              right: 0,
+              flexDirection: "column",
+              gap: 2,
+              padding: "10px clamp(20px,4vw,48px) 20px",
+              background: scrolled ? "rgba(245,243,239,0.98)" : NAVY,
+              backdropFilter: scrolled ? "saturate(1.1) blur(8px)" : "none",
+              WebkitBackdropFilter: scrolled ? "saturate(1.1) blur(8px)" : "none",
+              borderBottom: `1px solid ${navRule}`,
+              boxShadow: "0 24px 40px -28px rgba(9,15,28,0.55)",
+              animation: "mzUp .22s ease-out both",
+            }}
+          >
+            {NAV_LINKS.map(([href, label]) => (
+              <a
+                key={href}
+                href={href}
+                onClick={(e) => {
+                  setMenuOpen(false);
+                  scrollToHash(e, href);
+                }}
+                style={{
+                  padding: "13px 2px",
+                  fontSize: 15,
+                  fontWeight: 500,
+                  color: navMuted,
+                  borderBottom: `1px solid ${navRule}`,
+                }}
+              >
+                {label}
+              </a>
+            ))}
+            <Link
+              to={CTA_TO}
+              onClick={() => setMenuOpen(false)}
+              style={{
+                padding: "13px 2px",
+                fontSize: 15,
+                fontWeight: 500,
+                color: navInk,
+                borderBottom: `1px solid ${navRule}`,
+              }}
+            >
+              Sign in
+            </Link>
+            <Link
+              to={CTA_TO}
+              onClick={() => setMenuOpen(false)}
+              style={{ ...navCta, marginTop: 14, justifyContent: "center", padding: "13px 16px" }}
+            >
+              Request a demo
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* ── Hero ────────────────────────────────────────────── */}
