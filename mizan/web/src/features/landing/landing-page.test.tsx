@@ -15,15 +15,32 @@ function renderLanding() {
 }
 
 describe("LandingPage", () => {
-  it("renders the hero and routes sign-in to /login", () => {
+  it("renders the hero and points every primary CTA at /login", () => {
     renderLanding();
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Run your firm with clarity.");
-    const signIn = screen.getAllByRole("link", { name: "Sign in" });
-    expect(signIn.length).toBeGreaterThan(0);
-    signIn.forEach((link) => expect(link).toHaveAttribute("href", "/login"));
-    expect(screen.getAllByRole("link", { name: /request a demo/i })[0].getAttribute("href")).toMatch(
-      /^mailto:/,
-    );
+
+    // "Sign in", "Request a demo", "Explore the platform" and "Explore Mizan" all
+    // route to the sign-in page — there is no separate demo/marketing target yet.
+    for (const name of [/^sign in$/i, /^request a demo$/i, /^explore the platform$/i, /^explore mizan$/i]) {
+      const links = screen.getAllByRole("link", { name });
+      expect(links.length).toBeGreaterThan(0);
+      links.forEach((link) => expect(link).toHaveAttribute("href", "/login"));
+    }
+  });
+
+  it("scrolls to a section from the nav instead of navigating away", async () => {
+    const scrollIntoView = vi.fn();
+    const original = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = scrollIntoView;
+    try {
+      const { user } = renderLanding();
+      const security = screen.getAllByRole("link", { name: "Security" })[0];
+      expect(security).toHaveAttribute("href", "#security");
+      await user.click(security);
+      expect(scrollIntoView).toHaveBeenCalled();
+    } finally {
+      Element.prototype.scrollIntoView = original;
+    }
   });
 
   it("switches the product showcase when a tab is picked", async () => {

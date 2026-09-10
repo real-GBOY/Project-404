@@ -28,7 +28,22 @@ import {
   shotCellStyle,
 } from "./landing-data";
 
-const DEMO_HREF = "mailto:hello@mizan.legal?subject=Mizan%20demo%20request";
+/** Every primary call-to-action on the landing page points at sign-in. */
+const CTA_TO = "/login";
+
+/**
+ * Scroll to an in-page section instead of following the `#hash` as navigation.
+ * The sticky-nav offset is handled by `scroll-margin-top` on each section
+ * (`SECTION_STYLE`); reduced-motion users get an instant jump.
+ */
+function scrollToHash(e: React.MouseEvent<HTMLAnchorElement>, hash: string) {
+  const el = document.getElementById(hash.slice(1));
+  if (!el) return;
+  e.preventDefault();
+  const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  history.replaceState(null, "", hash);
+}
 
 /** A single Material Symbols Rounded glyph, coloured inline. */
 function Sym({
@@ -75,7 +90,6 @@ function Mark({ size = 26, stroke = PAPER, dot = true }: { size?: number; stroke
 }
 
 const SECTION_STYLE = "scroll-margin-top:90px";
-const SHELL = "max-width:1280px;margin:0 auto;padding:0 clamp(20px,4vw,48px)";
 const EYEBROW = "font-size:10.5px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:#B99A5B;margin-bottom:16px";
 const H2 = "font-family:Spectral,Georgia,serif;font-size:clamp(29px,3.9vw,46px);font-weight:400;line-height:1.14;margin:0";
 
@@ -197,7 +211,10 @@ export function LandingPage() {
         background: PAPER,
         color: NAVY,
         fontFamily: "'Public Sans',Helvetica,sans-serif",
-        overflowX: "hidden",
+        // `clip` contains any horizontal overflow WITHOUT turning this wrapper
+        // into a scroll container — so in-page `scrollIntoView` targets the
+        // document and anchor links land on the right section.
+        overflowX: "clip",
       }}
     >
       <style>{`
@@ -232,26 +249,28 @@ export function LandingPage() {
             )}
           >
             {NAV_LINKS.map(([href, label]) => (
-              <a key={href} href={href} style={{ fontSize: 13.5, fontWeight: 500, color: navMuted }}>
+              <a
+                key={href}
+                href={href}
+                onClick={(e) => scrollToHash(e, href)}
+                style={{ fontSize: 13.5, fontWeight: 500, color: navMuted }}
+              >
                 {label}
               </a>
             ))}
             <span style={{ width: 1, height: 20, background: navRule }} />
-            <Link to="/login" style={{ fontSize: 13.5, fontWeight: 500, color: navInk }}>
+            <Link to={CTA_TO} style={{ fontSize: 13.5, fontWeight: 500, color: navInk }}>
               Sign in
             </Link>
-            <a href={DEMO_HREF} style={navCta}>
+            <Link to={CTA_TO} style={navCta}>
               Request a demo
-            </a>
+            </Link>
           </div>
         </div>
       </div>
 
       {/* ── Hero ────────────────────────────────────────────── */}
       <div style={{ background: NAVY, color: PAPER, position: "relative" }}>
-        <div style={S(`${SHELL.replace("padding:0 ", "padding:clamp(52px,7vw,86px) ")} 0`.replace("48px) 0", "48px) 0"))}>
-          <div style={S("max-width:1280px;margin:0 auto;padding:0")} />
-        </div>
         <div style={S("max-width:1280px;margin:0 auto;padding:clamp(52px,7vw,86px) clamp(20px,4vw,48px) 0")}>
           <div
             style={S(
@@ -304,8 +323,8 @@ export function LandingPage() {
                 AI-assisted workflows into one intelligent workspace.
               </p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
-                <a
-                  href={DEMO_HREF}
+                <Link
+                  to={CTA_TO}
                   className="mz-cta-brass"
                   style={S(
                     "display:inline-flex;align-items:center;gap:9px;padding:16px 26px;background:#B99A5B;color:#16233A;font-size:11.5px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;white-space:nowrap",
@@ -313,16 +332,16 @@ export function LandingPage() {
                 >
                   Request a demo
                   <Sym name="arrow_forward" size={17} />
-                </a>
-                <a
-                  href="#platform"
+                </Link>
+                <Link
+                  to={CTA_TO}
                   className="mz-cta-ghost"
                   style={S(
                     "display:inline-flex;align-items:center;gap:9px;padding:16px 26px;border:1px solid rgba(245,243,239,0.38);color:#F5F3EF;font-size:11.5px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;white-space:nowrap",
                   )}
                 >
                   Explore the platform
-                </a>
+                </Link>
               </div>
             </div>
 
@@ -1536,8 +1555,8 @@ export function LandingPage() {
             Bring your matters, people, documents, workflows, and intelligence into one system.
           </p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "center" }}>
-            <a
-              href={DEMO_HREF}
+            <Link
+              to={CTA_TO}
               className="mz-cta-navy"
               style={S(
                 "display:inline-flex;align-items:center;gap:9px;padding:16px 30px;background:#16233A;color:#F5F3EF;font-size:11.5px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase",
@@ -1545,16 +1564,16 @@ export function LandingPage() {
             >
               Request a demo
               <Sym name="arrow_forward" size={17} />
-            </a>
-            <a
-              href="#platform"
+            </Link>
+            <Link
+              to={CTA_TO}
               className="mz-cta-outline"
               style={S(
                 "display:inline-flex;align-items:center;padding:16px 30px;border:1px solid rgba(22,35,58,0.28);color:#16233A;font-size:11.5px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase",
               )}
             >
               Explore Mizan
-            </a>
+            </Link>
           </div>
         </div>
       </div>
@@ -1578,7 +1597,7 @@ export function LandingPage() {
             {(
               [
                 ["Product", [["#platform", "Platform"], ["#features", "Features"], ["#ai", "Mizan AI"], ["#security", "Security"]]],
-                ["Firm", [["#about", "About"], [DEMO_HREF, "Request a demo"], ["/login", "Sign in"]]],
+                ["Firm", [["#about", "About"], [CTA_TO, "Request a demo"], [CTA_TO, "Sign in"]]],
               ] as [string, [string, string][]][]
             ).map(([title, links]) => (
               <div key={title} style={{ flex: "0 1 150px" }}>
@@ -1592,7 +1611,12 @@ export function LandingPage() {
                         {label}
                       </Link>
                     ) : (
-                      <a key={label} href={href} style={{ fontSize: 12.5, fontWeight: 400, color: "rgba(245,243,239,0.78)" }}>
+                      <a
+                        key={label}
+                        href={href}
+                        onClick={(e) => scrollToHash(e, href)}
+                        style={{ fontSize: 12.5, fontWeight: 400, color: "rgba(245,243,239,0.78)" }}
+                      >
                         {label}
                       </a>
                     ),
