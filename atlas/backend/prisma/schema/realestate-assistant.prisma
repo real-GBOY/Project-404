@@ -1,0 +1,67 @@
+// app/realestate/assistant — AI Copilot ("Ask Atlas"), stub: server-side
+// keyword-match answers (ported from the frontend's copilot-transcripts.ts),
+// no LLM. Real conversations/messages persisted so the UI is backend-driven;
+// upgradeable to a real LLM later without a schema change (mirrors Mizan
+// Copilot's own stub -> real-LLM upgrade path). Product domain (not Core).
+
+model realestate_ai_conversations {
+  id               String   @id
+  organization_id  String
+  user_id          String
+  title            String
+  created_at       DateTime @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime @default(now()) @db.Timestamptz(6)
+
+  realestate_ai_messages realestate_ai_messages[]
+
+  @@unique([organization_id, id], map: "realestate_ai_conversations_org_id_uq")
+  @@index([organization_id, user_id], map: "realestate_ai_conversations_user_idx")
+  @@map("realestate_ai_conversations")
+}
+
+model realestate_ai_messages {
+  id               String   @id
+  organization_id  String
+  conversation_id  String
+  /// @kyselyType('user' | 'ai')
+  role             String
+  text             String
+  detail           String?
+  recommend        String?
+  /// @kyselyType(Json<{ label: string; value: string; delta: string }[]>)
+  stats            Json?
+  /// @kyselyType(Json<{ name: string; value: string; meta: string }[]>)
+  rows             Json?
+  /// @kyselyType(Json<string[]>)
+  cites            Json?
+  /// @kyselyType(Json<string[]>)
+  follow           Json?
+  is_action        Boolean  @default(false)
+  created_at       DateTime @default(now()) @db.Timestamptz(6)
+
+  realestate_ai_conversations realestate_ai_conversations @relation(fields: [organization_id, conversation_id], references: [organization_id, id], onDelete: Cascade, onUpdate: NoAction, map: "realestate_ai_messages_conversation_fk")
+
+  @@unique([organization_id, id], map: "realestate_ai_messages_org_id_uq")
+  @@index([organization_id, conversation_id], map: "realestate_ai_messages_conversation_idx")
+  @@map("realestate_ai_messages")
+}
+
+model realestate_ai_insights {
+  id               String    @id
+  organization_id  String
+  /// @kyselyType('dashboard' | 'feed')
+  kind             String
+  tag              String
+  confidence       Decimal   @db.Decimal(4, 2)
+  text             String
+  detail           String
+  cta              String
+  target_route     String?
+  dismissed_by     String?
+  dismissed_at     DateTime? @db.Timestamptz(6)
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "realestate_ai_insights_org_id_uq")
+  @@index([organization_id, kind], map: "realestate_ai_insights_kind_idx")
+  @@map("realestate_ai_insights")
+}

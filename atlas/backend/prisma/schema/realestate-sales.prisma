@@ -1,0 +1,119 @@
+// app/realestate/sales — reservations, contracts, payment plans +
+// installments, commissions. Product domain (not Core).
+
+model realestate_reservations {
+  id               String    @id
+  organization_id  String
+  unit_id          String
+  customer_id      String
+  agent_id         String
+  reserved_at      DateTime  @default(now()) @db.Timestamptz(6)
+  expires_at       DateTime  @db.Timestamptz(6)
+  /// @kyselyType(number)
+  deposit_egp      BigInt
+  /// @kyselyType('active' | 'expiring' | 'expired' | 'converted')
+  status           String    @default("active")
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime  @default(now()) @db.Timestamptz(6)
+
+  realestate_contracts realestate_contracts[]
+
+  @@unique([organization_id, id], map: "realestate_reservations_org_id_uq")
+  @@unique([organization_id, unit_id], map: "realestate_reservations_unit_uq")
+  @@index([organization_id, customer_id], map: "realestate_reservations_customer_idx")
+  @@map("realestate_reservations")
+}
+
+model realestate_contracts {
+  id               String    @id
+  organization_id  String
+  reservation_id   String?
+  customer_id      String
+  unit_id          String
+  /// @kyselyType(number)
+  value_egp        BigInt
+  signed_date      DateTime? @db.Date
+  /// @kyselyType('draft' | 'awaiting-approval' | 'signed')
+  status           String    @default("draft")
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime  @default(now()) @db.Timestamptz(6)
+
+  realestate_reservations realestate_reservations? @relation(fields: [organization_id, reservation_id], references: [organization_id, id], onDelete: SetNull, onUpdate: NoAction, map: "realestate_contracts_reservation_fk")
+  realestate_payment_plans realestate_payment_plans[]
+
+  @@unique([organization_id, id], map: "realestate_contracts_org_id_uq")
+  @@index([organization_id, customer_id], map: "realestate_contracts_customer_idx")
+  @@index([organization_id, unit_id], map: "realestate_contracts_unit_idx")
+  @@map("realestate_contracts")
+}
+
+model realestate_payment_plans {
+  id                  String   @id
+  organization_id     String
+  contract_id         String
+  unit_id             String
+  customer_id         String
+  /// @kyselyType(number)
+  total_egp           BigInt
+  down_payment_pct    Decimal  @db.Decimal(5, 2)
+  installment_count   Int
+  /// @kyselyType('monthly' | 'quarterly' | 'semi-annual' | 'annual')
+  cadence             String   @default("quarterly")
+  start_date          DateTime @db.Date
+  created_at          DateTime @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime @default(now()) @db.Timestamptz(6)
+
+  realestate_contracts   realestate_contracts     @relation(fields: [organization_id, contract_id], references: [organization_id, id], onDelete: Cascade, onUpdate: NoAction, map: "realestate_payment_plans_contract_fk")
+  realestate_installments realestate_installments[]
+
+  @@unique([organization_id, id], map: "realestate_payment_plans_org_id_uq")
+  @@unique([organization_id, contract_id], map: "realestate_payment_plans_contract_uq")
+  @@index([organization_id, customer_id], map: "realestate_payment_plans_customer_idx")
+  @@map("realestate_payment_plans")
+}
+
+model realestate_installments {
+  id               String   @id
+  organization_id  String
+  payment_plan_id  String
+  seq_no           Int
+  label            String
+  due_date         DateTime @db.Date
+  /// @kyselyType(number)
+  amount_egp       BigInt
+  /// @kyselyType(number)
+  paid_egp         BigInt   @default(0)
+  /// @kyselyType('pending' | 'partial' | 'paid' | 'overdue')
+  status           String   @default("pending")
+  created_at       DateTime @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime @default(now()) @db.Timestamptz(6)
+
+  realestate_payment_plans realestate_payment_plans @relation(fields: [organization_id, payment_plan_id], references: [organization_id, id], onDelete: Cascade, onUpdate: NoAction, map: "realestate_installments_plan_fk")
+
+  @@unique([organization_id, id], map: "realestate_installments_org_id_uq")
+  @@unique([organization_id, payment_plan_id, seq_no], map: "realestate_installments_plan_seq_uq")
+  @@index([organization_id, status, due_date], map: "realestate_installments_status_due_idx")
+  @@map("realestate_installments")
+}
+
+model realestate_commissions {
+  id                 String   @id
+  organization_id    String
+  agent_id           String
+  /// first-of-month date representing the commission period
+  period             DateTime @db.Date
+  contracts_count    Int      @default(0)
+  /// @kyselyType(number)
+  sales_value_egp    BigInt   @default(0)
+  rate_pct           Decimal  @db.Decimal(5, 2)
+  /// @kyselyType(number)
+  commission_egp     BigInt   @default(0)
+  /// @kyselyType('pending' | 'approved' | 'paid')
+  status             String   @default("pending")
+  created_at         DateTime @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "realestate_commissions_org_id_uq")
+  @@unique([organization_id, agent_id, period], map: "realestate_commissions_agent_period_uq")
+  @@map("realestate_commissions")
+}

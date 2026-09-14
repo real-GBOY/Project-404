@@ -1,0 +1,112 @@
+// app/realestate/properties — projects, buildings, units, price lists.
+// Product domain (not Core). Every row is tenant-scoped: organization_id
+// NOT NULL + tenant_isolation RLS (see the realestate migration).
+
+model realestate_projects {
+  id                 String   @id
+  organization_id    String
+  name               String
+  slug               String
+  location           String
+  developer          String
+  /// @kyselyType('pre-launch' | 'launched' | 'under-construction' | 'delivered')
+  status             String   @default("launched")
+  total_units        Int      @default(0)
+  sold_units         Int      @default(0)
+  reserved_units     Int      @default(0)
+  available_units    Int      @default(0)
+  /// @kyselyType(number)
+  total_value_egp    BigInt   @default(0)
+  /// @kyselyType(number)
+  revenue_egp        BigInt   @default(0)
+  velocity_per_week  Decimal  @default(0) @db.Decimal(6, 2)
+  sell_through_pct   Decimal  @default(0) @db.Decimal(5, 2)
+  created_at         DateTime @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime @default(now()) @db.Timestamptz(6)
+
+  realestate_buildings    realestate_buildings[]
+  realestate_units        realestate_units[]
+  realestate_price_lists  realestate_price_lists[]
+
+  @@unique([organization_id, id], map: "realestate_projects_org_id_uq")
+  @@unique([organization_id, slug], map: "realestate_projects_org_slug_uq")
+  @@index([organization_id], map: "realestate_projects_org_idx")
+  @@map("realestate_projects")
+}
+
+model realestate_buildings {
+  id               String   @id
+  organization_id  String
+  project_id       String
+  /// short code within the project, e.g. "A", "C1"
+  key              String
+  name             String
+  floors           Int
+  units_per_floor  Int
+  handover_date    DateTime? @db.Date
+  /// @kyselyType('pre-launch' | 'launched' | 'under-construction' | 'delivered')
+  status           String   @default("under-construction")
+  created_at       DateTime @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime @default(now()) @db.Timestamptz(6)
+
+  realestate_projects realestate_projects @relation(fields: [organization_id, project_id], references: [organization_id, id], onDelete: Cascade, onUpdate: NoAction, map: "realestate_buildings_project_fk")
+  realestate_units    realestate_units[]
+
+  @@unique([organization_id, id], map: "realestate_buildings_org_id_uq")
+  @@unique([organization_id, project_id, key], map: "realestate_buildings_project_key_uq")
+  @@index([organization_id, project_id], map: "realestate_buildings_project_idx")
+  @@map("realestate_buildings")
+}
+
+model realestate_units {
+  id                  String   @id
+  organization_id     String
+  building_id         String
+  project_id          String
+  /// e.g. "A-0904"
+  code                String
+  floor               Int
+  /// e.g. "1-Bed", "Penthouse"
+  unit_type           String
+  area_sqm            Decimal  @db.Decimal(7, 2)
+  /// @kyselyType(number)
+  base_price_egp      BigInt
+  /// @kyselyType('available' | 'reserved' | 'sold' | 'on-hold' | 'unavailable')
+  status              String   @default("available")
+  current_customer_id String?
+  current_agent_id    String?
+  created_at          DateTime @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime @default(now()) @db.Timestamptz(6)
+
+  realestate_buildings realestate_buildings @relation(fields: [organization_id, building_id], references: [organization_id, id], onDelete: Cascade, onUpdate: NoAction, map: "realestate_units_building_fk")
+  realestate_projects  realestate_projects  @relation(fields: [organization_id, project_id], references: [organization_id, id], onDelete: Cascade, onUpdate: NoAction, map: "realestate_units_project_fk")
+
+  @@unique([organization_id, id], map: "realestate_units_org_id_uq")
+  @@unique([organization_id, code], map: "realestate_units_org_code_uq")
+  @@index([organization_id, building_id], map: "realestate_units_building_idx")
+  @@index([organization_id, project_id, status], map: "realestate_units_project_status_idx")
+  @@map("realestate_units")
+}
+
+model realestate_price_lists {
+  id                  String    @id
+  organization_id     String
+  project_id          String
+  name                String
+  version             String
+  /// @kyselyType(number)
+  base_per_sqm_egp    BigInt
+  floor_premium_pct   Decimal   @default(0) @db.Decimal(5, 2)
+  max_discount_pct    Decimal   @default(0) @db.Decimal(5, 2)
+  effective_date      DateTime  @db.Date
+  /// @kyselyType('draft' | 'awaiting-approval' | 'active')
+  status              String    @default("draft")
+  created_at          DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime  @default(now()) @db.Timestamptz(6)
+
+  realestate_projects realestate_projects @relation(fields: [organization_id, project_id], references: [organization_id, id], onDelete: Cascade, onUpdate: NoAction, map: "realestate_price_lists_project_fk")
+
+  @@unique([organization_id, id], map: "realestate_price_lists_org_id_uq")
+  @@index([organization_id, project_id], map: "realestate_price_lists_project_idx")
+  @@map("realestate_price_lists")
+}

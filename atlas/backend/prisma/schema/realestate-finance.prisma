@@ -1,0 +1,47 @@
+// app/realestate/finance — payments, saved financial-report definitions.
+// Collections and Outstanding are read-composition aggregates over payments +
+// installments (see finance/finance-queries.ts), not tables. Product domain.
+
+model realestate_payments {
+  id               String    @id
+  organization_id  String
+  reference        String
+  customer_id      String
+  unit_id          String
+  installment_id   String?
+  /// @kyselyType(number)
+  amount_egp       BigInt
+  /// @kyselyType('bank-transfer' | 'cheque' | 'cash' | 'card')
+  method           String
+  paid_at          DateTime  @default(now()) @db.Timestamptz(6)
+  /// @kyselyType('paid' | 'pending' | 'overdue')
+  status           String    @default("paid")
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "realestate_payments_org_id_uq")
+  @@unique([organization_id, reference], map: "realestate_payments_org_reference_uq")
+  @@index([organization_id, customer_id], map: "realestate_payments_customer_idx")
+  @@index([organization_id, unit_id], map: "realestate_payments_unit_idx")
+  @@map("realestate_payments")
+}
+
+model realestate_financial_reports {
+  id               String    @id
+  organization_id  String
+  name             String
+  /// @kyselyType('collections' | 'revenue' | 'receivables' | 'commissions' | 'treasury')
+  type             String
+  period           String
+  owner_id         String
+  /// @kyselyType('manual' | 'daily' | 'weekly' | 'monthly')
+  schedule         String    @default("manual")
+  last_run_at      DateTime? @db.Timestamptz(6)
+  /// @kyselyType('draft' | 'active')
+  status           String    @default("draft")
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "realestate_financial_reports_org_id_uq")
+  @@index([organization_id, type], map: "realestate_financial_reports_type_idx")
+  @@map("realestate_financial_reports")
+}

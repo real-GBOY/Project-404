@@ -1,0 +1,99 @@
+// app/realestate/operations — tasks, workflows, approvals, documents.
+// Product domain (not Core). Documents reuse Core's FilesModule for actual
+// storage (see docs on presigned uploads) — this table is metadata only.
+
+model realestate_tasks {
+  id               String    @id
+  organization_id  String
+  /// @kyselyType('high' | 'medium' | 'low')
+  priority         String    @default("medium")
+  title            String
+  related_type     String?
+  related_id       String?
+  assignee_id      String
+  due_at           DateTime  @db.Timestamptz(6)
+  /// @kyselyType('open' | 'in-progress' | 'done')
+  status           String    @default("open")
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "realestate_tasks_org_id_uq")
+  @@index([organization_id, assignee_id, status], map: "realestate_tasks_assignee_status_idx")
+  @@map("realestate_tasks")
+}
+
+model realestate_workflows {
+  id               String    @id
+  organization_id  String
+  name             String
+  description      String?
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime  @default(now()) @db.Timestamptz(6)
+
+  realestate_workflow_steps realestate_workflow_steps[]
+
+  @@unique([organization_id, id], map: "realestate_workflows_org_id_uq")
+  @@map("realestate_workflows")
+}
+
+model realestate_workflow_steps {
+  id               String    @id
+  organization_id  String
+  workflow_id      String
+  seq_no           Int
+  label            String
+  assignee_id      String?
+  /// @kyselyType('done' | 'current' | 'pending')
+  state            String    @default("pending")
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime  @default(now()) @db.Timestamptz(6)
+
+  realestate_workflows realestate_workflows @relation(fields: [organization_id, workflow_id], references: [organization_id, id], onDelete: Cascade, onUpdate: NoAction, map: "realestate_workflow_steps_workflow_fk")
+
+  @@unique([organization_id, id], map: "realestate_workflow_steps_org_id_uq")
+  @@unique([organization_id, workflow_id, seq_no], map: "realestate_workflow_steps_workflow_seq_uq")
+  @@map("realestate_workflow_steps")
+}
+
+model realestate_approvals {
+  id                String    @id
+  organization_id   String
+  /// @kyselyType('discount' | 'refund' | 'contract' | 'commission' | 'other')
+  kind              String
+  subject           String
+  related_type      String?
+  related_id        String?
+  /// @kyselyType(number)
+  amount_egp        BigInt?
+  requested_by      String
+  step_no           Int       @default(1)
+  step_total        Int       @default(1)
+  /// @kyselyType('awaiting-approval' | 'escalated' | 'approved' | 'rejected')
+  status            String    @default("awaiting-approval")
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "realestate_approvals_org_id_uq")
+  @@index([organization_id, status], map: "realestate_approvals_status_idx")
+  @@map("realestate_approvals")
+}
+
+model realestate_documents {
+  id               String    @id
+  organization_id  String
+  name             String
+  doc_type         String
+  related_type     String?
+  related_id       String?
+  /// Core `files.id` — actual bytes live in Core's FilesModule (presigned upload flow)
+  file_id          String?
+  uploaded_by      String
+  /// @kyselyType('draft' | 'pending' | 'verified')
+  status           String    @default("pending")
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "realestate_documents_org_id_uq")
+  @@index([organization_id, related_type, related_id], map: "realestate_documents_related_idx")
+  @@map("realestate_documents")
+}

@@ -1,0 +1,26 @@
+// Atlas RE OS — Prisma datasource & generators.
+//
+// Same split as the root repo (Mizan): Prisma owns schema definition +
+// migration history; its generated types feed Kysely. Prisma Client is NOT
+// used for runtime queries. Models live in the sibling *.prisma files, split
+// by feature module. Migrations are in ../migrations, applied with
+// `prisma migrate deploy` (see ../../scripts/migrate.ts).
+//
+// This schema/migration project is Atlas's OWN — it never touches the root
+// repo's `prisma/` directory (Mizan's), and Core's baseline tables
+// (users/organizations/roles/…) are created here via copied baseline
+// migration SQL, not Prisma models (Core's own tables never need a Prisma
+// model in this project — only Atlas's new tables do).
+
+datasource db {
+  provider = "postgresql"
+}
+
+generator kysely {
+  provider        = "prisma-kysely"
+  output          = "../../app/realestate/db"
+  fileName        = "schema.ts"
+  importExtension = ".js"
+  dbTypeName      = "RealestateTables"
+  banner          = "import type { Json } from \"../../../../../core/kernel/db/json.js\";"
+}

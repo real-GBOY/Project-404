@@ -1,0 +1,114 @@
+// app/realestate/crm — leads (also backs the Pipeline board and Deals screen,
+// see the consolidation note in app/realestate/crm/lead.domain.ts), customers,
+// activities, followups. Product domain (not Core).
+
+model realestate_leads {
+  id                    String    @id
+  organization_id       String
+  name                  String
+  phone                 String
+  email                 String?
+  /// @kyselyType('referral' | 'website' | 'facebook' | 'broker' | 'exhibition' | 'instagram')
+  source                String
+  /// @kyselyType('new' | 'qualified' | 'contacted' | 'viewing' | 'negotiation' | 'lost')
+  status                String    @default("new")
+  /// Superset funnel stage backing the Pipeline kanban — see lead.domain.ts.
+  /// @kyselyType('new' | 'qualified' | 'contacted' | 'viewing' | 'negotiation' | 'reserved' | 'contracted' | 'sold' | 'lost')
+  stage                 String    @default("new")
+  score                 Int       @default(0)
+  interest_unit_id      String?
+  interest_text         String?
+  /// @kyselyType(number)
+  value_egp             BigInt    @default(0)
+  agent_id              String
+  /// set once a lead is tracked as a "deal" (Sales > Deals screen)
+  probability_pct       Decimal?  @db.Decimal(5, 2)
+  expected_close_date   DateTime? @db.Date
+  last_activity_at      DateTime  @default(now()) @db.Timestamptz(6)
+  created_at            DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "realestate_leads_org_id_uq")
+  @@index([organization_id, stage], map: "realestate_leads_stage_idx")
+  @@index([organization_id, agent_id], map: "realestate_leads_agent_idx")
+  @@map("realestate_leads")
+}
+
+model realestate_customers {
+  id                 String    @id
+  organization_id    String
+  name               String
+  email              String?
+  phone              String?
+  primary_project_id String?
+  agent_id           String
+  /// @kyselyType('active' | 'pending')
+  status             String    @default("active")
+  since_date         DateTime  @default(now()) @db.Date
+  national_id        String?
+  address            String?
+  created_at         DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime  @default(now()) @db.Timestamptz(6)
+
+  realestate_customer_units realestate_customer_units[]
+
+  @@unique([organization_id, id], map: "realestate_customers_org_id_uq")
+  @@index([organization_id, agent_id], map: "realestate_customers_agent_idx")
+  @@map("realestate_customers")
+}
+
+model realestate_customer_units {
+  id               String   @id
+  organization_id  String
+  customer_id      String
+  unit_id          String
+  created_at       DateTime @default(now()) @db.Timestamptz(6)
+
+  realestate_customers realestate_customers @relation(fields: [organization_id, customer_id], references: [organization_id, id], onDelete: Cascade, onUpdate: NoAction, map: "realestate_customer_units_customer_fk")
+
+  @@unique([organization_id, id], map: "realestate_customer_units_org_id_uq")
+  @@unique([organization_id, unit_id], map: "realestate_customer_units_unit_uq")
+  @@index([organization_id, customer_id], map: "realestate_customer_units_customer_idx")
+  @@map("realestate_customer_units")
+}
+
+model realestate_activities {
+  id               String   @id
+  organization_id  String
+  /// @kyselyType('call' | 'meeting' | 'viewing' | 'email' | 'note' | 'whatsapp')
+  type             String
+  subject          String
+  /// polymorphic label, e.g. "lead" | "customer" — no cross-table FK (matches
+  /// every source screen's free-text relatedTo)
+  related_type     String?
+  related_id       String?
+  agent_id         String
+  outcome          String?
+  occurred_at      DateTime @default(now()) @db.Timestamptz(6)
+  created_at       DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "realestate_activities_org_id_uq")
+  @@index([organization_id, occurred_at], map: "realestate_activities_occurred_idx")
+  @@index([organization_id, related_type, related_id], map: "realestate_activities_related_idx")
+  @@map("realestate_activities")
+}
+
+model realestate_followups {
+  id               String    @id
+  organization_id  String
+  /// @kyselyType('high' | 'medium' | 'low')
+  priority         String    @default("medium")
+  lead_id          String?
+  customer_id      String?
+  reason           String
+  agent_id         String
+  due_at           DateTime  @db.Timestamptz(6)
+  /// @kyselyType('open' | 'in-progress' | 'overdue' | 'done')
+  status           String    @default("open")
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "realestate_followups_org_id_uq")
+  @@index([organization_id, agent_id, status], map: "realestate_followups_agent_status_idx")
+  @@map("realestate_followups")
+}

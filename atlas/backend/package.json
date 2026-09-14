@@ -1,0 +1,28 @@
+{
+  "name": "@atlas/backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Atlas RE OS backend — real-estate operating system, powered by AURIC Core (a separate deployment/database from Mizan: see docs note in app/app.module.ts).",
+  "type": "module",
+  "engines": {
+    "node": "^22.12.0 || >=24.0.0"
+  },
+  "scripts": {
+    "dev": "node --watch --import @swc-node/register/esm-register main.ts",
+    "serve": "node --import @swc-node/register/esm-register main.ts",
+    "migrate": "node --import @swc-node/register/esm-register scripts/migrate.ts up",
+    "migrate:status": "node --import @swc-node/register/esm-register scripts/migrate.ts status",
+    "migrate:dev": "prisma migrate dev",
+    "db:generate": "prisma generate",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"app/**/*.ts\" \"scripts/**/*.ts\" \"main.ts\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:cov": "vitest run --coverage"
+  },
+  "comment_dependencies": "Deliberately no dependencies/devDependencies of its own — every package below is already installed at the repo root (../../node_modules), and Node/TS module resolution walks up directories to find it. This is NOT an oversight: Core's own source (imported via @core/*) is compiled/run as part of this package too, so a SEPARATE copy of fastify/@nestjs/*/reflect-metadata/kysely here would create a dual-package hazard (two physically different module instances of the same library — breaks NestJS DI's reflect-metadata registry and produces spurious structural type errors on Fastify's plugin types). Always `npm install` at the repo root, never inside atlas/backend.",
+  "dependencies": {},
+  "devDependencies": {}
+}
