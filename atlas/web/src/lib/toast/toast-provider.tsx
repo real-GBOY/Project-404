@@ -60,7 +60,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {items.map((t) => (
           <div
             key={t.id}
-            className="pointer-events-auto rounded-card border border-[#26262a] bg-foreground px-3.5 py-3 text-white"
+            className="pointer-events-auto rounded-card border border-toast-border bg-foreground px-3.5 py-3 text-white"
             style={{ animation: "slidein .18s ease" }}
           >
             <div className="flex items-center gap-2">

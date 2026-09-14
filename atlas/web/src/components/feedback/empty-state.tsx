@@ -15,7 +15,7 @@ export function EmptyState({ icon = "search", title, description, action }: Empt
       className="flex flex-col items-center gap-2.5 px-6 py-[54px] text-center"
       data-slot="empty-state"
     >
-      <div className="flex size-10 items-center justify-center rounded-card border border-dashed border-faint text-[#B5B5AE]">
+      <div className="flex size-10 items-center justify-center rounded-card border border-dashed border-faint text-icon-muted">
         <Icon name={icon} size={18} />
       </div>
       <div className="text-[13px] font-semibold text-foreground">{title}</div>

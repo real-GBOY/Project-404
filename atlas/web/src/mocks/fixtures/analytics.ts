@@ -2,6 +2,8 @@
 // config) and `AGENTS_PERF` class field (Agent Performance leaderboard), plus the authored agent
 // groupings and shared analytics filter list.
 
+import { TOKEN_COLORS } from "@/styles/colors";
+
 export interface AnalyticsRouteConfigFixture {
   title: string;
   subtitle: string;
@@ -149,19 +151,19 @@ export const AGENTS_PERF: AgentPerformanceFixture[] = [
 export const AGENT_GROUPS = [
   {
     label: 'Top performers',
-    color: '#1E7A5A',
+    color: TOKEN_COLORS.success.success,
     note: 'Above target on revenue and follow-up compliance',
     items: ['Ahmed Mohamed · EGP 52.4M · 94% follow-up', 'Sara Fathy · EGP 48.9M · 91% follow-up', 'Youssef Hegazy · EGP 61.2M · 88% follow-up'],
   },
   {
     label: 'Underperforming',
-    color: '#9A3838',
+    color: TOKEN_COLORS.danger.danger,
     note: 'Conversion below 3.5% or follow-up under 60%',
     items: ['Nour ElSayed · 3.1% conversion · 58% follow-up', 'Kariman Osman · 2.7% conversion · 41% follow-up'],
   },
   {
     label: 'High potential',
-    color: '#1B4DB8',
+    color: TOKEN_COLORS.brand.primary,
     note: 'Strong conversion, capacity for more leads',
     items: ['Menna Kamal · 4.8% conversion · 30 viewings', 'Mohamed Adel · 4.9% conversion · 24 viewings'],
   },

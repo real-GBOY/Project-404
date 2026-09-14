@@ -54,8 +54,19 @@ export function NotificationsDrawer({ open, onOpenChange }: { open: boolean; onO
         />
       ) : (
         filtered.map((n) => (
-          <DrawerSection key={n.id} className={n.read ? undefined : "bg-[#FAFBFE]"}>
-            <div className="flex gap-2.5" onClick={() => markRead(n.id)}>
+          <DrawerSection key={n.id} className={n.read ? undefined : "bg-surface-unread"}>
+            <div
+              className="flex gap-2.5"
+              role="button"
+              tabIndex={0}
+              onClick={() => markRead(n.id)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  markRead(n.id);
+                }
+              }}
+            >
               <span className={`flex size-[26px] flex-none items-center justify-center rounded-sm ${ICON_TONE[n.category]}`}>
                 <Icon name={n.icon} size={14} />
               </span>
@@ -70,7 +81,8 @@ export function NotificationsDrawer({ open, onOpenChange }: { open: boolean; onO
                     variant="secondary"
                     size="sm"
                     className="mt-2"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       onOpenChange(false);
                       navigate(n.action!.to);
                     }}

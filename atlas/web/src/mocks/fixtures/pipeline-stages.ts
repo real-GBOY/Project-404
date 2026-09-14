@@ -2,6 +2,8 @@
 // the extra pipeline-only leads (`extraPipe`) that appear on the Kanban pipeline board but not in the
 // LEADS table (they represent further-along leads: Reserved/Contracted/Sold).
 
+import { DATAVIZ_COLORS } from "@/styles/colors";
+
 export const STAGES = [
   'NEW', 'QUALIFIED', 'CONTACTED', 'VIEWING', 'NEGOTIATION', 'RESERVED', 'CONTRACTED', 'SOLD', 'LOST',
 ] as const;
@@ -9,15 +11,15 @@ export const STAGES = [
 export type StageKey = (typeof STAGES)[number];
 
 export const STAGE_COLORS: Record<StageKey, string> = {
-  NEW: '#9FB4E4',
-  QUALIFIED: '#7E9BDC',
-  CONTACTED: '#5C80CF',
-  VIEWING: '#E2B457',
-  NEGOTIATION: '#D89A3C',
-  RESERVED: '#1B4DB8',
-  CONTRACTED: '#2E7D5B',
-  SOLD: '#1E7A5A',
-  LOST: '#C05555',
+  NEW: DATAVIZ_COLORS.pipelineStage.new,
+  QUALIFIED: DATAVIZ_COLORS.pipelineStage.qualified,
+  CONTACTED: DATAVIZ_COLORS.pipelineStage.contacted,
+  VIEWING: DATAVIZ_COLORS.pipelineStage.viewing,
+  NEGOTIATION: DATAVIZ_COLORS.pipelineStage.negotiation,
+  RESERVED: DATAVIZ_COLORS.pipelineStage.reserved,
+  CONTRACTED: DATAVIZ_COLORS.pipelineStage.contracted,
+  SOLD: DATAVIZ_COLORS.pipelineStage.sold,
+  LOST: DATAVIZ_COLORS.pipelineStage.lost,
 };
 
 // stageOf(lead) default mapping from a LEADS row's `status` field to a pipeline stage, used when there
@@ -70,10 +72,10 @@ export interface FunnelStageFixture {
 }
 
 export const CRM_FUNNEL: FunnelStageFixture[] = [
-  { label: 'New', count: '1,842', rate: '100%', pct: 100, color: '#9FB4E4' },
-  { label: 'Qualified', count: '1,024', rate: '55.6%', pct: 56, color: '#7E9BDC' },
-  { label: 'Viewing', count: '612', rate: '33.2%', pct: 33, color: '#5C80CF' },
-  { label: 'Negotiation', count: '348', rate: '18.9%', pct: 19, color: '#3A65C3' },
-  { label: 'Reserved', count: '278', rate: '15.1%', pct: 15, color: '#1B4DB8' },
-  { label: 'Contracted', count: '217', rate: '11.8%', pct: 12, color: '#12357F' },
+  { label: 'New', count: '1,842', rate: '100%', pct: 100, color: DATAVIZ_COLORS.funnel.new },
+  { label: 'Qualified', count: '1,024', rate: '55.6%', pct: 56, color: DATAVIZ_COLORS.funnel.qualified },
+  { label: 'Viewing', count: '612', rate: '33.2%', pct: 33, color: DATAVIZ_COLORS.funnel.viewing },
+  { label: 'Negotiation', count: '348', rate: '18.9%', pct: 19, color: DATAVIZ_COLORS.funnel.negotiation },
+  { label: 'Reserved', count: '278', rate: '15.1%', pct: 15, color: DATAVIZ_COLORS.funnel.reserved },
+  { label: 'Contracted', count: '217', rate: '11.8%', pct: 12, color: DATAVIZ_COLORS.funnel.contracted },
 ];

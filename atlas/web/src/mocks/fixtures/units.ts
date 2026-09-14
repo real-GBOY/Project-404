@@ -27,15 +27,20 @@ export const UNIT_TYPES: UnitTypeFixture[] = [
   { label: 'Duplex', areaSqm: 246, basePriceEgpM: 10.4 },
 ];
 
+import { TOKEN_COLORS } from "@/styles/colors";
+
 export type UnitStatus = 'Sold' | 'Available' | 'Reserved' | 'On Hold' | 'Unavailable';
 
 // unitColors(status) -> [background, foreground, border] used to paint the floor-plate grid.
+// Note: "Unavailable" uses plain canvas/border rather than the dedicated
+// unitUnavailableFill/Border tokens (#F2F2EE/#D8D4CB) — that's how the design prototype
+// actually authored it, kept verbatim rather than "corrected" to match the token names.
 export const UNIT_STATUS_COLORS: Record<UnitStatus, [bg: string, fg: string, border: string]> = {
-  Sold: ['#1B4DB8', '#fff', '#12357F'],
-  Available: ['#E8F4EF', '#1E7A5A', '#BFE0D2'],
-  Reserved: ['#F6E3BD', '#7A5416', '#E2B457'],
-  'On Hold': ['#EFEDE8', '#6E6459', '#D8D4CB'],
-  Unavailable: ['#F6F6F4', '#B5B5AE', '#E3E3DF'],
+  Sold: [TOKEN_COLORS.unit.unitSold, TOKEN_COLORS.brand.primaryForeground, TOKEN_COLORS.unit.unitSoldBorder],
+  Available: [TOKEN_COLORS.unit.unitAvailableFill, TOKEN_COLORS.unit.unitAvailableFg, TOKEN_COLORS.unit.unitAvailableBorder],
+  Reserved: [TOKEN_COLORS.unit.unitReservedFill, TOKEN_COLORS.unit.unitReservedFg, TOKEN_COLORS.unit.unitReservedBorder],
+  'On Hold': [TOKEN_COLORS.unit.unitHoldFill, TOKEN_COLORS.unit.unitHoldFg, TOKEN_COLORS.unit.unitHoldBorder],
+  Unavailable: [TOKEN_COLORS.surface.canvas, TOKEN_COLORS.unit.unitUnavailableFg, TOKEN_COLORS.border.border],
 };
 
 // unitAt(buildingKey, floor, idx, totalFloors) formula, verbatim:

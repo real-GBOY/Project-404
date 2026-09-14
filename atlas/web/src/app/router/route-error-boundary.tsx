@@ -11,17 +11,17 @@ interface State {
 
 /** Catches render errors within one routed page so a crash there doesn't take down the whole shell. */
 export class RouteErrorBoundary extends Component<Props, State> {
-  state: State = { error: null };
+  override state: State = { error: null };
 
   static getDerivedStateFromError(error: Error): State {
     return { error };
   }
 
-  componentDidCatch(error: Error, info: ErrorInfo) {
+  override componentDidCatch(error: Error, info: ErrorInfo) {
     console.error("Route error:", error, info);
   }
 
-  render() {
+  override render() {
     if (this.state.error) {
       return (
         <div className="px-[18px] pt-4">

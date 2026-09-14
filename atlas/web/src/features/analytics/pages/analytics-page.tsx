@@ -92,7 +92,15 @@ export function AnalyticsPage({ route }: { route: AnalyticsRoute }) {
         {PROJECTS.map((p) => (
           <div
             key={p.id}
+            role="button"
+            tabIndex={0}
             onClick={() => navigate(`/projects/${p.id}`)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                navigate(`/projects/${p.id}`);
+              }
+            }}
             className="grid cursor-pointer grid-cols-[1.6fr_.8fr_.8fr_1.2fr] items-center gap-2 border-b border-border-row px-3 py-2 last:border-0 hover:bg-surface-hover"
           >
             <div className="truncate text-[11.5px] font-medium">{p.name}</div>

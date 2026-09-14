@@ -31,6 +31,18 @@ export function KanbanCard({
       draggable
       onDragStart={onDragStart}
       onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={
+        onClick
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClick();
+              }
+            }
+          : undefined
+      }
       className="cursor-grab rounded-card border border-border bg-surface p-2.5 transition-colors hover:border-primary"
     >
       <div className="mb-1.5 flex items-center gap-1.5">

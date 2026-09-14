@@ -1,6 +1,8 @@
 // Extracted verbatim from the design prototype's `CUSTOMERS` class field, plus the customer-detail
 // data built by `detailVals()` for the single "selected" customer shown on the Customer 360 screen.
 
+import { TOKEN_COLORS } from "@/styles/colors";
+
 export interface CustomerFixture {
   id: string;
   name: string;
@@ -108,11 +110,11 @@ export const CUSTOMER_DETAIL_C1 = {
     { name: 'Proof of income.pdf', size: '640 KB', status: 'Pending' },
   ] satisfies CustomerDocumentFixture[],
   timeline: [
-    { kind: 'Reservation', text: 'B-1204 reserved · deposit EGP 145,500 pending', when: '11 Mar 2026 · 14:42', color: '#E2B457' },
-    { kind: 'Payment', text: 'Installment 5 / 16 received · EGP 290,000', when: '08 Mar 2026 · 10:02', color: '#3DBE8B' },
-    { kind: 'Call', text: 'Discussed upgrade to Building C penthouse', when: '02 Mar 2026 · 16:20', color: '#1B4DB8' },
-    { kind: 'Contract', text: 'C-0189 signed for A-0508', when: '21 Feb 2026 · 12:00', color: '#3DBE8B' },
-    { kind: 'Note', text: 'Prefers Q4 2026 handover; second home buyer', when: '18 Feb 2026 · 09:40', color: '#8A8A85' },
+    { kind: 'Reservation', text: 'B-1204 reserved · deposit EGP 145,500 pending', when: '11 Mar 2026 · 14:42', color: TOKEN_COLORS.warning.warningSolid },
+    { kind: 'Payment', text: 'Installment 5 / 16 received · EGP 290,000', when: '08 Mar 2026 · 10:02', color: TOKEN_COLORS.success.successStrong },
+    { kind: 'Call', text: 'Discussed upgrade to Building C penthouse', when: '02 Mar 2026 · 16:20', color: TOKEN_COLORS.brand.primary },
+    { kind: 'Contract', text: 'C-0189 signed for A-0508', when: '21 Feb 2026 · 12:00', color: TOKEN_COLORS.success.successStrong },
+    { kind: 'Note', text: 'Prefers Q4 2026 handover; second home buyer', when: '18 Feb 2026 · 09:40', color: TOKEN_COLORS.text.muted },
   ] satisfies CustomerTimelineEntryFixture[],
   tabs: ['Overview', 'Units', 'Payments', 'Contracts', 'Documents', 'Activity'],
 };

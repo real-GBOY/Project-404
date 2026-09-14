@@ -1,11 +1,13 @@
 /**
  * Navigation model — mirrors the design's 9 collapsible sidebar groups
- * (PLAN §2/§8). Nav items in the design carry NO icon, label + optional
- * count badge only.
+ * (PLAN §2/§8). The design itself carries no icon here (label + optional count
+ * badge only); `icon` (a name from `components/ui/icon.tsx`'s registry) was
+ * added on top of that for sidebar scannability and isn't part of the source design.
  */
 export interface NavItem {
   to: string;
   label: string;
+  icon: string;
   badge?: number;
   /** also treat these path prefixes as "this item is active" */
   match?: string[];
@@ -19,83 +21,83 @@ export interface NavGroup {
 export const NAV: NavGroup[] = [
   {
     title: "Overview",
-    items: [{ to: "/dashboard", label: "Executive Dashboard" }],
+    items: [{ to: "/dashboard", label: "Executive Dashboard", icon: "dashboard" }],
   },
   {
     title: "CRM",
     items: [
-      { to: "/leads", label: "Leads" },
-      { to: "/customers", label: "Customers" },
-      { to: "/pipeline", label: "Pipeline" },
-      { to: "/activities", label: "Activities" },
-      { to: "/followups", label: "Follow-ups", badge: 23 },
+      { to: "/leads", label: "Leads", icon: "lead" },
+      { to: "/customers", label: "Customers", icon: "customer" },
+      { to: "/pipeline", label: "Pipeline", icon: "pipeline" },
+      { to: "/activities", label: "Activities", icon: "activity" },
+      { to: "/followups", label: "Follow-ups", icon: "followup", badge: 23 },
     ],
   },
   {
     title: "Properties",
     items: [
-      { to: "/projects", label: "Projects" },
-      { to: "/buildings", label: "Buildings" },
-      { to: "/units", label: "Units" },
-      { to: "/availability", label: "Availability" },
-      { to: "/pricing", label: "Pricing" },
+      { to: "/projects", label: "Projects", icon: "project" },
+      { to: "/buildings", label: "Buildings", icon: "building" },
+      { to: "/units", label: "Units", icon: "unit" },
+      { to: "/availability", label: "Availability", icon: "availability" },
+      { to: "/pricing", label: "Pricing", icon: "pricing" },
     ],
   },
   {
     title: "Sales",
     items: [
-      { to: "/reservations", label: "Reservations", badge: 4 },
-      { to: "/deals", label: "Deals" },
-      { to: "/contracts", label: "Contracts" },
-      { to: "/plans", label: "Payment Plans" },
-      { to: "/commissions", label: "Commissions" },
+      { to: "/reservations", label: "Reservations", icon: "reservation", badge: 4 },
+      { to: "/deals", label: "Deals", icon: "deal" },
+      { to: "/contracts", label: "Contracts", icon: "contract" },
+      { to: "/plans", label: "Payment Plans", icon: "payment-plan" },
+      { to: "/commissions", label: "Commissions", icon: "commission" },
     ],
   },
   {
     title: "Finance",
     items: [
-      { to: "/payments", label: "Payments" },
-      { to: "/installments", label: "Installments" },
-      { to: "/collections", label: "Collections" },
-      { to: "/outstanding", label: "Outstanding Payments", badge: 12 },
-      { to: "/finreports", label: "Financial Reports" },
+      { to: "/payments", label: "Payments", icon: "payment" },
+      { to: "/installments", label: "Installments", icon: "installment" },
+      { to: "/collections", label: "Collections", icon: "collection" },
+      { to: "/outstanding", label: "Outstanding Payments", icon: "outstanding", badge: 12 },
+      { to: "/finreports", label: "Financial Reports", icon: "report" },
     ],
   },
   {
     title: "Operations",
     items: [
-      { to: "/tasks", label: "Tasks" },
-      { to: "/workflows", label: "Workflows" },
-      { to: "/approvals", label: "Approvals", badge: 7 },
-      { to: "/documents", label: "Documents" },
+      { to: "/tasks", label: "Tasks", icon: "task" },
+      { to: "/workflows", label: "Workflows", icon: "workflow" },
+      { to: "/approvals", label: "Approvals", icon: "approval", badge: 7 },
+      { to: "/documents", label: "Documents", icon: "doc" },
     ],
   },
   {
     title: "Analytics",
     items: [
-      { to: "/analytics/sales", label: "Sales Analytics" },
-      { to: "/analytics/leads", label: "Lead Analytics" },
-      { to: "/analytics/projects", label: "Project Performance" },
-      { to: "/analytics/agents", label: "Agent Performance" },
-      { to: "/analytics/revenue", label: "Revenue" },
-      { to: "/analytics/inventory", label: "Inventory Analytics" },
+      { to: "/analytics/sales", label: "Sales Analytics", icon: "trend-up" },
+      { to: "/analytics/leads", label: "Lead Analytics", icon: "filter" },
+      { to: "/analytics/projects", label: "Project Performance", icon: "project" },
+      { to: "/analytics/agents", label: "Agent Performance", icon: "users" },
+      { to: "/analytics/revenue", label: "Revenue", icon: "revenue" },
+      { to: "/analytics/inventory", label: "Inventory Analytics", icon: "inventory" },
     ],
   },
   {
     title: "AI",
     items: [
-      { to: "/copilot", label: "AI Copilot" },
-      { to: "/insights", label: "Insights" },
-      { to: "/recommendations", label: "Recommendations" },
+      { to: "/copilot", label: "AI Copilot", icon: "spark" },
+      { to: "/insights", label: "Insights", icon: "insight" },
+      { to: "/recommendations", label: "Recommendations", icon: "recommendation" },
     ],
   },
   {
     title: "Administration",
     items: [
-      { to: "/team", label: "Team" },
-      { to: "/roles", label: "Roles & Permissions" },
-      { to: "/settings/organization", label: "Organization Settings" },
-      { to: "/audit", label: "Audit Logs" },
+      { to: "/team", label: "Team", icon: "users" },
+      { to: "/roles", label: "Roles & Permissions", icon: "shield" },
+      { to: "/settings/organization", label: "Organization Settings", icon: "gear" },
+      { to: "/audit", label: "Audit Logs", icon: "history" },
     ],
   },
 ];

@@ -88,6 +88,7 @@ export function Sidebar({ onSearch }: { onSearch: () => void }) {
                           : "border-transparent text-sidebar-foreground hover:bg-surface-nav-hover hover:text-foreground",
                       )}
                     >
+                      <Icon name={item.icon} size={14} className={active ? "text-primary" : "text-subtle"} />
                       <span className="flex-1 truncate">{item.label}</span>
                       {item.badge != null && (
                         <span className="rounded-badge bg-surface-track px-1 font-mono text-[9px] font-semibold text-body">

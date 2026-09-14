@@ -2,6 +2,8 @@
 // `componentDidMount()` via setTimeout to simulate real-time activity (a toast notification + an
 // activity-feed prepend). There is no other authored toast content in the prototype — these two are it.
 
+import { DATAVIZ_COLORS, TOKEN_COLORS } from "@/styles/colors";
+
 export interface LiveDemoEventFixture {
   kind: 'Reservation' | 'Payment';
   /** Toast accent color */
@@ -18,13 +20,13 @@ export interface LiveDemoEventFixture {
 
 export const LIVE_DEMO_EVENTS: LiveDemoEventFixture[] = [
   {
-    kind: 'Reservation', color: '#F0B429', title: 'UNIT B-1204 · RESERVED',
+    kind: 'Reservation', color: DATAVIZ_COLORS.activityAmber, title: 'UNIT B-1204 · RESERVED',
     body: 'Ahmed Mohamed reserved B-1204 for Tarek ElGohary — deposit EGP 145,500 pending.',
     fireAfterMs: 5200, actionLabel: 'Open unit', targetRoute: 'units',
     // also sets a unit status override: unitOverrides['B-1204'] = 'Reserved' (see units.ts unitAt()).
   },
   {
-    kind: 'Payment', color: '#3DBE8B', title: 'EGP 340,000 collected',
+    kind: 'Payment', color: TOKEN_COLORS.success.successStrong, title: 'EGP 340,000 collected',
     body: 'Installment 7/20 cleared for Hala Mostafa · Cedar C-0311.',
     fireAfterMs: 13000,
   },

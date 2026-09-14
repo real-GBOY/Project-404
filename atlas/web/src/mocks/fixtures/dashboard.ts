@@ -3,6 +3,8 @@
 // other fixture array; they are independently authored numbers that happen to reconcile with
 // PROJECTS/AVAILABILITY/LEADS totals (see notes below).
 
+import { DATAVIZ_COLORS, TOKEN_COLORS } from "@/styles/colors";
+
 export interface DashboardKpiFixture {
   label: string;
   value: string;
@@ -16,16 +18,16 @@ export interface DashboardKpiFixture {
 }
 
 export const DASHBOARD_KPIS: DashboardKpiFixture[] = [
-  { label: 'Portfolio value', value: 'EGP 32.51B', delta: '+6.2%', deltaFg: '#1E7A5A', sparkValues: [58, 62, 60, 68, 72, 76, 81, 88], sparkColor: '#C9D4EE' },
-  { label: 'Revenue contracted', value: 'EGP 17.47B', delta: '+9.4%', deltaFg: '#1E7A5A', sparkValues: [40, 48, 52, 51, 60, 66, 74, 82], sparkColor: '#C9D4EE' },
-  { label: 'Collected revenue', value: 'EGP 6.42B', delta: '+11.2%', deltaFg: '#1E7A5A', sparkValues: [30, 36, 41, 44, 52, 58, 63, 71], sparkColor: '#C9D4EE' },
-  { label: 'Outstanding', value: 'EGP 42.6M', delta: '+4.2%', deltaFg: '#9A3838', sparkValues: [22, 26, 24, 30, 34, 33, 38, 42], sparkColor: '#EBC9C9' },
-  { label: 'Units sold', value: '733', delta: '+58', deltaFg: '#1E7A5A', sparkValues: [41, 44, 48, 52, 55, 61, 66, 72], sparkColor: '#C9D4EE' },
-  { label: 'Units available', value: '443', delta: '-58', deltaFg: '#1E7A5A', sparkValues: [72, 68, 64, 60, 56, 52, 48, 44], sparkColor: '#D8DCD4' },
-  { label: 'Reserved units', value: '110', delta: '+12', deltaFg: '#1E7A5A', sparkValues: [64, 70, 68, 74, 82, 88, 96, 110], sparkColor: '#EEDCBE' },
-  { label: 'Active leads', value: '312', delta: '+8.2%', deltaFg: '#1E7A5A', sparkValues: [210, 228, 244, 251, 268, 284, 296, 312], sparkColor: '#C9D4EE' },
-  { label: 'Conversion rate', value: '11.8%', delta: '+1.4pp', deltaFg: '#1E7A5A', sparkValues: [8.4, 9.1, 9.6, 9.4, 10.2, 10.8, 11.1, 11.8], sparkColor: '#C9D4EE' },
-  { label: 'Sales velocity', value: '14.2 u/wk', delta: '+18.4%', deltaFg: '#1E7A5A', sparkValues: [9.8, 10.4, 11.2, 10.9, 12.0, 12.6, 13.4, 14.2], sparkColor: '#C9D4EE' },
+  { label: 'Portfolio value', value: 'EGP 32.51B', delta: '+6.2%', deltaFg: TOKEN_COLORS.success.success, sparkValues: [58, 62, 60, 68, 72, 76, 81, 88], sparkColor: TOKEN_COLORS.chart.sparkPositive },
+  { label: 'Revenue contracted', value: 'EGP 17.47B', delta: '+9.4%', deltaFg: TOKEN_COLORS.success.success, sparkValues: [40, 48, 52, 51, 60, 66, 74, 82], sparkColor: TOKEN_COLORS.chart.sparkPositive },
+  { label: 'Collected revenue', value: 'EGP 6.42B', delta: '+11.2%', deltaFg: TOKEN_COLORS.success.success, sparkValues: [30, 36, 41, 44, 52, 58, 63, 71], sparkColor: TOKEN_COLORS.chart.sparkPositive },
+  { label: 'Outstanding', value: 'EGP 42.6M', delta: '+4.2%', deltaFg: TOKEN_COLORS.danger.danger, sparkValues: [22, 26, 24, 30, 34, 33, 38, 42], sparkColor: TOKEN_COLORS.chart.sparkNegative },
+  { label: 'Units sold', value: '733', delta: '+58', deltaFg: TOKEN_COLORS.success.success, sparkValues: [41, 44, 48, 52, 55, 61, 66, 72], sparkColor: TOKEN_COLORS.chart.sparkPositive },
+  { label: 'Units available', value: '443', delta: '-58', deltaFg: TOKEN_COLORS.success.success, sparkValues: [72, 68, 64, 60, 56, 52, 48, 44], sparkColor: TOKEN_COLORS.chart.sparkNeutral },
+  { label: 'Reserved units', value: '110', delta: '+12', deltaFg: TOKEN_COLORS.success.success, sparkValues: [64, 70, 68, 74, 82, 88, 96, 110], sparkColor: DATAVIZ_COLORS.sparkReserved },
+  { label: 'Active leads', value: '312', delta: '+8.2%', deltaFg: TOKEN_COLORS.success.success, sparkValues: [210, 228, 244, 251, 268, 284, 296, 312], sparkColor: TOKEN_COLORS.chart.sparkPositive },
+  { label: 'Conversion rate', value: '11.8%', delta: '+1.4pp', deltaFg: TOKEN_COLORS.success.success, sparkValues: [8.4, 9.1, 9.6, 9.4, 10.2, 10.8, 11.1, 11.8], sparkColor: TOKEN_COLORS.chart.sparkPositive },
+  { label: 'Sales velocity', value: '14.2 u/wk', delta: '+18.4%', deltaFg: TOKEN_COLORS.success.success, sparkValues: [9.8, 10.4, 11.2, 10.9, 12.0, 12.6, 13.4, 14.2], sparkColor: TOKEN_COLORS.chart.sparkPositive },
 ];
 // Note: "Units sold" (733), "Units available" (443), "Active leads" (312), "Portfolio value" (32.51B)
 // and "Revenue contracted" (17.47B) values above reconcile exactly with the sums of projects.ts
@@ -68,11 +70,11 @@ export interface InventoryBreakdownSliceFixture {
 }
 
 export const INVENTORY_BREAKDOWN: InventoryBreakdownSliceFixture[] = [
-  { label: 'Sold', count: '733', pct: 57, pctLabel: '57.0%', color: '#1B4DB8' },
-  { label: 'Available', count: '443', pct: 34.4, pctLabel: '34.4%', color: '#9FB4E4' },
-  { label: 'Reserved', count: '110', pct: 8.6, pctLabel: '8.6%', color: '#E2B457' },
-  { label: 'On hold', count: '18', pct: 1.4, pctLabel: '1.4%', color: '#B9B2A6' },
-  { label: 'Unavailable', count: '6', pct: 0.6, pctLabel: '0.5%', color: '#CFCFC9' },
+  { label: 'Sold', count: '733', pct: 57, pctLabel: '57.0%', color: TOKEN_COLORS.brand.primary },
+  { label: 'Available', count: '443', pct: 34.4, pctLabel: '34.4%', color: TOKEN_COLORS.chart.chartSecondary },
+  { label: 'Reserved', count: '110', pct: 8.6, pctLabel: '8.6%', color: TOKEN_COLORS.warning.warningSolid },
+  { label: 'On hold', count: '18', pct: 1.4, pctLabel: '1.4%', color: DATAVIZ_COLORS.onHold },
+  { label: 'Unavailable', count: '6', pct: 0.6, pctLabel: '0.5%', color: TOKEN_COLORS.text.faint },
 ];
 // GAP: total of the 5 counts (733+443+110+18+6=1310) is 24 units over the portfolio's own 1,286-unit
 // total (PROJECTS totalUnits sum = 1,286) — a minor inconsistency in the source prototype. Also note

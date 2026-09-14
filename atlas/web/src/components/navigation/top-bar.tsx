@@ -3,7 +3,6 @@ import { GROUP_OF, DETAIL_TITLES, NAV_ITEMS } from "@/app/router/nav";
 import { useReadPageChrome } from "@/lib/page-chrome";
 import { useOnlineCount } from "@/lib/realtime/online-count";
 import { useNotifications } from "@/lib/notifications/notifications-provider";
-import { Icon } from "@/components/ui/icon";
 import { IconButton } from "@/components/ui/icon-button";
 import { Button } from "@/components/ui/button";
 
