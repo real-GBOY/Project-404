@@ -1,0 +1,135 @@
+@import "tailwindcss";
+
+/**
+ * Atlas design tokens — the "Atlas RE OS" visual system
+ * (Claude Design: `Atlas RE OS.dc.html`).
+ *
+ * A flat, bordered "financial terminal" aesthetic: almost no shadows, a single
+ * hairline border color (#E3E3DF) does nearly all the structural work, and
+ * every numeric/code value (ids, money, dates, %, ⌘K) renders in monospace
+ * while labels/prose stay in the sans body font. Brand blue (#1B4DB8) is the
+ * only color; status meaning is carried entirely by the `tone()` pill system
+ * (see `lib/tone.ts`), not by component-level color props.
+ *
+ * Token NAMES follow the same shape as a sibling AURIC product's tokens so the
+ * conventions read the same across products; VALUES are Atlas's own.
+ */
+@theme {
+  --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", "Menlo", "Consolas", monospace;
+
+  /* radii — the design is almost universally 3px (cards/buttons/inputs) or
+     2px (badges/pills/nav-active/grid cells) */
+  --radius-badge: 2px;
+  --radius-card: 3px;
+  --radius-btn: 3px;
+  --radius-control: 3px;
+  --radius-chat: 4px;
+  --radius-modal: 5px;
+  --radius-pill: 999px;
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 5px;
+
+  /* frame dimensions */
+  --spacing-sidebar: 232px;
+  --spacing-topbar: 46px;
+
+  /* ── surfaces ───────────────────────────────────────────── */
+  --color-canvas: #f6f6f4;
+  --color-sidebar: #f3f3f0;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #fafaf8; /* toolbars, header rows, footer/pagination strips */
+  --color-surface-subtle-2: #f4f4f0; /* dense table divider bg */
+  --color-surface-hover: #fafafc; /* row hover (faint blue-white) */
+  --color-surface-track: #f2f2ee; /* progress-bar / chart track */
+  --color-surface-nav-hover: #e9e9e4;
+
+  /* ── text ───────────────────────────────────────────────── */
+  --color-foreground: #0b0b0c;
+  --color-sidebar-foreground: #2a2a28;
+  --color-body: #4a4a46;
+  --color-secondary: #6e6e6a;
+  --color-muted: #8a8a85;
+  --color-subtle: #9a9a94;
+  --color-faint: #cfcfc9;
+  --color-fainter: #e3e3df;
+  --color-placeholder: #a8a8a2;
+
+  /* ── borders ────────────────────────────────────────────── */
+  --color-border: #e3e3df; /* the dominant hairline, ~126 uses in the design */
+  --color-border-row: #f4f4f0; /* table row divider */
+  --color-border-elevated: #d8d8d2; /* modal / elevated-surface border */
+
+  /* ── brand (blue) ───────────────────────────────────────── */
+  --color-primary: #1b4db8;
+  --color-primary-hover: #16409c;
+  --color-primary-deep: #12357f;
+  --color-primary-foreground: #ffffff;
+  --color-primary-surface: #edf1fc;
+  --color-primary-surface-pale: #f4f6fc;
+  --color-primary-border: #d8deee;
+
+  /* ── tone pairs — the canonical status→color system ──────── */
+  --color-success: #1e7a5a;
+  --color-success-surface: #e8f4ef;
+  --color-success-strong: #3dbe8b;
+  --color-success-border: #bfe0d2;
+
+  --color-danger: #9a3838;
+  --color-danger-surface: #fbeded;
+  --color-danger-secondary: #c05555;
+  --color-danger-border: #e8cfcf;
+  --color-danger-solid: #b4553a;
+
+  --color-warning: #8a6120;
+  --color-warning-surface: #fcf3e4;
+  --color-warning-solid: #e2b457;
+  --color-warning-fill: #f6e3bd;
+  --color-warning-strong: #7a5416;
+
+  --color-neutral-tone: #6e6459;
+  --color-neutral-tone-surface: #f1efec;
+
+  --color-info: #3a5fa8;
+  --color-info-surface: #f4f6fc;
+
+  /* ── charts ─────────────────────────────────────────────── */
+  --color-chart-primary: #1b4db8;
+  --color-chart-secondary: #9fb4e4;
+  --color-chart-grid: #e3e3df;
+  --color-spark-positive: #c9d4ee;
+  --color-spark-negative: #ebc9c9;
+  --color-spark-neutral: #d8dcd4;
+
+  /* ── unit-status grid cells ─────────────────────────────── */
+  --color-unit-sold: #1b4db8;
+  --color-unit-sold-border: #12357f;
+  --color-unit-available-fill: #e8f4ef;
+  --color-unit-available-border: #bfe0d2;
+  --color-unit-available-fg: #1e7a5a;
+  --color-unit-reserved-fill: #f6e3bd;
+  --color-unit-reserved-border: #e2b457;
+  --color-unit-reserved-fg: #7a5416;
+  --color-unit-hold-fill: #efede8;
+  --color-unit-hold-border: #d8d4cb;
+  --color-unit-hold-fg: #6e6459;
+  --color-unit-unavailable-fill: #f2f2ee;
+  --color-unit-unavailable-border: #d8d4cb;
+  --color-unit-unavailable-fg: #b5b5ae;
+
+  /* ── shadows — reserved exclusively for floating overlays ─ */
+  --shadow-modal: 0 24px 60px rgba(11, 11, 12, 0.24);
+  --shadow-drawer: -14px 0 40px rgba(11, 11, 12, 0.14);
+  --shadow-elevated: 0 14px 34px rgba(11, 11, 12, 0.28);
+}
+
+/* Tailwind v4 keeps `border-gray-200` as the bare `border` default; the
+   design's default hairline is `--color-border`. */
+@layer base {
+  *,
+  ::after,
+  ::before {
+    border-color: var(--color-border);
+  }
+}
