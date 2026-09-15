@@ -29,17 +29,34 @@ http.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   return config;
 });
 
-/** Uses the bare `axios` client, not `http` — a failed refresh must not re-trigger this same interceptor. */
+/** Refresh tokens rotate server-side (single-use) and reusing an already-rotated
+ *  one revokes the whole session as theft detection. A page with several
+ *  queries in flight gets several concurrent 401s, so every caller here must
+ *  share one in-flight refresh instead of each racing its own — otherwise all
+ *  but the first lose that race and take the user's whole session down with
+ *  them. Uses the bare `axios` client, not `http` — a failed refresh must not
+ *  re-trigger this same interceptor. */
+let inFlightRefresh: Promise<boolean> | null = null;
+
 async function tryRefresh(): Promise<boolean> {
+  if (inFlightRefresh) return inFlightRefresh;
+
   const refreshToken = getRefreshToken();
   if (!refreshToken) return false;
-  try {
-    const res = await axios.post<{ tokens: TokenPair }>(`${API_BASE_URL}${ENDPOINTS.auth.refresh}`, { refreshToken });
-    setTokens(res.data.tokens);
-    return true;
-  } catch {
-    return false;
-  }
+
+  inFlightRefresh = (async () => {
+    try {
+      const res = await axios.post<{ tokens: TokenPair }>(`${API_BASE_URL}${ENDPOINTS.auth.refresh}`, { refreshToken });
+      setTokens(res.data.tokens);
+      return true;
+    } catch {
+      return false;
+    } finally {
+      inFlightRefresh = null;
+    }
+  })();
+
+  return inFlightRefresh;
 }
 
 interface RetriableConfig extends InternalAxiosRequestConfig {

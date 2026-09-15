@@ -169,7 +169,9 @@ export function EntityTablePage({ entity }: { entity: EntityKey }) {
                 }
               : undefined
           }
-          emptyTitle={config?.emptyTitle ?? `No ${(config?.title ?? entity).toLowerCase()} match “${query}”`}
+          emptyTitle={
+            config?.emptyTitle ?? (query ? `No ${(config?.title ?? entity).toLowerCase()} match “${query}”` : `No ${(config?.title ?? entity).toLowerCase()} found`)
+          }
           emptyDescription={config?.emptyWhy}
           emptyAction={
             hasActiveFilter ? (

@@ -28,8 +28,9 @@ export class CustomersService {
   async get(id: string) {
     const customer = await readInTenant(() => this.repo.findById(id));
     if (!customer) throw NotFound("customer.not_found", "Customer not found.");
-    const unitsOwned = await readInTenant(() => this.repo.unitsOwned(id));
-    return { ...customer, unitsOwned };
+    const [unitsOwned, stats] = await readInTenant(() => Promise.all([this.repo.unitsOwned(id), this.repo.statsByCustomer()]));
+    const s = stats.get(id) ?? { portfolioEgp: 0, collectedEgp: 0 };
+    return { ...customer, unitsOwned, portfolioEgp: s.portfolioEgp, collectedEgp: s.collectedEgp };
   }
 
   async create(body: CreateCustomerBody, actorId: string) {

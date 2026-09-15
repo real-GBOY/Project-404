@@ -18,6 +18,11 @@ const GROUP_ICON: Record<string, string> = {
 };
 
 interface IndexEntry {
+  /** A stable unique id for this row — never the display title, which can
+   *  repeat (unit codes recur per project/building, names can collide) and
+   *  would otherwise give React duplicate list keys, corrupting which row
+   *  renders which content. */
+  id: string;
   group: string;
   title: string;
   subtitle: string;
@@ -43,25 +48,25 @@ export function useGlobalSearch(navigate: (to: string) => void): (query: string)
     const entries: IndexEntry[] = [];
 
     for (const u of units.data ?? []) {
-      entries.push({ group: "Units", title: u.code, subtitle: `${projects.byId.get(u.projectId) ?? u.projectId} · ${u.unitType}`, meta: titleCase(u.status), targetRoute: "units" });
+      entries.push({ id: u.id, group: "Units", title: u.code, subtitle: `${projects.byId.get(u.projectId) ?? u.projectId} · ${u.unitType}`, meta: titleCase(u.status), targetRoute: "units" });
     }
     for (const c of customers.data ?? []) {
-      entries.push({ group: "Customers", title: c.name, subtitle: `${c.id} · ${c.unitsOwned} unit${c.unitsOwned === 1 ? "" : "s"} · ${formatEgp(c.portfolioEgp)}`, meta: titleCase(c.status), targetRoute: `customers/${c.id}` });
+      entries.push({ id: c.id, group: "Customers", title: c.name, subtitle: `${c.id} · ${c.unitsOwned} unit${c.unitsOwned === 1 ? "" : "s"} · ${formatEgp(c.portfolioEgp)}`, meta: titleCase(c.status), targetRoute: `customers/${c.id}` });
     }
     for (const l of leads.data ?? []) {
-      entries.push({ group: "Leads", title: l.name, subtitle: `${l.id} · ${titleCase(l.stage)} · score ${l.score}`, meta: titleCase(l.status), targetRoute: "leads" });
+      entries.push({ id: l.id, group: "Leads", title: l.name, subtitle: `${l.id} · ${titleCase(l.stage)} · score ${l.score}`, meta: titleCase(l.status), targetRoute: "leads" });
     }
     for (const [id, name] of projects.byId.entries()) {
-      entries.push({ group: "Projects", title: name, subtitle: name, meta: "Project", targetRoute: `projects/${id}` });
+      entries.push({ id, group: "Projects", title: name, subtitle: name, meta: "Project", targetRoute: `projects/${id}` });
     }
     for (const c of contracts.data ?? []) {
-      entries.push({ group: "Contracts & Payments", title: c.id, subtitle: formatEgp(c.valueEgp), meta: titleCase(c.status), targetRoute: "contracts" });
+      entries.push({ id: c.id, group: "Contracts & Payments", title: c.id, subtitle: formatEgp(c.valueEgp), meta: titleCase(c.status), targetRoute: "contracts" });
     }
     for (const p of payments.data ?? []) {
-      entries.push({ group: "Contracts & Payments", title: p.reference, subtitle: formatEgp(p.amountEgp), meta: titleCase(p.status), targetRoute: "payments" });
+      entries.push({ id: p.id, group: "Contracts & Payments", title: p.reference, subtitle: formatEgp(p.amountEgp), meta: titleCase(p.status), targetRoute: "payments" });
     }
     for (const d of documents.data ?? []) {
-      entries.push({ group: "Documents", title: d.name, subtitle: titleCase(d.docType), meta: titleCase(d.status), targetRoute: "documents" });
+      entries.push({ id: d.id, group: "Documents", title: d.name, subtitle: titleCase(d.docType), meta: titleCase(d.status), targetRoute: "documents" });
     }
     return entries;
   }, [units.data, projects.byId, customers.data, leads.data, contracts.data, payments.data, documents.data]);
@@ -73,7 +78,7 @@ export function useGlobalSearch(navigate: (to: string) => void): (query: string)
       .filter((item) => `${item.title} ${item.subtitle}`.toLowerCase().includes(q))
       .slice(0, 40)
       .map((item) => ({
-        id: `${item.group}:${item.title}`,
+        id: `${item.group}:${item.id}`,
         group: item.group,
         title: item.title,
         sub: item.subtitle,
