@@ -16,140 +16,155 @@
  *
  * `DATAVIZ_COLORS` covers colors that only ever appear as raw hex passed to fixture
  * data or inline styles (chart series, pipeline-stage/funnel gradients, one-off
- * activity/toast accents) — extracted verbatim from the design prototype, so kept
- * distinct from the semantic tone system in `TOKEN_COLORS` rather than forced onto it.
+ * activity/toast accents) — kept distinct from the semantic tone system in
+ * `TOKEN_COLORS` rather than forced onto it.
+ *
+ * Palette is the "Atlas RE OS Identity" brand system (Claude Design:
+ * `Atlas RE OS Identity.dc.html`): graphite ink on warm paper, a single ochre
+ * signal color, and compute cyan reserved for AI/forecast/derived output so
+ * machine-generated content is always visually distinguishable from recorded
+ * fact. Shape is right-angled throughout — see `--radius-*` in tokens.css,
+ * which is flat everywhere except the 2px status-chip exception.
  */
 
 export const TOKEN_COLORS = {
   surface: {
-    canvas: "#f6f6f4",
-    sidebar: "#f3f3f0",
+    canvas: "#efede8",
+    sidebar: "#0d1013",
+    /** search field / footer row inside the dark sidebar — a shade above sidebar bg */
+    surfaceSidebarSubtle: "#14181d",
     surface: "#ffffff",
-    surfaceSubtle: "#fafaf8",
-    surfaceSubtle2: "#f4f4f0",
-    surfaceHover: "#fafafc",
-    surfaceTrack: "#f2f2ee",
-    surfaceNavHover: "#e9e9e4",
+    surfaceSubtle: "#f7f6f3",
+    surfaceSubtle2: "#f2f1ec",
+    surfaceHover: "#faf9f6",
+    surfaceTrack: "#efede8",
+    surfaceNavHover: "#1d232a",
     /** unread notification row tint */
-    surfaceUnread: "#fafbfe",
+    surfaceUnread: "#fbf6ec",
   },
   text: {
-    foreground: "#0b0b0c",
-    sidebarForeground: "#2a2a28",
-    body: "#4a4a46",
-    secondary: "#6e6e6a",
-    muted: "#8a8a85",
-    subtle: "#9a9a94",
-    faint: "#cfcfc9",
-    fainter: "#e3e3df",
-    placeholder: "#a8a8a2",
+    foreground: "#14181d",
+    sidebarForeground: "#c4c9cf",
+    body: "#2a323b",
+    secondary: "#5c6672",
+    muted: "#8a939e",
+    subtle: "#9aa2ac",
+    faint: "#c4c9cf",
+    fainter: "#e2dfd8",
+    placeholder: "#9aa2ac",
     /** dashed empty-state icon glyphs */
-    iconMuted: "#b5b5ae",
+    iconMuted: "#c4c9cf",
   },
   border: {
-    border: "#e3e3df",
-    borderRow: "#f4f4f0",
-    borderElevated: "#d8d8d2",
+    border: "#e2dfd8",
+    borderRow: "#efede8",
+    borderElevated: "#c4c9cf",
+    /** hairlines inside the dark sidebar (search field, section dividers, footer) */
+    borderSidebar: "#2a323b",
   },
   brand: {
-    primary: "#1b4db8",
-    primaryHover: "#16409c",
-    primaryDeep: "#12357f",
-    primaryForeground: "#ffffff",
-    primarySurface: "#edf1fc",
-    primarySurfacePale: "#f4f6fc",
-    primaryBorder: "#d8deee",
+    primary: "#e0a020",
+    primaryHover: "#c98a15",
+    primaryDeep: "#9c6b10",
+    /** ochre fills always carry dark ink text, never white */
+    primaryForeground: "#14181d",
+    primarySurface: "#fcefd2",
+    primarySurfacePale: "#fefaee",
+    primaryBorder: "#f2dca0",
   },
   success: {
-    success: "#1e7a5a",
-    successSurface: "#e8f4ef",
-    successStrong: "#3dbe8b",
-    successBorder: "#bfe0d2",
+    success: "#2f6b46",
+    successSurface: "#e7f0ea",
+    successStrong: "#5fa87a",
+    successBorder: "#c3dbc9",
   },
   danger: {
-    danger: "#9a3838",
-    dangerSurface: "#fbeded",
-    dangerSecondary: "#c05555",
-    dangerBorder: "#e8cfcf",
-    dangerSolid: "#b4553a",
+    danger: "#a8382f",
+    dangerSurface: "#f8e9e7",
+    dangerSecondary: "#d88078",
+    dangerBorder: "#e9c6c1",
+    dangerSolid: "#9a332b",
   },
   warning: {
-    warning: "#8a6120",
-    warningSurface: "#fcf3e4",
-    warningSolid: "#e2b457",
-    warningFill: "#f6e3bd",
-    warningStrong: "#7a5416",
+    warning: "#8a5e14",
+    warningSurface: "#f5ebd7",
+    warningSolid: "#b8791a",
+    warningFill: "#ead9b0",
+    warningStrong: "#8a5e14",
   },
   neutral: {
-    neutralTone: "#6e6459",
-    neutralToneSurface: "#f1efec",
+    neutralTone: "#5c6672",
+    neutralToneSurface: "#eaebe7",
   },
+  /** repurposed as "Compute Cyan" — AI, forecasts, derived metrics; never recorded fact */
   info: {
-    info: "#3a5fa8",
-    infoSurface: "#f4f6fc",
+    info: "#1f6f73",
+    infoSurface: "#e3eeee",
+    /** bright cyan for text on dark/graphite surfaces (AI insight panels) */
+    infoStrong: "#7fc4c4",
   },
   chart: {
-    chartPrimary: "#1b4db8",
-    chartSecondary: "#9fb4e4",
-    chartGrid: "#e3e3df",
-    sparkPositive: "#c9d4ee",
-    sparkNegative: "#ebc9c9",
-    sparkNeutral: "#d8dcd4",
+    chartPrimary: "#1d232a",
+    chartSecondary: "#c4c9cf",
+    chartGrid: "#e2dfd8",
+    sparkPositive: "#d3e6d9",
+    sparkNegative: "#f0d3cf",
+    sparkNeutral: "#dedad1",
   },
   unit: {
-    unitSold: "#1b4db8",
-    unitSoldBorder: "#12357f",
-    unitAvailableFill: "#e8f4ef",
-    unitAvailableBorder: "#bfe0d2",
-    unitAvailableFg: "#1e7a5a",
-    unitReservedFill: "#f6e3bd",
-    unitReservedBorder: "#e2b457",
-    unitReservedFg: "#7a5416",
-    unitHoldFill: "#efede8",
-    unitHoldBorder: "#d8d4cb",
-    unitHoldFg: "#6e6459",
-    unitUnavailableFill: "#f2f2ee",
-    unitUnavailableBorder: "#d8d4cb",
-    unitUnavailableFg: "#b5b5ae",
+    unitSold: "#2f6b46",
+    unitSoldBorder: "#255939",
+    unitAvailableFill: "#ffffff",
+    unitAvailableBorder: "#c4c9cf",
+    unitAvailableFg: "#5c6672",
+    unitReservedFill: "#e0a020",
+    unitReservedBorder: "#e0a020",
+    unitReservedFg: "#14181d",
+    unitHoldFill: "#8a939e",
+    unitHoldBorder: "#5c6672",
+    unitHoldFg: "#ffffff",
+    unitUnavailableFill: "#efede8",
+    unitUnavailableBorder: "#c4c9cf",
+    unitUnavailableFg: "#9aa2ac",
   },
   overlay: {
-    /** dark toast card border — a hair lighter than `text.foreground` for definition on `bg-foreground` */
-    toastBorder: "#26262a",
+    /** dark toast card border — a hair lighter than `surface.sidebar` for definition on `bg-foreground` */
+    toastBorder: "#2a323b",
   },
 } as const;
 
 /**
  * Colors that only ever show up as raw hex in fixture data or inline styles
  * (never as a Tailwind class) — chart series, pipeline/funnel stage gradients,
- * one-off activity/toast accents. Verbatim from the design prototype.
+ * one-off activity/toast accents.
  */
 export const DATAVIZ_COLORS = {
   pipelineStage: {
-    new: "#9fb4e4",
-    qualified: "#7e9bdc",
-    contacted: "#5c80cf",
-    viewing: "#e2b457",
-    negotiation: "#d89a3c",
-    reserved: "#1b4db8",
-    contracted: "#2e7d5b",
-    sold: "#1e7a5a",
-    lost: "#c05555",
+    new: "#c4c9cf",
+    qualified: "#aeb6bf",
+    contacted: "#8a939e",
+    viewing: "#ead9b0",
+    negotiation: "#ddae5c",
+    reserved: "#e0a020",
+    contracted: "#1f6f73",
+    sold: "#2f6b46",
+    lost: "#a8382f",
   },
-  /** CRM funnel (dashboard) uses its own blue progression, distinct from `pipelineStage` */
+  /** CRM funnel (dashboard) uses its own graphite→ochre progression, distinct from `pipelineStage` */
   funnel: {
-    new: "#9fb4e4",
-    qualified: "#7e9bdc",
-    viewing: "#5c80cf",
-    negotiation: "#3a65c3",
-    reserved: "#1b4db8",
-    contracted: "#12357f",
+    new: "#c4c9cf",
+    qualified: "#aeb6bf",
+    viewing: "#8a939e",
+    negotiation: "#ddae5c",
+    reserved: "#e0a020",
+    contracted: "#9c6b10",
   },
   /** dashboard "Reserved units" KPI sparkline accent */
-  sparkReserved: "#eedcbe",
+  sparkReserved: "#f5e0ad",
   /** dashboard inventory "On hold" segment */
-  onHold: "#b9b2a6",
+  onHold: "#b0afa7",
   /** live activity feed / toast "reservation" accent */
-  activityAmber: "#f0b429",
+  activityAmber: "#e0a020",
 } as const;
 
 /**

@@ -1,7 +1,8 @@
-import { Route, Routes, Navigate } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import { AppShell } from "@/app/layouts/app-shell";
 import { LoginPage } from "@/features/auth/login-page";
 import { ProtectedRoute } from "./protected-route";
+import { RootRoute } from "./root-route";
 import { NotFoundPage } from "./not-found-page";
 import { PlaceholderPage } from "./placeholder-page";
 import { DashboardPage } from "@/features/dashboard";
@@ -28,7 +29,7 @@ import { OrgSettingsPage } from "@/features/admin/pages/org-settings-page";
 export function AppRouter() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/" element={<RootRoute />} />
       <Route path="login" element={<LoginPage />} />
 
       <Route element={<ProtectedRoute />}>

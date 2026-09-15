@@ -52,7 +52,7 @@ export function TopBar({
       <div className="relative">
         <IconButton icon="bell" aria-label="Notifications" onClick={onToggleNotifications} />
         {unreadCount > 0 && (
-          <span className="absolute -right-1 -top-1 rounded-full bg-primary px-1 font-mono text-[9px] text-white">
+          <span className="absolute -right-1 -top-1 bg-primary px-1 font-mono text-[9px] text-primary-foreground">
             {unreadCount}
           </span>
         )}

@@ -81,13 +81,13 @@ body {
 
 @keyframes pulsedot {
   0% {
-    box-shadow: 0 0 0 0 rgba(30, 122, 90, 0.45);
+    box-shadow: 0 0 0 0 rgba(47, 107, 70, 0.45);
   }
   70% {
-    box-shadow: 0 0 0 6px rgba(30, 122, 90, 0);
+    box-shadow: 0 0 0 6px rgba(47, 107, 70, 0);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(30, 122, 90, 0);
+    box-shadow: 0 0 0 0 rgba(47, 107, 70, 0);
   }
 }
 

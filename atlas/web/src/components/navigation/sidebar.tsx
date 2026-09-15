@@ -5,6 +5,7 @@ import { cn } from "@/lib/cn";
 import { useAuth } from "@/features/auth/auth-provider";
 import { Icon } from "@/components/ui/icon";
 import { Avatar } from "@/components/ui/avatar";
+import { LogoMark } from "@/components/ui/logo";
 
 const OPEN_KEY = "atlas.sidebar.groups";
 
@@ -38,14 +39,12 @@ export function Sidebar({ onSearch }: { onSearch: () => void }) {
   const isActive = (to: string) => pathname === to || pathname.startsWith(`${to}/`);
 
   return (
-    <aside className="flex h-dvh w-sidebar flex-none flex-col border-r border-border bg-sidebar">
-      <div className="flex items-center gap-2 border-b border-border px-4 pb-3.5 pt-4">
-        <div className="flex size-[22px] flex-none items-center justify-center rounded-sm bg-primary text-[11px] font-bold text-white">
-          A
-        </div>
+    <aside className="flex h-dvh w-sidebar flex-none flex-col border-r border-border-sidebar bg-sidebar">
+      <div className="flex items-center gap-2 border-b border-border-sidebar px-4 pb-3.5 pt-4">
+        <LogoMark size={26} tone="paper" />
         <div className="min-w-0">
-          <div className="text-[12px] font-semibold tracking-[0.02em] text-sidebar-foreground">ATLAS</div>
-          <div className="whitespace-nowrap text-[8.5px] uppercase tracking-[0.1em] text-subtle">
+          <div className="text-[12px] font-bold leading-none tracking-[-0.02em] text-sidebar-foreground">ATLAS</div>
+          <div className="whitespace-nowrap font-mono text-[8px] uppercase tracking-[0.16em] text-muted">
             Real Estate OS
           </div>
         </div>
@@ -55,11 +54,11 @@ export function Sidebar({ onSearch }: { onSearch: () => void }) {
         <button
           type="button"
           onClick={onSearch}
-          className="flex w-full items-center gap-2 rounded-btn border border-border bg-surface px-2 py-1.5 text-start text-[11px] text-subtle transition-colors hover:border-faint hover:text-body"
+          className="flex w-full items-center gap-2 border border-border-sidebar bg-surface-sidebar-subtle px-2 py-1.5 text-start font-mono text-[11px] text-muted transition-colors hover:border-secondary hover:text-sidebar-foreground"
         >
           <Icon name="search" size={13} />
           <span className="flex-1">Search everything</span>
-          <span className="rounded-sm border border-border px-1 font-mono text-[9px]">⌘K</span>
+          <span className="border border-border-sidebar px-1 font-mono text-[9px]">⌘K</span>
         </button>
       </div>
 
@@ -72,7 +71,7 @@ export function Sidebar({ onSearch }: { onSearch: () => void }) {
                 type="button"
                 onClick={() => toggle(group.title)}
                 aria-expanded={expanded}
-                className="flex w-full select-none items-center gap-1.5 rounded-sm px-2.5 py-1.5 text-[9px] font-semibold uppercase tracking-[0.13em] text-subtle transition-colors hover:bg-surface-nav-hover hover:text-body"
+                className="flex w-full select-none items-center gap-1.5 px-2.5 py-1.5 font-mono text-[9px] font-semibold uppercase tracking-[0.16em] text-muted transition-colors hover:bg-surface-nav-hover hover:text-sidebar-foreground"
               >
                 <span className="flex-1 text-start">{group.title}</span>
                 <Icon name={expanded ? "chevron-up" : "chevron-down"} size={10} />
@@ -85,16 +84,16 @@ export function Sidebar({ onSearch }: { onSearch: () => void }) {
                       key={item.to}
                       to={item.to}
                       className={cn(
-                        "flex items-center gap-2 rounded-r-sm border-l-2 px-2.5 py-[9px] text-[11.5px] transition-colors",
+                        "flex items-center gap-2 border-l-[3px] px-2.5 py-[9px] text-[11.5px] transition-colors",
                         active
-                          ? "border-primary bg-primary-surface font-semibold text-primary"
-                          : "border-transparent text-sidebar-foreground hover:bg-surface-nav-hover hover:text-foreground",
+                          ? "border-primary bg-surface-nav-hover font-semibold text-white"
+                          : "border-transparent text-sidebar-foreground hover:bg-surface-nav-hover hover:text-white",
                       )}
                     >
-                      <Icon name={item.icon} size={14} className={active ? "text-primary" : "text-subtle"} />
+                      <Icon name={item.icon} size={14} className={active ? "text-primary" : "text-muted"} />
                       <span className="flex-1 truncate">{item.label}</span>
                       {item.badge != null && (
-                        <span className="rounded-badge bg-surface-track px-1 font-mono text-[9px] font-semibold text-body">
+                        <span className="bg-surface-sidebar-subtle px-1 font-mono text-[9px] font-semibold text-danger-secondary">
                           {item.badge}
                         </span>
                       )}
@@ -106,16 +105,16 @@ export function Sidebar({ onSearch }: { onSearch: () => void }) {
         })}
       </nav>
 
-      <div className="flex items-center gap-2 border-t border-border bg-surface-subtle px-3 py-2.5">
-        <Avatar name={displayName} variant="dark" size={24} />
+      <div className="flex items-center gap-2 border-t border-border-sidebar bg-surface-sidebar-subtle px-3 py-2.5">
+        <Avatar name={displayName} variant="brand" size={24} />
         <div className="min-w-0 flex-1">
           <div className="truncate text-[11px] font-medium text-sidebar-foreground">{displayName}</div>
-          <div className="truncate text-[9.5px] text-subtle">{auth.user?.email}</div>
+          <div className="truncate text-[9.5px] text-muted">{auth.user?.email}</div>
         </div>
         <button
           type="button"
           title="Sign out"
-          className="text-subtle hover:text-body"
+          className="text-muted hover:text-sidebar-foreground"
           onClick={() => {
             auth.logout();
             navigate("/login", { replace: true });

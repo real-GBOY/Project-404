@@ -23,7 +23,7 @@ export const Pill = forwardRef<HTMLSpanElement, PillProps>(function Pill(
       )}
       {...props}
     >
-      {dot && <span className="size-1.5 flex-none rounded-full bg-current" aria-hidden="true" />}
+      {dot && <span className="size-1.5 flex-none bg-current" aria-hidden="true" />}
       {children}
     </span>
   );

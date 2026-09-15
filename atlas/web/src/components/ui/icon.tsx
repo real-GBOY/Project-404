@@ -153,7 +153,7 @@ export function Icon({
   name,
   className,
   size = 16,
-  strokeWidth = 1.75,
+  strokeWidth = 1.5,
   "aria-hidden": ariaHidden = true,
   "aria-label": ariaLabel,
 }: IconProps) {
@@ -164,6 +164,8 @@ export function Icon({
       width={size}
       height={size}
       strokeWidth={strokeWidth}
+      strokeLinecap="butt"
+      strokeLinejoin="miter"
       className={cn("flex-none select-none", className)}
       aria-hidden={ariaLabel ? undefined : ariaHidden}
       aria-label={ariaLabel}

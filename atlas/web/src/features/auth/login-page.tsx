@@ -3,6 +3,7 @@ import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { LogoMark } from "@/components/ui/logo";
 import { ApiError } from "@/config";
 import { useAuth } from "./auth-provider";
 
@@ -45,12 +46,10 @@ export function LoginPage() {
     <div className="flex min-h-dvh items-center justify-center bg-canvas px-4">
       <div className="w-full max-w-[360px]">
         <div className="mb-6 flex items-center justify-center gap-2.5">
-          <div className="flex size-7 items-center justify-center rounded-sm bg-primary text-[13px] font-bold text-white">
-            A
-          </div>
+          <LogoMark size={28} />
           <div>
-            <div className="text-[13px] font-semibold tracking-[0.02em]">ATLAS</div>
-            <div className="text-[8.5px] uppercase tracking-[0.1em] text-subtle">Real Estate OS</div>
+            <div className="text-[15px] font-bold leading-none tracking-[-0.03em]">ATLAS</div>
+            <div className="mt-1 font-mono text-[8.5px] uppercase tracking-[0.16em] text-subtle">Real Estate OS</div>
           </div>
         </div>
 

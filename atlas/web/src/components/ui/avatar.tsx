@@ -12,12 +12,12 @@ function initialsOf(name: string): string {
   return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase();
 }
 
-/** Circular initials avatar — dark for the current user, pale-blue for entities/agents. */
+/** Square initials avatar (the identity has no rounding) — graphite for the current user, pale-ochre for entities/agents. */
 export function Avatar({ name, size = 24, variant = "brand", className }: AvatarProps) {
   return (
     <div
       className={cn(
-        "flex flex-none items-center justify-center rounded-full font-bold",
+        "flex flex-none items-center justify-center font-bold",
         variant === "dark" ? "bg-foreground text-white" : "bg-primary-surface text-primary",
         className,
       )}

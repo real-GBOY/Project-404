@@ -1,15 +1,17 @@
 @import "tailwindcss";
 
 /**
- * Atlas design tokens — the "Atlas RE OS" visual system
- * (Claude Design: `Atlas RE OS.dc.html`).
+ * Atlas design tokens — the "Atlas RE OS Identity" visual system
+ * (Claude Design: `Atlas RE OS Identity.dc.html`).
  *
- * A flat, bordered "financial terminal" aesthetic: almost no shadows, a single
- * hairline border color (#E3E3DF) does nearly all the structural work, and
- * every numeric/code value (ids, money, dates, %, ⌘K) renders in monospace
- * while labels/prose stay in the sans body font. Brand blue (#1B4DB8) is the
- * only color; status meaning is carried entirely by the `tone()` pill system
- * (see `lib/tone.ts`), not by component-level color props.
+ * Graphite ink on warm paper, right angles throughout (radius 0 except the
+ * 2px status-chip exception), 1px hairline borders instead of shadow for
+ * everyday elevation. Survey Ochre is the single "signal" accent — reserved
+ * for the one thing that needs attention per view. Compute Cyan is reserved
+ * exclusively for AI/forecast/derived output, so machine-generated content
+ * is always visually distinguishable from recorded fact. Every numeric/code
+ * value (ids, money, dates, %, ⌘K) renders in IBM Plex Mono; structure and
+ * prose render in Archivo.
  *
  * Token NAMES follow the same shape as a sibling AURIC product's tokens so the
  * conventions read the same across products; VALUES are Atlas's own.
@@ -21,118 +23,122 @@
  * colors.ts first and copy the value here.
  */
 @theme {
-  --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --font-mono: ui-monospace, "SFMono-Regular", "Menlo", "Consolas", monospace;
+  --font-sans: "Archivo", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", "Menlo", "Consolas", monospace;
 
-  /* radii — the design is almost universally 3px (cards/buttons/inputs) or
-     2px (badges/pills/nav-active/grid cells) */
+  /* radii — right angles everywhere; the single exception is the 2px used by
+     status chips/badges and quick-action pills. */
   --radius-badge: 2px;
-  --radius-card: 3px;
-  --radius-btn: 3px;
-  --radius-control: 3px;
-  --radius-chat: 4px;
-  --radius-modal: 5px;
-  --radius-pill: 999px;
-  --radius-sm: 2px;
-  --radius-md: 3px;
-  --radius-lg: 5px;
+  --radius-card: 0px;
+  --radius-btn: 0px;
+  --radius-control: 0px;
+  --radius-chat: 0px;
+  --radius-modal: 0px;
+  --radius-pill: 2px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
 
   /* frame dimensions */
   --spacing-sidebar: 232px;
   --spacing-topbar: 46px;
 
   /* ── surfaces ───────────────────────────────────────────── */
-  --color-canvas: #f6f6f4;
-  --color-sidebar: #f3f3f0;
+  --color-canvas: #efede8;
+  --color-sidebar: #0d1013;
+  --color-surface-sidebar-subtle: #14181d; /* search field / footer row inside the dark sidebar */
   --color-surface: #ffffff;
-  --color-surface-subtle: #fafaf8; /* toolbars, header rows, footer/pagination strips */
-  --color-surface-subtle-2: #f4f4f0; /* dense table divider bg */
-  --color-surface-hover: #fafafc; /* row hover (faint blue-white) */
-  --color-surface-track: #f2f2ee; /* progress-bar / chart track */
-  --color-surface-nav-hover: #e9e9e4;
-  --color-surface-unread: #fafbfe; /* unread notification row tint */
+  --color-surface-subtle: #f7f6f3; /* toolbars, header rows, footer/pagination strips */
+  --color-surface-subtle-2: #f2f1ec; /* dense table divider bg */
+  --color-surface-hover: #faf9f6; /* row hover */
+  --color-surface-track: #efede8; /* progress-bar / chart track */
+  --color-surface-nav-hover: #1d232a; /* dark-sidebar hover + active-row bg */
+  --color-surface-unread: #fbf6ec; /* unread notification row tint */
 
   /* ── text ───────────────────────────────────────────────── */
-  --color-foreground: #0b0b0c;
-  --color-sidebar-foreground: #2a2a28;
-  --color-body: #4a4a46;
-  --color-secondary: #6e6e6a;
-  --color-muted: #8a8a85;
-  --color-subtle: #9a9a94;
-  --color-faint: #cfcfc9;
-  --color-fainter: #e3e3df;
-  --color-placeholder: #a8a8a2;
-  --color-icon-muted: #b5b5ae; /* dashed empty-state icon glyphs */
+  --color-foreground: #14181d;
+  --color-sidebar-foreground: #c4c9cf;
+  --color-body: #2a323b;
+  --color-secondary: #5c6672;
+  --color-muted: #8a939e;
+  --color-subtle: #9aa2ac;
+  --color-faint: #c4c9cf;
+  --color-fainter: #e2dfd8;
+  --color-placeholder: #9aa2ac;
+  --color-icon-muted: #c4c9cf; /* dashed empty-state icon glyphs */
 
   /* ── borders ────────────────────────────────────────────── */
-  --color-border: #e3e3df; /* the dominant hairline, ~126 uses in the design */
-  --color-border-row: #f4f4f0; /* table row divider */
-  --color-border-elevated: #d8d8d2; /* modal / elevated-surface border */
+  --color-border: #e2dfd8; /* the dominant hairline on paper */
+  --color-border-row: #efede8; /* table row divider */
+  --color-border-elevated: #c4c9cf; /* modal / elevated-surface border */
+  --color-border-sidebar: #2a323b; /* hairlines inside the dark sidebar */
 
-  /* ── brand (blue) ───────────────────────────────────────── */
-  --color-primary: #1b4db8;
-  --color-primary-hover: #16409c;
-  --color-primary-deep: #12357f;
-  --color-primary-foreground: #ffffff;
-  --color-primary-surface: #edf1fc;
-  --color-primary-surface-pale: #f4f6fc;
-  --color-primary-border: #d8deee;
+  /* ── brand (Survey Ochre) ───────────────────────────────── */
+  --color-primary: #e0a020;
+  --color-primary-hover: #c98a15;
+  --color-primary-deep: #9c6b10;
+  --color-primary-foreground: #14181d; /* ochre fills carry dark ink text, never white */
+  --color-primary-surface: #fcefd2;
+  --color-primary-surface-pale: #fefaee;
+  --color-primary-border: #f2dca0;
 
   /* ── tone pairs — the canonical status→color system ──────── */
-  --color-success: #1e7a5a;
-  --color-success-surface: #e8f4ef;
-  --color-success-strong: #3dbe8b;
-  --color-success-border: #bfe0d2;
+  --color-success: #2f6b46;
+  --color-success-surface: #e7f0ea;
+  --color-success-strong: #5fa87a;
+  --color-success-border: #c3dbc9;
 
-  --color-danger: #9a3838;
-  --color-danger-surface: #fbeded;
-  --color-danger-secondary: #c05555;
-  --color-danger-border: #e8cfcf;
-  --color-danger-solid: #b4553a;
+  --color-danger: #a8382f;
+  --color-danger-surface: #f8e9e7;
+  --color-danger-secondary: #d88078;
+  --color-danger-border: #e9c6c1;
+  --color-danger-solid: #9a332b;
 
-  --color-warning: #8a6120;
-  --color-warning-surface: #fcf3e4;
-  --color-warning-solid: #e2b457;
-  --color-warning-fill: #f6e3bd;
-  --color-warning-strong: #7a5416;
+  --color-warning: #8a5e14;
+  --color-warning-surface: #f5ebd7;
+  --color-warning-solid: #b8791a;
+  --color-warning-fill: #ead9b0;
+  --color-warning-strong: #8a5e14;
 
-  --color-neutral-tone: #6e6459;
-  --color-neutral-tone-surface: #f1efec;
+  --color-neutral-tone: #5c6672;
+  --color-neutral-tone-surface: #eaebe7;
 
-  --color-info: #3a5fa8;
-  --color-info-surface: #f4f6fc;
+  /* Compute Cyan — AI, forecasts, derived metrics; never recorded fact */
+  --color-info: #1f6f73;
+  --color-info-surface: #e3eeee;
+  --color-info-strong: #7fc4c4; /* bright cyan for text on dark/graphite surfaces */
 
   /* ── charts ─────────────────────────────────────────────── */
-  --color-chart-primary: #1b4db8;
-  --color-chart-secondary: #9fb4e4;
-  --color-chart-grid: #e3e3df;
-  --color-spark-positive: #c9d4ee;
-  --color-spark-negative: #ebc9c9;
-  --color-spark-neutral: #d8dcd4;
+  --color-chart-primary: #1d232a;
+  --color-chart-secondary: #c4c9cf;
+  --color-chart-grid: #e2dfd8;
+  --color-spark-positive: #d3e6d9;
+  --color-spark-negative: #f0d3cf;
+  --color-spark-neutral: #dedad1;
 
   /* ── unit-status grid cells ─────────────────────────────── */
-  --color-unit-sold: #1b4db8;
-  --color-unit-sold-border: #12357f;
-  --color-unit-available-fill: #e8f4ef;
-  --color-unit-available-border: #bfe0d2;
-  --color-unit-available-fg: #1e7a5a;
-  --color-unit-reserved-fill: #f6e3bd;
-  --color-unit-reserved-border: #e2b457;
-  --color-unit-reserved-fg: #7a5416;
-  --color-unit-hold-fill: #efede8;
-  --color-unit-hold-border: #d8d4cb;
-  --color-unit-hold-fg: #6e6459;
-  --color-unit-unavailable-fill: #f2f2ee;
-  --color-unit-unavailable-border: #d8d4cb;
-  --color-unit-unavailable-fg: #b5b5ae;
+  --color-unit-sold: #2f6b46;
+  --color-unit-sold-border: #255939;
+  --color-unit-available-fill: #ffffff;
+  --color-unit-available-border: #c4c9cf;
+  --color-unit-available-fg: #5c6672;
+  --color-unit-reserved-fill: #e0a020;
+  --color-unit-reserved-border: #e0a020;
+  --color-unit-reserved-fg: #14181d;
+  --color-unit-hold-fill: #8a939e;
+  --color-unit-hold-border: #5c6672;
+  --color-unit-hold-fg: #ffffff;
+  --color-unit-unavailable-fill: #efede8;
+  --color-unit-unavailable-border: #c4c9cf;
+  --color-unit-unavailable-fg: #9aa2ac;
 
   /* ── overlays ───────────────────────────────────────────── */
-  --color-toast-border: #26262a; /* dark toast card border, a hair lighter than --color-foreground */
+  --color-toast-border: #2a323b; /* dark toast card border */
 
   /* ── shadows — reserved exclusively for floating overlays ─ */
-  --shadow-modal: 0 24px 60px rgba(11, 11, 12, 0.24);
-  --shadow-drawer: -14px 0 40px rgba(11, 11, 12, 0.14);
-  --shadow-elevated: 0 14px 34px rgba(11, 11, 12, 0.28);
+  --shadow-modal: 0 24px 60px rgba(20, 24, 29, 0.24);
+  --shadow-drawer: -14px 0 40px rgba(20, 24, 29, 0.14);
+  --shadow-elevated: 0 14px 34px rgba(20, 24, 29, 0.28);
 }
 
 /* Tailwind v4 keeps `border-gray-200` as the bare `border` default; the
