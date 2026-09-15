@@ -44,8 +44,10 @@ suite("realestate/sales", () => {
     const project = await asUser(org.adminId, org.orgId, () =>
       projects().create({ name: `Project ${Date.now()}`, location: "Cairo", developer: "Dev" }, org.adminId),
     );
+    // A small grid can hash entirely into one status bucket (unitAt's formula is
+    // deterministic on buildingKey+floor+idx) — 5x4 reliably yields a status mix.
     const building = await asUser(org.adminId, org.orgId, () =>
-      buildings().create({ projectId: project.id, key: "A", name: "Building A", floors: 2, unitsPerFloor: 2 }, org.adminId),
+      buildings().create({ projectId: project.id, key: "A", name: "Building A", floors: 5, unitsPerFloor: 4 }, org.adminId),
     );
     await asUser(org.adminId, org.orgId, () => units().generateForBuilding(building.id, org.adminId));
     const list = await asUser(org.adminId, org.orgId, () => units().list({ buildingId: building.id, status: "available" }));

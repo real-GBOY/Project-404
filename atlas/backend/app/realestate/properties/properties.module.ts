@@ -26,6 +26,6 @@ import { PriceListsService } from "./price-lists-service.js";
     PriceListsRepository,
     PriceListsService,
   ],
-  exports: [ProjectsRepository, ProjectsService, BuildingsRepository, UnitsRepository, UnitsService],
+  exports: [ProjectsRepository, ProjectsService, BuildingsRepository, BuildingsService, UnitsRepository, UnitsService],
 })
 export class PropertiesModule {}

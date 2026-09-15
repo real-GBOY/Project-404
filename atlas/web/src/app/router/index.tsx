@@ -1,5 +1,7 @@
 import { Route, Routes, Navigate } from "react-router-dom";
 import { AppShell } from "@/app/layouts/app-shell";
+import { LoginPage } from "@/features/auth/login-page";
+import { ProtectedRoute } from "./protected-route";
 import { NotFoundPage } from "./not-found-page";
 import { PlaceholderPage } from "./placeholder-page";
 import { DashboardPage } from "@/features/dashboard";
@@ -27,7 +29,9 @@ export function AppRouter() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="login" element={<LoginPage />} />
 
+      <Route element={<ProtectedRoute />}>
       <Route element={<AppShell />}>
         <Route path="dashboard" element={<DashboardPage />} />
 
@@ -91,6 +95,7 @@ export function AppRouter() {
         <Route path="audit" element={<EntityTablePage entity="audit" />} />
 
         <Route path="placeholder" element={<PlaceholderPage title="Coming soon" />} />
+      </Route>
       </Route>
 
       <Route path="*" element={<NotFoundPage />} />

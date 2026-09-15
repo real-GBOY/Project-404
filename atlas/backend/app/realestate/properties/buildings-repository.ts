@@ -33,14 +33,11 @@ export class BuildingsRepository {
     return requireOrganizationId();
   }
 
-  async listForProject(projectId: string): Promise<BuildingRow[]> {
-    const rows = await realestateDb()
-      .selectFrom("realestate_buildings")
-      .selectAll()
-      .where("organization_id", "=", this.org())
-      .where("project_id", "=", projectId)
-      .orderBy("key", "asc")
-      .execute();
+  /** Omit `projectId` for an org-wide list (the Buildings screen); pass it to scope to one project. */
+  async listForProject(projectId?: string): Promise<BuildingRow[]> {
+    let q = realestateDb().selectFrom("realestate_buildings").selectAll().where("organization_id", "=", this.org());
+    if (projectId) q = q.where("project_id", "=", projectId);
+    const rows = await q.orderBy("key", "asc").execute();
     return rows.map((r) => this.toRow(r));
   }
 

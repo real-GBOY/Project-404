@@ -1,121 +1,117 @@
 import { useMemo, useState } from "react";
 import { PageContainer, PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
+import { RowsSkeleton } from "@/components/feedback/skeleton";
+import { ErrorState } from "@/components/feedback/error-state";
 import { KanbanCard, KanbanColumn, type KanbanCardData } from "@/components/domain/kanban";
-import { useConfirm } from "@/lib/confirm/confirm-provider";
+import { QuickCreateModal } from "@/components/tables/quick-create-modal";
 import { useToast } from "@/lib/toast/toast-provider";
-import {
-  STAGES,
-  STAGE_COLORS,
-  LEAD_STATUS_TO_STAGE,
-  PIPELINE_EXTRA_LEADS,
-  type StageKey,
-} from "@/mocks/fixtures/pipeline-stages";
-import { LEADS } from "@/mocks/fixtures/leads";
+import { formatEgp } from "@/lib/money";
+import { timeAgo } from "@/lib/time";
+import { ApiError } from "@/lib/api/client";
+import { useAuth } from "@/features/auth/auth-provider";
+import { useTeamDirectory } from "@/api/team";
+import { useLeads, useCreateLead, useUpdateLead, type LeadStage, type LeadSource } from "@/api/crm";
+import { STAGES, STAGE_COLORS } from "@/mocks/fixtures/pipeline-stages";
 
 interface PipelineCard extends KanbanCardData {
-  defaultStage: StageKey;
-}
-
-/**
- * Full pipeline population = LEADS (mapped status → stage via
- * `LEAD_STATUS_TO_STAGE`, defaulting to NEW) concatenated with the
- * further-along `PIPELINE_EXTRA_LEADS` (which already carry an explicit
- * stage) — see pipeline-stages.ts's derivation note.
- */
-const ALL_CARDS: PipelineCard[] = [
-  ...LEADS.map((l) => ({
-    id: l.id,
-    name: l.name,
-    interest: l.interest,
-    value: l.value,
-    score: l.score,
-    agent: l.agent,
-    when: l.lastActivity,
-    defaultStage: LEAD_STATUS_TO_STAGE[l.status] ?? "NEW",
-  })),
-  ...PIPELINE_EXTRA_LEADS.map((l) => ({
-    id: l.id,
-    name: l.name,
-    interest: l.interest,
-    value: l.value,
-    score: l.score,
-    agent: l.agent,
-    when: l.lastActivity,
-    defaultStage: l.stage,
-  })),
-];
-
-/** Parses "EGP 5.4M" → 5.4 */
-function parseValueM(value: string): number {
-  const n = parseFloat(value.replace(/[^0-9.]/g, ""));
-  return Number.isFinite(n) ? n : 0;
-}
-
-/** Formats a summed EGP-millions number back to "EGP {sum}M", trimming trailing zeros. */
-function formatEGPM(sum: number): string {
-  const rounded = Math.round(sum * 100) / 100;
-  const str = rounded % 1 === 0 ? String(rounded) : rounded.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
-  return `EGP ${str}M`;
+  stage: LeadStage;
 }
 
 export function PipelinePage() {
-  const confirm = useConfirm();
+  const { data, isLoading, error } = useLeads();
+  const team = useTeamDirectory();
+  const updateLead = useUpdateLead();
+  const createLead = useCreateLead();
+  const auth = useAuth();
   const toast = useToast();
-  const [overrides, setOverrides] = useState<Record<string, StageKey>>({});
   const [dragId, setDragId] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
-  const columns = useMemo(() => {
-    const stageOf = (card: PipelineCard): StageKey => overrides[card.id] ?? card.defaultStage;
-    return STAGES.map((stage) => {
-      const cards = ALL_CARDS.filter((c) => stageOf(c) === stage);
-      const total = cards.reduce((sum, c) => sum + parseValueM(c.value), 0);
-      return { stage, cards, total };
-    });
-  }, [overrides]);
+  const cards: PipelineCard[] = useMemo(
+    () =>
+      (data ?? []).map((l) => ({
+        id: l.id,
+        name: l.name,
+        interest: l.interestText ?? "—",
+        value: formatEgp(l.valueEgp),
+        score: l.score,
+        agent: team.byId.get(l.agentId) ?? l.agentId,
+        when: timeAgo(l.lastActivityAt),
+        stage: l.stage,
+      })),
+    [data, team.byId],
+  );
 
-  function handleDrop(stage: StageKey) {
-    return (e: React.DragEvent) => {
+  const columns = useMemo(
+    () =>
+      STAGES.map((stage) => {
+        const stageCards = cards.filter((c) => c.stage.toUpperCase() === stage);
+        const totalM = stageCards.reduce((sum, c) => sum + (parseFloat(c.value.replace(/[^0-9.]/g, "")) || 0), 0);
+        return { stage, cards: stageCards, totalM };
+      }),
+    [cards],
+  );
+
+  if (isLoading || team.isLoading) {
+    return (
+      <PageContainer>
+        <PageHeader title="Pipeline" />
+        <RowsSkeleton rows={8} cols={4} />
+      </PageContainer>
+    );
+  }
+
+  if (error || team.error) {
+    return (
+      <PageContainer>
+        <PageHeader title="Pipeline" />
+        <ErrorState title="Couldn't load the pipeline" message={error instanceof ApiError ? error.message : "The request failed."} />
+      </PageContainer>
+    );
+  }
+
+  function handleDrop(stage: (typeof STAGES)[number]) {
+    return async (e: React.DragEvent) => {
       e.preventDefault();
       const id = e.dataTransfer.getData("text/plain") || dragId;
-      if (id) setOverrides((prev) => ({ ...prev, [id]: stage }));
       setDragId(null);
+      if (!id) return;
+      try {
+        await updateLead.mutateAsync({ id, body: { stage: stage.toLowerCase() as LeadStage } });
+      } catch (err) {
+        toast.push({ kind: "danger", title: "Couldn't move lead", body: err instanceof ApiError ? err.message : "Something went wrong." });
+      }
     };
   }
 
-  async function handleNewDeal() {
-    const ok = await confirm({
-      title: "New Deal",
-      body: "This is a mock action — no backend is connected yet.",
-      cta: "Create Deal",
-    });
-    if (ok) toast.push({ kind: "success", title: "Deal created", body: "Added to the New stage." });
-  }
+  const openDeals = cards.filter((c) => c.stage !== "lost" && c.stage !== "sold").length;
+  const weightedValueM = columns.reduce((sum, c) => sum + c.totalM, 0);
 
   return (
     <PageContainer>
       <PageHeader
         title="Pipeline"
-        description="84 open deals · EGP 1.86B weighted pipeline"
+        description={`${openDeals} open deals · EGP ${weightedValueM.toFixed(1)}M pipeline value`}
         actions={
-          <Button size="sm" icon="plus" onClick={handleNewDeal}>
-            New Deal
+          <Button size="sm" icon="plus" onClick={() => setCreateOpen(true)}>
+            New Lead
           </Button>
         }
       />
 
       <div className="flex gap-3 overflow-x-auto pb-2">
-        {columns.map(({ stage, cards, total }) => (
+        {columns.map(({ stage, cards: stageCards, totalM }) => (
           <KanbanColumn
             key={stage}
             label={stage}
             color={STAGE_COLORS[stage]}
-            count={cards.length}
-            value={formatEGPM(total)}
+            count={stageCards.length}
+            value={`EGP ${totalM.toFixed(1)}M`}
             onDragOver={(e) => e.preventDefault()}
             onDrop={handleDrop(stage)}
           >
-            {cards.map((card) => (
+            {stageCards.map((card) => (
               <KanbanCard
                 key={card.id}
                 card={card}
@@ -128,6 +124,40 @@ export function PipelinePage() {
           </KanbanColumn>
         ))}
       </div>
+
+      <QuickCreateModal
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        config={{
+          title: "New Lead",
+          submitLabel: "Create Lead",
+          fields: [
+            { name: "name", label: "Name", required: true, placeholder: "Full name" },
+            { name: "phone", label: "Phone", required: true, placeholder: "+20 1xx xxx xxxx" },
+            {
+              name: "source",
+              label: "Source",
+              type: "select",
+              required: true,
+              defaultValue: "website",
+              options: ["referral", "website", "facebook", "broker", "exhibition", "instagram"].map((v) => ({ value: v, label: v[0].toUpperCase() + v.slice(1) })),
+            },
+            { name: "agentId", label: "Agent", type: "select", required: true, defaultValue: auth.user?.id, options: team.members.map((m) => ({ value: m.id, label: m.name })) },
+            { name: "interestText", label: "Interest", placeholder: "e.g. North Hills · A-0904" },
+            { name: "valueEgp", label: "Deal Value (EGP)", type: "number", placeholder: "5400000" },
+          ],
+          onSubmit: async (values) => {
+            await createLead.mutateAsync({
+              name: values.name,
+              phone: values.phone,
+              source: values.source as LeadSource,
+              agentId: values.agentId,
+              interestText: values.interestText || null,
+              valueEgp: values.valueEgp ? Number(values.valueEgp) : undefined,
+            });
+          },
+        }}
+      />
     </PageContainer>
   );
 }

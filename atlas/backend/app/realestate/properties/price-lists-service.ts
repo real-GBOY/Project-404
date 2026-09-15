@@ -15,7 +15,7 @@ export class PriceListsService {
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
 
-  listForProject(projectId: string) {
+  listForProject(projectId?: string) {
     return readInTenant(() => this.repo.listForProject(projectId));
   }
 

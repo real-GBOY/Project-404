@@ -35,12 +35,11 @@ export class PriceListsRepository {
     return requireOrganizationId();
   }
 
-  async listForProject(projectId: string): Promise<PriceListRow[]> {
-    const rows = await realestateDb()
-      .selectFrom("realestate_price_lists")
-      .selectAll()
-      .where("organization_id", "=", this.org())
-      .where("project_id", "=", projectId)
+  /** Omit `projectId` for an org-wide list (the Pricing screen); pass it to scope to one project. */
+  async listForProject(projectId?: string): Promise<PriceListRow[]> {
+    let q = realestateDb().selectFrom("realestate_price_lists").selectAll().where("organization_id", "=", this.org());
+    if (projectId) q = q.where("project_id", "=", projectId);
+    const rows = await q
       .orderBy("effective_date", "desc")
       .execute();
     return rows.map((r) => this.toRow(r));

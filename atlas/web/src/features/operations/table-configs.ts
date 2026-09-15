@@ -1,18 +1,19 @@
 import { createElement } from "react";
 import type { DataColumn } from "@/components/tables/data-table";
 import { TextCell, BadgeCell } from "@/components/tables/data-table";
-import type { TableConfigRegistry } from "@/features/shared/table-types";
-import { TASKS, type TaskFixture } from "@/mocks/fixtures/tasks";
-import { AUDIT_LOG, type AuditLogEntryFixture } from "@/mocks/fixtures/audit-log";
+import type { TableConfigResult } from "@/features/shared/table-types";
+import { useAuth } from "@/features/auth/auth-provider";
+import { useTeamDirectory } from "@/api/team";
+import { useTasks, useCreateTask, toTaskView, type TaskView, type TaskPriority } from "@/api/operations";
 
 /**
- * Table configs for: tasks, audit.
+ * Table config for: tasks (the only EntityTablePage entity in Operations —
+ * workflows/approvals/documents are standalone pages, not this registry).
  *
- * Plain `.ts` (not `.tsx`) — esbuild's `ts` loader rejects JSX syntax, so
- * cell renderers are built with `createElement` instead of JSX here.
+ * Plain `.ts` (not `.tsx`) — cell renderers are built with `createElement`.
  */
 
-const taskColumns: DataColumn<TaskFixture>[] = [
+const taskColumns: DataColumn<TaskView>[] = [
   { key: "priority", label: "Priority", width: 78, render: (r) => createElement(BadgeCell, { status: r.priority }) },
   { key: "task", label: "Task", flex: 2, render: (r) => createElement(TextCell, { value: r.task, sub: r.relatedTo }) },
   { key: "assignee", label: "Assignee", flex: 1, render: (r) => createElement(TextCell, { value: r.assignee, weight: "normal" }) },
@@ -20,54 +21,69 @@ const taskColumns: DataColumn<TaskFixture>[] = [
   { key: "status", label: "Status", width: 108, render: (r) => createElement(BadgeCell, { status: r.status }) },
 ];
 
-const auditColumns: DataColumn<AuditLogEntryFixture>[] = [
-  { key: "timestamp", label: "Timestamp", width: 138, render: (r) => createElement(TextCell, { value: r.timestamp, mono: true, weight: "normal" }) },
-  { key: "user", label: "User", flex: 1, render: (r) => createElement(TextCell, { value: r.user }) },
-  { key: "action", label: "Action", width: 108, render: (r) => createElement(BadgeCell, { status: r.action }) },
-  { key: "entity", label: "Entity", flex: 1.2, render: (r) => createElement(TextCell, { value: r.entity, weight: "normal" }) },
-  { key: "change", label: "Before → After", flex: 1.6, render: (r) => createElement(TextCell, { value: `${r.before} → ${r.after}`, mono: true, weight: "normal" }) },
-  { key: "source", label: "Source", width: 84, render: (r) => createElement(BadgeCell, { status: r.source }) },
-];
+export function useTasksTableConfig(): TableConfigResult<TaskView> {
+  const { data, isLoading, error } = useTasks();
+  const team = useTeamDirectory();
+  const createTask = useCreateTask();
+  const auth = useAuth();
 
-export const operationsTableConfigs: TableConfigRegistry = {
-  tasks: {
-    title: "Tasks",
-    subtitle: "186 open tasks · 42 due today · assigned across sales, finance and operations",
-    primaryAction: "New Task",
-    columns: taskColumns,
-    rows: TASKS,
-    rowKey: (r) => `${r.task}|${r.relatedTo}`,
-    searchText: (r) => `${r.task} ${r.relatedTo} ${r.assignee} ${r.status} ${r.priority}`,
-    searchPlaceholder: "Filter tasks…",
-    filters: ["Priority", "Assignee", "Status"],
-    minWidth: 760,
-    kpis: [
-      { label: "Open", value: "186", delta: "+14", deltaSign: "up" },
-      { label: "Due today", value: "42" },
-      { label: "Overdue", value: "19", delta: "+3", deltaSign: "up" },
-      { label: "Completed, 7d", value: "241", delta: "+9%", deltaSign: "up" },
-    ],
-    emptyWhy:
-      "Tasks are generated automatically from reservations, contracts, collections and workflow steps that need a human follow-up — none currently match this filter.",
-  },
+  if (isLoading || team.isLoading) return { config: undefined, isLoading: true, error: null };
+  if (error || team.error) return { config: undefined, isLoading: false, error: error ?? team.error };
 
-  audit: {
-    title: "Audit Logs",
-    subtitle: "Immutable record of every state change · retained 7 years · exportable for compliance",
-    columns: auditColumns,
-    rows: AUDIT_LOG,
-    rowKey: (r) => `${r.timestamp}|${r.entity}`,
-    searchText: (r) => `${r.user} ${r.action} ${r.entity} ${r.before} ${r.after} ${r.source}`,
-    searchPlaceholder: "Filter audit log…",
-    filters: ["User", "Action", "Source"],
-    minWidth: 820,
-    kpis: [
-      { label: "Entries today", value: "1,284" },
-      { label: "Users active", value: "38" },
-      { label: "Permission changes", value: "2" },
-      { label: "Retention", value: "7 years" },
-    ],
-    emptyWhy:
-      "Every reservation, approval, price change and payment writes an entry here the moment it happens — none currently match this filter.",
-  },
-};
+  const rows = (data ?? []).map((r) => toTaskView(r, (id) => team.byId.get(id) ?? id));
+  const openCount = rows.filter((r) => r.status !== "Done").length;
+  const doneCount = rows.filter((r) => r.status === "Done").length;
+  const dueTodayCount = rows.filter((r) => r.due === "Today").length;
+
+  return {
+    isLoading: false,
+    error: null,
+    config: {
+      title: "Tasks",
+      subtitle: `${openCount} open tasks · ${dueTodayCount} due today`,
+      primaryAction: "New Task",
+      columns: taskColumns,
+      rows,
+      rowKey: (r) => r.id,
+      searchText: (r) => `${r.task} ${r.relatedTo} ${r.assignee} ${r.status} ${r.priority}`,
+      searchPlaceholder: "Filter tasks…",
+      filters: ["Priority", "Assignee", "Status"],
+      minWidth: 760,
+      kpis: [
+        { label: "Open", value: String(openCount) },
+        { label: "Due today", value: String(dueTodayCount) },
+        { label: "Done", value: String(doneCount) },
+        { label: "Total", value: String(rows.length) },
+      ],
+      emptyWhy: "Tasks are generated automatically from reservations, contracts, collections and workflow steps that need a human follow-up — none currently match this filter.",
+      createForm: {
+        title: "New Task",
+        submitLabel: "Create Task",
+        fields: [
+          { name: "title", label: "Task", required: true, placeholder: "What needs to happen?" },
+          {
+            name: "priority",
+            label: "Priority",
+            type: "select",
+            defaultValue: "medium",
+            options: [
+              { value: "high", label: "High" },
+              { value: "medium", label: "Medium" },
+              { value: "low", label: "Low" },
+            ],
+          },
+          { name: "dueAt", label: "Due", type: "date", required: true },
+          { name: "assigneeId", label: "Assignee", type: "select", required: true, defaultValue: auth.user?.id, options: team.members.map((m) => ({ value: m.id, label: m.name })) },
+        ],
+        onSubmit: async (values) => {
+          await createTask.mutateAsync({
+            title: values.title,
+            priority: values.priority as TaskPriority,
+            assigneeId: values.assigneeId,
+            dueAt: new Date(values.dueAt).toISOString(),
+          });
+        },
+      },
+    },
+  };
+}

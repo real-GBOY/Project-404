@@ -154,9 +154,8 @@ export const DATAVIZ_COLORS = {
 
 /**
  * The 7 recurring (surface, foreground) badge/tag pairs used throughout the status-tone
- * system (see `mocks/fixtures/tones.ts`'s `TONES` table and the dashboard/insights-feed
- * tag chips) — named once here so fixture files reference a pair instead of repeating
- * two hex literals every time the same combination recurs.
+ * system (dashboard/insights-feed tag chips) — named once here so callers reference a pair
+ * instead of repeating two hex literals every time the same combination recurs.
  */
 export const TONE_PAIRS = {
   success: [TOKEN_COLORS.success.successSurface, TOKEN_COLORS.success.success],

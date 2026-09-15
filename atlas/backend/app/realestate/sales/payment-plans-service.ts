@@ -5,7 +5,7 @@ import { Conflict, NotFound } from "@core/kernel/errors.js";
 import { AUDIT_LOGGER, UNIT_OF_WORK } from "@core/kernel/tokens.js";
 import type { IAuditLogger } from "@core/contracts/index.js";
 import { ContractsRepository } from "./contracts-repository.js";
-import { PaymentPlansRepository, type CreatePaymentPlanInput } from "./payment-plans-repository.js";
+import { PaymentPlansRepository, type CreatePaymentPlanInput, type InstallmentRow } from "./payment-plans-repository.js";
 import { generateInstallmentSchedule } from "./payment-plan.domain.js";
 import type { CreatePaymentPlanBody } from "./payment-plans.schema.js";
 
@@ -17,6 +17,16 @@ export class PaymentPlansService {
     @Inject(AUDIT_LOGGER) private readonly audit: IAuditLogger,
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
+
+  /** Flat, org-wide installment list (the Installments screen — not scoped to one plan). */
+  listInstallments(status?: InstallmentRow["status"]) {
+    return readInTenant(() => this.repo.listInstallmentsWithContext(status));
+  }
+
+  /** Flat, org-wide plan list (the Payment Plans screen — not scoped to one contract). */
+  listAll() {
+    return readInTenant(() => this.repo.listAll());
+  }
 
   async get(id: string) {
     const plan = await readInTenant(() => this.repo.findById(id));

@@ -1,8 +1,8 @@
 import { useCallback, useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { NAV } from "@/app/router/nav";
 import { cn } from "@/lib/cn";
-import { currentSession } from "@/lib/session";
+import { useAuth } from "@/features/auth/auth-provider";
 import { Icon } from "@/components/ui/icon";
 import { Avatar } from "@/components/ui/avatar";
 
@@ -19,6 +19,9 @@ function readOpen(): Record<string, boolean> {
 export function Sidebar({ onSearch }: { onSearch: () => void }) {
   const { pathname } = useLocation();
   const [open, setOpen] = useState(readOpen);
+  const auth = useAuth();
+  const navigate = useNavigate();
+  const displayName = auth.user?.displayName ?? auth.user?.email ?? "Signed in";
 
   const toggle = useCallback((key: string) => {
     setOpen((prev) => {
@@ -104,12 +107,22 @@ export function Sidebar({ onSearch }: { onSearch: () => void }) {
       </nav>
 
       <div className="flex items-center gap-2 border-t border-border bg-surface-subtle px-3 py-2.5">
-        <Avatar name={currentSession.name} variant="dark" size={24} />
+        <Avatar name={displayName} variant="dark" size={24} />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[11px] font-medium text-sidebar-foreground">{currentSession.name}</div>
-          <div className="truncate text-[9.5px] text-subtle">{currentSession.role}</div>
+          <div className="truncate text-[11px] font-medium text-sidebar-foreground">{displayName}</div>
+          <div className="truncate text-[9.5px] text-subtle">{auth.user?.email}</div>
         </div>
-        <span className="text-subtle">⋯</span>
+        <button
+          type="button"
+          title="Sign out"
+          className="text-subtle hover:text-body"
+          onClick={() => {
+            auth.logout();
+            navigate("/login", { replace: true });
+          }}
+        >
+          <Icon name="logout" size={14} />
+        </button>
       </div>
     </aside>
   );

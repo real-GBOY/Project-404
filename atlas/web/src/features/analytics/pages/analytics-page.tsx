@@ -5,32 +5,111 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { ErrorState } from "@/components/feedback/error-state";
+import { RowsSkeleton } from "@/components/feedback/skeleton";
 import { DualBarChart } from "@/components/charts/bar-chart";
 import { LineChart, StatFooter } from "@/components/charts/line-chart";
-import { ANALYTICS, ANALYTICS_FILTERS } from "@/mocks/fixtures/analytics";
-import { REVENUE_CHART } from "@/mocks/fixtures/dashboard";
-import { PROJECTS } from "@/mocks/fixtures/projects";
+import { formatEgp, toNumber } from "@/lib/money";
+import { ApiError } from "@/lib/api/client";
+import { useDashboardSummary } from "@/api/dashboard";
+import { useLeads } from "@/api/crm";
 
-type AnalyticsRoute = keyof typeof ANALYTICS;
+type AnalyticsRoute = "an_sales" | "an_leads" | "an_project" | "an_revenue" | "an_inventory";
 
-const VELOCITY_SERIES = [9.8, 10.4, 11.2, 10.9, 12, 12.6, 11.9, 13.4, 13.1, 14, 13.6, 14.2];
-const COLLECTION_SERIES = [86, 88, 87, 90, 89, 91, 88, 92, 90, 93, 89, 91.3];
+const ROUTE_COPY: Record<AnalyticsRoute, { title: string; subtitle: string; bars: string; line: string; breakdown: string }> = {
+  an_sales: { title: "Sales Analytics", subtitle: "Revenue, deal size and win rate across the portfolio", bars: "Due vs. Collected by Project", line: "Sales Velocity by Project", breakdown: "Sales by Project" },
+  an_leads: { title: "Lead Analytics", subtitle: "Funnel volume and conversion across the portfolio", bars: "Due vs. Collected by Project", line: "Sales Velocity by Project", breakdown: "Leads Context by Project" },
+  an_project: { title: "Project Analytics", subtitle: "Portfolio composition by project", bars: "Due vs. Collected by Project", line: "Sales Velocity by Project", breakdown: "Project Breakdown" },
+  an_revenue: { title: "Revenue Analytics", subtitle: "Revenue, collections and overdue exposure", bars: "Due vs. Collected by Project", line: "Collection Rate by Project", breakdown: "Revenue by Project" },
+  an_inventory: { title: "Inventory Analytics", subtitle: "Unit status mix across the portfolio", bars: "Due vs. Collected by Project", line: "Sales Velocity by Project", breakdown: "Inventory by Project" },
+};
 
-function deltaSign(delta: string): "up" | "down" | "flat" {
-  if (!delta) return "flat";
-  return delta.trim().startsWith("-") ? "down" : "up";
-}
+const ANALYTICS_FILTERS = ["Project: All", "Period: This Quarter", "Agent: All"];
 
 export function AnalyticsPage({ route }: { route: AnalyticsRoute }) {
   const navigate = useNavigate();
-  const config = ANALYTICS[route];
-  const series = config.lineKind === "velocity" ? VELOCITY_SERIES : COLLECTION_SERIES;
+  const summary = useDashboardSummary();
+  const leads = useLeads();
+  const copy = ROUTE_COPY[route];
+
+  if (summary.isLoading || leads.isLoading) {
+    return (
+      <PageContainer>
+        <PageHeader title={copy.title} description={copy.subtitle} />
+        <RowsSkeleton rows={8} cols={4} />
+      </PageContainer>
+    );
+  }
+
+  const error = summary.error ?? leads.error;
+  if (error || !summary.data) {
+    return (
+      <PageContainer>
+        <PageHeader title={copy.title} description={copy.subtitle} />
+        <ErrorState title="Couldn't load analytics" message={error instanceof ApiError ? error.message : "The request failed."} />
+      </PageContainer>
+    );
+  }
+
+  const d = summary.data;
+  const projectName = new Map(d.projects.map((p) => [p.id, p.name]));
+  const avgSellThrough = d.projects.length ? d.projects.reduce((s, p) => s + toNumber(p.sellThroughPct), 0) / d.projects.length : 0;
+  const soldLeads = (leads.data ?? []).filter((l) => l.stage === "sold");
+  const qualifiedLeads = (leads.data ?? []).filter((l) => l.stage !== "new" && l.stage !== "lost");
+
+  const kpis: Record<AnalyticsRoute, { label: string; value: string }[]> = {
+    an_sales: [
+      { label: "Total Revenue", value: formatEgp(d.revenueEgp) },
+      { label: "Units Sold", value: d.soldUnits.toLocaleString() },
+      { label: "Avg Deal Size", value: soldLeads.length ? formatEgp(soldLeads.reduce((s, l) => s + l.valueEgp, 0) / soldLeads.length) : "EGP 0" },
+      { label: "Avg Sell-through", value: `${avgSellThrough.toFixed(1)}%` },
+    ],
+    an_leads: [
+      { label: "Total Leads", value: String((leads.data ?? []).length) },
+      { label: "Qualified", value: String(qualifiedLeads.length) },
+      { label: "Conversion Rate", value: (leads.data ?? []).length ? `${((soldLeads.length / (leads.data ?? []).length) * 100).toFixed(1)}%` : "0%" },
+      { label: "Avg Score", value: (leads.data ?? []).length ? ((leads.data ?? []).reduce((s, l) => s + l.score, 0) / (leads.data ?? []).length).toFixed(0) : "0" },
+    ],
+    an_project: [
+      { label: "Projects", value: String(d.projectCount) },
+      { label: "Total Units", value: d.totalUnits.toLocaleString() },
+      { label: "Available", value: d.availableUnits.toLocaleString() },
+      { label: "Avg Sell-through", value: `${avgSellThrough.toFixed(1)}%` },
+    ],
+    an_revenue: [
+      { label: "Total Revenue", value: formatEgp(d.revenueEgp) },
+      { label: "Collected", value: formatEgp(d.collectionsByProject.reduce((s, c) => s + c.collectedEgp, 0)) },
+      { label: "Overdue", value: formatEgp(d.collectionsByProject.reduce((s, c) => s + c.overdueEgp, 0)) },
+      { label: "Portfolio Value", value: formatEgp(d.totalValueEgp) },
+    ],
+    an_inventory: [
+      { label: "Total Units", value: d.totalUnits.toLocaleString() },
+      { label: "Sold", value: d.soldUnits.toLocaleString() },
+      { label: "Reserved", value: d.reservedUnits.toLocaleString() },
+      { label: "Available", value: d.availableUnits.toLocaleString() },
+    ],
+  };
+
+  const collectionsMax = Math.max(...d.collectionsByProject.map((c) => c.dueEgp), 1);
+  const bars = d.collectionsByProject.map((c) => ({
+    label: (projectName.get(c.projectId) ?? c.projectId).slice(0, 8),
+    top: formatEgp(c.dueEgp),
+    a: Math.round((c.dueEgp / collectionsMax) * 100),
+    b: Math.round((c.collectedEgp / collectionsMax) * 100),
+  }));
+
+  const lineSeries =
+    route === "an_revenue"
+      ? d.collectionsByProject.map((c) => ({ label: (projectName.get(c.projectId) ?? c.projectId).slice(0, 3), value: c.collectionRatePct }))
+      : d.projects.map((p) => ({ label: p.name.slice(0, 3), value: toNumber(p.velocityPerWeek) }));
+  const latest = lineSeries.length ? lineSeries[lineSeries.length - 1].value : 0;
+  const first = lineSeries.length ? lineSeries[0].value : 0;
+  const change = first !== 0 ? (((latest - first) / first) * 100).toFixed(1) : "0.0";
 
   return (
     <PageContainer>
       <PageHeader
-        title={config.title}
-        description={config.subtitle}
+        title={copy.title}
+        description={copy.subtitle}
         actions={
           <>
             <Button variant="secondary" size="sm" icon="download">
@@ -51,70 +130,72 @@ export function AnalyticsPage({ route }: { route: AnalyticsRoute }) {
       />
 
       <KpiStrip className="mb-3.5">
-        {config.kpis.map((k) => (
-          <KpiTile key={k.label} label={k.label} value={k.value} delta={k.delta} deltaSign={deltaSign(k.delta)} compact />
+        {kpis[route].map((k) => (
+          <KpiTile key={k.label} label={k.label} value={k.value} compact />
         ))}
       </KpiStrip>
 
-      {config.error ? (
-        <div className="mb-3">
-          <ErrorState
-            title="Forecast model didn't return in time"
-            message="The revenue forecast integration timed out. Everything else on this page reflects live data."
-            traceId="req_8f21ac9e"
-            onRetry={() => undefined}
-          />
-        </div>
-      ) : (
-        <div className="mb-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
-          <Card>
-            <CardHeader title={config.bars} />
-            <DualBarChart data={REVENUE_CHART.map((m) => ({ label: m.month, top: "", a: m.contracted, b: m.collected }))} height={150} />
-          </Card>
-          <Card>
-            <CardHeader title={config.line} />
-            <div className="px-3 pt-3">
-              <LineChart data={series.map((v, i) => ({ label: String(i), value: v }))} height={80} />
-            </div>
-            <StatFooter items={[{ label: "Latest", value: String(series[series.length - 1]) }, { label: "12mo change", value: `${(((series[series.length - 1] - series[0]) / series[0]) * 100).toFixed(1)}%`, valueClassName: "text-success" }]} />
-          </Card>
-        </div>
-      )}
+      <div className="mb-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <Card>
+          <CardHeader title={copy.bars} />
+          {bars.length > 0 ? <DualBarChart data={bars} height={150} /> : <EmptyChart />}
+        </Card>
+        <Card>
+          <CardHeader title={copy.line} />
+          {lineSeries.length > 0 ? (
+            <>
+              <div className="px-3 pt-3">
+                <LineChart data={lineSeries} height={80} />
+              </div>
+              <StatFooter items={[{ label: "Latest", value: latest.toFixed(1) }, { label: "vs. first project", value: `${change}%`, valueClassName: Number(change) >= 0 ? "text-success" : "text-danger" }]} />
+            </>
+          ) : (
+            <EmptyChart />
+          )}
+        </Card>
+      </div>
 
       <Card>
-        <CardHeader title={config.breakdown} />
+        <CardHeader title={copy.breakdown} />
         <div className="grid grid-cols-[1.6fr_.8fr_.8fr_1.2fr] gap-2 border-b border-border-row bg-surface-subtle px-3 py-2 text-[9.5px] font-semibold uppercase tracking-[0.08em] text-muted">
           <div>Project</div>
           <div className="text-end">Units sold</div>
           <div className="text-end">Revenue</div>
           <div>Sell-through</div>
         </div>
-        {PROJECTS.map((p) => (
-          <div
-            key={p.id}
-            role="button"
-            tabIndex={0}
-            onClick={() => navigate(`/projects/${p.id}`)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                navigate(`/projects/${p.id}`);
-              }
-            }}
-            className="grid cursor-pointer grid-cols-[1.6fr_.8fr_.8fr_1.2fr] items-center gap-2 border-b border-border-row px-3 py-2 last:border-0 hover:bg-surface-hover"
-          >
-            <div className="truncate text-[11.5px] font-medium">{p.name}</div>
-            <div className="text-end font-mono text-[11px]">{p.soldUnits}</div>
-            <div className="text-end font-mono text-[11px]">EGP {p.revenueEgp}</div>
-            <div className="flex items-center gap-1.5">
-              <div className="h-1.5 flex-1 bg-surface-track">
-                <div className="h-full bg-primary" style={{ width: `${p.sellThroughPct}%` }} />
+        {d.projects.map((p) => {
+          const sellThrough = toNumber(p.sellThroughPct);
+          return (
+            <div
+              key={p.id}
+              role="button"
+              tabIndex={0}
+              onClick={() => navigate(`/projects/${p.id}`)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  navigate(`/projects/${p.id}`);
+                }
+              }}
+              className="grid cursor-pointer grid-cols-[1.6fr_.8fr_.8fr_1.2fr] items-center gap-2 border-b border-border-row px-3 py-2 last:border-0 hover:bg-surface-hover"
+            >
+              <div className="truncate text-[11.5px] font-medium">{p.name}</div>
+              <div className="text-end font-mono text-[11px]">{p.soldUnits}</div>
+              <div className="text-end font-mono text-[11px]">{formatEgp(p.revenueEgp)}</div>
+              <div className="flex items-center gap-1.5">
+                <div className="h-1.5 flex-1 bg-surface-track">
+                  <div className="h-full bg-primary" style={{ width: `${sellThrough}%` }} />
+                </div>
+                <span className="w-8 flex-none font-mono text-[10px] text-secondary">{sellThrough.toFixed(0)}%</span>
               </div>
-              <span className="w-8 flex-none font-mono text-[10px] text-secondary">{p.sellThroughPct}%</span>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </Card>
     </PageContainer>
   );
+}
+
+function EmptyChart() {
+  return <div className="flex h-[140px] items-center justify-center text-[11px] text-subtle">No data yet.</div>;
 }

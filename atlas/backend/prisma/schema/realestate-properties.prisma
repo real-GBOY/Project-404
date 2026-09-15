@@ -82,7 +82,10 @@ model realestate_units {
   realestate_projects  realestate_projects  @relation(fields: [organization_id, project_id], references: [organization_id, id], onDelete: Cascade, onUpdate: NoAction, map: "realestate_units_project_fk")
 
   @@unique([organization_id, id], map: "realestate_units_org_id_uq")
-  @@unique([organization_id, code], map: "realestate_units_org_code_uq")
+  // code is only unique WITHIN a project (a short building key like "A" is
+  // reused across different projects, e.g. every project having its own
+  // "Building A" — a global-per-org unique code would collide across projects).
+  @@unique([organization_id, project_id, code], map: "realestate_units_project_code_uq")
   @@index([organization_id, building_id], map: "realestate_units_building_idx")
   @@index([organization_id, project_id, status], map: "realestate_units_project_status_idx")
   @@map("realestate_units")

@@ -22,7 +22,7 @@ export class PriceListsController {
 
   @Get()
   @RequirePermission("read", "price_list")
-  list(@Query("projectId") projectId: string) {
+  list(@Query("projectId") projectId?: string) {
     return this.service.listForProject(projectId);
   }
 

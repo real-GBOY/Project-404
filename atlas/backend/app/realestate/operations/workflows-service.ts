@@ -22,7 +22,10 @@ export class WorkflowsService {
   }
 
   create(input: CreateWorkflowInput) {
-    return this.uow.transaction(() => this.repo.create(input));
+    return this.uow.transaction(async () => {
+      const workflow = await this.repo.create(input);
+      return { ...workflow, steps: await this.repo.steps(workflow.id) };
+    });
   }
 
   async advance(workflowId: string, seqNo: number) {

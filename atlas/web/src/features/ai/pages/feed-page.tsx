@@ -1,16 +1,20 @@
+import { useNavigate } from "react-router-dom";
 import { PageContainer, PageHeader } from "@/components/ui/page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { InsightCard } from "@/components/domain/insight-card";
-import { useConfirm } from "@/lib/confirm/confirm-provider";
+import { RowsSkeleton } from "@/components/feedback/skeleton";
+import { ErrorState } from "@/components/feedback/error-state";
+import { EmptyState } from "@/components/feedback/empty-state";
 import { useToast } from "@/lib/toast/toast-provider";
-import { toneFromHex } from "@/lib/hex-tone";
-import { INSIGHTS_FEED } from "@/mocks/fixtures/ai-insights";
+import { toneOf } from "@/lib/tone";
+import { ApiError } from "@/lib/api/client";
+import { useInsights, useDismissInsight } from "@/api/dashboard";
 
 const COPY: Record<"insights" | "recos", { title: string; subtitle: string }> = {
   insights: {
     title: "AI Insights",
-    subtitle: "Generated every hour from sales, inventory, lead and payment data",
+    subtitle: "Generated from live sales, inventory, lead and payment data",
   },
   recos: {
     title: "Recommendations",
@@ -19,57 +23,87 @@ const COPY: Record<"insights" | "recos", { title: string; subtitle: string }> = 
 };
 
 /**
- * `isFeed` screen (PLAN §3.13) — same 5-item feed backs both /insights and
+ * `isFeed` screen — same feed (kind="feed") backs both /insights and
  * /recommendations, only the header copy differs. Wide cards, each split
- * into main content + a right-hand "Recommended action" sidebar panel
- * (the `InsightCard` `sidebar` skin) rather than the dashboard's inline
- * CTA/Dismiss button pair.
+ * into main content + a right-hand "Recommended action" sidebar panel.
  */
 export function FeedPage({ kind }: { kind: "insights" | "recos" }) {
-  const confirm = useConfirm();
+  const navigate = useNavigate();
   const toast = useToast();
   const copy = COPY[kind];
+  const { data, isLoading, error } = useInsights("feed");
+  const dismiss = useDismissInsight();
 
-  async function handleAct(cta: string, title: string, body: string) {
-    const ok = await confirm({
-      title: `${cta}?`,
-      body: `${title}. ${body} Atlas will apply this action and record it in the audit log.`,
-      cta: "Run action",
-    });
-    if (ok) toast.push({ kind: "success", title: "Action applied", body: cta });
+  if (isLoading) {
+    return (
+      <PageContainer>
+        <PageHeader title={copy.title} description={copy.subtitle} />
+        <RowsSkeleton rows={4} cols={1} />
+      </PageContainer>
+    );
   }
+
+  if (error) {
+    return (
+      <PageContainer>
+        <PageHeader title={copy.title} description={copy.subtitle} />
+        <ErrorState title="Couldn't load insights" message={error instanceof ApiError ? error.message : "The request failed."} />
+      </PageContainer>
+    );
+  }
+
+  const items = data ?? [];
 
   return (
     <PageContainer>
       <PageHeader title={copy.title} description={copy.subtitle} />
 
-      <div className="flex flex-col gap-3">
-        {INSIGHTS_FEED.map((item) => (
-          <Card key={item.title}>
-            <InsightCard
-              insight={{
-                id: item.title,
-                tag: item.tag,
-                tagTone: toneFromHex(item.tagFg),
-                confidence: item.confidence.replace("confidence ", ""),
-                text: item.title,
-                detail: item.body,
-                cta: item.cta,
-              }}
-              sidebar={
-                <>
-                  <Button size="sm" onClick={() => handleAct(item.cta, item.title, item.body)}>
-                    {item.cta}
-                  </Button>
-                  <Button size="sm" variant="secondary" onClick={() => toast.push({ title: "Insight dismissed" })}>
-                    Dismiss
-                  </Button>
-                </>
-              }
-            />
-          </Card>
-        ))}
-      </div>
+      {items.length === 0 ? (
+        <Card>
+          <EmptyState icon="insight" title="No insights right now" description="New insights are generated from live sales, inventory, lead and payment data as it changes." />
+        </Card>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {items.map((item) => (
+            <Card key={item.id}>
+              <InsightCard
+                insight={{
+                  id: item.id,
+                  tag: item.tag,
+                  tagTone: toneOf(item.tag),
+                  confidence: item.confidence,
+                  text: item.text,
+                  detail: item.detail,
+                  cta: item.cta,
+                }}
+                sidebar={
+                  <>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        if (item.targetRoute) navigate(`/${item.targetRoute.replace("an_", "analytics/")}`);
+                        else toast.push({ kind: "info", title: "No automated action yet", body: "This insight doesn't have a wired action yet." });
+                      }}
+                    >
+                      {item.cta}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => {
+                        dismiss.mutate(item.id);
+                        toast.push({ title: "Insight dismissed" });
+                      }}
+                    >
+                      Dismiss
+                    </Button>
+                  </>
+                }
+              />
+            </Card>
+          ))}
+        </div>
+      )}
     </PageContainer>
   );
 }

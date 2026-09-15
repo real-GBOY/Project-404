@@ -92,6 +92,40 @@ export class CustomersRepository {
     return this.findById(id);
   }
 
+  /** Batched per-customer rollup for the list screen (units owned, portfolio value, amount collected) —
+   *  mirrors `FinanceQueries`'s reduce-in-JS join pattern rather than a SQL GROUP BY. */
+  async statsByCustomer(): Promise<Map<string, { unitsOwned: number; portfolioEgp: number; collectedEgp: number }>> {
+    const org = this.org();
+    const [units, plans, installments] = await Promise.all([
+      realestateDb().selectFrom("realestate_customer_units").select(["customer_id"]).where("organization_id", "=", org).execute(),
+      realestateDb().selectFrom("realestate_payment_plans").select(["customer_id", "total_egp"]).where("organization_id", "=", org).execute(),
+      realestateDb()
+        .selectFrom("realestate_installments")
+        .innerJoin("realestate_payment_plans", (join) =>
+          join
+            .onRef("realestate_payment_plans.id", "=", "realestate_installments.payment_plan_id")
+            .onRef("realestate_payment_plans.organization_id", "=", "realestate_installments.organization_id"),
+        )
+        .select(["realestate_payment_plans.customer_id as customerId", "realestate_installments.paid_egp as paidEgp"])
+        .where("realestate_installments.organization_id", "=", org)
+        .execute(),
+    ]);
+
+    const stats = new Map<string, { unitsOwned: number; portfolioEgp: number; collectedEgp: number }>();
+    const bump = (id: string, patch: Partial<{ unitsOwned: number; portfolioEgp: number; collectedEgp: number }>) => {
+      const cur = stats.get(id) ?? { unitsOwned: 0, portfolioEgp: 0, collectedEgp: 0 };
+      stats.set(id, {
+        unitsOwned: cur.unitsOwned + (patch.unitsOwned ?? 0),
+        portfolioEgp: cur.portfolioEgp + (patch.portfolioEgp ?? 0),
+        collectedEgp: cur.collectedEgp + (patch.collectedEgp ?? 0),
+      });
+    };
+    for (const u of units) bump(u.customer_id, { unitsOwned: 1 });
+    for (const p of plans) bump(p.customer_id, { portfolioEgp: p.total_egp });
+    for (const i of installments) bump(i.customerId, { collectedEgp: i.paidEgp });
+    return stats;
+  }
+
   async unitsOwned(customerId: string): Promise<string[]> {
     const rows = await realestateDb()
       .selectFrom("realestate_customer_units")

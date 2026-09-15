@@ -1,63 +1,81 @@
-import { useState } from "react";
 import { PageContainer, PageHeader } from "@/components/ui/page-header";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DataTable, TextCell, BadgeCell, type DataColumn } from "@/components/tables/data-table";
 import { WorkflowStepper, type WorkflowStep } from "@/components/domain/workflow-stepper";
-import { useConfirm } from "@/lib/confirm/confirm-provider";
+import { RowsSkeleton } from "@/components/feedback/skeleton";
+import { ErrorState } from "@/components/feedback/error-state";
+import { EmptyState } from "@/components/feedback/empty-state";
 import { useToast } from "@/lib/toast/toast-provider";
-import { WORKFLOW_EXAMPLE_STEPS } from "@/mocks/fixtures/workflows";
-import { APPROVALS, type ApprovalFixture } from "@/mocks/fixtures/approvals";
-
-const WORKFLOW_TITLE = "Reservation → Contract · C-0191 · Hala Mostafa";
-
-const WORKFLOW_STEPS: WorkflowStep[] = WORKFLOW_EXAMPLE_STEPS.map((s) => ({
-  label: s.label,
-  who: s.who,
-  when: s.when,
-  state: s.state === "todo" ? "pending" : s.state,
-  note: s.state === "current" ? `Waiting on ${s.who}` : undefined,
-}));
-
-function rowKey(r: ApprovalFixture): string {
-  return `${r.kind}|${r.subject}`;
-}
+import { ApiError } from "@/lib/api/client";
+import { useTeamDirectory } from "@/api/team";
+import { useWorkflows, useAdvanceWorkflowStep, useApprovals, useDecideApproval, toApprovalView, type ApprovalView } from "@/api/operations";
 
 /**
  * Single screen behind two nav entries — Operations → Workflows AND
- * Operations → Approvals (PLAN §3 item 11, `isWorkflows`). The design
- * doesn't differentiate by route: one step-tracker for the in-flight
- * workflow instance + one pending-approvals queue, always both together.
+ * Operations → Approvals. One step-tracker for the most recent workflow
+ * instance + one pending-approvals queue, both backed by real data.
  */
 export function WorkflowsApprovalsPage() {
-  const confirm = useConfirm();
   const toast = useToast();
-  const [rows, setRows] = useState<ApprovalFixture[]>(APPROVALS);
+  const workflows = useWorkflows();
+  const advanceStep = useAdvanceWorkflowStep();
+  const approvals = useApprovals();
+  const team = useTeamDirectory();
+  const decideApproval = useDecideApproval();
 
-  async function handleApprove(row: ApprovalFixture) {
-    const ok = await confirm({
-      title: "Approve this request?",
-      body: `${row.kind} — ${row.subject} (${row.amount}). This will record an approval in the audit log and advance the workflow to its next step.`,
-      cta: "Approve",
-    });
-    if (!ok) return;
-    setRows((prev) => prev.filter((r) => rowKey(r) !== rowKey(row)));
-    toast.push({ kind: "success", title: "Approved", body: `${row.kind} for ${row.subject} moved to the next step.` });
+  if (workflows.isLoading || approvals.isLoading || team.isLoading) {
+    return (
+      <PageContainer>
+        <PageHeader title="Workflows & Approvals" />
+        <RowsSkeleton rows={6} cols={4} />
+      </PageContainer>
+    );
   }
 
-  async function handleReject(row: ApprovalFixture) {
-    const ok = await confirm({
-      title: "Reject this request?",
-      body: `${row.kind} — ${row.subject} will be sent back to ${row.who} with a rejection note recorded in the audit log.`,
-      cta: "Reject",
-      destructive: true,
-    });
-    if (!ok) return;
-    setRows((prev) => prev.filter((r) => rowKey(r) !== rowKey(row)));
-    toast.push({ kind: "warning", title: "Rejected", body: `${row.kind} for ${row.subject} sent back to ${row.who}.` });
+  const error = workflows.error ?? approvals.error ?? team.error;
+  if (error) {
+    return (
+      <PageContainer>
+        <PageHeader title="Workflows & Approvals" />
+        <ErrorState title="Couldn't load workflows" message={error instanceof ApiError ? error.message : "The request failed."} />
+      </PageContainer>
+    );
   }
 
-  const columns: DataColumn<ApprovalFixture>[] = [
+  const workflow = workflows.data?.[0];
+  const steps: WorkflowStep[] = (workflow?.steps ?? []).map((s) => ({
+    label: s.label,
+    who: s.assigneeId ? team.byId.get(s.assigneeId) ?? s.assigneeId : "Unassigned",
+    when: "—",
+    state: s.state,
+    note: s.state === "current" ? `Waiting on ${s.assigneeId ? team.byId.get(s.assigneeId) ?? s.assigneeId : "assignee"}` : undefined,
+  }));
+  const currentStep = workflow?.steps.find((s) => s.state === "current");
+
+  async function handleApprove(row: ApprovalView) {
+    try {
+      await decideApproval.mutateAsync({ id: row.id, decision: "approved" });
+      toast.push({ kind: "success", title: "Approved", body: `${row.kind} for ${row.subject} moved to the next step.` });
+    } catch (err) {
+      toast.push({ kind: "danger", title: "Couldn't approve", body: err instanceof ApiError ? err.message : "Something went wrong." });
+    }
+  }
+
+  async function handleReject(row: ApprovalView) {
+    try {
+      await decideApproval.mutateAsync({ id: row.id, decision: "rejected" });
+      toast.push({ kind: "warning", title: "Rejected", body: `${row.kind} for ${row.subject} sent back to ${row.who}.` });
+    } catch (err) {
+      toast.push({ kind: "danger", title: "Couldn't reject", body: err instanceof ApiError ? err.message : "Something went wrong." });
+    }
+  }
+
+  const rows = (approvals.data ?? []).map((r) => toApprovalView(r, (id) => team.byId.get(id) ?? id));
+  const pending = rows.filter((r) => r.status === "Awaiting Approval" || r.status === "Escalated");
+  const escalated = rows.filter((r) => r.status === "Escalated").length;
+
+  const columns: DataColumn<ApprovalView>[] = [
     { key: "kind", label: "Type", flex: 1.3, render: (r) => <TextCell value={r.kind} /> },
     { key: "subject", label: "Subject", flex: 1.8, render: (r) => <TextCell value={r.subject} weight="normal" /> },
     { key: "amount", label: "Amount", width: 148, render: (r) => <TextCell value={r.amount} mono /> },
@@ -83,28 +101,36 @@ export function WorkflowsApprovalsPage() {
     },
   ];
 
-  const escalated = rows.filter((r) => r.status === "Escalated").length;
-
   return (
     <PageContainer>
-      <PageHeader
-        title="Workflows & Approvals"
-        description="4 active workflow definitions · 7 approvals pending · 2 escalated past SLA"
-      />
+      <PageHeader title="Workflows & Approvals" description={`${workflows.data?.length ?? 0} workflow definitions · ${pending.length} approvals pending${escalated ? ` · ${escalated} escalated` : ""}`} />
 
       <div className="mb-3.5">
-        <WorkflowStepper title={WORKFLOW_TITLE} steps={WORKFLOW_STEPS} />
+        {workflow ? (
+          <div className="rounded-card border border-border bg-surface p-3.5">
+            <div className="mb-3 flex items-center justify-between">
+              <div className="text-[12px] font-semibold">{workflow.name}</div>
+              {currentStep && (
+                <Button size="sm" onClick={() => advanceStep.mutate({ workflowId: workflow.id, seqNo: currentStep.seqNo })}>
+                  Advance Step
+                </Button>
+              )}
+            </div>
+            <WorkflowStepper title="" steps={steps} />
+          </div>
+        ) : (
+          <Card>
+            <EmptyState icon="workflow" title="No workflows yet" description="Workflow definitions with ordered approval steps will appear here once created." />
+          </Card>
+        )}
       </div>
 
       <Card>
-        <CardHeader
-          title="Pending Approvals"
-          subtitle={`${rows.length} awaiting action${escalated ? ` · ${escalated} escalated past SLA` : ""}`}
-        />
+        <CardHeader title="Pending Approvals" subtitle={`${pending.length} awaiting action${escalated ? ` · ${escalated} escalated past SLA` : ""}`} />
         <DataTable
           columns={columns}
-          rows={rows}
-          rowKey={rowKey}
+          rows={pending}
+          rowKey={(r) => r.id}
           minWidth={880}
           emptyTitle="All caught up"
           emptyDescription="New contract, discount, price-list, reservation-extension, payout and refund requests will appear here the moment they're submitted for approval."

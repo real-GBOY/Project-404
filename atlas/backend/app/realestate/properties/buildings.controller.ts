@@ -22,7 +22,7 @@ export class BuildingsController {
 
   @Get()
   @RequirePermission("read", "building")
-  list(@Query("projectId") projectId: string) {
+  list(@Query("projectId") projectId?: string) {
     return this.service.listForProject(projectId);
   }
 

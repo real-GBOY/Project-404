@@ -10,35 +10,28 @@ import { ProgressBar } from "@/components/ui/progress-bar";
 import { StatusBadge } from "@/components/ui/pill";
 import { DataTable, TextCell, BadgeCell, BarCell } from "@/components/tables/data-table";
 import type { DataColumn } from "@/components/tables/data-table";
-import { DualBarChart, ChartLegend } from "@/components/charts/bar-chart";
-import { LineChart, StatFooter } from "@/components/charts/line-chart";
-import { Funnel } from "@/components/charts/funnel";
+import { StackedBarLegend } from "@/components/charts/funnel";
 import { EmptyState } from "@/components/feedback/empty-state";
-import { UnitDrawer } from "@/components/domain/unit-drawer";
-import { useConfirm } from "@/lib/confirm/confirm-provider";
+import { ErrorState } from "@/components/feedback/error-state";
+import { RowsSkeleton } from "@/components/feedback/skeleton";
+import { UnitDrawer, type UnitDrawerData } from "@/components/domain/unit-drawer";
+import { QuickCreateModal } from "@/components/tables/quick-create-modal";
 import { useToast } from "@/lib/toast/toast-provider";
-import {
-  PROJECTS,
-  NORTH_HILLS_FINANCIALS,
-  NORTH_HILLS_SALES_HISTORY,
-  PROJECT_TABS,
-  type ProjectMonthlySalesFixture,
-} from "@/mocks/fixtures/projects";
-import { BUILDINGS_TABLE, type BuildingTableRowFixture } from "@/mocks/fixtures/buildings";
-import { REVENUE_CHART } from "@/mocks/fixtures/dashboard";
-import { CRM_FUNNEL } from "@/mocks/fixtures/pipeline-stages";
-import { BuildingInventory } from "../building-inventory";
-import { toUnitDrawerData, type GeneratedUnit } from "../generate-units";
+import { formatEgp, formatEgpExact, toNumber } from "@/lib/money";
+import { titleCase } from "@/lib/text";
+import { ApiError } from "@/lib/api/client";
+import { useAuth } from "@/features/auth/auth-provider";
+import { useTeamDirectory } from "@/api/team";
+import { useCustomers } from "@/api/crm";
+import { useProjects, useBuildings, useUnits, useCreateBuilding, toBuildingViews, type BuildingView } from "@/api/properties";
+import { useCollections, type CollectionRow } from "@/api/finance";
+import { useCreateReservation } from "@/api/sales";
+import { BuildingInventory, type RealUnit } from "../building-inventory";
 
-// Same two 12-point series used app-wide (dashboard + analytics screens — see those fixtures' own
-// comments); reused here for the Analytics/Financials tabs with an explicit "portfolio-wide, not
-// project-scoped" caveat since the mock data has no per-project breakdown of these two series.
-const VELOCITY_SERIES = [9.8, 10.4, 11.2, 10.9, 12, 12.6, 11.9, 13.4, 13.1, 14, 13.6, 14.2];
-const COLLECTION_SERIES = [86, 88, 87, 90, 89, 91, 88, 92, 90, 93, 89, 91.3];
-
+const PROJECT_TABS = ["Overview", "Buildings", "Inventory", "Sales", "Financials", "Analytics"] as const;
 type ProjectTab = (typeof PROJECT_TABS)[number];
 
-const buildingColumns: DataColumn<BuildingTableRowFixture>[] = [
+const buildingColumns: DataColumn<BuildingView>[] = [
   { key: "building", label: "Building", flex: 1.3, render: (r) => TextCell({ value: r.building }) },
   { key: "floors", label: "Floors", width: 64, align: "end", render: (r) => TextCell({ value: r.floors, mono: true, weight: "normal" }) },
   { key: "units", label: "Units", width: 64, align: "end", render: (r) => TextCell({ value: r.units, mono: true, weight: "normal" }) },
@@ -48,29 +41,61 @@ const buildingColumns: DataColumn<BuildingTableRowFixture>[] = [
   { key: "status", label: "Status", width: 140, render: (r) => BadgeCell({ status: r.status }) },
 ];
 
-const salesColumns: DataColumn<ProjectMonthlySalesFixture>[] = [
-  { key: "period", label: "Period", flex: 1, render: (r) => TextCell({ value: r.period, mono: true }) },
-  { key: "units", label: "Units", width: 64, align: "end", render: (r) => TextCell({ value: r.units, mono: true, weight: "normal" }) },
-  { key: "revenue", label: "Revenue", width: 110, align: "end", render: (r) => TextCell({ value: r.revenue, mono: true }) },
-  { key: "avgDeal", label: "Avg. Deal", width: 100, align: "end", render: (r) => TextCell({ value: r.avgDeal, mono: true, weight: "normal" }) },
-  { key: "velocity", label: "Velocity", width: 90, align: "end", render: (r) => TextCell({ value: r.velocity, mono: true, weight: "normal" }) },
-];
+function financialRows(revenueEgp: number, collection: CollectionRow | undefined): { label: string; value: string }[] {
+  return [
+    { label: "Contracted", value: formatEgp(revenueEgp) },
+    { label: "Collected", value: formatEgp(collection?.collectedEgp ?? 0) },
+    { label: "Overdue", value: formatEgp(collection?.overdueEgp ?? 0) },
+    { label: "Collection rate", value: `${(collection?.collectionRatePct ?? 0).toFixed(1)}%` },
+  ];
+}
 
 /**
- * Project Detail (`/projects/:id`, PLAN §3 item 7): header + KPI strip + 6-tab panel. Only North
- * Hills carries authored sales-history/financials in the mock data (see projects.ts's gap note) —
- * every other project shows an honest empty state on those two panels rather than fabricated numbers.
+ * Project Detail (`/projects/:id`): header + KPI strip + 6-tab panel, backed by real project/building/
+ * unit/collections data. Sales-history and per-project lead-funnel/velocity trends aren't modeled in
+ * this data set (no time-series snapshots, and leads aren't linked to a specific project) — those two
+ * tabs show an honest empty state rather than fabricated numbers.
  */
 export function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const confirm = useConfirm();
   const toast = useToast();
   const [tab, setTab] = useState<ProjectTab>(PROJECT_TABS[0]);
-  const [selectedUnit, setSelectedUnit] = useState<GeneratedUnit | null>(null);
+  const [selectedUnit, setSelectedUnit] = useState<RealUnit | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [addBuildingOpen, setAddBuildingOpen] = useState(false);
+  const [reserveOpen, setReserveOpen] = useState(false);
 
-  const project = PROJECTS.find((p) => p.id === id);
+  const projects = useProjects();
+  const buildings = useBuildings(id);
+  const units = useUnits({ projectId: id });
+  const collections = useCollections();
+  const customers = useCustomers();
+  const team = useTeamDirectory();
+  const createBuilding = useCreateBuilding();
+  const createReservation = useCreateReservation();
+  const auth = useAuth();
+
+  const loading = projects.isLoading || buildings.isLoading || units.isLoading || collections.isLoading;
+
+  if (loading) {
+    return (
+      <PageContainer>
+        <RowsSkeleton rows={6} cols={4} />
+      </PageContainer>
+    );
+  }
+
+  const error = projects.error ?? buildings.error ?? units.error ?? collections.error;
+  if (error) {
+    return (
+      <PageContainer>
+        <ErrorState title="Couldn't load this project" message={error instanceof ApiError ? error.message : "The request failed."} />
+      </PageContainer>
+    );
+  }
+
+  const project = projects.data?.find((p) => p.id === id);
 
   if (!project) {
     return (
@@ -78,7 +103,7 @@ export function ProjectDetailPage() {
         <EmptyState
           icon="project"
           title="Project not found"
-          description={`No project matches "${id}" in the mock data.`}
+          description={`No project matches "${id}".`}
           action={
             <Button size="sm" onClick={() => navigate("/projects")}>
               Back to Projects
@@ -89,35 +114,39 @@ export function ProjectDetailPage() {
     );
   }
 
-  const isNorthHills = project.id === "north-hills";
-  const projectBuildings = BUILDINGS_TABLE.filter((b) => b.project === project.name);
+  const buildingViews = toBuildingViews(buildings.data ?? [], units.data ?? [], () => project.name);
+  const collectionRow = collections.data?.find((c) => c.projectId === id);
+  const sellThroughPct = Math.round(toNumber(project.sellThroughPct));
+  const inventorySegments = [
+    { label: "Sold", n: project.soldUnits, pct: project.totalUnits ? Math.round((project.soldUnits / project.totalUnits) * 100) : 0, color: "var(--color-chart-primary)" },
+    { label: "Reserved", n: project.reservedUnits, pct: project.totalUnits ? Math.round((project.reservedUnits / project.totalUnits) * 100) : 0, color: "var(--color-warning)" },
+    { label: "Available", n: project.availableUnits, pct: project.totalUnits ? Math.round((project.availableUnits / project.totalUnits) * 100) : 0, color: "var(--color-success)" },
+  ];
 
-  async function handleAddBuilding() {
-    const ok = await confirm({
-      title: `Add a building to ${project!.name}?`,
-      body: "This is a mock action — no backend is connected yet.",
-      cta: "Add building",
-    });
-    if (ok) toast.push({ kind: "success", title: "Building added", body: `A new building was queued for ${project!.name}.` });
-  }
-
-  function handleUnitClick(unit: GeneratedUnit) {
+  function handleUnitClick(unit: RealUnit) {
     setSelectedUnit(unit);
     setDrawerOpen(true);
   }
 
-  async function handleDrawerReserve() {
-    if (!selectedUnit) return;
-    const ok = await confirm({
-      title: `Reserve unit ${selectedUnit.code}?`,
-      body: "This will mark the unit as Reserved and notify the sales desk. Mock action — no backend is connected yet.",
-      cta: "Reserve unit",
-    });
-    if (ok) {
-      toast.push({ kind: "success", title: "Unit reserved", body: `${selectedUnit.code} marked as Reserved.` });
-      setDrawerOpen(false);
-    }
-  }
+  const customerName = (uid: string | null) => (uid ? customers.data?.find((c) => c.id === uid)?.name ?? uid : "Unassigned");
+  const agentName = (uid: string | null) => (uid ? team.byId.get(uid) ?? uid : "Unassigned");
+
+  const drawerUnit: UnitDrawerData | null = selectedUnit
+    ? {
+        code: selectedUnit.code,
+        project: selectedUnit.projectName,
+        building: selectedUnit.buildingName,
+        type: selectedUnit.type,
+        area: `${selectedUnit.areaSqm} m²`,
+        status: selectedUnit.status,
+        price: formatEgpExact(selectedUnit.basePriceEgp),
+        paid: selectedUnit.status === "Sold" || selectedUnit.status === "Reserved" ? "—" : undefined,
+        remaining: selectedUnit.status === "Sold" || selectedUnit.status === "Reserved" ? formatEgpExact(selectedUnit.basePriceEgp) : undefined,
+        paidPct: 0,
+        customer: selectedUnit.status === "Sold" || selectedUnit.status === "Reserved" ? customerName(selectedUnit.currentCustomerId) : undefined,
+        agent: selectedUnit.status === "Sold" || selectedUnit.status === "Reserved" ? agentName(selectedUnit.currentAgentId) : undefined,
+      }
+    : null;
 
   return (
     <PageContainer>
@@ -129,21 +158,21 @@ export function ProjectDetailPage() {
         title={project.name}
         description={
           <span className="flex flex-wrap items-center gap-2">
-            <StatusBadge status={project.status} />
+            <StatusBadge status={titleCase(project.status)} />
             <span>
               {project.location} · {project.developer}
             </span>
           </span>
         }
         actions={
-          <Button size="sm" icon="plus" onClick={handleAddBuilding}>
+          <Button size="sm" icon="plus" onClick={() => setAddBuildingOpen(true)}>
             Add Building
           </Button>
         }
         below={
           <div className="flex max-w-[320px] items-center gap-2">
-            <ProgressBar value={project.sellThroughPct} height={8} className="flex-1" />
-            <span className="flex-none font-mono text-[11px] text-secondary">{project.sellThroughPct}% sell-through</span>
+            <ProgressBar value={sellThroughPct} height={8} className="flex-1" />
+            <span className="flex-none font-mono text-[11px] text-secondary">{sellThroughPct}% sell-through</span>
           </div>
         }
       />
@@ -153,47 +182,31 @@ export function ProjectDetailPage() {
         <KpiTile label="Sold" value={String(project.soldUnits)} compact />
         <KpiTile label="Reserved" value={String(project.reservedUnits)} compact />
         <KpiTile label="Available" value={String(project.availableUnits)} compact />
-        <KpiTile label="Revenue" value={`EGP ${project.revenueEgp}`} compact />
-        <KpiTile label="Velocity" value={project.velocity} compact />
+        <KpiTile label="Revenue" value={formatEgp(project.revenueEgp)} compact />
+        <KpiTile label="Velocity" value={`${toNumber(project.velocityPerWeek).toFixed(1)}/wk`} compact />
       </KpiStrip>
 
       <TabBar value={tab} onChange={setTab} tabs={PROJECT_TABS} className="mb-3.5" />
 
       {tab === "Overview" && (
-        <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-          <Card className="lg:col-span-2">
-            <div className="flex items-center gap-2.5 border-b border-border-row px-3 py-2.5">
-              <span className="text-[11.5px] font-semibold">Revenue vs. Collections</span>
-              <span className="text-[10px] text-subtle">relative units · trailing 12 months · portfolio-wide (simplification)</span>
-              <div className="flex-1" />
-              <ChartLegend
-                items={[
-                  { label: "Contracted", color: "var(--color-chart-primary)" },
-                  { label: "Collected", color: "var(--color-chart-secondary)" },
-                ]}
-              />
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          <Card>
+            <CardHeader title="Inventory Split" subtitle={`${project.totalUnits} units`} />
+            <div className="p-3">
+              <StackedBarLegend segments={inventorySegments} />
             </div>
-            <DualBarChart data={REVENUE_CHART.map((m) => ({ label: m.month, top: "", a: m.contracted, b: m.collected }))} />
           </Card>
 
           <Card>
-            <CardHeader title="Financial Position" subtitle={isNorthHills ? undefined : "North Hills only in mock data"} />
-            {isNorthHills ? (
-              <div className="flex flex-col">
-                {NORTH_HILLS_FINANCIALS.map((f) => (
-                  <div key={f.label} className="flex items-center justify-between border-b border-border-row px-3 py-2 last:border-0">
-                    <span className="text-[11px] text-secondary">{f.label}</span>
-                    <span className="font-mono text-[11px] font-semibold">{f.value}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <EmptyState
-                icon="doc"
-                title="Financials not broken out yet"
-                description="Per-project financial position is only modeled for North Hills in the current mock data — the real backend will provide this for every project."
-              />
-            )}
+            <CardHeader title="Financial Position" />
+            <div className="flex flex-col">
+              {financialRows(project.revenueEgp, collectionRow).map((f) => (
+                <div key={f.label} className="flex items-center justify-between border-b border-border-row px-3 py-2 last:border-0">
+                  <span className="text-[11px] text-secondary">{f.label}</span>
+                  <span className="font-mono text-[11px] font-semibold">{f.value}</span>
+                </div>
+              ))}
+            </div>
           </Card>
         </div>
       )}
@@ -202,8 +215,8 @@ export function ProjectDetailPage() {
         <Card>
           <DataTable
             columns={buildingColumns}
-            rows={projectBuildings}
-            rowKey={(r) => r.building}
+            rows={buildingViews}
+            rowKey={(r) => r.id}
             emptyTitle="No buildings yet"
             emptyDescription="Add a building to start tracking floors and inventory for this project."
           />
@@ -214,86 +227,90 @@ export function ProjectDetailPage() {
 
       {tab === "Sales" && (
         <Card>
-          {isNorthHills ? (
-            <DataTable columns={salesColumns} rows={NORTH_HILLS_SALES_HISTORY} rowKey={(r) => r.period} />
-          ) : (
-            <EmptyState
-              icon="payment"
-              title="Sales history not tracked per-project yet"
-              description="Monthly sales-by-period history is only modeled for North Hills in the current mock data — the real backend will provide this for every project."
-            />
-          )}
+          <EmptyState
+            icon="payment"
+            title="Sales history not tracked per-project yet"
+            description="Monthly sales-by-period history isn't modeled in this data set — only current-period totals are available (see the KPI strip above)."
+          />
         </Card>
       )}
 
       {tab === "Financials" && (
-        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-          <Card>
-            <CardHeader title="Financial Position" subtitle={isNorthHills ? undefined : "North Hills only in mock data"} />
-            {isNorthHills ? (
-              <div className="flex flex-col">
-                {NORTH_HILLS_FINANCIALS.map((f) => (
-                  <div key={f.label} className="flex items-center justify-between border-b border-border-row px-3 py-2 last:border-0">
-                    <span className="text-[11px] text-secondary">{f.label}</span>
-                    <span className="font-mono text-[11px] font-semibold">{f.value}</span>
-                  </div>
-                ))}
+        <Card>
+          <CardHeader title="Financial Position" />
+          <div className="flex flex-col">
+            {financialRows(project.revenueEgp, collectionRow).map((f) => (
+              <div key={f.label} className="flex items-center justify-between border-b border-border-row px-3 py-2 last:border-0">
+                <span className="text-[11px] text-secondary">{f.label}</span>
+                <span className="font-mono text-[11px] font-semibold">{f.value}</span>
               </div>
-            ) : (
-              <EmptyState
-                icon="doc"
-                title="Financials not broken out yet"
-                description="Per-project financial position is only modeled for North Hills in the current mock data."
-              />
-            )}
-          </Card>
-
-          <Card>
-            <CardHeader title="Collection Trend" subtitle="% of due collected · portfolio-wide (simplification)" />
-            <div className="px-3 pt-3">
-              <LineChart data={COLLECTION_SERIES.map((v, i) => ({ label: String(i), value: v }))} color="var(--color-success)" />
-            </div>
-            <StatFooter
-              items={[
-                { label: "Collection rate", value: "91.3%" },
-                { label: "Overdue", value: "EGP 42.6M", valueClassName: "text-danger" },
-              ]}
-            />
-          </Card>
-        </div>
+            ))}
+          </div>
+        </Card>
       )}
 
       {tab === "Analytics" && (
-        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-          <Card>
-            <CardHeader title="Sales Velocity" subtitle="units / week · portfolio-wide series (simplification)" />
-            <div className="px-3 pt-3">
-              <LineChart data={VELOCITY_SERIES.map((v, i) => ({ label: String(i), value: v }))} />
-            </div>
-            <StatFooter
-              items={[
-                { label: "Current", value: "14.2 u/wk" },
-                { label: "vs. last month", value: "+18.4%", valueClassName: "text-success" },
-              ]}
-            />
-          </Card>
-
-          <Card>
-            <CardHeader title="Lead Conversion Funnel" subtitle="portfolio-wide (simplification)" />
-            <div className="p-3">
-              <Funnel
-                stages={CRM_FUNNEL.map((f) => ({ label: f.label, n: parseInt(f.count.replace(/,/g, ""), 10), rate: f.rate, pct: f.pct, color: f.color }))}
-              />
-            </div>
-          </Card>
-        </div>
+        <Card>
+          <EmptyState
+            icon="trend-up"
+            title="Velocity and funnel trends aren't broken out per-project"
+            description="Leads aren't linked to a specific project in this data set, so a per-project conversion funnel or velocity trend can't be computed honestly — see the portfolio-wide versions on the Executive Dashboard."
+          />
+        </Card>
       )}
 
-      <UnitDrawer
-        unit={selectedUnit ? toUnitDrawerData(selectedUnit) : null}
-        open={drawerOpen}
-        onOpenChange={setDrawerOpen}
-        onReserve={handleDrawerReserve}
+      <UnitDrawer unit={drawerUnit} open={drawerOpen} onOpenChange={setDrawerOpen} onReserve={() => { setDrawerOpen(false); setReserveOpen(true); }} />
+
+      <QuickCreateModal
+        open={addBuildingOpen}
+        onOpenChange={setAddBuildingOpen}
+        config={{
+          title: "Add Building",
+          submitLabel: "Add Building",
+          fields: [
+            { name: "key", label: "Building Key", required: true, placeholder: "e.g. D" },
+            { name: "name", label: "Name", required: true, placeholder: "e.g. Building D" },
+            { name: "floors", label: "Floors", type: "number", required: true, placeholder: "12" },
+            { name: "unitsPerFloor", label: "Units / Floor", type: "number", required: true, placeholder: "8" },
+            { name: "handoverDate", label: "Handover Date", type: "date" },
+          ],
+          onSubmit: async (values) => {
+            await createBuilding.mutateAsync({
+              projectId: project.id,
+              key: values.key,
+              name: values.name,
+              floors: Number(values.floors),
+              unitsPerFloor: Number(values.unitsPerFloor),
+              handoverDate: values.handoverDate || null,
+            });
+            toast.push({ kind: "success", title: "Building added", body: `${values.name} added to ${project.name}.` });
+          },
+        }}
+      />
+
+      <QuickCreateModal
+        open={reserveOpen}
+        onOpenChange={setReserveOpen}
+        config={{
+          title: "New Reservation",
+          submitLabel: "Reserve Unit",
+          fields: [
+            {
+              name: "unitId",
+              label: "Unit",
+              type: "select",
+              required: true,
+              defaultValue: selectedUnit?.status === "Available" ? selectedUnit.id : undefined,
+              options: (units.data ?? []).filter((u) => u.status === "available").map((u) => ({ value: u.id, label: `${u.code} · ${u.unitType}` })),
+            },
+            { name: "customerId", label: "Customer", type: "select", required: true, options: (customers.data ?? []).map((c) => ({ value: c.id, label: c.name })) },
+            { name: "depositEgp", label: "Deposit (EGP)", type: "number", required: true, placeholder: "150000" },
+            { name: "agentId", label: "Agent", type: "select", required: true, defaultValue: auth.user?.id, options: team.members.map((m) => ({ value: m.id, label: m.name })) },
+          ],
+          onSubmit: async (values) => {
+            await createReservation.mutateAsync({ unitId: values.unitId, customerId: values.customerId, agentId: values.agentId, depositEgp: Number(values.depositEgp) });
+          },
+        }}
       />
     </PageContainer>
   );

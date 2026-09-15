@@ -59,6 +59,7 @@ import {
   PieChart,
   Lightbulb,
   ThumbsUp,
+  LogOut,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -133,6 +134,7 @@ const ICONS: Record<string, LucideIcon> = {
   inventory: PieChart,
   insight: Lightbulb,
   recommendation: ThumbsUp,
+  logout: LogOut,
 };
 
 export interface IconProps {

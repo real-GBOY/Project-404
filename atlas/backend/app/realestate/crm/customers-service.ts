@@ -16,7 +16,13 @@ export class CustomersService {
   ) {}
 
   list() {
-    return readInTenant(() => this.repo.list());
+    return readInTenant(async () => {
+      const [rows, stats] = await Promise.all([this.repo.list(), this.repo.statsByCustomer()]);
+      return rows.map((c) => {
+        const s = stats.get(c.id) ?? { unitsOwned: 0, portfolioEgp: 0, collectedEgp: 0 };
+        return { ...c, unitsOwned: s.unitsOwned, portfolioEgp: s.portfolioEgp, collectedEgp: s.collectedEgp };
+      });
+    });
   }
 
   async get(id: string) {

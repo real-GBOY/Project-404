@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { PageChromeProvider } from "@/lib/page-chrome";
 import { Sidebar } from "@/components/navigation/sidebar";
@@ -7,7 +7,7 @@ import { CommandPalette } from "@/components/navigation/command-palette";
 import { NotificationsDrawer } from "@/components/navigation/notifications-drawer";
 import { RouteErrorBoundary } from "@/app/router/route-error-boundary";
 import { RowsSkeleton } from "@/components/feedback/skeleton";
-import { createGlobalSearch } from "@/features/shared/global-search";
+import { useGlobalSearch } from "@/features/shared/global-search";
 
 function useViewport() {
   const [vw, setVw] = useState(() => (typeof window === "undefined" ? 1280 : window.innerWidth));
@@ -32,7 +32,7 @@ export function AppShell() {
   const [manuallyOpen, setManuallyOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
-  const search = useMemo(() => createGlobalSearch(navigate), [navigate]);
+  const search = useGlobalSearch(navigate);
 
   const collapsedByWidth = vw < 1100;
   const showRail = !collapsedByWidth || manuallyOpen;

@@ -64,16 +64,6 @@ export class UnitsRepository {
     return row ? this.toRow(row) : null;
   }
 
-  async findByCode(code: string): Promise<UnitRow | null> {
-    const row = await realestateDb()
-      .selectFrom("realestate_units")
-      .selectAll()
-      .where("organization_id", "=", this.org())
-      .where("code", "=", code)
-      .executeTakeFirst();
-    return row ? this.toRow(row) : null;
-  }
-
   async availabilitySummary(): Promise<
     Array<{ projectId: string; unitType: string; available: number; reserved: number; sold: number; priceFromEgp: number }>
   > {

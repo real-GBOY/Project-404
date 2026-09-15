@@ -15,6 +15,16 @@ export default defineConfig({
   },
   server: {
     port: 4400,
+    // Proxies to the Atlas backend (atlas/backend, port 3100 by default) so the
+    // app can call relative `/api/...` paths in dev, same convention as
+    // mizan/web's own `/api` proxy. Override the backend's own port via
+    // ATLAS_API_PROXY_TARGET if you run it elsewhere.
+    proxy: {
+      "/api": {
+        target: process.env.ATLAS_API_PROXY_TARGET ?? "http://localhost:3100",
+        changeOrigin: true,
+      },
+    },
   },
   test: {
     environment: "jsdom",

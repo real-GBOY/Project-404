@@ -46,6 +46,17 @@ export class PaymentPlansRepository {
     return requireOrganizationId();
   }
 
+  /** Flat, org-wide plan list (the Payment Plans screen's sidebar — not scoped to one contract). */
+  async listAll(): Promise<PaymentPlanRow[]> {
+    const rows = await realestateDb()
+      .selectFrom("realestate_payment_plans")
+      .selectAll()
+      .where("organization_id", "=", this.org())
+      .orderBy("start_date", "desc")
+      .execute();
+    return rows.map((r) => this.toPlanRow(r));
+  }
+
   async findByContract(contractId: string): Promise<PaymentPlanRow | null> {
     const row = await realestateDb()
       .selectFrom("realestate_payment_plans")
@@ -120,6 +131,24 @@ export class PaymentPlansRepository {
     if (status) q = q.where("status", "=", status);
     const rows = await q.orderBy("due_date", "asc").execute();
     return rows.map((r) => this.toInstallmentRow(r));
+  }
+
+  /** Same as `listInstallments`, joined to the owning plan for the flat Installments screen (needs
+   *  customer/unit, not just the plan id) — mirrors `FinanceQueries`'s join pattern. */
+  async listInstallmentsWithContext(status?: InstallmentRow["status"]): Promise<(InstallmentRow & { customerId: string; unitId: string })[]> {
+    let q = realestateDb()
+      .selectFrom("realestate_installments")
+      .innerJoin("realestate_payment_plans", (join) =>
+        join
+          .onRef("realestate_payment_plans.id", "=", "realestate_installments.payment_plan_id")
+          .onRef("realestate_payment_plans.organization_id", "=", "realestate_installments.organization_id"),
+      )
+      .selectAll("realestate_installments")
+      .select(["realestate_payment_plans.customer_id as customerId", "realestate_payment_plans.unit_id as unitId"])
+      .where("realestate_installments.organization_id", "=", this.org());
+    if (status) q = q.where("realestate_installments.status", "=", status);
+    const rows = await q.orderBy("realestate_installments.due_date", "asc").execute();
+    return rows.map((r) => ({ ...this.toInstallmentRow(r), customerId: r.customerId, unitId: r.unitId }));
   }
 
   async findInstallmentById(id: string): Promise<InstallmentRow | null> {

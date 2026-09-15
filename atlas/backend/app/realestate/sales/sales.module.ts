@@ -8,7 +8,7 @@ import { ReservationsService } from "./reservations-service.js";
 import { ContractsController } from "./contracts.controller.js";
 import { ContractsRepository } from "./contracts-repository.js";
 import { ContractsService } from "./contracts-service.js";
-import { PaymentPlansController } from "./payment-plans.controller.js";
+import { PaymentPlansController, InstallmentsController } from "./payment-plans.controller.js";
 import { PaymentPlansRepository } from "./payment-plans-repository.js";
 import { PaymentPlansService } from "./payment-plans-service.js";
 import { CommissionsController } from "./commissions.controller.js";
@@ -17,7 +17,7 @@ import { CommissionsService } from "./commissions-service.js";
 
 @Module({
   imports: [PropertiesModule, CrmModule, AuditModule, EventsModule],
-  controllers: [ReservationsController, ContractsController, PaymentPlansController, CommissionsController],
+  controllers: [ReservationsController, ContractsController, PaymentPlansController, InstallmentsController, CommissionsController],
   providers: [
     ReservationsRepository,
     ReservationsService,
@@ -28,6 +28,15 @@ import { CommissionsService } from "./commissions-service.js";
     CommissionsRepository,
     CommissionsService,
   ],
-  exports: [ReservationsRepository, ContractsRepository, PaymentPlansRepository, CommissionsRepository],
+  exports: [
+    ReservationsRepository,
+    ReservationsService,
+    ContractsRepository,
+    ContractsService,
+    PaymentPlansRepository,
+    PaymentPlansService,
+    CommissionsRepository,
+    CommissionsService,
+  ],
 })
 export class SalesModule {}

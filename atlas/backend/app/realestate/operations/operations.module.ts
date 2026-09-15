@@ -26,6 +26,15 @@ import { DocumentsService } from "./documents-service.js";
     DocumentsRepository,
     DocumentsService,
   ],
-  exports: [TasksRepository, ApprovalsRepository, DocumentsRepository],
+  exports: [
+    TasksRepository,
+    TasksService,
+    WorkflowsRepository,
+    WorkflowsService,
+    ApprovalsRepository,
+    ApprovalsService,
+    DocumentsRepository,
+    DocumentsService,
+  ],
 })
 export class OperationsModule {}

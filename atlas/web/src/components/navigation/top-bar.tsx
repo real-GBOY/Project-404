@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { GROUP_OF, DETAIL_TITLES, NAV_ITEMS } from "@/app/router/nav";
 import { useReadPageChrome } from "@/lib/page-chrome";
-import { useOnlineCount } from "@/lib/realtime/online-count";
 import { useNotifications } from "@/lib/notifications/notifications-provider";
 import { IconButton } from "@/components/ui/icon-button";
 import { Button } from "@/components/ui/button";
@@ -21,7 +20,6 @@ export function TopBar({
 }) {
   const navigate = useNavigate();
   const chrome = useReadPageChrome();
-  const online = useOnlineCount();
   const { unreadCount } = useNotifications();
 
   const fallback = NAV_ITEMS.filter((i) => pathname === i.to || pathname.startsWith(`${i.to}/`)).sort(
@@ -46,13 +44,6 @@ export function TopBar({
       </div>
 
       <div className="flex-1" />
-
-      <div className="hidden items-center gap-1.5 rounded-btn border border-border px-2 py-1 text-[10.5px] text-body md:flex">
-        <span className="size-1.5 rounded-full bg-success" style={{ animation: "pulsedot 2.2s infinite" }} />
-        <span>
-          Live · {online} online
-        </span>
-      </div>
 
       <Button variant="secondary" size="sm" icon="search" onClick={onSearch} className="hidden sm:inline-flex">
         Search <span className="font-mono text-[9px] text-subtle">⌘K</span>
