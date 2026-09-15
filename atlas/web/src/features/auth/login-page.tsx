@@ -16,8 +16,8 @@ export function LoginPage() {
   const auth = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("mostafa.halim@atlas.eg");
+  const [password, setPassword] = useState("demo-password-2026");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -57,6 +57,7 @@ export function LoginPage() {
         <Card className="p-5">
           <h1 className="m-0 text-[15px] font-semibold tracking-[-0.01em]">Sign in</h1>
           <p className="mt-1 text-[11px] text-secondary">Use your Atlas account to continue.</p>
+          <p className="mt-1 text-[10px] text-subtle">Demo credentials are pre-filled below.</p>
 
           <form className="mt-4 flex flex-col gap-3" onSubmit={handleSubmit}>
             <div className="flex flex-col gap-1.5">
