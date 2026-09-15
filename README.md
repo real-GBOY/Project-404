@@ -2,67 +2,75 @@
 
 NestJS 11 · Fastify · PostgreSQL + RLS · Kysely · TypeScript · MIT
 
-**A domain-agnostic application foundation, and the first real product built on it.**
+**A domain-agnostic application foundation, and two real products built on it.**
 
-This repository is two things with a hard seam between them:
+This repository is a foundation with a hard seam, and two independently-deployed products on the other side of it:
 
 | | | |
 |---|---|---|
-| **`core/`** | **Project-404 Core** — a versioned, reusable platform: identity, RBAC, multi-tenancy, files, audit, notifications, an event/outbox system, localization, observability. It knows nothing about any business domain. | 11 capabilities · v0.1 shipped |
+| **`core/`** | **Project-404 Core** — a versioned, reusable platform: identity, RBAC, multi-tenancy, files, audit, notifications, an event/outbox system, AI-agent orchestration, localization, observability. It knows nothing about any business domain. | 12 capabilities · v0.1 shipped |
 | **`mizan/`** | **Mizan** — a multi-tenant law-firm management system. **Project #1**: the first application built on Core, and the proof that Core's contracts hold under a real product. | backend domain complete · web F0–F16 · **202 tests green** |
+| **`atlas/`** | **Atlas** — a real-estate developer OS (CRM, inventory, sales, payment plans, finance, ops) for an Egyptian developer. **Project #2**: a second, independently-deployed product on the same Core — its own package, its own database — built to see which parts of "Project #1" were actually reusable and which were Mizan-shaped. | backend + web complete · **80 backend / 5 web tests** |
 
-**Run it:** `docker compose up --build` → API on `http://localhost:3000/api`, interactive docs on `http://localhost:3000/api/docs`.
+**Run it:** `docker compose up --build` → Mizan API on `http://localhost:3000/api`, interactive docs on `http://localhost:3000/api/docs`. Atlas is a separate package with its own quick start — see [§ Atlas](#atlas) below.
 
-> **Project-404 is not a law-firm ERP.** It is the foundation. Mizan is the ERP, *powered by* Project-404 Core. The next client after Mizan will not re-implement auth, tenancy, permissions, file storage, an audit trail, or an outbox — that is the entire point.
+> **Project-404 is not a law-firm ERP, and it isn't a real-estate OS either.** It is the foundation both are *powered by*. The bet was that the client after Mizan wouldn't re-implement auth, tenancy, permissions, file storage, an audit trail, or an outbox — Atlas is that bet paid off: same `core/`, a different domain, zero copy-pasted platform code. `core/assistant` is the one deliberate exception to the **Rule of Three** below: Mizan and Atlas built the same AI-orchestration loop independently, and rather than let a third product copy it again, it was pulled into Core at n=2 — every other capability still waits for three.
 
 ---
 
 ## Architecture
 
+Two products, each its own deployable package and its own database, sharing one `core/` by source import — never by a running process or a shared schema:
+
 ```
-   CLIENTS          mizan/web            ·  mizan/mobile
-                    React 19 + Vite         Expo / React Native
-                         │
-                         │   HTTP / JSON only — the clients share no code with the server
-                         ▼
-   MIZAN BACKEND    mizan/backend/app/lawfirm/
-                    clients · matters · hearings · tasks · documents
-                    billing · calendar · staff · dashboard · settings · activity
-                         │
-                         │   core/contracts interfaces + DI tokens only — never a Core table
-                         ▼
-   PROJECT-404 CORE core/
-                    identity · rbac · organizations · tenancy · files
-                    audit · notifications · events · localization
-                    observability · http · kernel
-                         │
-                         ▼
-   INFRASTRUCTURE   PostgreSQL (+ row-level security) · local disk · SMTP
+   CLIENTS          mizan/web · mizan/mobile          atlas/web
+                    React 19 + Vite / Expo            React 19 + Vite + Tailwind 4
+                         │                                  │
+                         │  HTTP / JSON only — no client shares code with any server
+                         ▼                                  ▼
+   PRODUCT BACKEND  mizan/backend/app/lawfirm/         atlas/backend/app/realestate/
+                     clients · matters · hearings        crm · properties · sales · finance
+                     tasks · documents · billing          operations · admin · dashboard
+                     calendar · staff · activity          assistant (AI Copilot)
+                     @auric/core package, :3000            @atlas/backend package, own port
+                     database: auric                       database: atlas
+                         │                                  │
+                         │  core/contracts interfaces + DI tokens only — never a Core table
+                         ▼                                  ▼
+                          ─────────────  PROJECT-404 CORE  ─────────────
+                          core/  — identity · rbac · organizations · tenancy
+                          files · audit · notifications · events · assistant
+                          localization · observability · http · kernel
+                                            │
+                                            ▼
+                    INFRASTRUCTURE   PostgreSQL (+ row-level security) · local disk · SMTP
 ```
 
-**Dependencies flow one way, and only one way:**
+**Dependencies flow one way, and only one way, from either product:**
 
 ```
 PROJECT-404 CORE  ◀──  MIZAN BACKEND  ◀──  { mizan/web, mizan/mobile }
+PROJECT-404 CORE  ◀──  ATLAS BACKEND  ◀──  atlas/web
 ```
 
-- `core/` **must never** import from `mizan/`. Verified: `grep -rn "mizan/" core/` is empty. If a symbol in Core names a `Matter`, a `Hearing`, or an `Invoice`, it is in the wrong place.
-- `mizan/backend/` reaches Core **only** through `core/contracts` interfaces (`IUserProvider`, `IPermissionProvider`, `ITenantContext`, `IFileStorage`, `IAuditLogger`, `IEventBus`, …) and DI tokens — never a Core table or concrete class. One sanctioned exception: the boot-time seed.
-- `mizan/web/` imports **no repository code at all**. It consumes the HTTP API and re-implements the few shared rules (the `action:resource` permission matcher, the `ar-EG` formatters) rather than importing them.
+- `core/` **must never** import from `mizan/` or `atlas/`. Verified: `grep -rn "mizan/\|atlas/" core/` is empty. If a symbol in Core names a `Matter`, a `Hearing`, a `Lead`, or a `Unit`, it is in the wrong place.
+- `mizan/backend/` and `atlas/backend/` each reach Core **only** through `core/contracts` interfaces (`IUserProvider`, `IPermissionProvider`, `ITenantContext`, `IFileStorage`, `IAuditLogger`, `IEventBus`, …) and DI tokens — never a Core table or concrete class. One sanctioned exception per product: the boot-time seed.
+- `mizan/web/` and `atlas/web/` import **no repository code at all**. Each consumes its own product's HTTP API and re-implements the handful of shared rules (the `action:resource` permission matcher, formatting) rather than importing them.
+- `atlas/backend` is not a module of the root package — it's `@atlas/backend`, its own `package.json`, its own Prisma migration history, its own Postgres database (`atlas`, vs. Mizan's `auric`). It imports `core/` via a relative path alias (`@core/* → ../../core/*`), the same source, compiled and run as a second, independent process.
 
-The full contract — what each side owns, why there is no `modules/` or `client-002/` folder yet — is **[`docs/mizan-project-one.md`](docs/mizan-project-one.md)**.
+The full Core ↔ Mizan contract — what each side owns, why there is no generic `modules/` or `client-00N/` folder — is **[`docs/mizan-project-one.md`](docs/mizan-project-one.md)**. Atlas repeats the same shape one level down, under `atlas/`.
 
 ### Principles the code actually enforces
 
 | Principle | How it shows up |
 |---|---|
-| **Modular monolith, not microservices** | One NestJS process. Feature `@Module`s, clean layer boundaries, no network hops between domains. |
-| **Rule of Three** | No capability is extracted into a reusable Project-404 module until it has been built across **three** real client projects. Mizan is client #1 — nothing is extracted. |
+| **Modular monolith, not microservices** | Each product is one NestJS process — feature `@Module`s, clean layer boundaries, no network hops between domains within a product. Two products means two processes, not a mesh. |
+| **Rule of Three** | No capability is extracted into a reusable Project-404 module until it has been built across **three** real client projects — with one deliberate exception: `core/assistant`, pulled out at two products (Mizan Copilot, then Atlas Copilot duplicating it near-verbatim) rather than let a third product copy it again. Every other capability still waits for three; Atlas is client #2. |
 | **The database is the security boundary** | Postgres row-level security + `organization_id NOT NULL` on every tenant table. A forgotten `WHERE` clause in application code cannot leak across tenants. Frontend `can()` is UX only. |
 | **Every use case owns its transaction** | `authenticate → validate → transaction → persist → publish event`. The event bus never opens a transaction. |
 | **Prisma owns schema, Kysely owns runtime** | Prisma defines tables + migration history and generates Kysely's types. No Prisma Client, no ORM at runtime — typed SQL only. |
-| **Money is never summed across currencies** | Financial values are `{ currency, amount }[]`, rendered as stacked lines. No FX, no "dominant currency". Invoice math is server-authoritative. |
-| **Bilingual, RTL-first-class** | English is the default; Arabic is fully supported and one switch away (persisted per user). RTL is first-class (logical CSS only), with `ar-EG` number/date/currency formatting and bilingual notification templates. |
+| **Money is never summed across currencies** | Financial values are `{ currency, amount }[]`, rendered as stacked lines. No FX, no "dominant currency". Invoice and payment-plan math is server-authoritative in both products. |
+| **Bilingual, RTL-first-class (Mizan)** | Mizan: English is the default; Arabic is fully supported and one switch away (persisted per user), RTL via logical CSS only, `ar-EG` formatting, bilingual notification templates. Atlas is English-only by design — an Egyptian developer's internal sales/ops tool, not a bilingual client-facing product. |
 
 ---
 
@@ -83,8 +91,9 @@ The full contract — what each side owns, why there is no `modules/` or `client
 | Localization — language/direction resolution, `ar-EG` formatters | `core/localization` | ✅ |
 | Observability — structured logs, correlation IDs, `/health`, `/health/ready` | `core/observability` | ✅ |
 | HTTP — Zod pipe, `JwtAuthGuard` + `PermissionGuard` + `@RequirePermission`, exception filter, request-context middleware | `core/http` | ✅ |
+| **AI Copilot orchestration** — LLM provider boundary, RBAC-gated tool-execution pipeline, scope-gate (heuristic → classifier, fail-open), conversation store. No HTTP surface, no domain knowledge — each product supplies its own tools, system prompt, and permission gates | `core/assistant` | ✅ the one capability extracted early (§ Rule of Three, above) — proven under two independent Copilots (Mizan's, Atlas's) |
 
-17 Prisma schema files · 5 migrations · integration suites that boot the real Core against a throwaway Postgres and run it as the `auric_app` / `auric_system` roles so `FORCE ROW LEVEL SECURITY` is actually exercised.
+**17** Core-only tables (of 37 total, the rest are Mizan's) across **9** schema files · **9** migrations in the root package's history — integration suites boot the real Core against a throwaway Postgres and run it as the `auric_app` / `auric_system` roles so `FORCE ROW LEVEL SECURITY` is actually exercised. (Atlas tracks its own, separate migration history against its own database — see § Atlas below.)
 
 ### Mizan backend — `mizan/backend/app/lawfirm/` ✅ domain complete
 
@@ -115,9 +124,26 @@ The native client — a **separate client of the same API** as `mizan/web/` (rul
 - API + auth layer is a near-verbatim port of the web client: one `httpClient`, single-flight `401` refresh, tokens in `expo-secure-store` (Keychain/Keystore), biometric unlock. Response types lifted from the web slices — both clients break at compile time if the contract moves.
 - `tsc` · `eslint` · `prettier --check` · `expo export` (iOS/Android/web) · `expo-doctor` 21/21 all green. Full write-up in [`mizan/mobile/PROJECT_OVERVIEW.md`](mizan/mobile/PROJECT_OVERVIEW.md).
 
+### Atlas backend — `atlas/backend/app/realestate/` ✅ complete, own package + database
+
+The second product on Core, and the first real test of "is this actually reusable or just Mizan-shaped": a real-estate developer OS — CRM, inventory, sales, payment plans, finance, ops, AI Copilot.
+
+- **23** `realestate_*` tables (own Prisma schema + own migration history, own `atlas` database — not a schema inside Mizan's) — leads → deals → reservations → contracts → payment plans → installments → payments, price lists, projects/buildings/units inventory, commissions, tasks/workflows/approvals, AI insights.
+- **Feature modules** — `crm · properties · sales · finance · operations · admin · dashboard · assistant` — same `core/contracts`-only boundary as Mizan; `grep -rn "mizan/" atlas/` and `grep -rn "atlas/" core/` are both empty.
+- **Atlas Copilot** (`assistant/`) — the product-specific 30% on top of `core/assistant`: real-estate tools (units, leads, reservations, collections, likely-to-sell ranking), its own system prompt and scope vocabulary, its own permission gates. Real Groq/OpenAI-compatible calls, not a scripted demo.
+- **Every list screen's filters and search are backend-driven** — no client-side derivation from the currently-visible rows. A hand-written SQL relevance-ranking algorithm (`shared/search.ts`: exact → prefix → word-boundary → substring, weighted across columns) backs every `q` search param; KPI tallies query the unfiltered dataset separately so they read as portfolio totals, never "whatever the filter left."
+- **80 backend tests**, one file per feature module, plus a live-Groq integration suite that hits the real AI provider (not mocked) to prove tool-calling and scope-refusal actually work.
+
+### Atlas web — `atlas/web/` ✅ complete, on the real backend
+
+- **111** source files across **12** feature areas — `crm · properties · sales · finance · operations · admin · dashboard · analytics · ai (Copilot) · auth · landing · shared`.
+- All colors sourced from one file (`src/styles/colors.ts`), enforced by a sync test — no stray hex literals anywhere else in the app.
+- Stack: Vite · React 19 · TypeScript · Tailwind 4 · Radix (a real `FilterDropdown` component, not a styled `<select>`) · TanStack Query v5 · React Router.
+- Audited end-to-end before being shown externally: live-verified search/filter correctness against known data (not just "it renders"), a login-session race condition that could silently log a user out mid-session, a `NaN` on the customer detail page, and a duplicate-key bug in the global ⌘K search were all found and fixed by re-testing the running app, not just by reading the code.
+
 ### Continuous integration
 
-**GitHub Actions** on every push and PR (`.github/workflows/ci.yml`): backend `typecheck · lint · format:check · test` (against a Postgres service, RLS enforced) `· build`; web `lint · typecheck · test · build`; mobile `lint · typecheck · format:check · expo-doctor · export`; and the production Docker image builds.
+**GitHub Actions** on every push and PR (`.github/workflows/ci.yml`): Mizan backend `typecheck · lint · format:check · test` (against a Postgres service, RLS enforced) `· build`; Mizan web `lint · typecheck · test · build`; mobile `lint · typecheck · format:check · expo-doctor · export`; the production Docker image builds; a VPS deploy job. **Atlas is not in this pipeline yet** — as a separate package with its own database, it's currently verified the same way (`typecheck · lint · test`, both `atlas/backend` and `atlas/web`) but by hand, not in CI. Adding an `atlas` job to `ci.yml` is the honest next step, not yet done.
 
 ---
 
@@ -139,17 +165,24 @@ auric/
 │   ├── web/                  standalone Vite package (mizan-web) — HTTP API only, no repo imports
 │   └── mobile/               standalone Expo package (mizan-mobile) — HTTP API only, no repo imports
 │
-├── prisma/                   schema (mirrors every table) + migration history — Core + lawfirm
+├── atlas/                    Project #2 — the Atlas real-estate application (own package, own DB)
+│   ├── backend/               @atlas/backend — own package.json, own prisma/ (schema + migrations),
+│   │                          composition root · demo seeder · real-estate domain (realestate/)
+│   │                          imports core/ via a relative path alias (@core/* → ../../core/*)
+│   └── web/                   standalone Vite package (atlas-web) — HTTP API only, no repo imports
+│
+├── prisma/                   schema (mirrors every table) + migration history — Core + lawfirm only
+│                              (atlas/backend/prisma/ is Atlas's own, separate history)
 ├── scripts/                  migrate · provision-db · build
 ├── http/                     .http request files for the API
 ├── docs/                     architecture, tenancy, integration guide, conventions
-├── Dockerfile · docker-compose.yml · .github/workflows/ci.yml
+├── Dockerfile · docker-compose.yml · .github/workflows/ci.yml   (Mizan + mobile only — Atlas not wired in yet)
 └── main.ts                   entrypoint — migrate → NestFactory (Fastify) → OpenAPI → seed → listen :3000
 ```
 
-Every module — Core or Mizan — follows the same anatomy (`domain / application / infrastructure / api / events / permissions / validation / tests`), so any developer can navigate any module. Table schema lives in `prisma/schema/<module>.prisma`, not the module folder.
+Every module — Core, Mizan, or Atlas — follows the same anatomy (`domain / application / infrastructure / api / events / permissions / validation / tests`, Atlas's real-estate module trims this slightly), so any developer can navigate any module. Table schema lives in `prisma/schema/<module>.prisma` (or `atlas/backend/prisma/schema/` for Atlas), not the module folder.
 
-`main.ts` and all build config stay at the repo root: the backend is one npm package (`@auric/core`) rooted where `core/` is, and `mizan/backend/app/` is its Mizan-specific slice.
+`main.ts` and all build config stay at the repo root: the Mizan backend is one npm package (`@auric/core`) rooted where `core/` is, and `mizan/backend/app/` is its Mizan-specific slice. Atlas is a second, sibling package (`@atlas/backend`) with its own entrypoint, root config, and database — it does not run inside the `@auric/core` process.
 
 ---
 
@@ -217,6 +250,31 @@ npm run dev                                # http://localhost:4300 — proxies /
 The web client talks to the real backend; run the backend first. Register an
 account at `/register`, or use a seeded demo login above.
 
+<a id="atlas"></a>
+### Atlas
+
+A **separate package with its own database** — not part of the `docker compose` above.
+
+```bash
+cd atlas/backend
+npm install
+cp .env.example .env                       # already points at a separate `atlas` database — do not reuse Mizan's
+createdb atlas
+ATLAS_SEED_DEMO=true npm run serve          # migrate → Nest bootstrap → OpenAPI → demo seed → :3100
+```
+
+```bash
+curl localhost:3100/api/health
+curl -sX POST localhost:3100/api/auth/login -H 'content-type: application/json' \
+  -d '{"email":"mostafa.halim@atlas.eg","password":"demo-password-2026"}'
+```
+
+```bash
+cd atlas/web
+npm install
+npm run dev                                # proxies /api → :3100
+```
+
 ---
 
 ## Scripts
@@ -234,6 +292,8 @@ account at `/register`, or use a seeded demo login above.
 | `npm test` · `npm run test:cov` | Vitest (integration needs a Postgres) |
 
 **Web** (`cd mizan/web`): `dev` · `build` · `typecheck` · `lint` · `format` · `test`.
+
+**Atlas** (separate packages — same script names, run from `atlas/backend` / `atlas/web`): `serve` / `dev` · `migrate` · `typecheck` · `lint` · `test`. `ATLAS_SEED_DEMO=true` on `serve`/`dev` seeds the demo developer portfolio.
 
 ### Tests
 
@@ -259,10 +319,12 @@ Every reusable capability carries its **architectural contract** next to the cod
 | `core/contracts/` · `core/kernel/` · `core/events/` | the foundation layer |
 | `core/identity/` · `core/rbac/` · `core/organizations/` | auth & access |
 | `core/files/` · `core/audit/` · `core/notifications/` | capabilities |
+| [`core/assistant/README.md`](core/assistant/README.md) | AI Copilot orchestration — the one capability shared by both products (§ Rule of Three) |
 | `core/localization/` · `core/observability/` · `core/http/` · `core/bootstrap/` | cross-cutting |
 | [`mizan/README.md`](mizan/README.md) · [`mizan/backend/app/README.md`](mizan/backend/app/README.md) | **Mizan** (Project #1) — the Core ↔ Mizan boundary |
 | [`mizan/web/README.md`](mizan/web/README.md) | **Mizan** web client — API-only, imports no repo code |
 | [`mizan/mobile/README.md`](mizan/mobile/README.md) · [`mizan/mobile/PROJECT_OVERVIEW.md`](mizan/mobile/PROJECT_OVERVIEW.md) | **Mizan** mobile client (Expo / RN) — API-only, imports no repo code |
+| [`docs/atlas-assistant.md`](docs/atlas-assistant.md) | **Atlas** (Project #2) Copilot — the product-specific layer on `core/assistant`. Atlas has no per-module READMEs yet (that pass hasn't been done, unlike Mizan/Core) — this doc plus the code comments in `atlas/backend/app/realestate/assistant/` are the closest thing today. |
 
 ### Docs
 
