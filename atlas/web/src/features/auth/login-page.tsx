@@ -3,7 +3,7 @@ import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { ApiError } from "@/lib/api/client";
+import { ApiError } from "@/config";
 import { useAuth } from "./auth-provider";
 
 /**

@@ -9,7 +9,7 @@ import { RowsSkeleton } from "@/components/feedback/skeleton";
 import { DualBarChart } from "@/components/charts/bar-chart";
 import { LineChart, StatFooter } from "@/components/charts/line-chart";
 import { formatEgp, toNumber } from "@/lib/money";
-import { ApiError } from "@/lib/api/client";
+import { ApiError } from "@/config";
 import { useDashboardSummary } from "@/api/dashboard";
 import { useLeads } from "@/api/crm";
 

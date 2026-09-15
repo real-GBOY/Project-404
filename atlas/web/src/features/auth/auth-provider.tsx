@@ -1,7 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
-import { apiFetch, setSessionExpiredHandler } from "@/lib/api/client";
-import { getRefreshToken, setTokens } from "@/lib/api/token-store";
-import type { AuthUser, LoginResponse, MeResponse } from "@/lib/api/auth-types";
+import { get, post, ENDPOINTS, getRefreshToken, setTokens, setSessionExpiredHandler } from "@/config";
+import type { AuthUser, LoginResponse, MeResponse } from "./auth-types";
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
@@ -22,9 +21,9 @@ const SIGNED_OUT: AuthState = { status: "unauthenticated", user: null, organizat
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 /**
- * Session lives here: a persisted refresh token (see `lib/api/token-store.ts`)
+ * Session lives here: a persisted refresh token (see `config/token-store.ts`)
  * is exchanged for a fresh access token + `/me` on boot, so a page reload
- * doesn't force a re-login. `client.ts`'s `apiFetch` calls
+ * doesn't force a re-login. `config/http.ts`'s axios instance calls
  * `setSessionExpiredHandler` back into this provider so an unrecoverable 401
  * anywhere in the app (not just a failed login) drops the user back to
  * `/login`.
@@ -34,7 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loadMe = useCallback(async () => {
     try {
-      const me = await apiFetch<MeResponse>("/me");
+      const me = await get<MeResponse>(ENDPOINTS.me);
       setState({ status: "authenticated", user: me.user, organizationId: me.organizationId });
     } catch {
       setTokens(null);
@@ -54,10 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (email: string, password: string) => {
-      const res = await apiFetch<LoginResponse>("/auth/login", {
-        method: "POST",
-        body: JSON.stringify({ email, password }),
-      });
+      const res = await post<LoginResponse>(ENDPOINTS.auth.login, { email, password });
       setTokens(res.tokens);
       await loadMe();
     },
@@ -69,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setTokens(null);
     setState(SIGNED_OUT);
     if (refreshToken) {
-      apiFetch("/auth/logout", { method: "POST", body: JSON.stringify({ refreshToken }) }).catch(() => {
+      post(ENDPOINTS.auth.logout, { refreshToken }).catch(() => {
         /* best-effort — the client-side session is already cleared */
       });
     }

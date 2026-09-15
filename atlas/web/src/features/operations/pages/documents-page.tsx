@@ -10,7 +10,7 @@ import { QuickCreateModal } from "@/components/tables/quick-create-modal";
 import { useToast } from "@/lib/toast/toast-provider";
 import { formatDate } from "@/lib/time";
 import { titleCase } from "@/lib/text";
-import { ApiError } from "@/lib/api/client";
+import { ApiError } from "@/config";
 import { useAuth } from "@/features/auth/auth-provider";
 import { useTeamDirectory } from "@/api/team";
 import { useDocuments, useCreateDocument, type DocumentRow } from "@/api/operations";

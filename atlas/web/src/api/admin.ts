@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { apiFetch, toQueryString } from "@/lib/api/client";
+import { get, ENDPOINTS } from "@/config";
 
 // ---------- Roles ----------
 
@@ -14,7 +14,7 @@ export interface RoleRow {
 }
 
 export function useRoles() {
-  return useQuery({ queryKey: ["roles"], queryFn: () => apiFetch<{ items: RoleRow[] }>("/realestate/rbac/roles") });
+  return useQuery({ queryKey: ["roles"], queryFn: () => get<{ items: RoleRow[] }>(ENDPOINTS.rbac.roles) });
 }
 
 export interface RoleView {
@@ -50,7 +50,7 @@ export interface AuditLogRow {
 export function useAuditLogs(q?: string) {
   return useQuery({
     queryKey: ["audit-logs", q ?? ""],
-    queryFn: () => apiFetch<{ items: AuditLogRow[]; total: number }>(`/realestate/audit-logs${toQueryString({ q })}`),
+    queryFn: () => get<{ items: AuditLogRow[]; total: number }>(ENDPOINTS.auditLogs, { q }),
   });
 }
 

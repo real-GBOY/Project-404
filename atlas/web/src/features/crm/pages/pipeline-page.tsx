@@ -8,7 +8,7 @@ import { QuickCreateModal } from "@/components/tables/quick-create-modal";
 import { useToast } from "@/lib/toast/toast-provider";
 import { formatEgp } from "@/lib/money";
 import { timeAgo } from "@/lib/time";
-import { ApiError } from "@/lib/api/client";
+import { ApiError } from "@/config";
 import { useAuth } from "@/features/auth/auth-provider";
 import { useTeamDirectory } from "@/api/team";
 import { useLeads, useCreateLead, useUpdateLead, type LeadStage, type LeadSource } from "@/api/crm";

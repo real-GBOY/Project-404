@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiFetch, toQueryString } from "@/lib/api/client";
+import { get, post, patch, ENDPOINTS } from "@/config";
 import { formatEgp } from "@/lib/money";
 import { timeAgo } from "@/lib/time";
 import { titleCase } from "@/lib/text";
@@ -49,14 +49,14 @@ export interface LeadListParams {
 export function useLeads(params?: LeadListParams) {
   return useQuery({
     queryKey: ["leads", params ?? {}],
-    queryFn: () => apiFetch<LeadRow[]>(`/realestate/leads${toQueryString(params)}`),
+    queryFn: () => get<LeadRow[]>(ENDPOINTS.leads.list, params),
   });
 }
 
 export function useCreateLead() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: CreateLeadBody) => apiFetch<LeadRow>("/realestate/leads", { method: "POST", body: JSON.stringify(body) }),
+    mutationFn: (body: CreateLeadBody) => post<LeadRow>(ENDPOINTS.leads.list, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["leads"] }),
   });
 }
@@ -65,7 +65,7 @@ export function useUpdateLead() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, body }: { id: string; body: Partial<{ status: LeadStatus; stage: LeadStage; score: number; valueEgp: number; agentId: string }> }) =>
-      apiFetch<LeadRow>(`/realestate/leads/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+      patch<LeadRow>(ENDPOINTS.leads.byId(id), body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["leads"] }),
   });
 }
@@ -74,7 +74,7 @@ export function useTrackAsDeal() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, probabilityPct, expectedCloseDate }: { id: string; probabilityPct: number; expectedCloseDate: string }) =>
-      apiFetch<LeadRow>(`/realestate/leads/${id}/track-as-deal`, { method: "POST", body: JSON.stringify({ probabilityPct, expectedCloseDate }) }),
+      post<LeadRow>(ENDPOINTS.leads.trackAsDeal(id), { probabilityPct, expectedCloseDate }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["leads"] }),
   });
 }
@@ -141,13 +141,13 @@ export interface CreateCustomerBody {
 }
 
 export function useCustomers() {
-  return useQuery({ queryKey: ["customers"], queryFn: () => apiFetch<CustomerRow[]>("/realestate/customers") });
+  return useQuery({ queryKey: ["customers"], queryFn: () => get<CustomerRow[]>(ENDPOINTS.customers.list) });
 }
 
 export function useCustomer(id: string | undefined) {
   return useQuery({
     queryKey: ["customers", id],
-    queryFn: () => apiFetch<CustomerRow & { unitsOwned: string[] }>(`/realestate/customers/${id}`),
+    queryFn: () => get<CustomerRow & { unitsOwned: string[] }>(ENDPOINTS.customers.byId(id!)),
     enabled: !!id,
   });
 }
@@ -155,7 +155,7 @@ export function useCustomer(id: string | undefined) {
 export function useCreateCustomer() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: CreateCustomerBody) => apiFetch<CustomerRow>("/realestate/customers", { method: "POST", body: JSON.stringify(body) }),
+    mutationFn: (body: CreateCustomerBody) => post<CustomerRow>(ENDPOINTS.customers.list, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["customers"] }),
   });
 }
@@ -215,14 +215,14 @@ export interface CreateActivityBody {
 export function useActivities(params?: { relatedType?: "lead" | "customer"; relatedId?: string }) {
   return useQuery({
     queryKey: ["activities", params ?? {}],
-    queryFn: () => apiFetch<ActivityRow[]>(`/realestate/activities${toQueryString(params)}`),
+    queryFn: () => get<ActivityRow[]>(ENDPOINTS.activities.list, params),
   });
 }
 
 export function useCreateActivity() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: CreateActivityBody) => apiFetch<ActivityRow>("/realestate/activities", { method: "POST", body: JSON.stringify(body) }),
+    mutationFn: (body: CreateActivityBody) => post<ActivityRow>(ENDPOINTS.activities.list, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["activities"] }),
   });
 }
@@ -277,13 +277,13 @@ export interface CreateFollowupBody {
 }
 
 export function useFollowups() {
-  return useQuery({ queryKey: ["followups"], queryFn: () => apiFetch<FollowupRow[]>("/realestate/followups") });
+  return useQuery({ queryKey: ["followups"], queryFn: () => get<FollowupRow[]>(ENDPOINTS.followups.list) });
 }
 
 export function useCreateFollowup() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: CreateFollowupBody) => apiFetch<FollowupRow>("/realestate/followups", { method: "POST", body: JSON.stringify(body) }),
+    mutationFn: (body: CreateFollowupBody) => post<FollowupRow>(ENDPOINTS.followups.list, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["followups"] }),
   });
 }
@@ -291,8 +291,7 @@ export function useCreateFollowup() {
 export function useUpdateFollowupStatus() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: FollowupStatus }) =>
-      apiFetch<FollowupRow>(`/realestate/followups/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
+    mutationFn: ({ id, status }: { id: string; status: FollowupStatus }) => patch<FollowupRow>(ENDPOINTS.followups.status(id), { status }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["followups"] }),
   });
 }

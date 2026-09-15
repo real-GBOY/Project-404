@@ -13,7 +13,7 @@ import { cn } from "@/lib/cn";
 import { formatEgpExact } from "@/lib/money";
 import { formatDate } from "@/lib/time";
 import { titleCase } from "@/lib/text";
-import { ApiError } from "@/lib/api/client";
+import { ApiError } from "@/config";
 import { useCustomers } from "@/api/crm";
 import { useUnitDirectory } from "@/api/properties";
 import { usePaymentPlans, usePaymentPlan, type InstallmentRow } from "@/api/sales";

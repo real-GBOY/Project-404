@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ApiError } from "@/lib/api/client";
+import { ApiError } from "@/config";
 import { useToast } from "@/lib/toast/toast-provider";
 
 export interface QuickCreateField {

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiFetch, toQueryString } from "@/lib/api/client";
+import { get, post, patch, ENDPOINTS } from "@/config";
 import { titleCase } from "@/lib/text";
 
 // ---------- Tasks ----------
@@ -30,14 +30,14 @@ export interface CreateTaskBody {
 export function useTasks(params?: { assigneeId?: string; status?: TaskStatus }) {
   return useQuery({
     queryKey: ["tasks", params ?? {}],
-    queryFn: () => apiFetch<TaskRow[]>(`/realestate/tasks${toQueryString(params)}`),
+    queryFn: () => get<TaskRow[]>(ENDPOINTS.tasks.list, params),
   });
 }
 
 export function useCreateTask() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: CreateTaskBody) => apiFetch<TaskRow>("/realestate/tasks", { method: "POST", body: JSON.stringify(body) }),
+    mutationFn: (body: CreateTaskBody) => post<TaskRow>(ENDPOINTS.tasks.list, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
   });
 }
@@ -45,8 +45,7 @@ export function useCreateTask() {
 export function useUpdateTaskStatus() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: TaskStatus }) =>
-      apiFetch<TaskRow>(`/realestate/tasks/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
+    mutationFn: ({ id, status }: { id: string; status: TaskStatus }) => patch<TaskRow>(ENDPOINTS.tasks.status(id), { status }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
   });
 }
@@ -110,14 +109,14 @@ export interface CreateDocumentBody {
 export function useDocuments(params?: { relatedType?: string; relatedId?: string }) {
   return useQuery({
     queryKey: ["documents", params ?? {}],
-    queryFn: () => apiFetch<DocumentRow[]>(`/realestate/documents${toQueryString(params)}`),
+    queryFn: () => get<DocumentRow[]>(ENDPOINTS.documents.list, params),
   });
 }
 
 export function useCreateDocument() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: CreateDocumentBody) => apiFetch<DocumentRow>("/realestate/documents", { method: "POST", body: JSON.stringify(body) }),
+    mutationFn: (body: CreateDocumentBody) => post<DocumentRow>(ENDPOINTS.documents.list, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["documents"] }),
   });
 }
@@ -161,13 +160,13 @@ export interface CreateWorkflowBody {
 }
 
 export function useWorkflows() {
-  return useQuery({ queryKey: ["workflows"], queryFn: () => apiFetch<WorkflowRow[]>("/realestate/workflows") });
+  return useQuery({ queryKey: ["workflows"], queryFn: () => get<WorkflowRow[]>(ENDPOINTS.workflows.list) });
 }
 
 export function useCreateWorkflow() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: CreateWorkflowBody) => apiFetch<WorkflowRow>("/realestate/workflows", { method: "POST", body: JSON.stringify(body) }),
+    mutationFn: (body: CreateWorkflowBody) => post<WorkflowRow>(ENDPOINTS.workflows.list, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["workflows"] }),
   });
 }
@@ -175,8 +174,7 @@ export function useCreateWorkflow() {
 export function useAdvanceWorkflowStep() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ workflowId, seqNo }: { workflowId: string; seqNo: number }) =>
-      apiFetch<WorkflowRow>(`/realestate/workflows/${workflowId}/steps/${seqNo}/advance`, { method: "POST" }),
+    mutationFn: ({ workflowId, seqNo }: { workflowId: string; seqNo: number }) => post<WorkflowRow>(ENDPOINTS.workflows.advanceStep(workflowId, seqNo)),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["workflows"] }),
   });
 }
@@ -213,14 +211,14 @@ export interface CreateApprovalBody {
 export function useApprovals(status?: ApprovalStatus) {
   return useQuery({
     queryKey: ["approvals", status ?? "all"],
-    queryFn: () => apiFetch<ApprovalRow[]>(`/realestate/approvals${status ? `?status=${status}` : ""}`),
+    queryFn: () => get<ApprovalRow[]>(ENDPOINTS.approvals.list, { status }),
   });
 }
 
 export function useCreateApproval() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: CreateApprovalBody) => apiFetch<ApprovalRow>("/realestate/approvals", { method: "POST", body: JSON.stringify(body) }),
+    mutationFn: (body: CreateApprovalBody) => post<ApprovalRow>(ENDPOINTS.approvals.list, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["approvals"] }),
   });
 }
@@ -228,8 +226,7 @@ export function useCreateApproval() {
 export function useDecideApproval() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, decision }: { id: string; decision: "approved" | "rejected" }) =>
-      apiFetch<ApprovalRow>(`/realestate/approvals/${id}/decide`, { method: "POST", body: JSON.stringify({ decision }) }),
+    mutationFn: ({ id, decision }: { id: string; decision: "approved" | "rejected" }) => post<ApprovalRow>(ENDPOINTS.approvals.decide(id), { decision }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["approvals"] }),
   });
 }

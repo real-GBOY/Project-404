@@ -24,7 +24,7 @@ import { useDocuments } from "@/api/operations";
 import { formatEgp, formatEgpExact } from "@/lib/money";
 import { formatDate, timeAgo } from "@/lib/time";
 import { titleCase } from "@/lib/text";
-import { ApiError } from "@/lib/api/client";
+import { ApiError } from "@/config";
 
 const TABS = ["Overview", "Units", "Payments", "Contracts", "Documents", "Activity"] as const;
 type CustomerTab = (typeof TABS)[number];

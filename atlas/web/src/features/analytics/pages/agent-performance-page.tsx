@@ -6,7 +6,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { RowsSkeleton } from "@/components/feedback/skeleton";
 import { ErrorState } from "@/components/feedback/error-state";
-import { ApiError } from "@/lib/api/client";
+import { ApiError } from "@/config";
 import { useTeam } from "@/api/team";
 import { useLeads, useActivities, useFollowups } from "@/api/crm";
 

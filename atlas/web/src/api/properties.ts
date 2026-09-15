@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiFetch, toQueryString } from "@/lib/api/client";
+import { get, post, patch, ENDPOINTS } from "@/config";
 import { formatEgp, formatEgpExact, toNumber } from "@/lib/money";
 import { formatDate } from "@/lib/time";
 import { titleCase } from "@/lib/text";
@@ -33,7 +33,7 @@ export interface CreateProjectBody {
 }
 
 export function useProjects() {
-  return useQuery({ queryKey: ["projects"], queryFn: () => apiFetch<ProjectRow[]>("/realestate/projects") });
+  return useQuery({ queryKey: ["projects"], queryFn: () => get<ProjectRow[]>(ENDPOINTS.projects.list) });
 }
 
 /** Cross-domain name lookup: leads/customers/units all reference a projectId by id only. */
@@ -50,7 +50,7 @@ export function useProjectDirectory() {
 export function useCreateProject() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: CreateProjectBody) => apiFetch<ProjectRow>("/realestate/projects", { method: "POST", body: JSON.stringify(body) }),
+    mutationFn: (body: CreateProjectBody) => post<ProjectRow>(ENDPOINTS.projects.list, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["projects"] }),
   });
 }
@@ -119,14 +119,14 @@ export interface CreateBuildingBody {
 export function useBuildings(projectId?: string) {
   return useQuery({
     queryKey: ["buildings", projectId ?? "all"],
-    queryFn: () => apiFetch<BuildingRow[]>(`/realestate/buildings${toQueryString({ projectId })}`),
+    queryFn: () => get<BuildingRow[]>(ENDPOINTS.buildings.list, { projectId }),
   });
 }
 
 export function useCreateBuilding() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: CreateBuildingBody) => apiFetch<BuildingRow>("/realestate/buildings", { method: "POST", body: JSON.stringify(body) }),
+    mutationFn: (body: CreateBuildingBody) => post<BuildingRow>(ENDPOINTS.buildings.list, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["buildings"] }),
   });
 }
@@ -160,14 +160,14 @@ export interface UnitListParams {
 export function useUnits(params?: UnitListParams) {
   return useQuery({
     queryKey: ["units", params ?? {}],
-    queryFn: () => apiFetch<UnitRow[]>(`/realestate/units${toQueryString(params)}`),
+    queryFn: () => get<UnitRow[]>(ENDPOINTS.units.list, params),
   });
 }
 
 export function useGenerateUnits() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (buildingId: string) => apiFetch<UnitRow[]>(`/realestate/units/buildings/${buildingId}/generate`, { method: "POST" }),
+    mutationFn: (buildingId: string) => post<UnitRow[]>(ENDPOINTS.units.generate(buildingId)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["units"] });
       qc.invalidateQueries({ queryKey: ["buildings"] });
@@ -180,7 +180,7 @@ export function useUpdateUnitStatus() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, status, customerId, agentId }: { id: string; status: UnitStatus; customerId?: string | null; agentId?: string | null }) =>
-      apiFetch<UnitRow>(`/realestate/units/${id}/status`, { method: "PATCH", body: JSON.stringify({ status, customerId, agentId }) }),
+      patch<UnitRow>(ENDPOINTS.units.status(id), { status, customerId, agentId }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["units"] });
       qc.invalidateQueries({ queryKey: ["projects"] });
@@ -298,14 +298,14 @@ export interface CreatePriceListBody {
 export function usePriceLists(projectId?: string) {
   return useQuery({
     queryKey: ["price-lists", projectId ?? "all"],
-    queryFn: () => apiFetch<PriceListRow[]>(`/realestate/price-lists${toQueryString({ projectId })}`),
+    queryFn: () => get<PriceListRow[]>(ENDPOINTS.priceLists.list, { projectId }),
   });
 }
 
 export function useCreatePriceList() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: CreatePriceListBody) => apiFetch<PriceListRow>("/realestate/price-lists", { method: "POST", body: JSON.stringify(body) }),
+    mutationFn: (body: CreatePriceListBody) => post<PriceListRow>(ENDPOINTS.priceLists.list, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["price-lists"] }),
   });
 }

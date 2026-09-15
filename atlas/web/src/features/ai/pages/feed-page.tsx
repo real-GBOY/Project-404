@@ -8,7 +8,7 @@ import { ErrorState } from "@/components/feedback/error-state";
 import { EmptyState } from "@/components/feedback/empty-state";
 import { useToast } from "@/lib/toast/toast-provider";
 import { toneOf } from "@/lib/tone";
-import { ApiError } from "@/lib/api/client";
+import { ApiError } from "@/config";
 import { useInsights, useDismissInsight } from "@/api/dashboard";
 
 const COPY: Record<"insights" | "recos", { title: string; subtitle: string }> = {

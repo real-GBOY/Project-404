@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiFetch } from "@/lib/api/client";
+import { get, post, ENDPOINTS } from "@/config";
 
 export interface DashboardProjectSummary {
   id: string;
@@ -61,7 +61,7 @@ export interface DashboardSummary {
 }
 
 export function useDashboardSummary() {
-  return useQuery({ queryKey: ["dashboard"], queryFn: () => apiFetch<DashboardSummary>("/realestate/dashboard") });
+  return useQuery({ queryKey: ["dashboard"], queryFn: () => get<DashboardSummary>(ENDPOINTS.dashboard) });
 }
 
 // ---------- AI insights ----------
@@ -82,13 +82,13 @@ export interface InsightRow {
 }
 
 export function useInsights(kind: InsightKind) {
-  return useQuery({ queryKey: ["insights", kind], queryFn: () => apiFetch<InsightRow[]>(`/realestate/insights?kind=${kind}`) });
+  return useQuery({ queryKey: ["insights", kind], queryFn: () => get<InsightRow[]>(ENDPOINTS.insights.list, { kind }) });
 }
 
 export function useDismissInsight() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => apiFetch<void>(`/realestate/insights/${id}/dismiss`, { method: "POST" }),
+    mutationFn: (id: string) => post<void>(ENDPOINTS.insights.dismiss(id)),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["insights"] }),
   });
 }

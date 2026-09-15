@@ -1,9 +1,10 @@
 /**
- * Plain (non-React) token storage — `client.ts`'s `apiFetch` needs to read/
- * write the current tokens outside of component render, so this lives
- * outside React state. `auth-provider.tsx` wraps this in reactive context for
- * the UI. Only the refresh token is persisted (access tokens are short-lived
- * and re-derived from it on boot); this avoids ever persisting Basic secrets.
+ * Plain (non-React) token storage — `http.ts`'s axios interceptors need to
+ * read/write the current tokens outside of component render, so this lives
+ * outside React state. `features/auth/auth-provider.tsx` wraps this in
+ * reactive context for the UI. Only the refresh token is persisted (access
+ * tokens are short-lived and re-derived from it on boot); this avoids ever
+ * persisting long-lived secrets.
  */
 const REFRESH_KEY = "atlas.refreshToken";
 

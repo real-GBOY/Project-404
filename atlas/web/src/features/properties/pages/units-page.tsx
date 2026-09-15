@@ -7,7 +7,7 @@ import { ErrorState } from "@/components/feedback/error-state";
 import { UnitDrawer, type UnitDrawerData } from "@/components/domain/unit-drawer";
 import { QuickCreateModal } from "@/components/tables/quick-create-modal";
 import { formatEgpExact } from "@/lib/money";
-import { ApiError } from "@/lib/api/client";
+import { ApiError } from "@/config";
 import { useAuth } from "@/features/auth/auth-provider";
 import { useTeamDirectory } from "@/api/team";
 import { useCustomers } from "@/api/crm";

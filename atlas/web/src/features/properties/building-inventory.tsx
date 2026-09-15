@@ -7,7 +7,7 @@ import { FloorRow, UNIT_LEGEND, type UnitCellData, type UnitStatus } from "@/com
 import { EmptyState } from "@/components/feedback/empty-state";
 import { ErrorState } from "@/components/feedback/error-state";
 import { useBuildings, useProjectDirectory, useUnits, type UnitRow } from "@/api/properties";
-import { ApiError } from "@/lib/api/client";
+import { ApiError } from "@/config";
 
 /** Same status→tailwind-class colors `UnitCell` already paints with (design tokens in tokens.css) —
  *  reused here only for the small legend swatches, never duplicated as raw hex. */

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiFetch } from "@/lib/api/client";
+import { get, post, ENDPOINTS } from "@/config";
 import { formatEgp, formatEgpExact } from "@/lib/money";
 import { formatDate } from "@/lib/time";
 import { titleCase } from "@/lib/text";
@@ -33,14 +33,14 @@ export interface RecordPaymentBody {
 export function usePayments(customerId?: string) {
   return useQuery({
     queryKey: ["payments", customerId ?? "all"],
-    queryFn: () => apiFetch<PaymentRow[]>(`/realestate/payments${customerId ? `?customerId=${customerId}` : ""}`),
+    queryFn: () => get<PaymentRow[]>(ENDPOINTS.payments.list, { customerId }),
   });
 }
 
 export function useRecordPayment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: RecordPaymentBody) => apiFetch<PaymentRow>("/realestate/payments", { method: "POST", body: JSON.stringify(body) }),
+    mutationFn: (body: RecordPaymentBody) => post<PaymentRow>(ENDPOINTS.payments.list, body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["payments"] });
       qc.invalidateQueries({ queryKey: ["installments"] });
@@ -93,7 +93,7 @@ export interface InstallmentRow {
 export function useInstallments(status?: InstallmentStatus) {
   return useQuery({
     queryKey: ["installments", status ?? "all"],
-    queryFn: () => apiFetch<InstallmentRow[]>(`/realestate/installments${status ? `?status=${status}` : ""}`),
+    queryFn: () => get<InstallmentRow[]>(ENDPOINTS.installments.list, { status }),
   });
 }
 
@@ -135,7 +135,7 @@ export interface CollectionRow {
 }
 
 export function useCollections() {
-  return useQuery({ queryKey: ["collections"], queryFn: () => apiFetch<CollectionRow[]>("/realestate/payments/collections") });
+  return useQuery({ queryKey: ["collections"], queryFn: () => get<CollectionRow[]>(ENDPOINTS.payments.collections) });
 }
 
 export interface CollectionView {
@@ -169,7 +169,7 @@ export interface OutstandingRow {
 }
 
 export function useOutstanding() {
-  return useQuery({ queryKey: ["outstanding"], queryFn: () => apiFetch<OutstandingRow[]>("/realestate/payments/outstanding") });
+  return useQuery({ queryKey: ["outstanding"], queryFn: () => get<OutstandingRow[]>(ENDPOINTS.payments.outstanding) });
 }
 
 export interface OutstandingView {
@@ -235,13 +235,13 @@ export interface CreateFinancialReportBody {
 }
 
 export function useFinancialReports() {
-  return useQuery({ queryKey: ["financial-reports"], queryFn: () => apiFetch<FinancialReportRow[]>("/realestate/financial-reports") });
+  return useQuery({ queryKey: ["financial-reports"], queryFn: () => get<FinancialReportRow[]>(ENDPOINTS.financialReports.list) });
 }
 
 export function useCreateFinancialReport() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: CreateFinancialReportBody) => apiFetch<FinancialReportRow>("/realestate/financial-reports", { method: "POST", body: JSON.stringify(body) }),
+    mutationFn: (body: CreateFinancialReportBody) => post<FinancialReportRow>(ENDPOINTS.financialReports.list, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["financial-reports"] }),
   });
 }

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiFetch } from "@/lib/api/client";
+import { get, post, ENDPOINTS } from "@/config";
 
 export interface NotificationRow {
   id: string;
@@ -19,7 +19,7 @@ interface NotificationsResponse {
 export function useNotificationsList(enabled: boolean) {
   return useQuery({
     queryKey: ["notifications"],
-    queryFn: () => apiFetch<NotificationsResponse>("/realestate/notifications"),
+    queryFn: () => get<NotificationsResponse>(ENDPOINTS.notifications.list),
     refetchInterval: 30_000,
     enabled,
   });
@@ -28,7 +28,7 @@ export function useNotificationsList(enabled: boolean) {
 export function useMarkNotificationRead() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => apiFetch<void>(`/realestate/notifications/${id}/read`, { method: "POST" }),
+    mutationFn: (id: string) => post<void>(ENDPOINTS.notifications.read(id)),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
   });
 }
@@ -36,7 +36,7 @@ export function useMarkNotificationRead() {
 export function useMarkAllNotificationsRead() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => apiFetch<void>("/realestate/notifications/read-all", { method: "POST" }),
+    mutationFn: () => post<void>(ENDPOINTS.notifications.readAll),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
   });
 }

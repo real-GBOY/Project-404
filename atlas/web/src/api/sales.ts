@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiFetch, toQueryString } from "@/lib/api/client";
+import { get, post, patch, ENDPOINTS } from "@/config";
 import { formatEgp, formatEgpExact, toNumber } from "@/lib/money";
 import { formatDate } from "@/lib/time";
 import { titleCase } from "@/lib/text";
@@ -32,14 +32,14 @@ export interface CreateReservationBody {
 export function useReservations(status?: ReservationStatus) {
   return useQuery({
     queryKey: ["reservations", status ?? "all"],
-    queryFn: () => apiFetch<ReservationRow[]>(`/realestate/reservations${toQueryString({ status })}`),
+    queryFn: () => get<ReservationRow[]>(ENDPOINTS.reservations.list, { status }),
   });
 }
 
 export function useCreateReservation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: CreateReservationBody) => apiFetch<ReservationRow>("/realestate/reservations", { method: "POST", body: JSON.stringify(body) }),
+    mutationFn: (body: CreateReservationBody) => post<ReservationRow>(ENDPOINTS.reservations.list, body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["reservations"] });
       qc.invalidateQueries({ queryKey: ["units"] });
@@ -50,7 +50,7 @@ export function useCreateReservation() {
 export function useCancelReservation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => apiFetch<ReservationRow>(`/realestate/reservations/${id}/cancel`, { method: "POST" }),
+    mutationFn: (id: string) => post<ReservationRow>(ENDPOINTS.reservations.cancel(id)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["reservations"] });
       qc.invalidateQueries({ queryKey: ["units"] });
@@ -152,14 +152,14 @@ export interface CreateContractBody {
 export function useContracts(status?: ContractStatus) {
   return useQuery({
     queryKey: ["contracts", status ?? "all"],
-    queryFn: () => apiFetch<ContractRow[]>(`/realestate/contracts${toQueryString({ status })}`),
+    queryFn: () => get<ContractRow[]>(ENDPOINTS.contracts.list, { status }),
   });
 }
 
 export function useCreateContract() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: CreateContractBody) => apiFetch<ContractRow>("/realestate/contracts", { method: "POST", body: JSON.stringify(body) }),
+    mutationFn: (body: CreateContractBody) => post<ContractRow>(ENDPOINTS.contracts.list, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["contracts"] }),
   });
 }
@@ -167,7 +167,7 @@ export function useCreateContract() {
 export function useSignContract() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => apiFetch<ContractRow>(`/realestate/contracts/${id}/sign`, { method: "POST" }),
+    mutationFn: (id: string) => post<ContractRow>(ENDPOINTS.contracts.sign(id)),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["contracts"] }),
   });
 }
@@ -211,15 +211,14 @@ export interface CommissionRow {
 export function useCommissions(agentId?: string) {
   return useQuery({
     queryKey: ["commissions", agentId ?? "all"],
-    queryFn: () => apiFetch<CommissionRow[]>(`/realestate/commissions${toQueryString({ agentId })}`),
+    queryFn: () => get<CommissionRow[]>(ENDPOINTS.commissions.list, { agentId }),
   });
 }
 
 export function useUpdateCommissionStatus() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: CommissionStatus }) =>
-      apiFetch<CommissionRow>(`/realestate/commissions/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
+    mutationFn: ({ id, status }: { id: string; status: CommissionStatus }) => patch<CommissionRow>(ENDPOINTS.commissions.status(id), { status }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["commissions"] }),
   });
 }
@@ -276,13 +275,13 @@ export interface InstallmentRow {
 }
 
 export function usePaymentPlans() {
-  return useQuery({ queryKey: ["payment-plans"], queryFn: () => apiFetch<PaymentPlanRow[]>("/realestate/payment-plans") });
+  return useQuery({ queryKey: ["payment-plans"], queryFn: () => get<PaymentPlanRow[]>(ENDPOINTS.paymentPlans.list) });
 }
 
 export function usePaymentPlan(id: string | undefined) {
   return useQuery({
     queryKey: ["payment-plans", id],
-    queryFn: () => apiFetch<PaymentPlanRow & { installments: InstallmentRow[] }>(`/realestate/payment-plans/${id}`),
+    queryFn: () => get<PaymentPlanRow & { installments: InstallmentRow[] }>(ENDPOINTS.paymentPlans.byId(id!)),
     enabled: !!id,
   });
 }

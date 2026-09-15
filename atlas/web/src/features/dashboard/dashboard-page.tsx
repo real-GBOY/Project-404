@@ -19,7 +19,7 @@ import { timeAgo } from "@/lib/time";
 import { titleCase } from "@/lib/text";
 import { useTeamDirectory } from "@/api/team";
 import { useDashboardSummary, useInsights, useDismissInsight } from "@/api/dashboard";
-import { ApiError } from "@/lib/api/client";
+import { ApiError } from "@/config";
 
 const RANGES = [
   { value: "mtd", label: "MTD" },

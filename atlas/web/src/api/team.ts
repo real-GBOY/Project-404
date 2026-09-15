@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { apiFetch } from "@/lib/api/client";
+import { get, ENDPOINTS } from "@/config";
 
 export interface TeamMember {
   id: string;
@@ -16,7 +16,7 @@ interface TeamResponse {
 }
 
 export function useTeam() {
-  return useQuery({ queryKey: ["team"], queryFn: () => apiFetch<TeamResponse>("/team") });
+  return useQuery({ queryKey: ["team"], queryFn: () => get<TeamResponse>(ENDPOINTS.team) });
 }
 
 /** Every domain that shows an "agent" name needs userId -> display-name; this is the one place that mapping lives. */

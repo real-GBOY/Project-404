@@ -4,7 +4,7 @@ import { Icon } from "@/components/ui/icon";
 import { RowsSkeleton } from "@/components/feedback/skeleton";
 import { ErrorState } from "@/components/feedback/error-state";
 import { AiBubble, ActionBubble, CitationChip, FollowUpPill, UserBubble } from "@/components/domain/chat-bubble";
-import { ApiError } from "@/lib/api/client";
+import { ApiError } from "@/config";
 import { useConversations, useMessages, useCopilotSuggestions, useAsk, type MessageRow } from "@/api/ai";
 
 /**

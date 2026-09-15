@@ -13,7 +13,7 @@ import { ErrorState } from "@/components/feedback/error-state";
 import { QuickCreateModal } from "@/components/tables/quick-create-modal";
 import { useConfirm } from "@/lib/confirm/confirm-provider";
 import { useToast } from "@/lib/toast/toast-provider";
-import { ApiError } from "@/lib/api/client";
+import { ApiError } from "@/config";
 import { useTableConfig } from "./entity-table-registry";
 import type { EntityKey } from "./table-types";
 
