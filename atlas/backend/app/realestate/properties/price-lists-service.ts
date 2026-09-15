@@ -4,7 +4,7 @@ import { readInTenant } from "@core/kernel/db/db.js";
 import { NotFound } from "@core/kernel/errors.js";
 import { AUDIT_LOGGER, UNIT_OF_WORK } from "@core/kernel/tokens.js";
 import type { IAuditLogger } from "@core/contracts/index.js";
-import { PriceListsRepository, type CreatePriceListInput } from "./price-lists-repository.js";
+import { PriceListsRepository, type CreatePriceListInput, type PriceListFilter } from "./price-lists-repository.js";
 import type { CreatePriceListBody, UpdatePriceListBody } from "./price-lists.schema.js";
 
 @Injectable()
@@ -15,8 +15,8 @@ export class PriceListsService {
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
 
-  listForProject(projectId?: string) {
-    return readInTenant(() => this.repo.listForProject(projectId));
+  listForProject(filter: PriceListFilter = {}) {
+    return readInTenant(() => this.repo.listForProject(filter));
   }
 
   async create(body: CreatePriceListBody, actorId: string) {

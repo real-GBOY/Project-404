@@ -2,9 +2,18 @@ import { Injectable } from "@nestjs/common";
 import { requireOrganizationId } from "@core/kernel/tenant.js";
 import { realestateDb } from "@atlas/realestate/db/executor.js";
 import { realestateId } from "@atlas/realestate/shared/ids.js";
+import { combinedRelevance } from "@atlas/realestate/shared/search.js";
 
 export type PaymentMethod = "bank-transfer" | "cheque" | "cash" | "card";
 export type PaymentStatus = "paid" | "pending" | "overdue";
+
+export interface PaymentFilter {
+  method?: PaymentMethod;
+  status?: PaymentStatus;
+  customerId?: string;
+  /** Free-text search across reference / customer name, ranked by relevance. */
+  q?: string;
+}
 
 export interface PaymentRow {
   id: string;
@@ -32,10 +41,33 @@ export class PaymentsRepository {
     return requireOrganizationId();
   }
 
-  async list(customerId?: string): Promise<PaymentRow[]> {
-    let q = realestateDb().selectFrom("realestate_payments").selectAll().where("organization_id", "=", this.org());
-    if (customerId) q = q.where("customer_id", "=", customerId);
-    const rows = await q.orderBy("paid_at", "desc").execute();
+  async list(filter: PaymentFilter = {}): Promise<PaymentRow[]> {
+    let q = realestateDb()
+      .selectFrom("realestate_payments")
+      .selectAll("realestate_payments")
+      .where("realestate_payments.organization_id", "=", this.org());
+    if (filter.customerId) q = q.where("realestate_payments.customer_id", "=", filter.customerId);
+    if (filter.method) q = q.where("realestate_payments.method", "=", filter.method);
+    if (filter.status) q = q.where("realestate_payments.status", "=", filter.status);
+
+    const term = filter.q?.trim();
+    if (term) {
+      const joined = q.innerJoin("realestate_customers", (join) =>
+        join
+          .onRef("realestate_customers.id", "=", "realestate_payments.customer_id")
+          .onRef("realestate_customers.organization_id", "=", "realestate_payments.organization_id"),
+      );
+      const score = combinedRelevance([{ column: "realestate_payments.reference" }, { column: "realestate_customers.name", weight: 0.8 }], term);
+      const rows = await joined
+        .select(score.as("relevance_score"))
+        .where(score, ">", 0)
+        .orderBy("relevance_score", "desc")
+        .orderBy("realestate_payments.paid_at", "desc")
+        .execute();
+      return rows.map((r) => this.toRow(r));
+    }
+
+    const rows = await q.orderBy("realestate_payments.paid_at", "desc").execute();
     return rows.map((r) => this.toRow(r));
   }
 

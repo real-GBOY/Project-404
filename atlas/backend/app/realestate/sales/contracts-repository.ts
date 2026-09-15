@@ -2,8 +2,17 @@ import { Injectable } from "@nestjs/common";
 import { requireOrganizationId } from "@core/kernel/tenant.js";
 import { realestateDb } from "@atlas/realestate/db/executor.js";
 import { realestateId } from "@atlas/realestate/shared/ids.js";
+import { combinedRelevance } from "@atlas/realestate/shared/search.js";
 
 export type ContractStatus = "draft" | "awaiting-approval" | "signed";
+
+export interface ContractFilter {
+  status?: ContractStatus;
+  /** Joins to the unit to scope by project. */
+  projectId?: string;
+  /** Free-text search across customer name / unit code, ranked by relevance. */
+  q?: string;
+}
 
 export interface ContractRow {
   id: string;
@@ -29,10 +38,52 @@ export class ContractsRepository {
     return requireOrganizationId();
   }
 
-  async list(status?: ContractStatus): Promise<ContractRow[]> {
-    let q = realestateDb().selectFrom("realestate_contracts").selectAll().where("organization_id", "=", this.org());
-    if (status) q = q.where("status", "=", status);
-    const rows = await q.orderBy("created_at", "desc").execute();
+  async list(filter: ContractFilter = {}): Promise<ContractRow[]> {
+    let q = realestateDb()
+      .selectFrom("realestate_contracts")
+      .selectAll("realestate_contracts")
+      .where("realestate_contracts.organization_id", "=", this.org());
+    if (filter.status) q = q.where("realestate_contracts.status", "=", filter.status);
+
+    const term = filter.q?.trim();
+
+    if (term) {
+      let joined = q
+        .innerJoin("realestate_units", (join) =>
+          join
+            .onRef("realestate_units.id", "=", "realestate_contracts.unit_id")
+            .onRef("realestate_units.organization_id", "=", "realestate_contracts.organization_id"),
+        )
+        .innerJoin("realestate_customers", (join) =>
+          join
+            .onRef("realestate_customers.id", "=", "realestate_contracts.customer_id")
+            .onRef("realestate_customers.organization_id", "=", "realestate_contracts.organization_id"),
+        );
+      if (filter.projectId) joined = joined.where("realestate_units.project_id", "=", filter.projectId);
+      const score = combinedRelevance([{ column: "realestate_customers.name" }, { column: "realestate_units.code", weight: 0.8 }], term);
+      const rows = await joined
+        .select(score.as("relevance_score"))
+        .where(score, ">", 0)
+        .orderBy("relevance_score", "desc")
+        .orderBy("realestate_contracts.created_at", "desc")
+        .execute();
+      return rows.map((r) => this.toRow(r));
+    }
+
+    if (filter.projectId) {
+      const rows = await q
+        .innerJoin("realestate_units", (join) =>
+          join
+            .onRef("realestate_units.id", "=", "realestate_contracts.unit_id")
+            .onRef("realestate_units.organization_id", "=", "realestate_contracts.organization_id"),
+        )
+        .where("realestate_units.project_id", "=", filter.projectId)
+        .orderBy("realestate_contracts.created_at", "desc")
+        .execute();
+      return rows.map((r) => this.toRow(r));
+    }
+
+    const rows = await q.orderBy("realestate_contracts.created_at", "desc").execute();
     return rows.map((r) => this.toRow(r));
   }
 

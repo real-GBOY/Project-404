@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { requireOrganizationId } from "@core/kernel/tenant.js";
 import { realestateDb } from "@atlas/realestate/db/executor.js";
 import { realestateId } from "@atlas/realestate/shared/ids.js";
+import { combinedRelevance } from "@atlas/realestate/shared/search.js";
 import type { LeadSource, LeadStage, LeadStatus } from "./lead.domain.js";
 
 export interface LeadRow {
@@ -26,8 +27,11 @@ export interface LeadRow {
 export interface LeadFilter {
   status?: LeadStatus;
   stage?: LeadStage;
+  source?: LeadSource;
   agentId?: string;
   dealsOnly?: boolean;
+  /** Free-text search across name/phone/id — ranks by relevance, doesn't just filter. */
+  q?: string;
 }
 
 export interface CreateLeadInput {
@@ -47,12 +51,29 @@ export class LeadsRepository {
   }
 
   async list(filter: LeadFilter): Promise<LeadRow[]> {
-    let q = realestateDb().selectFrom("realestate_leads").selectAll().where("organization_id", "=", this.org());
-    if (filter.status) q = q.where("status", "=", filter.status);
-    if (filter.stage) q = q.where("stage", "=", filter.stage);
-    if (filter.agentId) q = q.where("agent_id", "=", filter.agentId);
-    if (filter.dealsOnly) q = q.where((eb) => eb.or([eb("probability_pct", "is not", null), eb("expected_close_date", "is not", null)]));
-    const rows = await q.orderBy("last_activity_at", "desc").execute();
+    let query = realestateDb().selectFrom("realestate_leads").selectAll().where("organization_id", "=", this.org());
+    if (filter.status) query = query.where("status", "=", filter.status);
+    if (filter.stage) query = query.where("stage", "=", filter.stage);
+    if (filter.source) query = query.where("source", "=", filter.source);
+    if (filter.agentId) query = query.where("agent_id", "=", filter.agentId);
+    if (filter.dealsOnly) query = query.where((eb) => eb.or([eb("probability_pct", "is not", null), eb("expected_close_date", "is not", null)]));
+
+    const term = filter.q?.trim();
+    if (term) {
+      const score = combinedRelevance(
+        [{ column: "name" }, { column: "phone", weight: 0.7 }, { column: "id", weight: 0.6 }],
+        term,
+      );
+      const rows = await query
+        .select(score.as("relevance_score"))
+        .where(score, ">", 0)
+        .orderBy("relevance_score", "desc")
+        .orderBy("last_activity_at", "desc")
+        .execute();
+      return rows.map((r) => this.toRow(r));
+    }
+
+    const rows = await query.orderBy("last_activity_at", "desc").execute();
     return rows.map((r) => this.toRow(r));
   }
 

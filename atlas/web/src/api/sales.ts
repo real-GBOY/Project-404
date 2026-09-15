@@ -29,10 +29,17 @@ export interface CreateReservationBody {
   depositEgp: number;
 }
 
-export function useReservations(status?: ReservationStatus) {
+export interface ReservationListParams {
+  status?: ReservationStatus;
+  agentId?: string;
+  projectId?: string;
+  q?: string;
+}
+
+export function useReservations(params?: ReservationListParams) {
   return useQuery({
-    queryKey: ["reservations", status ?? "all"],
-    queryFn: () => get<ReservationRow[]>(ENDPOINTS.reservations.list, { status }),
+    queryKey: ["reservations", params ?? {}],
+    queryFn: () => get<ReservationRow[]>(ENDPOINTS.reservations.list, params),
   });
 }
 
@@ -59,6 +66,9 @@ export function useCancelReservation() {
 }
 
 export interface ReservationView {
+  /** The reservation's own id — one unit can have more than one reservation
+   *  row over time, so this (not `unitId`) is what's actually unique per row. */
+  id: string;
   unitId: string;
   unitLocation: string;
   customer: string;
@@ -86,6 +96,7 @@ export function toReservationView(
 ): ReservationView {
   const u = unit(row.unitId);
   return {
+    id: row.id,
     unitId: u?.code ?? row.unitId,
     unitLocation: u?.location ?? "—",
     customer: customerName(row.customerId),
@@ -107,6 +118,8 @@ export interface DealView {
   stage: string;
   probabilityPct: number;
   expectedClose: string;
+  /** Raw ISO date behind `expectedClose` — the "Expected close" filter buckets this. */
+  expectedCloseDate: string | null;
   agent: string;
 }
 
@@ -123,6 +136,7 @@ export function toDealView(row: LeadRow, unit: (id: string) => UnitDirectoryEntr
     stage: titleCase(row.stage),
     probabilityPct: Math.round(toNumber(row.probabilityPct)),
     expectedClose: row.expectedCloseDate ? formatDate(row.expectedCloseDate) : "—",
+    expectedCloseDate: row.expectedCloseDate ?? null,
     agent: agentName(row.agentId),
   };
 }
@@ -149,10 +163,16 @@ export interface CreateContractBody {
   valueEgp: number;
 }
 
-export function useContracts(status?: ContractStatus) {
+export interface ContractListParams {
+  status?: ContractStatus;
+  projectId?: string;
+  q?: string;
+}
+
+export function useContracts(params?: ContractListParams) {
   return useQuery({
-    queryKey: ["contracts", status ?? "all"],
-    queryFn: () => get<ContractRow[]>(ENDPOINTS.contracts.list, { status }),
+    queryKey: ["contracts", params ?? {}],
+    queryFn: () => get<ContractRow[]>(ENDPOINTS.contracts.list, params),
   });
 }
 
@@ -176,6 +196,9 @@ export interface ContractView {
   id: string;
   customer: string;
   unit: string;
+  /** The unit's project name — contracts aren't assigned to an agent in this
+   *  data model, so this (not "Agent") is what the Contracts filter offers. */
+  project: string;
   value: string;
   signed: string;
   status: string;
@@ -183,10 +206,12 @@ export interface ContractView {
 
 export function toContractView(row: ContractRow, unit: (id: string) => UnitDirectoryEntry | undefined, customerName: (id: string) => string): ContractView {
   const u = unit(row.unitId);
+  const project = u ? u.location.split(" · ")[0] : "—";
   return {
     id: row.id,
     customer: customerName(row.customerId),
-    unit: u ? `${u.code} · ${u.location.split(" · ")[0]}` : row.unitId,
+    unit: u ? `${u.code} · ${project}` : row.unitId,
+    project,
     value: formatEgp(row.valueEgp),
     signed: row.signedDate ? formatDate(row.signedDate) : "—",
     status: titleCase(row.status),
@@ -208,10 +233,16 @@ export interface CommissionRow {
   status: CommissionStatus;
 }
 
-export function useCommissions(agentId?: string) {
+export interface CommissionListParams {
+  agentId?: string;
+  period?: string;
+  status?: CommissionStatus;
+}
+
+export function useCommissions(params?: CommissionListParams) {
   return useQuery({
-    queryKey: ["commissions", agentId ?? "all"],
-    queryFn: () => get<CommissionRow[]>(ENDPOINTS.commissions.list, { agentId }),
+    queryKey: ["commissions", params ?? {}],
+    queryFn: () => get<CommissionRow[]>(ENDPOINTS.commissions.list, params),
   });
 }
 

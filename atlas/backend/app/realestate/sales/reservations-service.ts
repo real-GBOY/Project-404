@@ -8,7 +8,7 @@ import type { IAuditLogger } from "@core/contracts/index.js";
 import { UnitsRepository } from "@atlas/realestate/properties/units-repository.js";
 import { ProjectsRepository } from "@atlas/realestate/properties/projects-repository.js";
 import { CustomersRepository } from "@atlas/realestate/crm/customers-repository.js";
-import { ReservationsRepository, type CreateReservationInput, type ReservationStatus } from "./reservations-repository.js";
+import { ReservationsRepository, type CreateReservationInput, type ReservationFilter } from "./reservations-repository.js";
 import type { CreateReservationBody } from "./reservations.schema.js";
 
 @Injectable()
@@ -23,8 +23,8 @@ export class ReservationsService {
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
 
-  list(status?: ReservationStatus) {
-    return readInTenant(() => this.repo.list(status));
+  list(filter: ReservationFilter = {}) {
+    return readInTenant(() => this.repo.list(filter));
   }
 
   async get(id: string) {

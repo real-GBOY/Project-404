@@ -24,7 +24,7 @@ export class FollowupsController {
   @Get()
   @RequirePermission("read", "followup")
   list(@Query(ZodQuery(listFollowupsQuery)) q: ListFollowupsQuery) {
-    return this.service.list(q.agentId, q.status);
+    return this.service.list(q);
   }
 
   @Post()

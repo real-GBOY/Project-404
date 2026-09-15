@@ -2,8 +2,17 @@ import { Injectable } from "@nestjs/common";
 import { requireOrganizationId } from "@core/kernel/tenant.js";
 import { realestateDb } from "@atlas/realestate/db/executor.js";
 import { realestateId } from "@atlas/realestate/shared/ids.js";
+import { combinedRelevance } from "@atlas/realestate/shared/search.js";
 
 export type CustomerStatus = "active" | "pending";
+
+export interface CustomerFilter {
+  status?: CustomerStatus;
+  primaryProjectId?: string;
+  agentId?: string;
+  /** Free-text search across name/email/phone/id, ranked by relevance. */
+  q?: string;
+}
 
 export interface CustomerRow {
   id: string;
@@ -35,13 +44,28 @@ export class CustomersRepository {
     return requireOrganizationId();
   }
 
-  async list(): Promise<CustomerRow[]> {
-    const rows = await realestateDb()
-      .selectFrom("realestate_customers")
-      .selectAll()
-      .where("organization_id", "=", this.org())
-      .orderBy("name", "asc")
-      .execute();
+  async list(filter: CustomerFilter = {}): Promise<CustomerRow[]> {
+    let query = realestateDb().selectFrom("realestate_customers").selectAll().where("organization_id", "=", this.org());
+    if (filter.status) query = query.where("status", "=", filter.status);
+    if (filter.primaryProjectId) query = query.where("primary_project_id", "=", filter.primaryProjectId);
+    if (filter.agentId) query = query.where("agent_id", "=", filter.agentId);
+
+    const term = filter.q?.trim();
+    if (term) {
+      const score = combinedRelevance(
+        [{ column: "name" }, { column: "email", weight: 0.8 }, { column: "phone", weight: 0.7 }, { column: "id", weight: 0.6 }],
+        term,
+      );
+      const rows = await query
+        .select(score.as("relevance_score"))
+        .where(score, ">", 0)
+        .orderBy("relevance_score", "desc")
+        .orderBy("name", "asc")
+        .execute();
+      return rows.map((r) => this.toRow(r));
+    }
+
+    const rows = await query.orderBy("name", "asc").execute();
     return rows.map((r) => this.toRow(r));
   }
 

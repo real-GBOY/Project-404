@@ -76,18 +76,21 @@ export class AdminService {
     return { ok: true };
   }
 
-  async auditLogs(q: string | undefined) {
+  async auditLogs(filter: { q?: string; action?: string; actor?: string }) {
     return readInTenant(async () => {
       const records = await this.audit.query({ limit: 200 });
       const names = await this.directory.userNames(records.map((r) => r.actorId));
-      const items = records.map((r) => ({
+      let items = records.map((r) => ({
         id: r.id,
         actor: r.actorId ? (names.get(r.actorId) ?? "—") : "system",
         action: r.action,
         resource: r.resourceId ? `${r.resourceType}:${r.resourceId}` : r.resourceType,
         at: r.createdAt.toISOString(),
       }));
-      const filtered = q ? items.filter((a) => `${a.actor} ${a.action} ${a.resource}`.toLowerCase().includes(q.toLowerCase())) : items;
+      if (filter.action) items = items.filter((a) => a.action === filter.action);
+      if (filter.actor) items = items.filter((a) => a.actor === filter.actor);
+      const term = filter.q?.trim().toLowerCase();
+      const filtered = term ? items.filter((a) => `${a.actor} ${a.action} ${a.resource}`.toLowerCase().includes(term)) : items;
       return { items: filtered.slice(0, 50), total: filtered.length };
     });
   }

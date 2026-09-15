@@ -2,9 +2,18 @@ import { Injectable } from "@nestjs/common";
 import { requireOrganizationId } from "@core/kernel/tenant.js";
 import { realestateDb } from "@atlas/realestate/db/executor.js";
 import { realestateId } from "@atlas/realestate/shared/ids.js";
+import { combinedRelevance } from "@atlas/realestate/shared/search.js";
 
 export type FollowupPriority = "high" | "medium" | "low";
 export type FollowupStatus = "open" | "in-progress" | "overdue" | "done";
+
+export interface FollowupFilter {
+  agentId?: string;
+  status?: FollowupStatus;
+  priority?: FollowupPriority;
+  /** Free-text search across the reason, ranked by relevance. */
+  q?: string;
+}
 
 export interface FollowupRow {
   id: string;
@@ -32,11 +41,25 @@ export class FollowupsRepository {
     return requireOrganizationId();
   }
 
-  async list(agentId?: string, status?: FollowupStatus): Promise<FollowupRow[]> {
-    let q = realestateDb().selectFrom("realestate_followups").selectAll().where("organization_id", "=", this.org());
-    if (agentId) q = q.where("agent_id", "=", agentId);
-    if (status) q = q.where("status", "=", status);
-    const rows = await q.orderBy("due_at", "asc").execute();
+  async list(filter: FollowupFilter = {}): Promise<FollowupRow[]> {
+    let query = realestateDb().selectFrom("realestate_followups").selectAll().where("organization_id", "=", this.org());
+    if (filter.agentId) query = query.where("agent_id", "=", filter.agentId);
+    if (filter.status) query = query.where("status", "=", filter.status);
+    if (filter.priority) query = query.where("priority", "=", filter.priority);
+
+    const term = filter.q?.trim();
+    if (term) {
+      const score = combinedRelevance([{ column: "reason" }], term);
+      const rows = await query
+        .select(score.as("relevance_score"))
+        .where(score, ">", 0)
+        .orderBy("relevance_score", "desc")
+        .orderBy("due_at", "asc")
+        .execute();
+      return rows.map((r) => this.toRow(r));
+    }
+
+    const rows = await query.orderBy("due_at", "asc").execute();
     return rows.map((r) => this.toRow(r));
   }
 

@@ -1,10 +1,12 @@
 import type { DataColumn } from "@/components/tables/data-table";
 import { TextCell, BadgeCell, BarCell } from "@/components/tables/data-table";
-import type { TableConfigResult } from "@/features/shared/table-types";
+import type { TableConfigResult, TableQueryParams } from "@/features/shared/table-types";
+import { titleCase } from "@/lib/text";
 import { useAuth } from "@/features/auth/auth-provider";
 import { useTeamDirectory } from "@/api/team";
 import { useCustomers } from "@/api/crm";
 import { useUnitDirectory, useProjectDirectory } from "@/api/properties";
+import { pastDateBucket, futureDateBucket } from "@/lib/date-bucket";
 import {
   usePayments,
   useRecordPayment,
@@ -20,11 +22,14 @@ import {
   toFinancialReportView,
   type PaymentView,
   type PaymentMethod,
+  type PaymentStatus,
   type InstallmentView,
+  type InstallmentStatus,
   type CollectionView,
   type OutstandingView,
   type FinancialReportView,
   type ReportType,
+  type ReportStatus,
   type ReportSchedule,
 } from "@/api/finance";
 
@@ -32,6 +37,19 @@ import {
  * Table configs for: payments, installments, collections, outstanding, finreports.
  * Plain `.ts` (no JSX) — cell renderers are invoked as functions, not JSX tags.
  */
+
+const PAYMENT_METHODS: PaymentMethod[] = ["bank-transfer", "cheque", "cash", "card"];
+const PAYMENT_STATUSES: PaymentStatus[] = ["paid", "pending", "overdue"];
+const INSTALLMENT_STATUSES: InstallmentStatus[] = ["pending", "partial", "paid", "overdue"];
+const AGING_BANDS = ["0-30", "31-60", "61-90", "90+"];
+const REPORT_STATUSES: ReportStatus[] = ["draft", "active"];
+
+/** Distinct values actually present across the full (unfiltered) dataset —
+ *  legitimate for a field with no fixed enum, computed from the *unfiltered*
+ *  query so it never shrinks as a filter narrows `rows`. */
+function distinctOptions<T>(rows: T[], get: (r: T) => string): Array<{ value: string; label: string }> {
+  return Array.from(new Set(rows.map(get))).sort().map((v) => ({ value: v, label: v }));
+}
 
 // ---------- Payments ----------
 
@@ -45,6 +63,15 @@ const paymentColumns: DataColumn<PaymentView>[] = [
   { key: "status", label: "Status", width: 92, render: (p) => BadgeCell({ status: p.status }) },
 ];
 
+/** Buckets a collection-rate percentage into real, meaningful bands — a plain
+ *  distinct-value filter over a percentage would offer one option per row. */
+function collectionRateBand(pct: number): string {
+  if (pct >= 95) return "95%+";
+  if (pct >= 80) return "80-94%";
+  if (pct >= 50) return "50-79%";
+  return "Below 50%";
+}
+
 const PAYMENT_METHOD_OPTIONS: { value: string; label: string }[] = [
   { value: "bank-transfer", label: "Bank Transfer" },
   { value: "cheque", label: "Cheque" },
@@ -52,38 +79,54 @@ const PAYMENT_METHOD_OPTIONS: { value: string; label: string }[] = [
   { value: "card", label: "Card" },
 ];
 
-export function usePaymentsTableConfig(): TableConfigResult<PaymentView> {
-  const { data, isLoading, error } = usePayments();
+export function usePaymentsTableConfig(params: TableQueryParams): TableConfigResult<PaymentView> {
+  const filtered = usePayments({
+    method: params.filters.method as PaymentMethod | undefined,
+    status: params.filters.status as PaymentStatus | undefined,
+    q: params.q,
+  });
+  const all = usePayments();
   const units = useUnitDirectory();
   const customers = useCustomers();
   const record = useRecordPayment();
 
-  if (isLoading || units.isLoading || customers.isLoading) return { config: undefined, isLoading: true, error: null };
-  if (error || units.error || customers.error) return { config: undefined, isLoading: false, error: error ?? units.error ?? customers.error };
+  if (filtered.isLoading || all.isLoading || units.isLoading || customers.isLoading) return { config: undefined, isLoading: true, error: null };
+  if (filtered.error || all.error || units.error || customers.error) {
+    return { config: undefined, isLoading: false, error: filtered.error ?? all.error ?? units.error ?? customers.error };
+  }
 
   const customersById = new Map((customers.data ?? []).map((c) => [c.id, c.name]));
-  const rows = (data ?? []).map((r) => toPaymentView(r, (id) => units.byId.get(id), (id) => customersById.get(id) ?? id));
-  const clearedCount = rows.filter((r) => r.status === "Paid").length;
-  const collectedEgp = (data ?? []).filter((r) => r.status === "paid").reduce((s, r) => s + r.amountEgp, 0);
+  const toView = (r: NonNullable<typeof filtered.data>[number]) => toPaymentView(r, (id) => units.byId.get(id), (id) => customersById.get(id) ?? id);
+  // Date has no fixed backend column (it's a derived recency bucket), so it's
+  // filtered client-side over the already backend-narrowed (method/status/q) rows.
+  const dateBucket = params.filters.date;
+  const rows = filtered.data!.map(toView).filter((r) => !dateBucket || pastDateBucket(r.paidAt) === dateBucket);
+  const allRows = all.data!.map(toView);
+  const clearedCount = allRows.filter((r) => r.status === "Paid").length;
+  const collectedEgp = all.data!.filter((r) => r.status === "paid").reduce((s, r) => s + r.amountEgp, 0);
+  const dateOptions = distinctOptions(allRows, (r) => pastDateBucket(r.paidAt));
 
   return {
     isLoading: false,
     error: null,
     config: {
       title: "Payments",
-      subtitle: `${rows.length} payments recorded`,
+      subtitle: `${allRows.length} payments recorded`,
       primaryAction: "Record Payment",
       columns: paymentColumns,
       rows,
-      rowKey: (p) => p.reference,
-      searchText: (p) => `${p.reference} ${p.customer} ${p.unit} ${p.method}`,
+      rowKey: (p) => p.id,
       searchPlaceholder: "Search reference, customer, unit…",
       kpis: [
         { label: "Total collected", value: `EGP ${(collectedEgp / 1e6).toFixed(1)}M` },
         { label: "Cleared", value: String(clearedCount) },
-        { label: "Total payments", value: String(rows.length) },
+        { label: "Total payments", value: String(allRows.length) },
       ],
-      filters: ["Method: All", "Status: All", "Date range"],
+      filters: [
+        { label: "Method", param: "method", options: PAYMENT_METHODS.map((m) => PAYMENT_METHOD_OPTIONS.find((o) => o.value === m)!) },
+        { label: "Status", param: "status", options: PAYMENT_STATUSES.map((s) => ({ value: s, label: titleCase(s) })) },
+        { label: "Date", param: "date", options: dateOptions },
+      ],
       minWidth: 800,
       emptyWhy: "Payments are recorded against a customer's installment schedule as they clear the bank, cheque or payment gateway — adjust filters or the date range to see other transactions.",
       emptyTitle: "No payments match this filter",
@@ -122,36 +165,53 @@ const installmentColumns: DataColumn<InstallmentView>[] = [
   { key: "status", label: "Status", width: 92, render: (i) => BadgeCell({ status: i.status }) },
 ];
 
-export function useInstallmentsTableConfig(): TableConfigResult<InstallmentView> {
-  const { data, isLoading, error } = useInstallments();
+export function useInstallmentsTableConfig(params: TableQueryParams): TableConfigResult<InstallmentView> {
+  const filtered = useInstallments({
+    status: params.filters.status as InstallmentStatus | undefined,
+    projectId: params.filters.projectId,
+    q: params.q,
+  });
+  const all = useInstallments();
   const units = useUnitDirectory();
   const customers = useCustomers();
+  const projects = useProjectDirectory();
 
-  if (isLoading || units.isLoading || customers.isLoading) return { config: undefined, isLoading: true, error: null };
-  if (error || units.error || customers.error) return { config: undefined, isLoading: false, error: error ?? units.error ?? customers.error };
+  if (filtered.isLoading || all.isLoading || units.isLoading || customers.isLoading) return { config: undefined, isLoading: true, error: null };
+  if (filtered.error || all.error || units.error || customers.error) {
+    return { config: undefined, isLoading: false, error: filtered.error ?? all.error ?? units.error ?? customers.error };
+  }
 
   const customersById = new Map((customers.data ?? []).map((c) => [c.id, c.name]));
-  const rows = (data ?? []).map((r) => toInstallmentView(r, (id) => units.byId.get(id), (id) => customersById.get(id) ?? id));
-  const overdueEgp = (data ?? []).filter((r) => r.status === "overdue").reduce((s, r) => s + (r.amountEgp - r.paidEgp), 0);
-  const paidEgp = (data ?? []).reduce((s, r) => s + r.paidEgp, 0);
+  const toView = (r: NonNullable<typeof filtered.data>[number]) => toInstallmentView(r, (id) => units.byId.get(id), (id) => customersById.get(id) ?? id);
+  // Due-date bucket has no fixed backend column, so filtered client-side over
+  // the already backend-narrowed (status/project/q) rows.
+  const dueBucket = params.filters.dueDate;
+  const rows = filtered.data!.map(toView).filter((r) => !dueBucket || futureDateBucket(r.dueDateIso) === dueBucket);
+  const allRows = all.data!.map(toView);
+  const overdueEgp = all.data!.filter((r) => r.status === "overdue").reduce((s, r) => s + (r.amountEgp - r.paidEgp), 0);
+  const paidEgp = all.data!.reduce((s, r) => s + r.paidEgp, 0);
+  const dueOptions = distinctOptions(allRows, (r) => futureDateBucket(r.dueDateIso));
 
   return {
     isLoading: false,
     error: null,
     config: {
       title: "Installments",
-      subtitle: `${rows.length} scheduled installment lines across active payment plans`,
+      subtitle: `${allRows.length} scheduled installment lines across active payment plans`,
       columns: installmentColumns,
       rows,
       rowKey: (i) => i.id,
-      searchText: (i) => `${i.label} ${i.customer} ${i.unit}`,
       searchPlaceholder: "Search customer, unit, installment…",
       kpis: [
         { label: "Overdue", value: `EGP ${(overdueEgp / 1e6).toFixed(1)}M` },
         { label: "Paid to date", value: `EGP ${(paidEgp / 1e6).toFixed(1)}M` },
-        { label: "Total lines", value: String(rows.length) },
+        { label: "Total lines", value: String(allRows.length) },
       ],
-      filters: ["Status: All", "Project: All", "Due date"],
+      filters: [
+        { label: "Status", param: "status", options: INSTALLMENT_STATUSES.map((s) => ({ value: s, label: titleCase(s) })) },
+        { label: "Project", param: "projectId", options: projects.projects.map((p) => ({ value: p.id, label: p.name })) },
+        { label: "Due date", param: "dueDate", options: dueOptions },
+      ],
       minWidth: 820,
       emptyWhy: "Installment lines are generated from each customer's payment plan the moment a contract is signed — clear filters to see installments across all plans.",
       emptyTitle: "No installments match this filter",
@@ -170,18 +230,25 @@ const collectionColumns: DataColumn<CollectionView>[] = [
   { key: "rate", label: "Collection rate", width: 128, render: (c) => BarCell({ pct: c.collectionRatePct, label: `${c.collectionRatePct}%` }) },
 ];
 
-export function useCollectionsTableConfig(): TableConfigResult<CollectionView> {
-  const { data, isLoading, error } = useCollections();
+export function useCollectionsTableConfig(params: TableQueryParams): TableConfigResult<CollectionView> {
+  const filtered = useCollections({ projectId: params.filters.project });
+  const all = useCollections();
   const projects = useProjectDirectory();
 
-  if (isLoading || projects.isLoading) return { config: undefined, isLoading: true, error: null };
-  if (error || projects.error) return { config: undefined, isLoading: false, error: error ?? projects.error };
+  if (filtered.isLoading || all.isLoading || projects.isLoading) return { config: undefined, isLoading: true, error: null };
+  if (filtered.error || all.error || projects.error) return { config: undefined, isLoading: false, error: filtered.error ?? all.error ?? projects.error };
 
-  const rows = (data ?? []).map((r) => toCollectionView(r, (id) => projects.byId.get(id) ?? id));
-  const dueEgp = (data ?? []).reduce((s, r) => s + r.dueEgp, 0);
-  const collectedEgp = (data ?? []).reduce((s, r) => s + r.collectedEgp, 0);
-  const overdueEgp = (data ?? []).reduce((s, r) => s + r.overdueEgp, 0);
-  const accounts = (data ?? []).reduce((s, r) => s + r.accounts, 0);
+  const toView = (r: NonNullable<typeof filtered.data>[number]) => toCollectionView(r, (id) => projects.byId.get(id) ?? id);
+  // Collections is a small per-project aggregate (one row per project), so the
+  // rate band and free text are filtered client-side over the already
+  // backend-narrowed (project) rows — same justified exception as Availability.
+  const rateBand = params.filters.rate;
+  const q = params.q?.trim().toLowerCase();
+  const rows = filtered.data!.map(toView).filter((r) => (!rateBand || collectionRateBand(r.collectionRatePct) === rateBand) && (!q || r.project.toLowerCase().includes(q)));
+  const dueEgp = all.data!.reduce((s, r) => s + r.dueEgp, 0);
+  const collectedEgp = all.data!.reduce((s, r) => s + r.collectedEgp, 0);
+  const overdueEgp = all.data!.reduce((s, r) => s + r.overdueEgp, 0);
+  const accounts = all.data!.reduce((s, r) => s + r.accounts, 0);
   const rate = dueEgp > 0 ? Math.round((collectedEgp / dueEgp) * 1000) / 10 : 0;
 
   return {
@@ -193,7 +260,6 @@ export function useCollectionsTableConfig(): TableConfigResult<CollectionView> {
       columns: collectionColumns,
       rows,
       rowKey: (c) => c.project,
-      searchText: (c) => c.project,
       searchPlaceholder: "Search project…",
       kpis: [
         { label: "Collected", value: `EGP ${(collectedEgp / 1e6).toFixed(1)}M` },
@@ -202,7 +268,14 @@ export function useCollectionsTableConfig(): TableConfigResult<CollectionView> {
         { label: "Overdue", value: `EGP ${(overdueEgp / 1e6).toFixed(1)}M` },
         { label: "Accounts in arrears", value: String(accounts) },
       ],
-      filters: ["Project: All", "Collection rate"],
+      filters: [
+        { label: "Project", param: "project", options: projects.projects.map((p) => ({ value: p.id, label: p.name })) },
+        {
+          label: "Collection rate",
+          param: "rate",
+          options: ["95%+", "80-94%", "50-79%", "Below 50%"].map((v) => ({ value: v, label: v })),
+        },
+      ],
       minWidth: 760,
       emptyWhy: "Collections roll up due, collected and overdue amounts per project for the current period — clear filters to see every project's performance.",
       emptyTitle: "No collections match this filter",
@@ -222,20 +295,33 @@ const outstandingColumns: DataColumn<OutstandingView>[] = [
   { key: "agent", label: "Agent", flex: 0.9, render: (o) => TextCell({ value: o.agent, weight: "normal" }) },
 ];
 
-export function useOutstandingTableConfig(): TableConfigResult<OutstandingView> {
-  const { data, isLoading, error } = useOutstanding();
+export function useOutstandingTableConfig(params: TableQueryParams): TableConfigResult<OutstandingView> {
+  const filtered = useOutstanding({ agentId: params.filters.agentId, projectId: params.filters.projectId });
+  const all = useOutstanding();
   const units = useUnitDirectory();
   const customers = useCustomers();
   const team = useTeamDirectory();
+  const projects = useProjectDirectory();
 
-  if (isLoading || units.isLoading || customers.isLoading || team.isLoading) return { config: undefined, isLoading: true, error: null };
-  if (error || units.error || customers.error || team.error) return { config: undefined, isLoading: false, error: error ?? units.error ?? customers.error ?? team.error };
+  if (filtered.isLoading || all.isLoading || units.isLoading || customers.isLoading || team.isLoading) {
+    return { config: undefined, isLoading: true, error: null };
+  }
+  if (filtered.error || all.error || units.error || customers.error || team.error) {
+    return { config: undefined, isLoading: false, error: filtered.error ?? all.error ?? units.error ?? customers.error ?? team.error };
+  }
 
   const customersById = new Map((customers.data ?? []).map((c) => [c.id, { name: c.name, agentId: c.agentId, portfolioEgp: c.portfolioEgp }]));
-  const rows = (data ?? []).map((r) => toOutstandingView(r, (id) => units.byId.get(id), (id) => customersById.get(id), (id) => team.byId.get(id) ?? id));
-  const totalOverdueEgp = (data ?? []).reduce((s, r) => s + r.overdueEgp, 0);
-  const over90Egp = (data ?? []).filter((r) => r.agingDays > 90).reduce((s, r) => s + r.overdueEgp, 0);
-  const accounts = new Set((data ?? []).map((r) => r.customerId)).size;
+  const toView = (r: NonNullable<typeof filtered.data>[number]) =>
+    toOutstandingView(r, (id) => units.byId.get(id), (id) => customersById.get(id), (id) => team.byId.get(id) ?? id);
+  // Aging band and free text have no fixed backend column (aging is derived
+  // from today's date; text spans resolved customer/unit/agent names), so
+  // they're filtered client-side over the already backend-narrowed rows.
+  const aging = params.filters.aging;
+  const q = params.q?.trim().toLowerCase();
+  const rows = filtered.data!.map(toView).filter((r) => (!aging || r.aging === aging) && (!q || `${r.customer} ${r.customerId} ${r.unit} ${r.agent}`.toLowerCase().includes(q)));
+  const totalOverdueEgp = all.data!.reduce((s, r) => s + r.overdueEgp, 0);
+  const over90Egp = all.data!.filter((r) => r.agingDays > 90).reduce((s, r) => s + r.overdueEgp, 0);
+  const accounts = new Set(all.data!.map((r) => r.customerId)).size;
 
   return {
     isLoading: false,
@@ -245,16 +331,19 @@ export function useOutstandingTableConfig(): TableConfigResult<OutstandingView> 
       subtitle: "Overdue balances prioritised by aging and exposure",
       columns: outstandingColumns,
       rows,
-      rowKey: (o) => `${o.customerId}_${o.unit}`,
+      rowKey: (o) => o.id,
       onRowClick: (row) => `/customers/${row.customerId}`,
-      searchText: (o) => `${o.customer} ${o.customerId} ${o.unit} ${o.agent}`,
       searchPlaceholder: "Search customer, unit, agent…",
       kpis: [
         { label: "Total overdue", value: `EGP ${(totalOverdueEgp / 1e6).toFixed(1)}M` },
         { label: "90+ days", value: `EGP ${(over90Egp / 1e6).toFixed(1)}M` },
         { label: "Accounts", value: String(accounts) },
       ],
-      filters: ["Aging: All", "Agent: All", "Project: All"],
+      filters: [
+        { label: "Aging", param: "aging", options: AGING_BANDS.map((b) => ({ value: b, label: b })) },
+        { label: "Agent", param: "agentId", options: team.members.map((m) => ({ value: m.id, label: m.name })) },
+        { label: "Project", param: "projectId", options: projects.projects.map((p) => ({ value: p.id, label: p.name })) },
+      ],
       minWidth: 880,
       emptyWhy: "Outstanding accounts are overdue installment balances prioritised by aging and exposure — clear filters to see accounts across all agents and projects.",
       emptyTitle: "No outstanding accounts match this filter",
@@ -288,17 +377,28 @@ const REPORT_SCHEDULE_OPTIONS: { value: ReportSchedule; label: string }[] = [
   { value: "monthly", label: "Monthly" },
 ];
 
-export function useFinreportsTableConfig(): TableConfigResult<FinancialReportView> {
-  const { data, isLoading, error } = useFinancialReports();
+export function useFinreportsTableConfig(params: TableQueryParams): TableConfigResult<FinancialReportView> {
+  const filtered = useFinancialReports({
+    type: params.filters.type as ReportType | undefined,
+    status: params.filters.status as ReportStatus | undefined,
+    q: params.q,
+  });
+  const all = useFinancialReports();
   const team = useTeamDirectory();
   const createReport = useCreateFinancialReport();
   const auth = useAuth();
 
-  if (isLoading || team.isLoading) return { config: undefined, isLoading: true, error: null };
-  if (error || team.error) return { config: undefined, isLoading: false, error: error ?? team.error };
+  if (filtered.isLoading || all.isLoading || team.isLoading) return { config: undefined, isLoading: true, error: null };
+  if (filtered.error || all.error || team.error) return { config: undefined, isLoading: false, error: filtered.error ?? all.error ?? team.error };
 
-  const rows = (data ?? []).map((r) => toFinancialReportView(r, (id) => team.byId.get(id) ?? id));
-  const scheduledCount = rows.filter((r) => r.schedule !== "Manual").length;
+  // Owner is resolved via the org's team directory, not a joinable column in
+  // this schema, so it's filtered client-side (by raw ownerId, before the
+  // name resolution below) over the already backend-narrowed rows.
+  const ownerId = params.filters.owner;
+  const scoped = ownerId ? filtered.data!.filter((r) => r.ownerId === ownerId) : filtered.data!;
+  const rows = scoped.map((r) => toFinancialReportView(r, (id) => team.byId.get(id) ?? id));
+  const allRows = all.data!.map((r) => toFinancialReportView(r, (id) => team.byId.get(id) ?? id));
+  const scheduledCount = allRows.filter((r) => r.schedule !== "Manual").length;
 
   return {
     isLoading: false,
@@ -310,13 +410,16 @@ export function useFinreportsTableConfig(): TableConfigResult<FinancialReportVie
       columns: finreportColumns,
       rows,
       rowKey: (r) => r.id,
-      searchText: (r) => `${r.name} ${r.type} ${r.owner}`,
       searchPlaceholder: "Search reports…",
       kpis: [
-        { label: "Saved reports", value: String(rows.length) },
+        { label: "Saved reports", value: String(allRows.length) },
         { label: "Scheduled", value: String(scheduledCount) },
       ],
-      filters: ["Type: All", "Owner: All", "Status: All"],
+      filters: [
+        { label: "Type", param: "type", options: REPORT_TYPE_OPTIONS },
+        { label: "Owner", param: "owner", options: team.members.map((m) => ({ value: m.id, label: m.name })) },
+        { label: "Status", param: "status", options: REPORT_STATUSES.map((s) => ({ value: s, label: titleCase(s) })) },
+      ],
       minWidth: 760,
       emptyWhy: "Saved and scheduled finance reports live here — create a new report or clear filters to see reports of other types.",
       emptyTitle: "No reports match this filter",

@@ -5,7 +5,7 @@ import { Conflict, NotFound } from "@core/kernel/errors.js";
 import { AUDIT_LOGGER, UNIT_OF_WORK } from "@core/kernel/tokens.js";
 import type { IAuditLogger } from "@core/contracts/index.js";
 import { ContractsRepository } from "./contracts-repository.js";
-import { PaymentPlansRepository, type CreatePaymentPlanInput, type InstallmentRow } from "./payment-plans-repository.js";
+import { PaymentPlansRepository, type CreatePaymentPlanInput, type InstallmentFilter } from "./payment-plans-repository.js";
 import { generateInstallmentSchedule } from "./payment-plan.domain.js";
 import type { CreatePaymentPlanBody } from "./payment-plans.schema.js";
 
@@ -19,8 +19,8 @@ export class PaymentPlansService {
   ) {}
 
   /** Flat, org-wide installment list (the Installments screen — not scoped to one plan). */
-  listInstallments(status?: InstallmentRow["status"]) {
-    return readInTenant(() => this.repo.listInstallmentsWithContext(status));
+  listInstallments(filter: InstallmentFilter = {}) {
+    return readInTenant(() => this.repo.listInstallmentsWithContext(filter));
   }
 
   /** Flat, org-wide plan list (the Payment Plans screen — not scoped to one contract). */

@@ -3,7 +3,7 @@ import type { UnitOfWork } from "@core/kernel/db/db.js";
 import { readInTenant } from "@core/kernel/db/db.js";
 import { NotFound } from "@core/kernel/errors.js";
 import { UNIT_OF_WORK } from "@core/kernel/tokens.js";
-import { TasksRepository, type CreateTaskInput, type TaskStatus } from "./tasks-repository.js";
+import { TasksRepository, type CreateTaskInput, type TaskStatus, type TaskFilter } from "./tasks-repository.js";
 
 @Injectable()
 export class TasksService {
@@ -12,8 +12,8 @@ export class TasksService {
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
 
-  list(assigneeId?: string, status?: TaskStatus) {
-    return readInTenant(() => this.repo.list(assigneeId, status));
+  list(filter: TaskFilter = {}) {
+    return readInTenant(() => this.repo.list(filter));
   }
 
   create(input: CreateTaskInput) {

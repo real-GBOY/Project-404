@@ -1,15 +1,17 @@
-import { Body, Controller, Get, HttpCode, Param, Patch, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { CurrentUser, RequirePermission } from "@core/http/decorators.js";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
 import { PermissionGuard } from "@core/http/permission.guard.js";
-import { ZodBody } from "@core/http/zod.pipe.js";
+import { ZodBody, ZodQuery } from "@core/http/zod.pipe.js";
 import type { Principal } from "@core/http/principal.js";
 import { ProjectsService } from "./projects-service.js";
 import {
   createProjectSchema,
+  listProjectsQuery,
   updateProjectSchema,
   type CreateProjectBody,
+  type ListProjectsQuery,
   type UpdateProjectBody,
 } from "./projects.schema.js";
 
@@ -22,8 +24,8 @@ export class ProjectsController {
 
   @Get()
   @RequirePermission("read", "project")
-  list() {
-    return this.service.list();
+  list(@Query(ZodQuery(listProjectsQuery)) q: ListProjectsQuery) {
+    return this.service.list(q);
   }
 
   @Get(":id")

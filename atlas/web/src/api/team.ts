@@ -15,8 +15,13 @@ interface TeamResponse {
   items: TeamMember[];
 }
 
-export function useTeam() {
-  return useQuery({ queryKey: ["team"], queryFn: () => get<TeamResponse>(ENDPOINTS.team) });
+export interface TeamListParams {
+  role?: string;
+  q?: string;
+}
+
+export function useTeam(params?: TeamListParams) {
+  return useQuery({ queryKey: ["team", params ?? {}], queryFn: () => get<TeamResponse>(ENDPOINTS.team, params) });
 }
 
 /** Every domain that shows an "agent" name needs userId -> display-name; this is the one place that mapping lives. */

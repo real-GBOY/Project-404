@@ -4,11 +4,16 @@
  * badge only); `icon` (a name from `components/ui/icon.tsx`'s registry) was
  * added on top of that for sidebar scannability and isn't part of the source design.
  */
+/** Keys the sidebar resolves to a live count via its own data hooks
+ *  (components/navigation/sidebar.tsx) — never a hardcoded number, so the
+ *  badge can't go stale the moment the underlying data changes. */
+export type NavBadgeKey = "followups" | "reservations" | "outstanding" | "approvals";
+
 export interface NavItem {
   to: string;
   label: string;
   icon: string;
-  badge?: number;
+  badgeKey?: NavBadgeKey;
   /** also treat these path prefixes as "this item is active" */
   match?: string[];
 }
@@ -30,7 +35,7 @@ export const NAV: NavGroup[] = [
       { to: "/customers", label: "Customers", icon: "customer" },
       { to: "/pipeline", label: "Pipeline", icon: "pipeline" },
       { to: "/activities", label: "Activities", icon: "activity" },
-      { to: "/followups", label: "Follow-ups", icon: "followup", badge: 23 },
+      { to: "/followups", label: "Follow-ups", icon: "followup", badgeKey: "followups" },
     ],
   },
   {
@@ -46,7 +51,7 @@ export const NAV: NavGroup[] = [
   {
     title: "Sales",
     items: [
-      { to: "/reservations", label: "Reservations", icon: "reservation", badge: 4 },
+      { to: "/reservations", label: "Reservations", icon: "reservation", badgeKey: "reservations" },
       { to: "/deals", label: "Deals", icon: "deal" },
       { to: "/contracts", label: "Contracts", icon: "contract" },
       { to: "/plans", label: "Payment Plans", icon: "payment-plan" },
@@ -59,7 +64,7 @@ export const NAV: NavGroup[] = [
       { to: "/payments", label: "Payments", icon: "payment" },
       { to: "/installments", label: "Installments", icon: "installment" },
       { to: "/collections", label: "Collections", icon: "collection" },
-      { to: "/outstanding", label: "Outstanding Payments", icon: "outstanding", badge: 12 },
+      { to: "/outstanding", label: "Outstanding Payments", icon: "outstanding", badgeKey: "outstanding" },
       { to: "/finreports", label: "Financial Reports", icon: "report" },
     ],
   },
@@ -68,7 +73,7 @@ export const NAV: NavGroup[] = [
     items: [
       { to: "/tasks", label: "Tasks", icon: "task" },
       { to: "/workflows", label: "Workflows", icon: "workflow" },
-      { to: "/approvals", label: "Approvals", icon: "approval", badge: 7 },
+      { to: "/approvals", label: "Approvals", icon: "approval", badgeKey: "approvals" },
       { to: "/documents", label: "Documents", icon: "doc" },
     ],
   },

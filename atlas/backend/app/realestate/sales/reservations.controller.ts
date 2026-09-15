@@ -3,11 +3,15 @@ import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { CurrentUser, RequirePermission } from "@core/http/decorators.js";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
 import { PermissionGuard } from "@core/http/permission.guard.js";
-import { ZodBody } from "@core/http/zod.pipe.js";
+import { ZodBody, ZodQuery } from "@core/http/zod.pipe.js";
 import type { Principal } from "@core/http/principal.js";
 import { ReservationsService } from "./reservations-service.js";
-import { createReservationSchema, type CreateReservationBody } from "./reservations.schema.js";
-import type { ReservationStatus } from "./reservations-repository.js";
+import {
+  createReservationSchema,
+  listReservationsQuery,
+  type CreateReservationBody,
+  type ListReservationsQuery,
+} from "./reservations.schema.js";
 
 @ApiTags("realestate · reservations")
 @ApiBearerAuth("access-token")
@@ -18,8 +22,8 @@ export class ReservationsController {
 
   @Get()
   @RequirePermission("read", "reservation")
-  list(@Query("status") status?: ReservationStatus) {
-    return this.service.list(status);
+  list(@Query(ZodQuery(listReservationsQuery)) q: ListReservationsQuery) {
+    return this.service.list(q);
   }
 
   @Get(":id")

@@ -47,10 +47,16 @@ export interface AuditLogRow {
   at: string;
 }
 
-export function useAuditLogs(q?: string) {
+export interface AuditLogListParams {
+  q?: string;
+  action?: string;
+  actor?: string;
+}
+
+export function useAuditLogs(params?: AuditLogListParams) {
   return useQuery({
-    queryKey: ["audit-logs", q ?? ""],
-    queryFn: () => get<{ items: AuditLogRow[]; total: number }>(ENDPOINTS.auditLogs, { q }),
+    queryKey: ["audit-logs", params ?? {}],
+    queryFn: () => get<{ items: AuditLogRow[]; total: number }>(ENDPOINTS.auditLogs, params),
   });
 }
 

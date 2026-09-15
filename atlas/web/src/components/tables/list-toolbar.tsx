@@ -11,18 +11,6 @@ export function ListToolbar({ className, children }: { className?: string; child
   );
 }
 
-export function FilterButton({ label, onClick }: { label: string; onClick?: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex items-center gap-1.5 rounded-btn border border-border bg-surface px-2.5 py-1 text-[11px] text-body transition-colors hover:bg-canvas"
-    >
-      {label} <span className="text-[9px] text-subtle">▾</span>
-    </button>
-  );
-}
-
 export function ViewToggle({ value, onChange }: { value: "table" | "grid"; onChange: (v: "table" | "grid") => void }) {
   return (
     <div className="flex overflow-hidden rounded-btn border border-border">

@@ -1,6 +1,6 @@
 import type { DataColumn } from "@/components/tables/data-table";
 import { TextCell, BadgeCell, BarCell } from "@/components/tables/data-table";
-import type { TableConfigResult } from "@/features/shared/table-types";
+import type { TableConfigResult, TableQueryParams } from "@/features/shared/table-types";
 import {
   useProjects,
   useProjectDirectory,
@@ -16,13 +16,26 @@ import {
   toPriceListView,
   type ProjectView,
   type ProjectStatus,
+  type BuildingStatus,
   type BuildingView,
   type AvailabilityView,
+  type PriceListRow,
   type PriceListView,
   type PriceListStatus,
 } from "@/api/properties";
 
-const PROJECT_STATUS_OPTIONS = ["pre-launch", "launched", "under-construction", "delivered"].map((v) => ({ value: v, label: v.split("-").map((w) => w[0].toUpperCase() + w.slice(1)).join(" ") }));
+const PROJECT_STATUSES: ProjectStatus[] = ["pre-launch", "launched", "under-construction", "delivered"];
+const BUILDING_STATUSES: BuildingStatus[] = ["pre-launch", "launched", "under-construction", "delivered"];
+const PRICE_LIST_STATUSES: PriceListStatus[] = ["draft", "awaiting-approval", "active"];
+const statusLabel = (v: string) => v.split("-").map((w) => w[0].toUpperCase() + w.slice(1)).join(" ");
+const PROJECT_STATUS_OPTIONS = PROJECT_STATUSES.map((v) => ({ value: v, label: statusLabel(v) }));
+
+/** Distinct values actually present across the full (unfiltered) dataset —
+ *  legitimate for a free-text field with no fixed enum (e.g. "Developer"):
+ *  computed from the *unfiltered* query, so it never shrinks as a filter narrows `rows`. */
+function distinctOptions<T>(rows: T[], get: (r: T) => string): Array<{ value: string; label: string }> {
+  return Array.from(new Set(rows.map(get))).sort().map((v) => ({ value: v, label: v }));
+}
 
 // ---------------------------------------------------------------------------
 // projects
@@ -40,19 +53,25 @@ const projectColumns: DataColumn<ProjectView>[] = [
   { key: "sellThrough", label: "Sell-through", width: 150, render: (r) => BarCell({ pct: r.sellThroughPct, label: `${r.sellThroughPct}%` }) },
 ];
 
-export function useProjectsTableConfig(): TableConfigResult<ProjectView> {
-  const { data, isLoading, error } = useProjects();
+export function useProjectsTableConfig(params: TableQueryParams): TableConfigResult<ProjectView> {
+  const filtered = useProjects({
+    status: params.filters.status as ProjectStatus | undefined,
+    developer: params.filters.developer,
+    q: params.q,
+  });
+  const all = useProjects();
   const createProject = useCreateProject();
 
-  if (isLoading) return { config: undefined, isLoading: true, error: null };
-  if (error) return { config: undefined, isLoading: false, error };
+  if (filtered.isLoading || all.isLoading) return { config: undefined, isLoading: true, error: null };
+  if (filtered.error || all.error) return { config: undefined, isLoading: false, error: filtered.error ?? all.error };
 
-  const rows = (data ?? []).map(toProjectView);
-  const totalValueEgp = (data ?? []).reduce((s, p) => s + p.totalValueEgp, 0);
-  const revenueEgp = (data ?? []).reduce((s, p) => s + p.revenueEgp, 0);
-  const unitsSold = rows.reduce((s, p) => s + p.soldUnits, 0);
-  const unitsAvailable = rows.reduce((s, p) => s + p.availableUnits, 0);
-  const avgSellThrough = rows.length ? rows.reduce((s, p) => s + p.sellThroughPct, 0) / rows.length : 0;
+  const rows = filtered.data!.map(toProjectView);
+  const allRows = all.data!.map(toProjectView);
+  const totalValueEgp = all.data!.reduce((s, p) => s + p.totalValueEgp, 0);
+  const revenueEgp = all.data!.reduce((s, p) => s + p.revenueEgp, 0);
+  const unitsSold = allRows.reduce((s, p) => s + p.soldUnits, 0);
+  const unitsAvailable = allRows.reduce((s, p) => s + p.availableUnits, 0);
+  const avgSellThrough = allRows.length ? allRows.reduce((s, p) => s + p.sellThroughPct, 0) / allRows.length : 0;
 
   return {
     isLoading: false,
@@ -66,8 +85,10 @@ export function useProjectsTableConfig(): TableConfigResult<ProjectView> {
       rowKey: (r) => r.id,
       onRowClick: (r) => `/projects/${r.id}`,
       searchPlaceholder: "Search projects…",
-      searchText: (r) => `${r.name} ${r.location} ${r.developer} ${r.status}`,
-      filters: ["Status", "Developer"],
+      filters: [
+        { label: "Status", param: "status", options: PROJECT_STATUSES.map((s) => ({ value: s, label: statusLabel(s) })) },
+        { label: "Developer", param: "developer", options: distinctOptions(allRows, (r) => r.developer) },
+      ],
       kpis: [
         { label: "Portfolio value", value: `EGP ${(totalValueEgp / 1e9).toFixed(2)}B` },
         { label: "Units sold", value: unitsSold.toLocaleString() },
@@ -113,19 +134,30 @@ const buildingColumns: DataColumn<BuildingView>[] = [
   { key: "status", label: "Status", width: 140, render: (r) => BadgeCell({ status: r.status }) },
 ];
 
-export function useBuildingsTableConfig(): TableConfigResult<BuildingView> {
-  const buildings = useBuildings();
+export function useBuildingsTableConfig(params: TableQueryParams): TableConfigResult<BuildingView> {
+  const filtered = useBuildings({
+    projectId: params.filters.projectId,
+    status: params.filters.status as BuildingStatus | undefined,
+    q: params.q,
+  });
+  const all = useBuildings();
   const units = useUnits();
   const projects = useProjectDirectory();
   const createBuilding = useCreateBuilding();
 
-  if (buildings.isLoading || units.isLoading || projects.isLoading) return { config: undefined, isLoading: true, error: null };
-  if (buildings.error || units.error || projects.error) return { config: undefined, isLoading: false, error: buildings.error ?? units.error ?? projects.error };
+  if (filtered.isLoading || all.isLoading || units.isLoading || projects.isLoading) {
+    return { config: undefined, isLoading: true, error: null };
+  }
+  if (filtered.error || all.error || units.error || projects.error) {
+    return { config: undefined, isLoading: false, error: filtered.error ?? all.error ?? units.error ?? projects.error };
+  }
 
-  const rows = toBuildingViews(buildings.data ?? [], units.data ?? [], (id) => projects.byId.get(id) ?? id);
-  const totalUnits = rows.reduce((s, b) => s + b.units, 0);
-  const totalSold = rows.reduce((s, b) => s + b.sold, 0);
-  const avgConversion = rows.length ? rows.reduce((s, b) => s + b.conversionPct, 0) / rows.length : 0;
+  const projectName = (id: string) => projects.byId.get(id) ?? id;
+  const rows = toBuildingViews(filtered.data!, units.data ?? [], projectName);
+  const allRows = toBuildingViews(all.data!, units.data ?? [], projectName);
+  const totalUnits = allRows.reduce((s, b) => s + b.units, 0);
+  const totalSold = allRows.reduce((s, b) => s + b.sold, 0);
+  const avgConversion = allRows.length ? allRows.reduce((s, b) => s + b.conversionPct, 0) / allRows.length : 0;
 
   return {
     isLoading: false,
@@ -138,10 +170,12 @@ export function useBuildingsTableConfig(): TableConfigResult<BuildingView> {
       rows,
       rowKey: (r) => r.id,
       searchPlaceholder: "Search buildings…",
-      searchText: (r) => `${r.building} ${r.project} ${r.status}`,
-      filters: ["Project", "Status"],
+      filters: [
+        { label: "Project", param: "projectId", options: projects.projects.map((p) => ({ value: p.id, label: p.name })) },
+        { label: "Status", param: "status", options: BUILDING_STATUSES.map((s) => ({ value: s, label: statusLabel(s) })) },
+      ],
       kpis: [
-        { label: "Buildings", value: String(rows.length) },
+        { label: "Buildings", value: String(allRows.length) },
         { label: "Total units", value: totalUnits.toLocaleString() },
         { label: "Sold", value: totalSold.toLocaleString() },
         { label: "Avg. conversion", value: `${avgConversion.toFixed(1)}%` },
@@ -189,18 +223,33 @@ const availabilityColumns: DataColumn<AvailabilityView>[] = [
   { key: "aging", label: "Aging", width: 70, align: "end", render: (r) => TextCell({ value: `${r.agingDays}d`, mono: true, weight: "normal" }) },
 ];
 
-export function useAvailabilityTableConfig(): TableConfigResult<AvailabilityView> {
-  const units = useUnits();
+export function useAvailabilityTableConfig(params: TableQueryParams): TableConfigResult<AvailabilityView> {
+  const filtered = useUnits({
+    projectId: params.filters.projectId,
+    unitType: params.filters.unitType,
+  });
+  const all = useUnits();
   const projects = useProjectDirectory();
 
-  if (units.isLoading || projects.isLoading) return { config: undefined, isLoading: true, error: null };
-  if (units.error || projects.error) return { config: undefined, isLoading: false, error: units.error ?? projects.error };
+  if (filtered.isLoading || all.isLoading || projects.isLoading) return { config: undefined, isLoading: true, error: null };
+  if (filtered.error || all.error || projects.error) {
+    return { config: undefined, isLoading: false, error: filtered.error ?? all.error ?? projects.error };
+  }
 
-  const rows = toAvailabilityViews(units.data ?? [], (id) => projects.byId.get(id) ?? id);
-  const available = rows.reduce((s, r) => s + r.available, 0);
-  const reserved = rows.reduce((s, r) => s + r.reserved, 0);
-  const sold = rows.reduce((s, r) => s + r.sold, 0);
-  const avgAging = rows.length ? Math.round(rows.reduce((s, r) => s + r.agingDays, 0) / rows.length) : 0;
+  const projectName = (id: string) => projects.byId.get(id) ?? id;
+  const allRows = toAvailabilityViews(all.data!, projectName);
+  // Availability rows are a small (project × unit-type) aggregate, already
+  // narrowed server-side by the Project/Unit Type filters above — a client
+  // substring match over ~dozens of rows here isn't the anti-pattern this
+  // refactor removed elsewhere (that was scanning full raw entity lists).
+  const q = params.q?.toLowerCase();
+  const rows = toAvailabilityViews(filtered.data!, projectName).filter(
+    (r) => !q || `${r.project} ${r.unitType}`.toLowerCase().includes(q),
+  );
+  const available = allRows.reduce((s, r) => s + r.available, 0);
+  const reserved = allRows.reduce((s, r) => s + r.reserved, 0);
+  const sold = allRows.reduce((s, r) => s + r.sold, 0);
+  const avgAging = allRows.length ? Math.round(allRows.reduce((s, r) => s + r.agingDays, 0) / allRows.length) : 0;
 
   return {
     isLoading: false,
@@ -212,8 +261,10 @@ export function useAvailabilityTableConfig(): TableConfigResult<AvailabilityView
       rows,
       rowKey: (r) => r.key,
       searchPlaceholder: "Search by project or unit type…",
-      searchText: (r) => `${r.project} ${r.unitType}`,
-      filters: ["Project", "Unit Type"],
+      filters: [
+        { label: "Project", param: "projectId", options: projects.projects.map((p) => ({ value: p.id, label: p.name })) },
+        { label: "Unit Type", param: "unitType", options: distinctOptions(all.data!, (u) => u.unitType) },
+      ],
       kpis: [
         { label: "Available", value: available.toLocaleString() },
         { label: "Reserved", value: reserved.toLocaleString() },
@@ -239,17 +290,26 @@ const pricingColumns: DataColumn<PriceListView>[] = [
   { key: "status", label: "Status", width: 130, render: (r) => BadgeCell({ status: r.status }) },
 ];
 
-export function usePricingTableConfig(): TableConfigResult<PriceListView> {
-  const { data, isLoading, error } = usePriceLists();
+export function usePricingTableConfig(params: TableQueryParams): TableConfigResult<PriceListView> {
+  const filtered = usePriceLists({
+    projectId: params.filters.projectId,
+    status: params.filters.status as PriceListStatus | undefined,
+    q: params.q,
+  });
+  const all = usePriceLists();
   const projects = useProjectDirectory();
   const createPriceList = useCreatePriceList();
 
-  if (isLoading || projects.isLoading) return { config: undefined, isLoading: true, error: null };
-  if (error || projects.error) return { config: undefined, isLoading: false, error: error ?? projects.error };
+  if (filtered.isLoading || all.isLoading || projects.isLoading) return { config: undefined, isLoading: true, error: null };
+  if (filtered.error || all.error || projects.error) {
+    return { config: undefined, isLoading: false, error: filtered.error ?? all.error ?? projects.error };
+  }
 
-  const rows = (data ?? []).map((r) => toPriceListView(r, (id) => projects.byId.get(id) ?? id));
-  const activeCount = rows.filter((r) => r.status === "Active").length;
-  const pendingCount = rows.filter((r) => r.status === "Awaiting Approval").length;
+  const toView = (r: PriceListRow) => toPriceListView(r, (id) => projects.byId.get(id) ?? id);
+  const rows = filtered.data!.map(toView);
+  const allRows = all.data!.map(toView);
+  const activeCount = allRows.filter((r) => r.status === "Active").length;
+  const pendingCount = allRows.filter((r) => r.status === "Awaiting Approval").length;
 
   return {
     isLoading: false,
@@ -262,8 +322,10 @@ export function usePricingTableConfig(): TableConfigResult<PriceListView> {
       rows,
       rowKey: (r) => r.id,
       searchPlaceholder: "Search price lists…",
-      searchText: (r) => `${r.name} ${r.project} ${r.status}`,
-      filters: ["Project", "Status"],
+      filters: [
+        { label: "Project", param: "projectId", options: projects.projects.map((p) => ({ value: p.id, label: p.name })) },
+        { label: "Status", param: "status", options: PRICE_LIST_STATUSES.map((s) => ({ value: s, label: statusLabel(s) })) },
+      ],
       kpis: [
         { label: "Active lists", value: String(activeCount) },
         { label: "Pending approval", value: String(pendingCount) },

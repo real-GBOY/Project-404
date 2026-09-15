@@ -1,10 +1,17 @@
 import type { DataColumn } from "@/components/tables/data-table";
 import { TextCell, BadgeCell } from "@/components/tables/data-table";
-import type { TableConfigResult } from "@/features/shared/table-types";
+import type { TableConfigResult, TableQueryParams } from "@/features/shared/table-types";
 import { useTeam } from "@/api/team";
 import { useRoles, toRoleView, useAuditLogs, toAuditLogView, type RoleView, type AuditLogView } from "@/api/admin";
 
 /** Table configs for: team, roles, audit. */
+
+/** Distinct values actually present across the full (unfiltered) dataset —
+ *  legitimate for a field with no fixed enum, computed from the *unfiltered*
+ *  query so it never shrinks as a filter narrows `rows`. */
+function distinctOptions<T>(rows: T[], get: (r: T) => string): Array<{ value: string; label: string }> {
+  return Array.from(new Set(rows.map(get))).sort().map((v) => ({ value: v, label: v }));
+}
 
 // ---------- Team ----------
 
@@ -24,31 +31,40 @@ const teamColumns: DataColumn<TeamMemberView>[] = [
   { key: "status", label: "Status", width: 80, render: (r) => BadgeCell({ status: r.status }) },
 ];
 
-export function useTeamTableConfig(): TableConfigResult<TeamMemberView> {
-  const { data, isLoading, error } = useTeam();
+export function useTeamTableConfig(params: TableQueryParams): TableConfigResult<TeamMemberView> {
+  const filtered = useTeam({ role: params.filters.role, q: params.q });
+  const all = useTeam();
 
-  if (isLoading) return { config: undefined, isLoading: true, error: null };
-  if (error) return { config: undefined, isLoading: false, error };
+  if (filtered.isLoading || all.isLoading) return { config: undefined, isLoading: true, error: null };
+  if (filtered.error || all.error) return { config: undefined, isLoading: false, error: filtered.error ?? all.error };
 
-  const rows = (data?.items ?? []).map((m) => ({ id: m.id, name: m.name, email: m.email, role: m.role, assignedLeads: m.assignedLeads, status: "Active" }));
-  const roleCounts = new Set(rows.map((r) => r.role)).size;
+  const toView = (m: NonNullable<typeof filtered.data>["items"][number]) => ({
+    id: m.id,
+    name: m.name,
+    email: m.email,
+    role: m.role,
+    assignedLeads: m.assignedLeads,
+    status: "Active",
+  });
+  const rows = (filtered.data?.items ?? []).map(toView);
+  const allRows = (all.data?.items ?? []).map(toView);
+  const roleOptions = distinctOptions(allRows, (r) => r.role);
 
   return {
     isLoading: false,
     error: null,
     config: {
       title: "Team",
-      subtitle: `${rows.length} users · ${roleCounts} roles`,
+      subtitle: `${allRows.length} users · ${roleOptions.length} roles`,
       columns: teamColumns,
       rows,
       rowKey: (r) => r.id,
-      searchText: (r) => `${r.name} ${r.email} ${r.role}`,
-      searchPlaceholder: "Search team by name, email, role…",
+      searchPlaceholder: "Search team by name, email…",
       kpis: [
-        { label: "Users", value: String(rows.length) },
-        { label: "Roles", value: String(roleCounts) },
+        { label: "Users", value: String(allRows.length) },
+        { label: "Roles", value: String(roleOptions.length) },
       ],
-      filters: ["Role: All", "Status: All"],
+      filters: [{ label: "Role", param: "role", options: roleOptions }],
       emptyWhy: "Team members are added when they're added to the organization — none match this filter yet.",
       emptyTitle: "No team members match this filter",
     },
@@ -65,27 +81,35 @@ const rolesColumns: DataColumn<RoleView>[] = [
   { key: "status", label: "Status", width: 80, render: (r) => BadgeCell({ status: r.status }) },
 ];
 
-export function useRolesTableConfig(): TableConfigResult<RoleView> {
+export function useRolesTableConfig(params: TableQueryParams): TableConfigResult<RoleView> {
   const { data, isLoading, error } = useRoles();
 
   if (isLoading) return { config: undefined, isLoading: true, error: null };
   if (error) return { config: undefined, isLoading: false, error };
 
-  const rows = (data?.items ?? []).map(toRoleView);
+  // The role catalog is a small, fixed set (a handful of built-in roles), so
+  // it's fetched once and filtered client-side rather than round-tripping
+  // the backend per keystroke — same justified exception as Availability.
+  const allRows = (data?.items ?? []).map(toRoleView);
+  const dataScope = params.filters.dataScope;
+  const q = params.q?.trim().toLowerCase();
+  const rows = allRows.filter(
+    (r) => (!dataScope || r.dataScope === dataScope) && (!q || `${r.name} ${r.dataScope} ${r.canApprove}`.toLowerCase().includes(q)),
+  );
+  const dataScopeOptions = distinctOptions(allRows, (r) => r.dataScope);
 
   return {
     isLoading: false,
     error: null,
     config: {
       title: "Roles & Permissions",
-      subtitle: `${rows.length} roles · fixed permission matrix per role`,
+      subtitle: `${allRows.length} roles · fixed permission matrix per role`,
       columns: rolesColumns,
       rows,
       rowKey: (r) => r.key,
-      searchText: (r) => `${r.name} ${r.dataScope} ${r.canApprove}`,
       searchPlaceholder: "Search roles by name, scope…",
-      kpis: [{ label: "Roles", value: String(rows.length) }],
-      filters: ["Data Scope: All"],
+      kpis: [{ label: "Roles", value: String(allRows.length) }],
+      filters: [{ label: "Data Scope", param: "dataScope", options: dataScopeOptions }],
       emptyWhy: "Roles define the permission, discount authority and approval scope every user inherits — clear this filter to see the full list.",
       emptyTitle: "No roles match this filter",
     },
@@ -101,26 +125,32 @@ const auditColumns: DataColumn<AuditLogView>[] = [
   { key: "entity", label: "Entity", flex: 1.4, render: (r) => TextCell({ value: r.entity, weight: "normal" }) },
 ];
 
-export function useAuditTableConfig(): TableConfigResult<AuditLogView> {
-  const { data, isLoading, error } = useAuditLogs();
+export function useAuditTableConfig(params: TableQueryParams): TableConfigResult<AuditLogView> {
+  const filtered = useAuditLogs({ action: params.filters.action, actor: params.filters.user, q: params.q });
+  const all = useAuditLogs();
 
-  if (isLoading) return { config: undefined, isLoading: true, error: null };
-  if (error) return { config: undefined, isLoading: false, error };
+  if (filtered.isLoading || all.isLoading) return { config: undefined, isLoading: true, error: null };
+  if (filtered.error || all.error) return { config: undefined, isLoading: false, error: filtered.error ?? all.error };
 
-  const rows = (data?.items ?? []).map(toAuditLogView);
+  const rows = (filtered.data?.items ?? []).map(toAuditLogView);
+  const allRows = (all.data?.items ?? []).map(toAuditLogView);
+  const userOptions = distinctOptions(allRows, (r) => r.user);
+  const actionOptions = distinctOptions(allRows, (r) => r.action);
 
   return {
     isLoading: false,
     error: null,
     config: {
       title: "Audit Logs",
-      subtitle: `Immutable record of every state change · ${data?.total ?? rows.length} entries`,
+      subtitle: `Immutable record of every state change · ${all.data?.total ?? allRows.length} entries`,
       columns: auditColumns,
       rows,
       rowKey: (r) => r.id,
-      searchText: (r) => `${r.user} ${r.action} ${r.entity}`,
-      searchPlaceholder: "Filter audit log…",
-      filters: ["User", "Action"],
+      searchPlaceholder: "Search audit log…",
+      filters: [
+        { label: "User", param: "user", options: userOptions },
+        { label: "Action", param: "action", options: actionOptions },
+      ],
       minWidth: 700,
       kpis: [{ label: "Entries shown", value: String(rows.length) }],
       emptyWhy: "Every reservation, approval, price change and payment writes an entry here the moment it happens — none currently match this filter.",

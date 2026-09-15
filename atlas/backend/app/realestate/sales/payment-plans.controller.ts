@@ -3,11 +3,15 @@ import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { CurrentUser, RequirePermission } from "@core/http/decorators.js";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
 import { PermissionGuard } from "@core/http/permission.guard.js";
-import { ZodBody } from "@core/http/zod.pipe.js";
+import { ZodBody, ZodQuery } from "@core/http/zod.pipe.js";
 import type { Principal } from "@core/http/principal.js";
 import { PaymentPlansService } from "./payment-plans-service.js";
-import { createPaymentPlanSchema, type CreatePaymentPlanBody } from "./payment-plans.schema.js";
-import type { InstallmentRow } from "./payment-plans-repository.js";
+import {
+  createPaymentPlanSchema,
+  listInstallmentsQuery,
+  type CreatePaymentPlanBody,
+  type ListInstallmentsQuery,
+} from "./payment-plans.schema.js";
 
 @ApiTags("realestate · payment plans")
 @ApiBearerAuth("access-token")
@@ -52,7 +56,7 @@ export class InstallmentsController {
 
   @Get()
   @RequirePermission("read", "payment_plan")
-  list(@Query("status") status?: InstallmentRow["status"]) {
-    return this.service.listInstallments(status);
+  list(@Query(ZodQuery(listInstallmentsQuery)) q: ListInstallmentsQuery) {
+    return this.service.listInstallments(q);
   }
 }

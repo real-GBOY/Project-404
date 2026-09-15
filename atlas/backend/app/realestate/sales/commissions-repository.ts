@@ -5,6 +5,12 @@ import { realestateId } from "@atlas/realestate/shared/ids.js";
 
 export type CommissionStatus = "pending" | "approved" | "paid";
 
+export interface CommissionFilter {
+  agentId?: string;
+  period?: string;
+  status?: CommissionStatus;
+}
+
 export interface CommissionRow {
   id: string;
   agentId: string;
@@ -30,9 +36,11 @@ export class CommissionsRepository {
     return requireOrganizationId();
   }
 
-  async list(agentId?: string): Promise<CommissionRow[]> {
+  async list(filter: CommissionFilter = {}): Promise<CommissionRow[]> {
     let q = realestateDb().selectFrom("realestate_commissions").selectAll().where("organization_id", "=", this.org());
-    if (agentId) q = q.where("agent_id", "=", agentId);
+    if (filter.agentId) q = q.where("agent_id", "=", filter.agentId);
+    if (filter.period) q = q.where("period", "=", new Date(filter.period));
+    if (filter.status) q = q.where("status", "=", filter.status);
     const rows = await q.orderBy("period", "desc").execute();
     return rows.map((r) => this.toRow(r));
   }

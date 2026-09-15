@@ -30,10 +30,17 @@ export interface RecordPaymentBody {
   method: PaymentMethod;
 }
 
-export function usePayments(customerId?: string) {
+export interface PaymentListParams {
+  customerId?: string;
+  method?: PaymentMethod;
+  status?: PaymentStatus;
+  q?: string;
+}
+
+export function usePayments(params?: PaymentListParams) {
   return useQuery({
-    queryKey: ["payments", customerId ?? "all"],
-    queryFn: () => get<PaymentRow[]>(ENDPOINTS.payments.list, { customerId }),
+    queryKey: ["payments", params ?? {}],
+    queryFn: () => get<PaymentRow[]>(ENDPOINTS.payments.list, params),
   });
 }
 
@@ -52,23 +59,34 @@ export function useRecordPayment() {
 }
 
 export interface PaymentView {
+  /** The payment's own id — `reference` is a short human-readable code, not
+   *  guaranteed unique (see payments-repository.ts), so this is the row key. */
+  id: string;
   reference: string;
   customer: string;
   unit: string;
+  /** The unit's project name — the "Project" filter's source. */
+  project: string;
   amount: string;
   method: string;
   date: string;
+  /** Raw ISO date behind `date` — the "Date" filter buckets this. */
+  paidAt: string;
   status: string;
 }
 
 export function toPaymentView(row: PaymentRow, unit: (id: string) => UnitDirectoryEntry | undefined, customerName: (id: string) => string): PaymentView {
+  const u = unit(row.unitId);
   return {
+    id: row.id,
     reference: row.reference,
     customer: customerName(row.customerId),
-    unit: unit(row.unitId)?.code ?? row.unitId,
+    unit: u?.code ?? row.unitId,
+    project: u ? u.location.split(" · ")[0] : "—",
     amount: formatEgpExact(row.amountEgp),
     method: titleCase(row.method),
     date: formatDate(row.paidAt),
+    paidAt: row.paidAt,
     status: titleCase(row.status),
   };
 }
@@ -90,10 +108,16 @@ export interface InstallmentRow {
   unitId: string;
 }
 
-export function useInstallments(status?: InstallmentStatus) {
+export interface InstallmentListParams {
+  status?: InstallmentStatus;
+  projectId?: string;
+  q?: string;
+}
+
+export function useInstallments(params?: InstallmentListParams) {
   return useQuery({
-    queryKey: ["installments", status ?? "all"],
-    queryFn: () => get<InstallmentRow[]>(ENDPOINTS.installments.list, { status }),
+    queryKey: ["installments", params ?? {}],
+    queryFn: () => get<InstallmentRow[]>(ENDPOINTS.installments.list, params),
   });
 }
 
@@ -102,7 +126,11 @@ export interface InstallmentView {
   label: string;
   customer: string;
   unit: string;
+  /** The unit's project name — the "Project" filter's source. */
+  project: string;
   dueDate: string;
+  /** Raw ISO date behind `dueDate` — the "Due date" filter buckets this. */
+  dueDateIso: string;
   amount: string;
   paid: string;
   progressPct: number;
@@ -110,12 +138,15 @@ export interface InstallmentView {
 }
 
 export function toInstallmentView(row: InstallmentRow, unit: (id: string) => UnitDirectoryEntry | undefined, customerName: (id: string) => string): InstallmentView {
+  const u = unit(row.unitId);
   return {
     id: row.id,
     label: row.label,
     customer: customerName(row.customerId),
-    unit: unit(row.unitId)?.code ?? row.unitId,
+    unit: u?.code ?? row.unitId,
+    project: u ? u.location.split(" · ")[0] : "—",
     dueDate: formatDate(row.dueDate),
+    dueDateIso: row.dueDate,
     amount: formatEgpExact(row.amountEgp),
     paid: formatEgpExact(row.paidEgp),
     progressPct: row.amountEgp > 0 ? Math.round((row.paidEgp / row.amountEgp) * 100) : 0,
@@ -134,8 +165,15 @@ export interface CollectionRow {
   collectionRatePct: number;
 }
 
-export function useCollections() {
-  return useQuery({ queryKey: ["collections"], queryFn: () => get<CollectionRow[]>(ENDPOINTS.payments.collections) });
+export interface CollectionsParams {
+  projectId?: string;
+}
+
+export function useCollections(params?: CollectionsParams) {
+  return useQuery({
+    queryKey: ["collections", params ?? {}],
+    queryFn: () => get<CollectionRow[]>(ENDPOINTS.payments.collections, params),
+  });
 }
 
 export interface CollectionView {
@@ -161,6 +199,7 @@ export function toCollectionView(row: CollectionRow, projectName: (id: string) =
 // ---------- Outstanding (read-composition over overdue/pending installments past due) ----------
 
 export interface OutstandingRow {
+  installmentId: string;
   customerId: string;
   unitId: string;
   overdueEgp: number;
@@ -168,14 +207,27 @@ export interface OutstandingRow {
   dueDate: string;
 }
 
-export function useOutstanding() {
-  return useQuery({ queryKey: ["outstanding"], queryFn: () => get<OutstandingRow[]>(ENDPOINTS.payments.outstanding) });
+export interface OutstandingParams {
+  agentId?: string;
+  projectId?: string;
+}
+
+export function useOutstanding(params?: OutstandingParams) {
+  return useQuery({
+    queryKey: ["outstanding", params ?? {}],
+    queryFn: () => get<OutstandingRow[]>(ENDPOINTS.payments.outstanding, params),
+  });
 }
 
 export interface OutstandingView {
+  /** The overdue installment's own id — a customer can have more than one
+   *  overdue installment on the same unit, so this is what's unique per row. */
+  id: string;
   customerId: string;
   customer: string;
   unit: string;
+  /** The unit's project name — the "Project" filter's source. */
+  project: string;
   overdue: string;
   aging: string;
   agingDays: number;
@@ -197,10 +249,13 @@ export function toOutstandingView(
   agentName: (id: string) => string,
 ): OutstandingView {
   const c = customer(row.customerId);
+  const u = unit(row.unitId);
   return {
+    id: row.installmentId,
     customerId: row.customerId,
     customer: c?.name ?? row.customerId,
-    unit: unit(row.unitId)?.code ?? row.unitId,
+    unit: u?.code ?? row.unitId,
+    project: u ? u.location.split(" · ")[0] : "—",
     overdue: formatEgpExact(row.overdueEgp),
     aging: agingBand(row.agingDays),
     agingDays: row.agingDays,
@@ -234,8 +289,17 @@ export interface CreateFinancialReportBody {
   schedule?: ReportSchedule;
 }
 
-export function useFinancialReports() {
-  return useQuery({ queryKey: ["financial-reports"], queryFn: () => get<FinancialReportRow[]>(ENDPOINTS.financialReports.list) });
+export interface FinancialReportListParams {
+  type?: ReportType;
+  status?: ReportStatus;
+  q?: string;
+}
+
+export function useFinancialReports(params?: FinancialReportListParams) {
+  return useQuery({
+    queryKey: ["financial-reports", params ?? {}],
+    queryFn: () => get<FinancialReportRow[]>(ENDPOINTS.financialReports.list, params),
+  });
 }
 
 export function useCreateFinancialReport() {

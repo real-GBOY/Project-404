@@ -3,11 +3,15 @@ import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { CurrentUser, RequirePermission } from "@core/http/decorators.js";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
 import { PermissionGuard } from "@core/http/permission.guard.js";
-import { ZodBody } from "@core/http/zod.pipe.js";
+import { ZodBody, ZodQuery } from "@core/http/zod.pipe.js";
 import type { Principal } from "@core/http/principal.js";
 import { ContractsService } from "./contracts-service.js";
-import { createContractSchema, type CreateContractBody } from "./contracts.schema.js";
-import type { ContractStatus } from "./contracts-repository.js";
+import {
+  createContractSchema,
+  listContractsQuery,
+  type CreateContractBody,
+  type ListContractsQuery,
+} from "./contracts.schema.js";
 
 @ApiTags("realestate · contracts")
 @ApiBearerAuth("access-token")
@@ -18,8 +22,8 @@ export class ContractsController {
 
   @Get()
   @RequirePermission("read", "contract")
-  list(@Query("status") status?: ContractStatus) {
-    return this.service.list(status);
+  list(@Query(ZodQuery(listContractsQuery)) q: ListContractsQuery) {
+    return this.service.list(q);
   }
 
   @Get(":id")

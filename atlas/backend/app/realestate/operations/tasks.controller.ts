@@ -3,10 +3,16 @@ import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { RequirePermission } from "@core/http/decorators.js";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
 import { PermissionGuard } from "@core/http/permission.guard.js";
-import { ZodBody } from "@core/http/zod.pipe.js";
+import { ZodBody, ZodQuery } from "@core/http/zod.pipe.js";
 import { TasksService } from "./tasks-service.js";
-import { createTaskSchema, updateTaskStatusSchema, type CreateTaskBody, type UpdateTaskStatusBody } from "./tasks.schema.js";
-import type { TaskStatus } from "./tasks-repository.js";
+import {
+  createTaskSchema,
+  updateTaskStatusSchema,
+  listTasksQuery,
+  type CreateTaskBody,
+  type UpdateTaskStatusBody,
+  type ListTasksQuery,
+} from "./tasks.schema.js";
 
 @ApiTags("realestate · tasks")
 @ApiBearerAuth("access-token")
@@ -17,8 +23,8 @@ export class TasksController {
 
   @Get()
   @RequirePermission("read", "task")
-  list(@Query("assigneeId") assigneeId?: string, @Query("status") status?: TaskStatus) {
-    return this.service.list(assigneeId, status);
+  list(@Query(ZodQuery(listTasksQuery)) q: ListTasksQuery) {
+    return this.service.list(q);
   }
 
   @Post()

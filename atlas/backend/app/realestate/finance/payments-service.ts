@@ -4,8 +4,8 @@ import { readInTenant } from "@core/kernel/db/db.js";
 import { AUDIT_LOGGER, UNIT_OF_WORK } from "@core/kernel/tokens.js";
 import type { IAuditLogger } from "@core/contracts/index.js";
 import { PaymentPlansRepository } from "@atlas/realestate/sales/payment-plans-repository.js";
-import { PaymentsRepository, type CreatePaymentInput } from "./payments-repository.js";
-import { FinanceQueries } from "./finance-queries.js";
+import { PaymentsRepository, type CreatePaymentInput, type PaymentFilter } from "./payments-repository.js";
+import { FinanceQueries, type CollectionsFilter, type OutstandingFilter } from "./finance-queries.js";
 import type { RecordPaymentBody } from "./payments.schema.js";
 
 @Injectable()
@@ -18,16 +18,16 @@ export class PaymentsService {
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
 
-  list(customerId?: string) {
-    return readInTenant(() => this.repo.list(customerId));
+  list(filter: PaymentFilter = {}) {
+    return readInTenant(() => this.repo.list(filter));
   }
 
-  collections() {
-    return readInTenant(() => this.queries.collectionsByProject());
+  collections(filter: CollectionsFilter = {}) {
+    return readInTenant(() => this.queries.collectionsByProject(filter));
   }
 
-  outstanding() {
-    return readInTenant(() => this.queries.outstandingAccounts());
+  outstanding(filter: OutstandingFilter = {}) {
+    return readInTenant(() => this.queries.outstandingAccounts(filter));
   }
 
   async record(body: RecordPaymentBody, actorId: string) {

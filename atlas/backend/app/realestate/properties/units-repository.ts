@@ -23,6 +23,7 @@ export interface UnitFilter {
   projectId?: string;
   buildingId?: string;
   status?: UnitStatus;
+  unitType?: string;
 }
 
 export interface CreateUnitInput {
@@ -50,6 +51,7 @@ export class UnitsRepository {
     if (filter.projectId) q = q.where("project_id", "=", filter.projectId);
     if (filter.buildingId) q = q.where("building_id", "=", filter.buildingId);
     if (filter.status) q = q.where("status", "=", filter.status);
+    if (filter.unitType) q = q.where("unit_type", "=", filter.unitType);
     const rows = await q.orderBy("code", "asc").execute();
     return rows.map((r) => this.toRow(r));
   }

@@ -1,10 +1,11 @@
 import { createElement } from "react";
 import type { DataColumn } from "@/components/tables/data-table";
 import { TextCell, BadgeCell } from "@/components/tables/data-table";
-import type { TableConfigResult } from "@/features/shared/table-types";
+import type { TableConfigResult, TableQueryParams } from "@/features/shared/table-types";
+import { titleCase } from "@/lib/text";
 import { useAuth } from "@/features/auth/auth-provider";
 import { useTeamDirectory } from "@/api/team";
-import { useTasks, useCreateTask, toTaskView, type TaskView, type TaskPriority } from "@/api/operations";
+import { useTasks, useCreateTask, toTaskView, type TaskView, type TaskPriority, type TaskStatus } from "@/api/operations";
 
 /**
  * Table config for: tasks (the only EntityTablePage entity in Operations —
@@ -12,6 +13,9 @@ import { useTasks, useCreateTask, toTaskView, type TaskView, type TaskPriority }
  *
  * Plain `.ts` (not `.tsx`) — cell renderers are built with `createElement`.
  */
+
+const TASK_PRIORITIES: TaskPriority[] = ["high", "medium", "low"];
+const TASK_STATUSES: TaskStatus[] = ["open", "in-progress", "done"];
 
 const taskColumns: DataColumn<TaskView>[] = [
   { key: "priority", label: "Priority", width: 78, render: (r) => createElement(BadgeCell, { status: r.priority }) },
@@ -21,19 +25,27 @@ const taskColumns: DataColumn<TaskView>[] = [
   { key: "status", label: "Status", width: 108, render: (r) => createElement(BadgeCell, { status: r.status }) },
 ];
 
-export function useTasksTableConfig(): TableConfigResult<TaskView> {
-  const { data, isLoading, error } = useTasks();
+export function useTasksTableConfig(params: TableQueryParams): TableConfigResult<TaskView> {
+  const filtered = useTasks({
+    assigneeId: params.filters.assigneeId,
+    priority: params.filters.priority as TaskPriority | undefined,
+    status: params.filters.status as TaskStatus | undefined,
+    q: params.q,
+  });
+  const all = useTasks();
   const team = useTeamDirectory();
   const createTask = useCreateTask();
   const auth = useAuth();
 
-  if (isLoading || team.isLoading) return { config: undefined, isLoading: true, error: null };
-  if (error || team.error) return { config: undefined, isLoading: false, error: error ?? team.error };
+  if (filtered.isLoading || all.isLoading || team.isLoading) return { config: undefined, isLoading: true, error: null };
+  if (filtered.error || all.error || team.error) return { config: undefined, isLoading: false, error: filtered.error ?? all.error ?? team.error };
 
-  const rows = (data ?? []).map((r) => toTaskView(r, (id) => team.byId.get(id) ?? id));
-  const openCount = rows.filter((r) => r.status !== "Done").length;
-  const doneCount = rows.filter((r) => r.status === "Done").length;
-  const dueTodayCount = rows.filter((r) => r.due === "Today").length;
+  const toView = (r: NonNullable<typeof filtered.data>[number]) => toTaskView(r, (id) => team.byId.get(id) ?? id);
+  const rows = filtered.data!.map(toView);
+  const allRows = all.data!.map(toView);
+  const openCount = allRows.filter((r) => r.status !== "Done").length;
+  const doneCount = allRows.filter((r) => r.status === "Done").length;
+  const dueTodayCount = allRows.filter((r) => r.due === "Today").length;
 
   return {
     isLoading: false,
@@ -45,15 +57,18 @@ export function useTasksTableConfig(): TableConfigResult<TaskView> {
       columns: taskColumns,
       rows,
       rowKey: (r) => r.id,
-      searchText: (r) => `${r.task} ${r.relatedTo} ${r.assignee} ${r.status} ${r.priority}`,
-      searchPlaceholder: "Filter tasks…",
-      filters: ["Priority", "Assignee", "Status"],
+      searchPlaceholder: "Search tasks…",
+      filters: [
+        { label: "Priority", param: "priority", options: TASK_PRIORITIES.map((p) => ({ value: p, label: titleCase(p) })) },
+        { label: "Assignee", param: "assigneeId", options: team.members.map((m) => ({ value: m.id, label: m.name })) },
+        { label: "Status", param: "status", options: TASK_STATUSES.map((s) => ({ value: s, label: titleCase(s) })) },
+      ],
       minWidth: 760,
       kpis: [
         { label: "Open", value: String(openCount) },
         { label: "Due today", value: String(dueTodayCount) },
         { label: "Done", value: String(doneCount) },
-        { label: "Total", value: String(rows.length) },
+        { label: "Total", value: String(allRows.length) },
       ],
       emptyWhy: "Tasks are generated automatically from reservations, contracts, collections and workflow steps that need a human follow-up — none currently match this filter.",
       createForm: {

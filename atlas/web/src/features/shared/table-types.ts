@@ -30,6 +30,34 @@ export type EntityKey =
   | "team"
   | "roles";
 
+/**
+ * The current search text + selected filter values for one list screen —
+ * built by `EntityTablePage`, forwarded through `useTableConfig` into each
+ * domain's own list query hook, which turns it into real backend query
+ * params. Filtering and search both happen server-side; nothing here slices
+ * an already-fetched array client-side.
+ */
+export interface TableQueryParams {
+  /** Free-text search — the corresponding list endpoint ranks by relevance. */
+  q?: string;
+  /** `filter.param` → selected value (absent/"All" means "no filter"). */
+  filters: Record<string, string>;
+}
+
+/**
+ * One real filter over a backend query param. Options are a fixed, known
+ * vocabulary — the domain's real enum values, or (for a directory-backed
+ * filter like "Agent") entries from the same directory hook the create-forms
+ * already use — never derived from whatever rows happen to be loaded, so the
+ * list stays complete even once the backend has actually narrowed `rows`.
+ */
+export interface TableFilter {
+  label: string;
+  /** Query param key this filter drives (matches the domain hook's param name). */
+  param: string;
+  options: Array<{ value: string; label: string }>;
+}
+
 export interface TableConfig<T = unknown> {
   title: string;
   subtitle: string;
@@ -39,10 +67,8 @@ export interface TableConfig<T = unknown> {
   rowKey: (row: T) => string;
   onRowClick?: (row: T) => string | void;
   kpis?: Omit<KpiTileProps, "compact">[];
-  filters?: string[];
+  filters?: TableFilter[];
   searchPlaceholder?: string;
-  /** field getter(s) the free-text search box matches against */
-  searchText: (row: T) => string;
   emptyTitle?: string;
   emptyWhy: string;
   minWidth?: number;

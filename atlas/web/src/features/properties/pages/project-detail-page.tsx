@@ -67,7 +67,7 @@ export function ProjectDetailPage() {
   const [reserveOpen, setReserveOpen] = useState(false);
 
   const projects = useProjects();
-  const buildings = useBuildings(id);
+  const buildings = useBuildings({ projectId: id });
   const units = useUnits({ projectId: id });
   const collections = useCollections();
   const customers = useCustomers();

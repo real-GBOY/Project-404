@@ -5,7 +5,7 @@ import { NotFound } from "@core/kernel/errors.js";
 import { AUDIT_LOGGER, UNIT_OF_WORK } from "@core/kernel/tokens.js";
 import type { IAuditLogger } from "@core/contracts/index.js";
 import { ProjectsRepository } from "./projects-repository.js";
-import { BuildingsRepository, type CreateBuildingInput } from "./buildings-repository.js";
+import { BuildingsRepository, type BuildingFilter, type CreateBuildingInput } from "./buildings-repository.js";
 import type { CreateBuildingBody, UpdateBuildingBody } from "./buildings.schema.js";
 
 @Injectable()
@@ -17,8 +17,8 @@ export class BuildingsService {
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
 
-  listForProject(projectId?: string) {
-    return readInTenant(() => this.repo.listForProject(projectId));
+  listForProject(filter: BuildingFilter = {}) {
+    return readInTenant(() => this.repo.listForProject(filter));
   }
 
   async get(id: string) {

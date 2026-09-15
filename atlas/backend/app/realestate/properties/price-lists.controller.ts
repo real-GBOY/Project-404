@@ -3,13 +3,15 @@ import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { CurrentUser, RequirePermission } from "@core/http/decorators.js";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
 import { PermissionGuard } from "@core/http/permission.guard.js";
-import { ZodBody } from "@core/http/zod.pipe.js";
+import { ZodBody, ZodQuery } from "@core/http/zod.pipe.js";
 import type { Principal } from "@core/http/principal.js";
 import { PriceListsService } from "./price-lists-service.js";
 import {
   createPriceListSchema,
+  listPriceListsQuery,
   updatePriceListSchema,
   type CreatePriceListBody,
+  type ListPriceListsQuery,
   type UpdatePriceListBody,
 } from "./price-lists.schema.js";
 
@@ -22,8 +24,8 @@ export class PriceListsController {
 
   @Get()
   @RequirePermission("read", "price_list")
-  list(@Query("projectId") projectId?: string) {
-    return this.service.listForProject(projectId);
+  list(@Query(ZodQuery(listPriceListsQuery)) q: ListPriceListsQuery) {
+    return this.service.listForProject(q);
   }
 
   @Post()

@@ -2,7 +2,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import type { UnitOfWork } from "@core/kernel/db/db.js";
 import { readInTenant } from "@core/kernel/db/db.js";
 import { UNIT_OF_WORK } from "@core/kernel/tokens.js";
-import { ActivitiesRepository, type CreateActivityInput } from "./activities-repository.js";
+import { ActivitiesRepository, type ActivityFilter, type CreateActivityInput } from "./activities-repository.js";
 
 @Injectable()
 export class ActivitiesService {
@@ -11,8 +11,8 @@ export class ActivitiesService {
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
 
-  list(relatedType?: string, relatedId?: string) {
-    return readInTenant(() => this.repo.list(relatedType, relatedId));
+  list(filter: ActivityFilter = {}) {
+    return readInTenant(() => this.repo.list(filter));
   }
 
   create(input: CreateActivityInput) {

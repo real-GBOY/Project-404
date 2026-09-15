@@ -2,8 +2,18 @@ import { Injectable } from "@nestjs/common";
 import { requireOrganizationId } from "@core/kernel/tenant.js";
 import { realestateDb } from "@atlas/realestate/db/executor.js";
 import { realestateId } from "@atlas/realestate/shared/ids.js";
+import { combinedRelevance } from "@atlas/realestate/shared/search.js";
 
 export type ReservationStatus = "active" | "expiring" | "expired" | "converted";
+
+export interface ReservationFilter {
+  status?: ReservationStatus;
+  agentId?: string;
+  /** Joins to the unit to scope by project. */
+  projectId?: string;
+  /** Free-text search across customer name / unit code, ranked by relevance. */
+  q?: string;
+}
 
 export interface ReservationRow {
   id: string;
@@ -30,10 +40,53 @@ export class ReservationsRepository {
     return requireOrganizationId();
   }
 
-  async list(status?: ReservationStatus): Promise<ReservationRow[]> {
-    let q = realestateDb().selectFrom("realestate_reservations").selectAll().where("organization_id", "=", this.org());
-    if (status) q = q.where("status", "=", status);
-    const rows = await q.orderBy("reserved_at", "desc").execute();
+  async list(filter: ReservationFilter = {}): Promise<ReservationRow[]> {
+    let q = realestateDb()
+      .selectFrom("realestate_reservations")
+      .selectAll("realestate_reservations")
+      .where("realestate_reservations.organization_id", "=", this.org());
+    if (filter.status) q = q.where("realestate_reservations.status", "=", filter.status);
+    if (filter.agentId) q = q.where("realestate_reservations.agent_id", "=", filter.agentId);
+
+    const term = filter.q?.trim();
+
+    if (term) {
+      let joined = q
+        .innerJoin("realestate_units", (join) =>
+          join
+            .onRef("realestate_units.id", "=", "realestate_reservations.unit_id")
+            .onRef("realestate_units.organization_id", "=", "realestate_reservations.organization_id"),
+        )
+        .innerJoin("realestate_customers", (join) =>
+          join
+            .onRef("realestate_customers.id", "=", "realestate_reservations.customer_id")
+            .onRef("realestate_customers.organization_id", "=", "realestate_reservations.organization_id"),
+        );
+      if (filter.projectId) joined = joined.where("realestate_units.project_id", "=", filter.projectId);
+      const score = combinedRelevance([{ column: "realestate_customers.name" }, { column: "realestate_units.code", weight: 0.8 }], term);
+      const rows = await joined
+        .select(score.as("relevance_score"))
+        .where(score, ">", 0)
+        .orderBy("relevance_score", "desc")
+        .orderBy("realestate_reservations.reserved_at", "desc")
+        .execute();
+      return rows.map((r) => this.toRow(r));
+    }
+
+    if (filter.projectId) {
+      const rows = await q
+        .innerJoin("realestate_units", (join) =>
+          join
+            .onRef("realestate_units.id", "=", "realestate_reservations.unit_id")
+            .onRef("realestate_units.organization_id", "=", "realestate_reservations.organization_id"),
+        )
+        .where("realestate_units.project_id", "=", filter.projectId)
+        .orderBy("realestate_reservations.reserved_at", "desc")
+        .execute();
+      return rows.map((r) => this.toRow(r));
+    }
+
+    const rows = await q.orderBy("realestate_reservations.reserved_at", "desc").execute();
     return rows.map((r) => this.toRow(r));
   }
 

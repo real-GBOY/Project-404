@@ -16,6 +16,9 @@ export const updateFollowupStatusSchema = z.object({
 export const listFollowupsQuery = z.object({
   agentId: z.string().optional(),
   status: z.enum(["open", "in-progress", "overdue", "done"]).optional(),
+  priority: z.enum(["high", "medium", "low"]).optional(),
+  /** Free-text search across the reason, ranked by relevance. */
+  q: z.string().trim().min(1).max(200).optional(),
 });
 
 export type CreateFollowupBody = z.infer<typeof createFollowupSchema>;

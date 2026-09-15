@@ -2,10 +2,18 @@ import { Injectable } from "@nestjs/common";
 import { requireOrganizationId } from "@core/kernel/tenant.js";
 import { realestateDb } from "@atlas/realestate/db/executor.js";
 import { realestateId } from "@atlas/realestate/shared/ids.js";
+import { combinedRelevance } from "@atlas/realestate/shared/search.js";
 
 export type ReportType = "collections" | "revenue" | "receivables" | "commissions" | "treasury";
 export type ReportSchedule = "manual" | "daily" | "weekly" | "monthly";
 export type ReportStatus = "draft" | "active";
+
+export interface FinancialReportFilter {
+  type?: ReportType;
+  status?: ReportStatus;
+  /** Free-text search across name/period, ranked by relevance. */
+  q?: string;
+}
 
 export interface FinancialReportRow {
   id: string;
@@ -32,13 +40,19 @@ export class FinancialReportsRepository {
     return requireOrganizationId();
   }
 
-  async list(): Promise<FinancialReportRow[]> {
-    const rows = await realestateDb()
-      .selectFrom("realestate_financial_reports")
-      .selectAll()
-      .where("organization_id", "=", this.org())
-      .orderBy("name", "asc")
-      .execute();
+  async list(filter: FinancialReportFilter = {}): Promise<FinancialReportRow[]> {
+    let q = realestateDb().selectFrom("realestate_financial_reports").selectAll().where("organization_id", "=", this.org());
+    if (filter.type) q = q.where("type", "=", filter.type);
+    if (filter.status) q = q.where("status", "=", filter.status);
+
+    const term = filter.q?.trim();
+    if (term) {
+      const score = combinedRelevance([{ column: "name" }, { column: "period", weight: 0.7 }], term);
+      const rows = await q.select(score.as("relevance_score")).where(score, ">", 0).orderBy("relevance_score", "desc").orderBy("name", "asc").execute();
+      return rows.map((r) => this.toRow(r));
+    }
+
+    const rows = await q.orderBy("name", "asc").execute();
     return rows.map((r) => this.toRow(r));
   }
 

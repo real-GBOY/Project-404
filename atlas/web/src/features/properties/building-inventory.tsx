@@ -49,7 +49,7 @@ export interface RealUnit extends UnitCellData {
  * `unit.domain.ts`'s `unitAt()`), not this component.
  */
 export function BuildingInventory({ projectId, onUnitClick }: { projectId: string; onUnitClick: (unit: RealUnit) => void }) {
-  const buildings = useBuildings(projectId);
+  const buildings = useBuildings({ projectId });
   const units = useUnits({ projectId });
   const projects = useProjectDirectory();
   const [buildingKey, setBuildingKey] = useState<string | undefined>(undefined);

@@ -2,8 +2,16 @@ import { Injectable } from "@nestjs/common";
 import { requireOrganizationId } from "@core/kernel/tenant.js";
 import { realestateDb } from "@atlas/realestate/db/executor.js";
 import { realestateId } from "@atlas/realestate/shared/ids.js";
+import { combinedRelevance } from "@atlas/realestate/shared/search.js";
 
 export type ProjectStatus = "pre-launch" | "launched" | "under-construction" | "delivered";
+
+export interface ProjectFilter {
+  status?: ProjectStatus;
+  developer?: string;
+  /** Free-text search across name/location/developer, ranked by relevance. */
+  q?: string;
+}
 
 export interface ProjectRow {
   id: string;
@@ -37,13 +45,27 @@ export class ProjectsRepository {
     return requireOrganizationId();
   }
 
-  async list(): Promise<ProjectRow[]> {
-    const rows = await realestateDb()
-      .selectFrom("realestate_projects")
-      .selectAll()
-      .where("organization_id", "=", this.org())
-      .orderBy("name", "asc")
-      .execute();
+  async list(filter: ProjectFilter = {}): Promise<ProjectRow[]> {
+    let query = realestateDb().selectFrom("realestate_projects").selectAll().where("organization_id", "=", this.org());
+    if (filter.status) query = query.where("status", "=", filter.status);
+    if (filter.developer) query = query.where("developer", "=", filter.developer);
+
+    const term = filter.q?.trim();
+    if (term) {
+      const score = combinedRelevance(
+        [{ column: "name" }, { column: "location", weight: 0.7 }, { column: "developer", weight: 0.7 }],
+        term,
+      );
+      const rows = await query
+        .select(score.as("relevance_score"))
+        .where(score, ">", 0)
+        .orderBy("relevance_score", "desc")
+        .orderBy("name", "asc")
+        .execute();
+      return rows.map((r) => this.toRow(r));
+    }
+
+    const rows = await query.orderBy("name", "asc").execute();
     return rows.map((r) => this.toRow(r));
   }
 

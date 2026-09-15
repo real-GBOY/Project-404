@@ -22,7 +22,7 @@ export class ActivitiesController {
   @Get()
   @RequirePermission("read", "activity")
   list(@Query(ZodQuery(listActivitiesQuery)) q: ListActivitiesQuery) {
-    return this.service.list(q.relatedType, q.relatedId);
+    return this.service.list(q);
   }
 
   @Post()

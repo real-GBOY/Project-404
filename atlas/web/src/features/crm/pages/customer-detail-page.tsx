@@ -84,7 +84,7 @@ export function CustomerDetailPage() {
   const customer = useCustomer(id);
   const team = useTeamDirectory();
   const units = useUnitDirectory();
-  const payments = usePayments(id);
+  const payments = usePayments({ customerId: id });
   const contracts = useContracts();
   const documents = useDocuments({ relatedType: "customer", relatedId: id });
   const activities = useActivities({ relatedType: "customer", relatedId: id });

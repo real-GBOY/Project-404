@@ -3,10 +3,19 @@ import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { CurrentUser, RequirePermission } from "@core/http/decorators.js";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
 import { PermissionGuard } from "@core/http/permission.guard.js";
-import { ZodBody } from "@core/http/zod.pipe.js";
+import { ZodBody, ZodQuery } from "@core/http/zod.pipe.js";
 import type { Principal } from "@core/http/principal.js";
 import { PaymentsService } from "./payments-service.js";
-import { recordPaymentSchema, type RecordPaymentBody } from "./payments.schema.js";
+import {
+  recordPaymentSchema,
+  listPaymentsQuery,
+  collectionsQuery,
+  outstandingQuery,
+  type RecordPaymentBody,
+  type ListPaymentsQuery,
+  type CollectionsQuery,
+  type OutstandingQuery,
+} from "./payments.schema.js";
 
 @ApiTags("realestate · payments")
 @ApiBearerAuth("access-token")
@@ -17,20 +26,20 @@ export class PaymentsController {
 
   @Get()
   @RequirePermission("read", "payment")
-  list(@Query("customerId") customerId?: string) {
-    return this.service.list(customerId);
+  list(@Query(ZodQuery(listPaymentsQuery)) q: ListPaymentsQuery) {
+    return this.service.list(q);
   }
 
   @Get("collections")
   @RequirePermission("read", "payment")
-  collections() {
-    return this.service.collections();
+  collections(@Query(ZodQuery(collectionsQuery)) q: CollectionsQuery) {
+    return this.service.collections(q);
   }
 
   @Get("outstanding")
   @RequirePermission("read", "payment")
-  outstanding() {
-    return this.service.outstanding();
+  outstanding(@Query(ZodQuery(outstandingQuery)) q: OutstandingQuery) {
+    return this.service.outstanding(q);
   }
 
   @Post()

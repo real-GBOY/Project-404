@@ -42,8 +42,11 @@ export interface CreateLeadBody {
 export interface LeadListParams {
   status?: LeadStatus;
   stage?: LeadStage;
+  source?: LeadSource;
   agentId?: string;
   dealsOnly?: boolean;
+  /** Free-text search across name/phone/id — filtered and ranked server-side. */
+  q?: string;
 }
 
 export function useLeads(params?: LeadListParams) {
@@ -140,8 +143,19 @@ export interface CreateCustomerBody {
   address?: string | null;
 }
 
-export function useCustomers() {
-  return useQuery({ queryKey: ["customers"], queryFn: () => get<CustomerRow[]>(ENDPOINTS.customers.list) });
+export interface CustomerListParams {
+  status?: CustomerStatus;
+  primaryProjectId?: string;
+  agentId?: string;
+  /** Free-text search across name/email/phone/id — filtered and ranked server-side. */
+  q?: string;
+}
+
+export function useCustomers(params?: CustomerListParams) {
+  return useQuery({
+    queryKey: ["customers", params ?? {}],
+    queryFn: () => get<CustomerRow[]>(ENDPOINTS.customers.list, params),
+  });
 }
 
 export function useCustomer(id: string | undefined) {
@@ -212,7 +226,14 @@ export interface CreateActivityBody {
   outcome?: string | null;
 }
 
-export function useActivities(params?: { relatedType?: "lead" | "customer"; relatedId?: string }) {
+export function useActivities(params?: {
+  relatedType?: "lead" | "customer";
+  relatedId?: string;
+  type?: ActivityType;
+  agentId?: string;
+  /** Free-text search across subject/outcome — filtered and ranked server-side. */
+  q?: string;
+}) {
   return useQuery({
     queryKey: ["activities", params ?? {}],
     queryFn: () => get<ActivityRow[]>(ENDPOINTS.activities.list, params),
@@ -228,6 +249,7 @@ export function useCreateActivity() {
 }
 
 export interface ActivityView {
+  id: string;
   type: string;
   subject: string;
   relatedTo: string;
@@ -242,6 +264,7 @@ export function toActivityView(
   relatedName: (type: "lead" | "customer" | null, id: string | null) => string,
 ): ActivityView {
   return {
+    id: row.id,
     type: titleCase(row.type),
     subject: row.subject,
     relatedTo: relatedName(row.relatedType, row.relatedId),
@@ -276,8 +299,17 @@ export interface CreateFollowupBody {
   dueAt: string;
 }
 
-export function useFollowups() {
-  return useQuery({ queryKey: ["followups"], queryFn: () => get<FollowupRow[]>(ENDPOINTS.followups.list) });
+export function useFollowups(params?: {
+  agentId?: string;
+  status?: FollowupStatus;
+  priority?: FollowupPriority;
+  /** Free-text search across the reason — filtered and ranked server-side. */
+  q?: string;
+}) {
+  return useQuery({
+    queryKey: ["followups", params ?? {}],
+    queryFn: () => get<FollowupRow[]>(ENDPOINTS.followups.list, params),
+  });
 }
 
 export function useCreateFollowup() {

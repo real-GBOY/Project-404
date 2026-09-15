@@ -3,7 +3,7 @@ import type { UnitOfWork } from "@core/kernel/db/db.js";
 import { readInTenant } from "@core/kernel/db/db.js";
 import { NotFound } from "@core/kernel/errors.js";
 import { UNIT_OF_WORK } from "@core/kernel/tokens.js";
-import { CommissionsRepository, type CommissionStatus, type UpsertCommissionInput } from "./commissions-repository.js";
+import { CommissionsRepository, type CommissionFilter, type CommissionStatus, type UpsertCommissionInput } from "./commissions-repository.js";
 
 @Injectable()
 export class CommissionsService {
@@ -12,8 +12,8 @@ export class CommissionsService {
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
 
-  list(agentId?: string) {
-    return readInTenant(() => this.repo.list(agentId));
+  list(filter: CommissionFilter = {}) {
+    return readInTenant(() => this.repo.list(filter));
   }
 
   upsert(input: UpsertCommissionInput) {

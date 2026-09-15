@@ -3,7 +3,7 @@ import type { UnitOfWork } from "@core/kernel/db/db.js";
 import { readInTenant } from "@core/kernel/db/db.js";
 import { NotFound } from "@core/kernel/errors.js";
 import { UNIT_OF_WORK } from "@core/kernel/tokens.js";
-import { FollowupsRepository, type CreateFollowupInput, type FollowupStatus } from "./followups-repository.js";
+import { FollowupsRepository, type CreateFollowupInput, type FollowupFilter, type FollowupStatus } from "./followups-repository.js";
 
 @Injectable()
 export class FollowupsService {
@@ -12,8 +12,8 @@ export class FollowupsService {
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
 
-  list(agentId?: string, status?: FollowupStatus) {
-    return readInTenant(() => this.repo.list(agentId, status));
+  list(filter: FollowupFilter = {}) {
+    return readInTenant(() => this.repo.list(filter));
   }
 
   create(input: CreateFollowupInput) {

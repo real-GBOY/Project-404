@@ -27,7 +27,14 @@ export interface CreateTaskBody {
   dueAt: string;
 }
 
-export function useTasks(params?: { assigneeId?: string; status?: TaskStatus }) {
+export interface TaskListParams {
+  assigneeId?: string;
+  priority?: TaskPriority;
+  status?: TaskStatus;
+  q?: string;
+}
+
+export function useTasks(params?: TaskListParams) {
   return useQuery({
     queryKey: ["tasks", params ?? {}],
     queryFn: () => get<TaskRow[]>(ENDPOINTS.tasks.list, params),

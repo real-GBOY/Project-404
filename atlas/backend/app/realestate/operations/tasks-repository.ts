@@ -2,9 +2,18 @@ import { Injectable } from "@nestjs/common";
 import { requireOrganizationId } from "@core/kernel/tenant.js";
 import { realestateDb } from "@atlas/realestate/db/executor.js";
 import { realestateId } from "@atlas/realestate/shared/ids.js";
+import { combinedRelevance } from "@atlas/realestate/shared/search.js";
 
 export type TaskPriority = "high" | "medium" | "low";
 export type TaskStatus = "open" | "in-progress" | "done";
+
+export interface TaskFilter {
+  assigneeId?: string;
+  priority?: TaskPriority;
+  status?: TaskStatus;
+  /** Free-text search across the task title, ranked by relevance. */
+  q?: string;
+}
 
 export interface TaskRow {
   id: string;
@@ -32,10 +41,19 @@ export class TasksRepository {
     return requireOrganizationId();
   }
 
-  async list(assigneeId?: string, status?: TaskStatus): Promise<TaskRow[]> {
+  async list(filter: TaskFilter = {}): Promise<TaskRow[]> {
     let q = realestateDb().selectFrom("realestate_tasks").selectAll().where("organization_id", "=", this.org());
-    if (assigneeId) q = q.where("assignee_id", "=", assigneeId);
-    if (status) q = q.where("status", "=", status);
+    if (filter.assigneeId) q = q.where("assignee_id", "=", filter.assigneeId);
+    if (filter.priority) q = q.where("priority", "=", filter.priority);
+    if (filter.status) q = q.where("status", "=", filter.status);
+
+    const term = filter.q?.trim();
+    if (term) {
+      const score = combinedRelevance([{ column: "title" }], term);
+      const rows = await q.select(score.as("relevance_score")).where(score, ">", 0).orderBy("relevance_score", "desc").orderBy("due_at", "asc").execute();
+      return rows.map((r) => this.toRow(r));
+    }
+
     const rows = await q.orderBy("due_at", "asc").execute();
     return rows.map((r) => this.toRow(r));
   }

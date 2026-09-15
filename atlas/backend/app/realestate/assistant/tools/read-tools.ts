@@ -117,7 +117,7 @@ export class ReadTools {
             relatedId: id.optional(),
           }),
         },
-        async (a) => capArray(await this.activities.list(a.relatedType, a.relatedId), 30),
+        async (a) => capArray(await this.activities.list({ relatedType: a.relatedType, relatedId: a.relatedId }), 30),
       ),
       t(
         {
@@ -185,7 +185,7 @@ export class ReadTools {
           resource: "reservation",
           parameters: z.object({ status: z.enum(["active", "expiring", "expired", "converted"]).optional() }),
         },
-        async (a) => capArray(await this.reservations.list(a.status)),
+        async (a) => capArray(await this.reservations.list({ status: a.status })),
       ),
       t(
         {
@@ -203,7 +203,7 @@ export class ReadTools {
           resource: "contract",
           parameters: z.object({ status: z.enum(["draft", "awaiting-approval", "signed"]).optional() }),
         },
-        async (a) => capArray(await this.contracts.list(a.status)),
+        async (a) => capArray(await this.contracts.list({ status: a.status })),
       ),
       t(
         {
@@ -221,7 +221,7 @@ export class ReadTools {
           resource: "payment_plan",
           parameters: z.object({ status: z.enum(["pending", "partial", "paid", "overdue"]).optional() }),
         },
-        async (a) => capArray(await this.paymentPlans.listInstallments(a.status), 40),
+        async (a) => capArray(await this.paymentPlans.listInstallments({ status: a.status }), 40),
       ),
       t(
         {
@@ -251,7 +251,7 @@ export class ReadTools {
             status: z.enum(["open", "in-progress", "done"]).optional(),
           }),
         },
-        async (a) => capArray(await this.tasks.list(a.assigneeId, a.status)),
+        async (a) => capArray(await this.tasks.list({ assigneeId: a.assigneeId, status: a.status })),
       ),
       t(
         {

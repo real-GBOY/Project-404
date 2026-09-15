@@ -1,11 +1,16 @@
-import { Body, Controller, Get, HttpCode, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Post, Query, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { RequirePermission } from "@core/http/decorators.js";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
 import { PermissionGuard } from "@core/http/permission.guard.js";
-import { ZodBody } from "@core/http/zod.pipe.js";
+import { ZodBody, ZodQuery } from "@core/http/zod.pipe.js";
 import { FinancialReportsService } from "./financial-reports-service.js";
-import { createFinancialReportSchema, type CreateFinancialReportBody } from "./financial-reports.schema.js";
+import {
+  createFinancialReportSchema,
+  listFinancialReportsQuery,
+  type CreateFinancialReportBody,
+  type ListFinancialReportsQuery,
+} from "./financial-reports.schema.js";
 
 @ApiTags("realestate · financial reports")
 @ApiBearerAuth("access-token")
@@ -16,8 +21,8 @@ export class FinancialReportsController {
 
   @Get()
   @RequirePermission("read", "financial_report")
-  list() {
-    return this.service.list();
+  list(@Query(ZodQuery(listFinancialReportsQuery)) q: ListFinancialReportsQuery) {
+    return this.service.list(q);
   }
 
   @Post()

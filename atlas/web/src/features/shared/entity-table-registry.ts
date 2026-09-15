@@ -1,4 +1,4 @@
-import type { AnyTableConfigResult, EntityKey } from "./table-types";
+import type { AnyTableConfigResult, EntityKey, TableQueryParams } from "./table-types";
 import { useLeadsTableConfig, useCustomersTableConfig, useActivitiesTableConfig, useFollowupsTableConfig } from "@/features/crm/table-configs";
 import { useProjectsTableConfig, useBuildingsTableConfig, useAvailabilityTableConfig, usePricingTableConfig } from "@/features/properties/table-configs";
 import { useReservationsTableConfig, useDealsTableConfig, useContractsTableConfig, useCommissionsTableConfig } from "@/features/sales/table-configs";
@@ -10,50 +10,50 @@ import { useTeamTableConfig, useRolesTableConfig, useAuditTableConfig } from "@/
 // (each route gets its own instance), so exactly one branch's hook ever runs for that
 // instance's whole lifetime — safe despite looking conditional to the lint rule.
 /* eslint-disable react-hooks/rules-of-hooks */
-export function useTableConfig(entity: EntityKey): AnyTableConfigResult {
+export function useTableConfig(entity: EntityKey, params: TableQueryParams): AnyTableConfigResult {
   switch (entity) {
     case "leads":
-      return useLeadsTableConfig() as AnyTableConfigResult;
+      return useLeadsTableConfig(params) as AnyTableConfigResult;
     case "customers":
-      return useCustomersTableConfig() as AnyTableConfigResult;
+      return useCustomersTableConfig(params) as AnyTableConfigResult;
     case "activities":
-      return useActivitiesTableConfig() as AnyTableConfigResult;
+      return useActivitiesTableConfig(params) as AnyTableConfigResult;
     case "followups":
-      return useFollowupsTableConfig() as AnyTableConfigResult;
+      return useFollowupsTableConfig(params) as AnyTableConfigResult;
     case "projects":
-      return useProjectsTableConfig() as AnyTableConfigResult;
+      return useProjectsTableConfig(params) as AnyTableConfigResult;
     case "buildings":
-      return useBuildingsTableConfig() as AnyTableConfigResult;
+      return useBuildingsTableConfig(params) as AnyTableConfigResult;
     case "availability":
-      return useAvailabilityTableConfig() as AnyTableConfigResult;
+      return useAvailabilityTableConfig(params) as AnyTableConfigResult;
     case "pricing":
-      return usePricingTableConfig() as AnyTableConfigResult;
+      return usePricingTableConfig(params) as AnyTableConfigResult;
     case "reservations":
-      return useReservationsTableConfig() as AnyTableConfigResult;
+      return useReservationsTableConfig(params) as AnyTableConfigResult;
     case "deals":
-      return useDealsTableConfig() as AnyTableConfigResult;
+      return useDealsTableConfig(params) as AnyTableConfigResult;
     case "contracts":
-      return useContractsTableConfig() as AnyTableConfigResult;
+      return useContractsTableConfig(params) as AnyTableConfigResult;
     case "commissions":
-      return useCommissionsTableConfig() as AnyTableConfigResult;
+      return useCommissionsTableConfig(params) as AnyTableConfigResult;
     case "payments":
-      return usePaymentsTableConfig() as AnyTableConfigResult;
+      return usePaymentsTableConfig(params) as AnyTableConfigResult;
     case "installments":
-      return useInstallmentsTableConfig() as AnyTableConfigResult;
+      return useInstallmentsTableConfig(params) as AnyTableConfigResult;
     case "collections":
-      return useCollectionsTableConfig() as AnyTableConfigResult;
+      return useCollectionsTableConfig(params) as AnyTableConfigResult;
     case "outstanding":
-      return useOutstandingTableConfig() as AnyTableConfigResult;
+      return useOutstandingTableConfig(params) as AnyTableConfigResult;
     case "finreports":
-      return useFinreportsTableConfig() as AnyTableConfigResult;
+      return useFinreportsTableConfig(params) as AnyTableConfigResult;
     case "tasks":
-      return useTasksTableConfig() as AnyTableConfigResult;
+      return useTasksTableConfig(params) as AnyTableConfigResult;
     case "team":
-      return useTeamTableConfig() as AnyTableConfigResult;
+      return useTeamTableConfig(params) as AnyTableConfigResult;
     case "roles":
-      return useRolesTableConfig() as AnyTableConfigResult;
+      return useRolesTableConfig(params) as AnyTableConfigResult;
     case "audit":
-      return useAuditTableConfig() as AnyTableConfigResult;
+      return useAuditTableConfig(params) as AnyTableConfigResult;
   }
 }
 /* eslint-enable react-hooks/rules-of-hooks */

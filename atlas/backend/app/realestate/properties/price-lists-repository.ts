@@ -2,8 +2,16 @@ import { Injectable } from "@nestjs/common";
 import { requireOrganizationId } from "@core/kernel/tenant.js";
 import { realestateDb } from "@atlas/realestate/db/executor.js";
 import { realestateId } from "@atlas/realestate/shared/ids.js";
+import { combinedRelevance } from "@atlas/realestate/shared/search.js";
 
 export type PriceListStatus = "draft" | "awaiting-approval" | "active";
+
+export interface PriceListFilter {
+  projectId?: string;
+  status?: PriceListStatus;
+  /** Free-text search across name/version, ranked by relevance. */
+  q?: string;
+}
 
 export interface PriceListRow {
   id: string;
@@ -36,12 +44,24 @@ export class PriceListsRepository {
   }
 
   /** Omit `projectId` for an org-wide list (the Pricing screen); pass it to scope to one project. */
-  async listForProject(projectId?: string): Promise<PriceListRow[]> {
-    let q = realestateDb().selectFrom("realestate_price_lists").selectAll().where("organization_id", "=", this.org());
-    if (projectId) q = q.where("project_id", "=", projectId);
-    const rows = await q
-      .orderBy("effective_date", "desc")
-      .execute();
+  async listForProject(filter: PriceListFilter = {}): Promise<PriceListRow[]> {
+    let query = realestateDb().selectFrom("realestate_price_lists").selectAll().where("organization_id", "=", this.org());
+    if (filter.projectId) query = query.where("project_id", "=", filter.projectId);
+    if (filter.status) query = query.where("status", "=", filter.status);
+
+    const term = filter.q?.trim();
+    if (term) {
+      const score = combinedRelevance([{ column: "name" }, { column: "version", weight: 0.6 }], term);
+      const rows = await query
+        .select(score.as("relevance_score"))
+        .where(score, ">", 0)
+        .orderBy("relevance_score", "desc")
+        .orderBy("effective_date", "desc")
+        .execute();
+      return rows.map((r) => this.toRow(r));
+    }
+
+    const rows = await query.orderBy("effective_date", "desc").execute();
     return rows.map((r) => this.toRow(r));
   }
 

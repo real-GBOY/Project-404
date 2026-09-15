@@ -3,11 +3,13 @@ import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { RequirePermission } from "@core/http/decorators.js";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
 import { PermissionGuard } from "@core/http/permission.guard.js";
-import { ZodBody } from "@core/http/zod.pipe.js";
+import { ZodBody, ZodQuery } from "@core/http/zod.pipe.js";
 import { CommissionsService } from "./commissions-service.js";
 import {
+  listCommissionsQuery,
   updateCommissionStatusSchema,
   upsertCommissionSchema,
+  type ListCommissionsQuery,
   type UpdateCommissionStatusBody,
   type UpsertCommissionBody,
 } from "./commissions.schema.js";
@@ -21,8 +23,8 @@ export class CommissionsController {
 
   @Get()
   @RequirePermission("read", "commission")
-  list(@Query("agentId") agentId?: string) {
-    return this.service.list(agentId);
+  list(@Query(ZodQuery(listCommissionsQuery)) q: ListCommissionsQuery) {
+    return this.service.list(q);
   }
 
   @Post()

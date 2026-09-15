@@ -1,13 +1,34 @@
 import { useCallback, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { NAV } from "@/app/router/nav";
+import { NAV, type NavBadgeKey } from "@/app/router/nav";
 import { cn } from "@/lib/cn";
 import { useAuth } from "@/features/auth/auth-provider";
 import { Icon } from "@/components/ui/icon";
 import { Avatar } from "@/components/ui/avatar";
 import { LogoMark } from "@/components/ui/logo";
+import { useFollowups } from "@/api/crm";
+import { useReservations } from "@/api/sales";
+import { useOutstanding } from "@/api/finance";
+import { useApprovals } from "@/api/operations";
 
 const OPEN_KEY = "atlas.sidebar.groups";
+
+/** Live counts for the sidebar's badges — real data, not a fixed number, so a
+ *  badge can never drift from what its own list screen actually shows. `undefined`
+ *  (not 0) while loading, so the sidebar shows nothing rather than a fake zero. */
+function useNavBadgeCounts(): Partial<Record<NavBadgeKey, number>> {
+  const followups = useFollowups();
+  const reservations = useReservations({ status: "expiring" });
+  const outstanding = useOutstanding();
+  const approvals = useApprovals();
+
+  return {
+    followups: followups.data?.filter((f) => f.status === "overdue").length,
+    reservations: reservations.data?.length,
+    outstanding: outstanding.data?.length,
+    approvals: approvals.data?.filter((a) => a.status === "awaiting-approval" || a.status === "escalated").length,
+  };
+}
 
 function readOpen(): Record<string, boolean> {
   try {
@@ -23,6 +44,7 @@ export function Sidebar({ onSearch }: { onSearch: () => void }) {
   const auth = useAuth();
   const navigate = useNavigate();
   const displayName = auth.user?.displayName ?? auth.user?.email ?? "Signed in";
+  const badgeCounts = useNavBadgeCounts();
 
   const toggle = useCallback((key: string) => {
     setOpen((prev) => {
@@ -79,6 +101,7 @@ export function Sidebar({ onSearch }: { onSearch: () => void }) {
               {expanded &&
                 group.items.map((item) => {
                   const active = isActive(item.to);
+                  const badge = item.badgeKey ? badgeCounts[item.badgeKey] : undefined;
                   return (
                     <NavLink
                       key={item.to}
@@ -92,9 +115,9 @@ export function Sidebar({ onSearch }: { onSearch: () => void }) {
                     >
                       <Icon name={item.icon} size={14} className={active ? "text-primary" : "text-muted"} />
                       <span className="flex-1 truncate">{item.label}</span>
-                      {item.badge != null && (
+                      {Boolean(badge) && (
                         <span className="bg-surface-sidebar-subtle px-1 font-mono text-[9px] font-semibold text-danger-secondary">
-                          {item.badge}
+                          {badge}
                         </span>
                       )}
                     </NavLink>

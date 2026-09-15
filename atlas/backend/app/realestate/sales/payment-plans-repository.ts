@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { requireOrganizationId } from "@core/kernel/tenant.js";
 import { realestateDb } from "@atlas/realestate/db/executor.js";
 import { realestateId } from "@atlas/realestate/shared/ids.js";
+import { combinedRelevance } from "@atlas/realestate/shared/search.js";
 import type { InstallmentSpec } from "./payment-plan.domain.js";
 
 export type Cadence = "monthly" | "quarterly" | "semi-annual" | "annual";
@@ -27,6 +28,14 @@ export interface InstallmentRow {
   amountEgp: number;
   paidEgp: number;
   status: "pending" | "partial" | "paid" | "overdue";
+}
+
+export interface InstallmentFilter {
+  status?: InstallmentRow["status"];
+  /** Joins to the plan's unit to scope by project. */
+  projectId?: string;
+  /** Free-text search across customer name / unit code, ranked by relevance. */
+  q?: string;
 }
 
 export interface CreatePaymentPlanInput {
@@ -135,18 +144,60 @@ export class PaymentPlansRepository {
 
   /** Same as `listInstallments`, joined to the owning plan for the flat Installments screen (needs
    *  customer/unit, not just the plan id) — mirrors `FinanceQueries`'s join pattern. */
-  async listInstallmentsWithContext(status?: InstallmentRow["status"]): Promise<(InstallmentRow & { customerId: string; unitId: string })[]> {
-    let q = realestateDb()
-      .selectFrom("realestate_installments")
-      .innerJoin("realestate_payment_plans", (join) =>
+  async listInstallmentsWithContext(filter: InstallmentFilter = {}): Promise<(InstallmentRow & { customerId: string; unitId: string })[]> {
+    const org = this.org();
+    const base = () =>
+      realestateDb()
+        .selectFrom("realestate_installments")
+        .innerJoin("realestate_payment_plans", (join) =>
+          join
+            .onRef("realestate_payment_plans.id", "=", "realestate_installments.payment_plan_id")
+            .onRef("realestate_payment_plans.organization_id", "=", "realestate_installments.organization_id"),
+        )
+        .selectAll("realestate_installments")
+        .select(["realestate_payment_plans.customer_id as customerId", "realestate_payment_plans.unit_id as unitId"])
+        .where("realestate_installments.organization_id", "=", org);
+
+    const term = filter.q?.trim();
+
+    if (term) {
+      let joined = base()
+        .innerJoin("realestate_units", (join) =>
+          join
+            .onRef("realestate_units.id", "=", "realestate_payment_plans.unit_id")
+            .onRef("realestate_units.organization_id", "=", "realestate_payment_plans.organization_id"),
+        )
+        .innerJoin("realestate_customers", (join) =>
+          join
+            .onRef("realestate_customers.id", "=", "realestate_payment_plans.customer_id")
+            .onRef("realestate_customers.organization_id", "=", "realestate_payment_plans.organization_id"),
+        );
+      if (filter.status) joined = joined.where("realestate_installments.status", "=", filter.status);
+      if (filter.projectId) joined = joined.where("realestate_units.project_id", "=", filter.projectId);
+      const score = combinedRelevance([{ column: "realestate_customers.name" }, { column: "realestate_units.code", weight: 0.8 }], term);
+      const rows = await joined
+        .select(score.as("relevance_score"))
+        .where(score, ">", 0)
+        .orderBy("relevance_score", "desc")
+        .orderBy("realestate_installments.due_date", "asc")
+        .execute();
+      return rows.map((r) => ({ ...this.toInstallmentRow(r), customerId: r.customerId, unitId: r.unitId }));
+    }
+
+    if (filter.projectId) {
+      let joined = base().innerJoin("realestate_units", (join) =>
         join
-          .onRef("realestate_payment_plans.id", "=", "realestate_installments.payment_plan_id")
-          .onRef("realestate_payment_plans.organization_id", "=", "realestate_installments.organization_id"),
-      )
-      .selectAll("realestate_installments")
-      .select(["realestate_payment_plans.customer_id as customerId", "realestate_payment_plans.unit_id as unitId"])
-      .where("realestate_installments.organization_id", "=", this.org());
-    if (status) q = q.where("realestate_installments.status", "=", status);
+          .onRef("realestate_units.id", "=", "realestate_payment_plans.unit_id")
+          .onRef("realestate_units.organization_id", "=", "realestate_payment_plans.organization_id"),
+      );
+      if (filter.status) joined = joined.where("realestate_installments.status", "=", filter.status);
+      joined = joined.where("realestate_units.project_id", "=", filter.projectId);
+      const rows = await joined.orderBy("realestate_installments.due_date", "asc").execute();
+      return rows.map((r) => ({ ...this.toInstallmentRow(r), customerId: r.customerId, unitId: r.unitId }));
+    }
+
+    let q = base();
+    if (filter.status) q = q.where("realestate_installments.status", "=", filter.status);
     const rows = await q.orderBy("realestate_installments.due_date", "asc").execute();
     return rows.map((r) => ({ ...this.toInstallmentRow(r), customerId: r.customerId, unitId: r.unitId }));
   }

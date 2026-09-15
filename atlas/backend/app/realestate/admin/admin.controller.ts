@@ -10,7 +10,7 @@ import { OrgSettingsService } from "./org-settings-service.js";
 import { assignRoleSchema, updateOrgSettingsSchema, type AssignRoleBody, type UpdateOrgSettingsBody } from "./admin.schema.js";
 import { z } from "zod";
 
-const auditQuery = z.object({ q: z.string().optional() });
+const auditQuery = z.object({ q: z.string().optional(), action: z.string().optional(), actor: z.string().optional() });
 
 /**
  * Real-estate adapter over Core RBAC/audit/notifications, reshaped for the
@@ -48,7 +48,7 @@ export class AdminController {
   @Get("audit-logs")
   @RequirePermission("read", "audit_log")
   auditLogs(@Query(ZodQuery(auditQuery)) q: z.infer<typeof auditQuery>) {
-    return this.service.auditLogs(q.q);
+    return this.service.auditLogs(q);
   }
 
   @Get("org-settings")

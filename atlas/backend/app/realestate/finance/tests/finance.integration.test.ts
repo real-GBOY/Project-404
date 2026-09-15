@@ -72,7 +72,7 @@ suite("realestate/finance", () => {
     );
     expect(recorded.status).toBe("paid");
 
-    const history = await asUser(orgA.adminId, orgA.orgId, () => payments().list(customer.id));
+    const history = await asUser(orgA.adminId, orgA.orgId, () => payments().list({ customerId: customer.id }));
     expect(history.some((p) => p.id === recorded.id)).toBe(true);
   });
 

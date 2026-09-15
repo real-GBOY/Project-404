@@ -3,13 +3,15 @@ import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { CurrentUser, RequirePermission } from "@core/http/decorators.js";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
 import { PermissionGuard } from "@core/http/permission.guard.js";
-import { ZodBody } from "@core/http/zod.pipe.js";
+import { ZodBody, ZodQuery } from "@core/http/zod.pipe.js";
 import type { Principal } from "@core/http/principal.js";
 import { BuildingsService } from "./buildings-service.js";
 import {
   createBuildingSchema,
+  listBuildingsQuery,
   updateBuildingSchema,
   type CreateBuildingBody,
+  type ListBuildingsQuery,
   type UpdateBuildingBody,
 } from "./buildings.schema.js";
 
@@ -22,8 +24,8 @@ export class BuildingsController {
 
   @Get()
   @RequirePermission("read", "building")
-  list(@Query("projectId") projectId?: string) {
-    return this.service.listForProject(projectId);
+  list(@Query(ZodQuery(listBuildingsQuery)) q: ListBuildingsQuery) {
+    return this.service.listForProject(q);
   }
 
   @Get(":id")

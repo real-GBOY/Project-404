@@ -3,11 +3,16 @@ import { z } from "zod";
 const STAGES = ["new", "qualified", "contacted", "viewing", "negotiation", "reserved", "contracted", "sold", "lost"] as const;
 const STATUSES = ["new", "qualified", "contacted", "viewing", "negotiation", "lost"] as const;
 
+const SOURCES = ["referral", "website", "facebook", "broker", "exhibition", "instagram"] as const;
+
 export const listLeadsQuery = z.object({
   status: z.enum(STATUSES).optional(),
   stage: z.enum(STAGES).optional(),
+  source: z.enum(SOURCES).optional(),
   agentId: z.string().optional(),
   dealsOnly: z.coerce.boolean().optional(),
+  /** Free-text search across name/phone/id, ranked by relevance. */
+  q: z.string().trim().min(1).max(200).optional(),
 });
 
 export const createLeadSchema = z.object({

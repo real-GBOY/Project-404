@@ -4,7 +4,7 @@ import { readInTenant } from "@core/kernel/db/db.js";
 import { NotFound, Conflict } from "@core/kernel/errors.js";
 import { AUDIT_LOGGER, UNIT_OF_WORK } from "@core/kernel/tokens.js";
 import type { IAuditLogger } from "@core/contracts/index.js";
-import { ProjectsRepository, type CreateProjectInput } from "./projects-repository.js";
+import { ProjectsRepository, type CreateProjectInput, type ProjectFilter } from "./projects-repository.js";
 import { slugify, type CreateProjectBody, type UpdateProjectBody } from "./projects.schema.js";
 
 @Injectable()
@@ -15,8 +15,8 @@ export class ProjectsService {
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
 
-  list() {
-    return readInTenant(() => this.repo.list());
+  list(filter: ProjectFilter = {}) {
+    return readInTenant(() => this.repo.list(filter));
   }
 
   async get(id: string) {

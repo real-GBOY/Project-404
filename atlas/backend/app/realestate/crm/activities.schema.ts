@@ -12,6 +12,10 @@ export const createActivitySchema = z.object({
 export const listActivitiesQuery = z.object({
   relatedType: z.string().optional(),
   relatedId: z.string().optional(),
+  type: z.enum(["call", "meeting", "viewing", "email", "note", "whatsapp"]).optional(),
+  agentId: z.string().optional(),
+  /** Free-text search across subject/outcome, ranked by relevance. */
+  q: z.string().trim().min(1).max(200).optional(),
 });
 
 export type CreateActivityBody = z.infer<typeof createActivitySchema>;

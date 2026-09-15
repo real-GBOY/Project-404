@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { PageContainer, PageHeader } from "@/components/ui/page-header";
 import { KpiStrip, KpiTile } from "@/components/ui/kpi-tile";
 import { Card } from "@/components/ui/card";
-import { ListToolbar, FilterButton, ViewToggle } from "@/components/tables/list-toolbar";
+import { ListToolbar, ViewToggle } from "@/components/tables/list-toolbar";
+import { FilterDropdown } from "@/components/ui/dropdown-menu";
 import { SearchInput } from "@/components/ui/input";
 import { ListFooter } from "@/components/tables/list-pagination";
 import { DataTable } from "@/components/tables/data-table";
@@ -13,6 +14,7 @@ import { ErrorState } from "@/components/feedback/error-state";
 import { QuickCreateModal } from "@/components/tables/quick-create-modal";
 import { useConfirm } from "@/lib/confirm/confirm-provider";
 import { useToast } from "@/lib/toast/toast-provider";
+import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { ApiError } from "@/config";
 import { useTableConfig } from "./entity-table-registry";
 import type { EntityKey } from "./table-types";
@@ -22,9 +24,10 @@ const PAGE_SIZE = 12;
 /**
  * ONE reusable screen shape — fed a different `TableConfig` per route — is
  * the entire CRM/Sales/Finance/Ops-list/Admin-list section (21 routes,
- * PLAN §3 screen #2). Search/filter/pagination/view-toggle state lives here;
- * data + columns + mutations come from `useTableConfig`, which is backed by
- * real API calls (see each domain's `table-configs.ts`).
+ * PLAN §3 screen #2). Search and filters are backend-driven: this component
+ * only holds the *selected* query/filter state and pagination; the actual
+ * narrowing happens in each domain's list endpoint (see table-configs.ts +
+ * the corresponding backend repository's `q`/filter columns).
  */
 export function EntityTablePage({ entity }: { entity: EntityKey }) {
   const navigate = useNavigate();
@@ -34,17 +37,24 @@ export function EntityTablePage({ entity }: { entity: EntityKey }) {
   const [page, setPage] = useState(1);
   const [view, setView] = useState<"table" | "grid">("table");
   const [createOpen, setCreateOpen] = useState(false);
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
 
-  const { config, isLoading, error } = useTableConfig(entity);
+  // Every keystroke would otherwise fire its own request against the backend.
+  const debouncedQuery = useDebouncedValue(query, 300);
 
-  const filteredRows = useMemo(() => {
-    if (!config) return [];
-    const q = query.trim().toLowerCase();
-    if (!q) return config.rows;
-    return config.rows.filter((r) => config.searchText(r).toLowerCase().includes(q));
-  }, [config, query]);
+  const params = useMemo(
+    () => ({
+      q: debouncedQuery.trim() || undefined,
+      filters: filterValues,
+    }),
+    [debouncedQuery, filterValues],
+  );
 
-  const pageRows = useMemo(() => filteredRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [filteredRows, page]);
+  const { config, isLoading, error } = useTableConfig(entity, params);
+
+  const rows = config?.rows ?? [];
+  const pageRows = useMemo(() => rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [rows, page]);
+  const hasActiveFilter = Boolean(query) || Object.values(filterValues).some((v) => v && v !== "All");
 
   if (!config && !isLoading) {
     return (
@@ -121,10 +131,27 @@ export function EntityTablePage({ entity }: { entity: EntityKey }) {
             placeholder={config?.searchPlaceholder ?? "Filter rows…"}
           />
           {config?.filters?.map((f) => (
-            <FilterButton key={f} label={f} />
+            <FilterDropdown
+              key={f.label}
+              label={f.label}
+              value={
+                f.options.find((o) => o.value === (filterValues[f.param] ?? ""))?.label ?? "All"
+              }
+              options={["All", ...f.options.map((o) => o.label)]}
+              onChange={(label) => {
+                const opt = f.options.find((o) => o.label === label);
+                setFilterValues((prev) => {
+                  const next = { ...prev };
+                  if (opt) next[f.param] = opt.value;
+                  else delete next[f.param];
+                  return next;
+                });
+                setPage(1);
+              }}
+            />
           ))}
           <div className="flex-1" />
-          <span className="font-mono text-[10.5px] text-subtle">{filteredRows.length} rows</span>
+          <span className="font-mono text-[10.5px] text-subtle">{rows.length} rows</span>
           <ViewToggle value={view} onChange={setView} />
         </ListToolbar>
 
@@ -145,9 +172,15 @@ export function EntityTablePage({ entity }: { entity: EntityKey }) {
           emptyTitle={config?.emptyTitle ?? `No ${(config?.title ?? entity).toLowerCase()} match “${query}”`}
           emptyDescription={config?.emptyWhy}
           emptyAction={
-            query ? (
+            hasActiveFilter ? (
               <div className="flex items-center gap-1.5">
-                <Button size="sm" onClick={() => setQuery("")}>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setQuery("");
+                    setFilterValues({});
+                  }}
+                >
                   Clear filter
                 </Button>
                 {config?.primaryAction && (
@@ -160,7 +193,7 @@ export function EntityTablePage({ entity }: { entity: EntityKey }) {
           }
         />
 
-        <ListFooter total={filteredRows.length} page={page} pageSize={PAGE_SIZE} onPageChange={setPage} />
+        <ListFooter total={rows.length} page={page} pageSize={PAGE_SIZE} onPageChange={setPage} />
       </Card>
 
       <QuickCreateModal open={createOpen} onOpenChange={setCreateOpen} config={config?.createForm} />

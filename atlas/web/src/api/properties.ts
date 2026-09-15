@@ -32,8 +32,18 @@ export interface CreateProjectBody {
   status?: ProjectStatus;
 }
 
-export function useProjects() {
-  return useQuery({ queryKey: ["projects"], queryFn: () => get<ProjectRow[]>(ENDPOINTS.projects.list) });
+export interface ProjectListParams {
+  status?: ProjectStatus;
+  developer?: string;
+  /** Free-text search across name/location/developer — filtered and ranked server-side. */
+  q?: string;
+}
+
+export function useProjects(params?: ProjectListParams) {
+  return useQuery({
+    queryKey: ["projects", params ?? {}],
+    queryFn: () => get<ProjectRow[]>(ENDPOINTS.projects.list, params),
+  });
 }
 
 /** Cross-domain name lookup: leads/customers/units all reference a projectId by id only. */
@@ -116,10 +126,17 @@ export interface CreateBuildingBody {
 }
 
 /** Omit `projectId` for the org-wide Buildings screen. */
-export function useBuildings(projectId?: string) {
+export interface BuildingListParams {
+  projectId?: string;
+  status?: BuildingStatus;
+  /** Free-text search across name/key — filtered and ranked server-side. */
+  q?: string;
+}
+
+export function useBuildings(params?: BuildingListParams) {
   return useQuery({
-    queryKey: ["buildings", projectId ?? "all"],
-    queryFn: () => get<BuildingRow[]>(ENDPOINTS.buildings.list, { projectId }),
+    queryKey: ["buildings", params ?? {}],
+    queryFn: () => get<BuildingRow[]>(ENDPOINTS.buildings.list, params),
   });
 }
 
@@ -154,6 +171,7 @@ export interface UnitListParams {
   projectId?: string;
   buildingId?: string;
   status?: UnitStatus;
+  unitType?: string;
 }
 
 /** Org-wide when called with no params — the one raw fetch that Buildings/Availability derive their rollups from. */
@@ -295,10 +313,17 @@ export interface CreatePriceListBody {
 }
 
 /** Omit `projectId` for the org-wide Pricing screen. */
-export function usePriceLists(projectId?: string) {
+export interface PriceListListParams {
+  projectId?: string;
+  status?: PriceListStatus;
+  /** Free-text search across name/version — filtered and ranked server-side. */
+  q?: string;
+}
+
+export function usePriceLists(params?: PriceListListParams) {
   return useQuery({
-    queryKey: ["price-lists", projectId ?? "all"],
-    queryFn: () => get<PriceListRow[]>(ENDPOINTS.priceLists.list, { projectId }),
+    queryKey: ["price-lists", params ?? {}],
+    queryFn: () => get<PriceListRow[]>(ENDPOINTS.priceLists.list, params),
   });
 }
 

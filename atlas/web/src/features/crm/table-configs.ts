@@ -1,6 +1,7 @@
 import type { DataColumn } from "@/components/tables/data-table";
 import { TextCell, BadgeCell, BarCell } from "@/components/tables/data-table";
-import type { TableConfigResult } from "@/features/shared/table-types";
+import type { TableConfigResult, TableQueryParams } from "@/features/shared/table-types";
+import { titleCase } from "@/lib/text";
 import { useAuth } from "@/features/auth/auth-provider";
 import { useTeamDirectory } from "@/api/team";
 import {
@@ -18,13 +19,23 @@ import {
   toFollowupView,
   type LeadView,
   type LeadSource,
+  type LeadStatus,
+  type CustomerRow,
+  type CustomerStatus,
   type CustomerView,
   type ActivityView,
   type ActivityType,
   type FollowupView,
   type FollowupPriority,
+  type FollowupStatus,
 } from "@/api/crm";
 import { useProjectDirectory } from "@/api/properties";
+
+const LEAD_STATUSES: LeadStatus[] = ["new", "qualified", "contacted", "viewing", "negotiation", "lost"];
+const LEAD_SOURCES: LeadSource[] = ["referral", "website", "facebook", "broker", "exhibition", "instagram"];
+const ACTIVITY_TYPES: ActivityType[] = ["call", "meeting", "viewing", "email", "note", "whatsapp"];
+const FOLLOWUP_PRIORITIES: FollowupPriority[] = ["high", "medium", "low"];
+const FOLLOWUP_STATUSES: FollowupStatus[] = ["open", "in-progress", "overdue", "done"];
 
 /**
  * Table configs for: leads, customers, activities, followups — each exported
@@ -56,37 +67,50 @@ function countBy<T>(rows: T[], key: (r: T) => string): Record<string, number> {
   return out;
 }
 
-export function useLeadsTableConfig(): TableConfigResult<LeadView> {
-  const { data, isLoading, error } = useLeads();
+export function useLeadsTableConfig(params: TableQueryParams): TableConfigResult<LeadView> {
+  const filtered = useLeads({
+    status: params.filters.status as LeadStatus | undefined,
+    source: params.filters.source as LeadSource | undefined,
+    agentId: params.filters.agentId,
+    q: params.q,
+  });
+  // Unfiltered, for KPIs — a search or filter shouldn't make "Qualified" read 0.
+  const all = useLeads();
   const team = useTeamDirectory();
   const createLead = useCreateLead();
   const auth = useAuth();
 
-  if (isLoading || team.isLoading) return { config: undefined, isLoading: true, error: null };
-  if (error || team.error) return { config: undefined, isLoading: false, error: error ?? team.error };
+  if (filtered.isLoading || all.isLoading || team.isLoading) return { config: undefined, isLoading: true, error: null };
+  if (filtered.error || all.error || team.error) {
+    return { config: undefined, isLoading: false, error: filtered.error ?? all.error ?? team.error };
+  }
 
-  const rows = (data ?? []).map((r) => toLeadView(r, (id) => team.byId.get(id) ?? id));
-  const statusCounts = countBy(rows, (r) => r.status);
+  const rows = filtered.data!.map((r) => toLeadView(r, (id) => team.byId.get(id) ?? id));
+  const allRows = all.data!.map((r) => toLeadView(r, (id) => team.byId.get(id) ?? id));
+  const statusCounts = countBy(allRows, (r) => r.status);
 
   return {
     isLoading: false,
     error: null,
     config: {
       title: "Leads",
-      subtitle: `${rows.length} leads`,
+      subtitle: `${allRows.length} leads`,
       primaryAction: "New Lead",
       columns: leadsColumns,
       rows,
       rowKey: (r) => r.id,
-      searchText: (r) => `${r.id} ${r.name} ${r.phone} ${r.source} ${r.agent} ${r.interest}`,
       searchPlaceholder: "Search leads by name, phone, ID…",
       kpis: [
-        { label: "Total Leads", value: String(rows.length) },
+        { label: "Total Leads", value: String(allRows.length) },
         { label: "Qualified", value: String(statusCounts["Qualified"] ?? 0) },
         { label: "In Negotiation", value: String(statusCounts["Negotiation"] ?? 0) },
         { label: "Lost", value: String(statusCounts["Lost"] ?? 0) },
       ],
-      filters: ["Status: All", "Source: All", "Agent: All"],
+      filters: [
+        { label: "Status", param: "status", options: LEAD_STATUSES.map((s) => ({ value: s, label: titleCase(s) })) },
+        { label: "Source", param: "source", options: LEAD_SOURCES.map((s) => ({ value: s, label: titleCase(s) })) },
+        { label: "Agent", param: "agentId", options: team.members.map((m) => ({ value: m.id, label: m.name })) },
+      ],
       emptyWhy: "Leads arrive automatically from the website, referrals, brokers, exhibitions and social campaigns — once new leads come in, or you clear this filter, they'll show up here.",
       emptyTitle: "No leads match this filter",
       createForm: {
@@ -145,46 +169,60 @@ const customersColumns: DataColumn<CustomerView>[] = [
   { key: "status", label: "Status", width: 84, render: (r) => BadgeCell({ status: r.status }) },
 ];
 
-export function useCustomersTableConfig(): TableConfigResult<CustomerView> {
-  const { data, isLoading, error } = useCustomers();
+export function useCustomersTableConfig(params: TableQueryParams): TableConfigResult<CustomerView> {
+  const filtered = useCustomers({
+    status: params.filters.status as CustomerStatus | undefined,
+    primaryProjectId: params.filters.primaryProjectId,
+    agentId: params.filters.agentId,
+    q: params.q,
+  });
+  const all = useCustomers();
   const team = useTeamDirectory();
   const projects = useProjectDirectory();
   const createCustomer = useCreateCustomer();
   const auth = useAuth();
 
-  if (isLoading || team.isLoading || projects.isLoading) return { config: undefined, isLoading: true, error: null };
-  if (error || team.error || projects.error) return { config: undefined, isLoading: false, error: error ?? team.error ?? projects.error };
+  if (filtered.isLoading || all.isLoading || team.isLoading || projects.isLoading) {
+    return { config: undefined, isLoading: true, error: null };
+  }
+  if (filtered.error || all.error || team.error || projects.error) {
+    return { config: undefined, isLoading: false, error: filtered.error ?? all.error ?? team.error ?? projects.error };
+  }
 
-  const rows = (data ?? []).map((r) =>
+  const toView = (r: CustomerRow) =>
     toCustomerView(
       r,
       (id) => team.byId.get(id) ?? id,
       (id) => (id ? projects.byId.get(id) ?? id : "—"),
-    ),
-  );
-  const activeCount = rows.filter((r) => r.status === "Active").length;
-  const totalPortfolioEgp = (data ?? []).reduce((sum, r) => sum + r.portfolioEgp, 0);
+    );
+  const rows = filtered.data!.map(toView);
+  const allRows = all.data!.map(toView);
+  const activeCount = allRows.filter((r) => r.status === "Active").length;
+  const totalPortfolioEgp = all.data!.reduce((sum, r) => sum + r.portfolioEgp, 0);
 
   return {
     isLoading: false,
     error: null,
     config: {
       title: "Customers",
-      subtitle: `${rows.length} customers · ${activeCount} active`,
+      subtitle: `${allRows.length} customers · ${activeCount} active`,
       primaryAction: "New Customer",
       columns: customersColumns,
       rows,
       rowKey: (r) => r.id,
       onRowClick: (row) => `/customers/${row.id}`,
-      searchText: (r) => `${r.id} ${r.name} ${r.email} ${r.phone} ${r.primaryProject} ${r.agent}`,
       searchPlaceholder: "Search customers by name, email, phone…",
       kpis: [
-        { label: "Customers", value: String(rows.length) },
+        { label: "Customers", value: String(allRows.length) },
         { label: "Active", value: String(activeCount) },
         { label: "Lifetime Value", value: totalPortfolioEgp > 0 ? `EGP ${(totalPortfolioEgp / 1e6).toFixed(1)}M` : "EGP 0" },
-        { label: "Avg. Units / Customer", value: rows.length ? (rows.reduce((s, r) => s + r.unitsOwned, 0) / rows.length).toFixed(1) : "0" },
+        { label: "Avg. Units / Customer", value: allRows.length ? (allRows.reduce((s, r) => s + r.unitsOwned, 0) / allRows.length).toFixed(1) : "0" },
       ],
-      filters: ["Status: All", "Project: All", "Agent: All"],
+      filters: [
+        { label: "Status", param: "status", options: [{ value: "active", label: "Active" }, { value: "pending", label: "Pending" }] },
+        { label: "Project", param: "primaryProjectId", options: projects.projects.map((p) => ({ value: p.id, label: p.name })) },
+        { label: "Agent", param: "agentId", options: team.members.map((m) => ({ value: m.id, label: m.name })) },
+      ],
       emptyWhy: "Customers are created automatically once a lead's reservation converts to a signed contract — clear this filter or check back once a deal closes.",
       emptyTitle: "No customers match this filter",
       createForm: {
@@ -234,17 +272,24 @@ const activitiesColumns: DataColumn<ActivityView>[] = [
   { key: "when", label: "When", width: 84, align: "end", render: (r) => TextCell({ value: r.when, mono: true, weight: "normal" }) },
 ];
 
-export function useActivitiesTableConfig(): TableConfigResult<ActivityView> {
-  const { data, isLoading, error } = useActivities();
+export function useActivitiesTableConfig(params: TableQueryParams): TableConfigResult<ActivityView> {
+  const filtered = useActivities({
+    type: params.filters.type as ActivityType | undefined,
+    agentId: params.filters.agentId,
+    q: params.q,
+  });
+  const all = useActivities();
   const team = useTeamDirectory();
   const leads = useLeads();
   const customers = useCustomers();
   const createActivity = useCreateActivity();
   const auth = useAuth();
 
-  if (isLoading || team.isLoading || leads.isLoading || customers.isLoading) return { config: undefined, isLoading: true, error: null };
-  if (error || team.error || leads.error || customers.error) {
-    return { config: undefined, isLoading: false, error: error ?? team.error ?? leads.error ?? customers.error };
+  if (filtered.isLoading || all.isLoading || team.isLoading || leads.isLoading || customers.isLoading) {
+    return { config: undefined, isLoading: true, error: null };
+  }
+  if (filtered.error || all.error || team.error || leads.error || customers.error) {
+    return { config: undefined, isLoading: false, error: filtered.error ?? all.error ?? team.error ?? leads.error ?? customers.error };
   }
 
   const leadsById = new Map((leads.data ?? []).map((l) => [l.id, l.name]));
@@ -255,8 +300,9 @@ export function useActivitiesTableConfig(): TableConfigResult<ActivityView> {
     return `${type === "lead" ? "Lead" : "Customer"} ${id}${name ? ` · ${name}` : ""}`;
   };
 
-  const rows = (data ?? []).map((r) => toActivityView(r, (id) => team.byId.get(id) ?? id, relatedName));
-  const typeCounts = countBy(rows, (r) => r.type);
+  const rows = filtered.data!.map((r) => toActivityView(r, (id) => team.byId.get(id) ?? id, relatedName));
+  const allRows = all.data!.map((r) => toActivityView(r, (id) => team.byId.get(id) ?? id, relatedName));
+  const typeCounts = countBy(allRows, (r) => r.type);
 
   return {
     isLoading: false,
@@ -267,16 +313,18 @@ export function useActivitiesTableConfig(): TableConfigResult<ActivityView> {
       primaryAction: "Log Activity",
       columns: activitiesColumns,
       rows,
-      rowKey: (r) => `${r.subject}|${r.relatedTo}|${r.when}`,
-      searchText: (r) => `${r.type} ${r.subject} ${r.relatedTo} ${r.agent} ${r.outcome}`,
+      rowKey: (r) => r.id,
       searchPlaceholder: "Search activities by subject, lead, agent…",
       kpis: [
-        { label: "Total Activities", value: String(rows.length) },
+        { label: "Total Activities", value: String(allRows.length) },
         { label: "Calls", value: String(typeCounts["Call"] ?? 0) },
         { label: "Viewings", value: String(typeCounts["Viewing"] ?? 0) },
         { label: "Meetings", value: String(typeCounts["Meeting"] ?? 0) },
       ],
-      filters: ["Type: All", "Agent: All"],
+      filters: [
+        { label: "Type", param: "type", options: ACTIVITY_TYPES.map((t) => ({ value: t, label: titleCase(t) })) },
+        { label: "Agent", param: "agentId", options: team.members.map((m) => ({ value: m.id, label: m.name })) },
+      ],
       emptyWhy: "Activities are logged automatically whenever an agent records a call, viewing, negotiation note or payment update — nothing has matched this filter yet.",
       emptyTitle: "No activities match this filter",
       createForm: {
@@ -334,17 +382,25 @@ const followupsColumns: DataColumn<FollowupView>[] = [
   { key: "status", label: "Status", width: 96, render: (r) => BadgeCell({ status: r.status }) },
 ];
 
-export function useFollowupsTableConfig(): TableConfigResult<FollowupView> {
-  const { data, isLoading, error } = useFollowups();
+export function useFollowupsTableConfig(params: TableQueryParams): TableConfigResult<FollowupView> {
+  const filtered = useFollowups({
+    agentId: params.filters.agentId,
+    status: params.filters.status as FollowupStatus | undefined,
+    priority: params.filters.priority as FollowupPriority | undefined,
+    q: params.q,
+  });
+  const all = useFollowups();
   const team = useTeamDirectory();
   const leads = useLeads();
   const customers = useCustomers();
   const createFollowup = useCreateFollowup();
   const auth = useAuth();
 
-  if (isLoading || team.isLoading || leads.isLoading || customers.isLoading) return { config: undefined, isLoading: true, error: null };
-  if (error || team.error || leads.error || customers.error) {
-    return { config: undefined, isLoading: false, error: error ?? team.error ?? leads.error ?? customers.error };
+  if (filtered.isLoading || all.isLoading || team.isLoading || leads.isLoading || customers.isLoading) {
+    return { config: undefined, isLoading: true, error: null };
+  }
+  if (filtered.error || all.error || team.error || leads.error || customers.error) {
+    return { config: undefined, isLoading: false, error: filtered.error ?? all.error ?? team.error ?? leads.error ?? customers.error };
   }
 
   const leadsById = new Map((leads.data ?? []).map((l) => [l.id, l.name]));
@@ -352,9 +408,10 @@ export function useFollowupsTableConfig(): TableConfigResult<FollowupView> {
   const relatedName = (leadId: string | null, customerId: string | null) =>
     (leadId && leadsById.get(leadId)) || (customerId && customersById.get(customerId)) || "—";
 
-  const rows = (data ?? []).map((r) => toFollowupView(r, (id) => team.byId.get(id) ?? id, relatedName));
-  const statusCounts = countBy(rows, (r) => r.status);
-  const priorityCounts = countBy(rows, (r) => r.priority);
+  const rows = filtered.data!.map((r) => toFollowupView(r, (id) => team.byId.get(id) ?? id, relatedName));
+  const allRows = all.data!.map((r) => toFollowupView(r, (id) => team.byId.get(id) ?? id, relatedName));
+  const statusCounts = countBy(allRows, (r) => r.status);
+  const priorityCounts = countBy(allRows, (r) => r.priority);
 
   return {
     isLoading: false,
@@ -366,7 +423,6 @@ export function useFollowupsTableConfig(): TableConfigResult<FollowupView> {
       columns: followupsColumns,
       rows,
       rowKey: (r) => r.id,
-      searchText: (r) => `${r.leadOrCustomer} ${r.reason} ${r.agent} ${r.priority} ${r.status}`,
       searchPlaceholder: "Search follow-ups by lead, customer, agent…",
       kpis: [
         { label: "Overdue", value: String(statusCounts["Overdue"] ?? 0) },
@@ -374,7 +430,11 @@ export function useFollowupsTableConfig(): TableConfigResult<FollowupView> {
         { label: "Done", value: String(statusCounts["Done"] ?? 0) },
         { label: "High Priority", value: String(priorityCounts["High"] ?? 0) },
       ],
-      filters: ["Priority: All", "Status: All", "Agent: All"],
+      filters: [
+        { label: "Priority", param: "priority", options: FOLLOWUP_PRIORITIES.map((p) => ({ value: p, label: titleCase(p) })) },
+        { label: "Status", param: "status", options: FOLLOWUP_STATUSES.map((s) => ({ value: s, label: titleCase(s) })) },
+        { label: "Agent", param: "agentId", options: team.members.map((m) => ({ value: m.id, label: m.name })) },
+      ],
       emptyWhy: "Follow-ups are generated automatically from the SLA clock on each lead's last activity — once one falls due, or you clear this filter, it will appear here.",
       emptyTitle: "No follow-ups match this filter",
       createForm: {
