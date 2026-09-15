@@ -24,15 +24,6 @@ export function AiBubble({ children }: { children: ReactNode }) {
   );
 }
 
-export function CitationChip({ label }: { label: string }) {
-  return (
-    <span className="inline-flex items-center gap-1 rounded-sm border border-primary-border bg-primary-surface-pale px-1.5 py-0.5 text-[10px] text-primary">
-      <Icon name="doc" size={10} />
-      {label}
-    </span>
-  );
-}
-
 export function FollowUpPill({ label, onClick }: { label: string; onClick?: () => void }) {
   return (
     <button
@@ -45,63 +36,24 @@ export function FollowUpPill({ label, onClick }: { label: string; onClick?: () =
   );
 }
 
-/** The "recommended action" style AI message — a tinted header (claim + detail) over a white
- *  footer with the recommendation copy and the run/decline/dismiss button row. Used by the
- *  Copilot chat for `ChatTurnFixture.isAction` turns and mirrors the design's dormant-leads card. */
-export function ActionBubble({
-  text,
-  detail,
-  recommend,
-  cites,
-  ctaLabel = "Create 23 follow-up tasks",
-  secondaryLabel = "Review leads first",
-  onAct,
-  onDismiss,
-}: {
-  text: string;
-  detail?: string;
-  recommend?: string;
-  cites?: string[];
-  ctaLabel?: string;
-  secondaryLabel?: string;
-  onAct?: () => void;
-  onDismiss?: () => void;
-}) {
+/** A small "used: tool_name" chip row under an AI reply — shows which Atlas
+ *  Copilot tools were invoked for this turn, and whether each succeeded. */
+export function ToolActivityRow({ items }: { items: Array<{ name: string; ok: boolean }> }) {
+  if (items.length === 0) return null;
   return (
-    <div className="flex items-start gap-2">
-      <span className="mt-0.5 flex size-6 flex-none items-center justify-center rounded-sm bg-primary-surface text-primary">
-        <Icon name="spark" size={13} />
-      </span>
-      <div className="min-w-0 flex-1 overflow-hidden rounded-chat border border-primary-border">
-        <div className="border-b border-primary-border bg-primary-surface-pale px-3 py-2.5">
-          <div className="text-[12.5px] font-semibold leading-snug text-pretty">{text}</div>
-          {detail && <div className="mt-1 text-[11.5px] leading-relaxed text-body text-pretty">{detail}</div>}
-        </div>
-        <div className="bg-surface px-3 py-3">
-          <div className="text-[9.5px] font-semibold uppercase tracking-[0.09em] text-muted">Recommended action</div>
-          {recommend && <div className="mt-1 text-[11.5px] leading-relaxed text-foreground text-pretty">{recommend}</div>}
-          <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-            <button
-              type="button"
-              onClick={onAct}
-              className="rounded-btn bg-primary px-3 py-1.5 text-[11px] font-medium text-primary-foreground hover:bg-primary-hover"
-            >
-              {ctaLabel}
-            </button>
-            <button
-              type="button"
-              className="rounded-btn border border-border bg-surface px-2.5 py-1.5 text-[11px] hover:bg-canvas"
-            >
-              {secondaryLabel}
-            </button>
-            <button type="button" onClick={onDismiss} className="text-[11px] text-secondary hover:text-body">
-              Dismiss
-            </button>
-            <div className="flex-1" />
-            {cites?.map((c) => <CitationChip key={c} label={c} />)}
-          </div>
-        </div>
-      </div>
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span className="text-[9.5px] uppercase tracking-[0.07em] text-subtle">Used</span>
+      {items.map((t, i) => (
+        <span
+          key={`${t.name}-${i}`}
+          className={`inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 text-[10px] ${
+            t.ok ? "border-primary-border bg-primary-surface-pale text-primary" : "border-danger-border bg-danger-surface text-danger"
+          }`}
+        >
+          <Icon name={t.ok ? "check" : "close"} size={9} />
+          {t.name}
+        </span>
+      ))}
     </div>
   );
 }

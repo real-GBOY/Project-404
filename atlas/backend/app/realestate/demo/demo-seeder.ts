@@ -11,14 +11,26 @@ import { BuildingsService } from "@atlas/realestate/properties/buildings-service
 import { UnitsService } from "@atlas/realestate/properties/units-service.js";
 import { LeadsService } from "@atlas/realestate/crm/leads-service.js";
 import { CustomersService } from "@atlas/realestate/crm/customers-service.js";
+import { ActivitiesService } from "@atlas/realestate/crm/activities-service.js";
 import { ReservationsService } from "@atlas/realestate/sales/reservations-service.js";
 import { ContractsService } from "@atlas/realestate/sales/contracts-service.js";
 import { PaymentPlansService } from "@atlas/realestate/sales/payment-plans-service.js";
+import { PaymentsService } from "@atlas/realestate/finance/payments-service.js";
 import { TasksService } from "@atlas/realestate/operations/tasks-service.js";
 import { ApprovalsService } from "@atlas/realestate/operations/approvals-service.js";
 import { WorkflowsService } from "@atlas/realestate/operations/workflows-service.js";
 import { InsightsRepository } from "@atlas/realestate/assistant/insights-repository.js";
-import { DEMO_DASHBOARD_INSIGHTS, DEMO_FEED_INSIGHTS, DEMO_LEADS, DEMO_PROJECTS, DEMO_TEAM } from "./demo-data.js";
+import { realestateDb } from "@atlas/realestate/db/executor.js";
+import {
+  DEMO_ACTIVITIES,
+  DEMO_DASHBOARD_INSIGHTS,
+  DEMO_FEED_INSIGHTS,
+  DEMO_LEADS,
+  DEMO_PROJECT_VELOCITY,
+  DEMO_PROJECTS,
+  DEMO_SALES_CHAINS,
+  DEMO_TEAM,
+} from "./demo-data.js";
 
 const log = moduleLogger("atlas-demo-seed");
 const DEMO_PASSWORD = "demo-password-2026";
@@ -40,9 +52,11 @@ export class DemoSeeder {
     private readonly units: UnitsService,
     private readonly leads: LeadsService,
     private readonly customers: CustomersService,
+    private readonly activities: ActivitiesService,
     private readonly reservations: ReservationsService,
     private readonly contracts: ContractsService,
     private readonly paymentPlans: PaymentPlansService,
+    private readonly payments: PaymentsService,
     private readonly tasks: TasksService,
     private readonly approvals: ApprovalsService,
     private readonly workflows: WorkflowsService,
@@ -120,7 +134,6 @@ export class DemoSeeder {
         }
       }
 
-      const leadId: string[] = [];
       for (const l of DEMO_LEADS) {
         const lead = await this.leads.create(
           {
@@ -133,13 +146,12 @@ export class DemoSeeder {
           },
           adminId,
         );
-        leadId.push(lead.id);
+        // Every lead starts at "new" — move the ones with a further stage so the
+        // Pipeline board and the dashboard's Lead Conversion Funnel both read as
+        // a real, decaying funnel rather than one bar.
+        if (l.stage && l.stage !== "new") await this.leads.moveStage(lead.id, l.stage, adminId);
+        if (l.trackAsDeal) await this.leads.trackAsDeal(lead.id, { probabilityPct: 55, expectedCloseDate: "2026-12-15" }, adminId);
       }
-      // Move a few leads further down the funnel so the Pipeline board isn't all "new".
-      await this.leads.moveStage(leadId[0], "negotiation", adminId);
-      await this.leads.moveStage(leadId[1], "viewing", adminId);
-      await this.leads.trackAsDeal(leadId[1], { probabilityPct: 55, expectedCloseDate: "2026-12-15" }, adminId);
-      await this.leads.update(leadId[2], { status: "qualified", stage: "qualified" }, adminId);
 
       // One full reservation -> signed contract -> payment plan chain, using a real
       // available unit from North Hills (first project seeded above).
@@ -168,6 +180,51 @@ export class DemoSeeder {
       // A second customer with no transactions yet, for a non-trivial customer list.
       await this.customers.create({ name: "Hala Mostafa", email: "hala.m@example.com", agentId: userId.get("sara")! }, adminId);
 
+      // More reservation -> signed contract -> payment plan chains, spread across
+      // the rest of the portfolio, each with a different collection progress —
+      // so "Due vs. Collected by Project" and "Collection Rate" get several
+      // differentiated bars instead of the one project above.
+      for (const chain of DEMO_SALES_CHAINS) {
+        const pid = projectId.get(chain.projectKey)!;
+        const avail = await this.units.list({ projectId: pid, status: "available" });
+        if (avail.length === 0) continue;
+        const unit = avail[0];
+        const customer = await this.customers.create(
+          { name: chain.customerName, email: chain.customerEmail, agentId: userId.get(chain.agentKey)!, primaryProjectId: pid },
+          adminId,
+        );
+        const reservation = await this.reservations.create(
+          { unitId: unit.id, customerId: customer.id, agentId: userId.get(chain.agentKey)!, holdDays: 14, depositEgp: Math.round(unit.basePriceEgp * 0.05) },
+          adminId,
+        );
+        const contract = await this.contracts.create(
+          { reservationId: reservation.id, customerId: customer.id, unitId: unit.id, valueEgp: unit.basePriceEgp },
+          adminId,
+        );
+        await this.contracts.sign(contract.id, adminId);
+        const plan = await this.paymentPlans.create(
+          { contractId: contract.id, downPaymentPct: chain.downPaymentPct, installmentCount: chain.installmentCount, cadence: chain.cadence, startDate: chain.startDate },
+          adminId,
+        );
+
+        for (const inst of plan.installments.slice(0, chain.paidCount)) {
+          await this.payments.record(
+            { customerId: customer.id, unitId: unit.id, installmentId: inst.id, amountEgp: inst.amountEgp, method: "bank-transfer" },
+            adminId,
+          );
+        }
+        if (chain.overdueCount) {
+          const overdueIds = plan.installments.slice(chain.paidCount, chain.paidCount + chain.overdueCount).map((i) => i.id);
+          if (overdueIds.length > 0) {
+            await realestateDb().updateTable("realestate_installments").set({ status: "overdue" }).where("id", "in", overdueIds).execute();
+          }
+        }
+      }
+
+      for (const a of DEMO_ACTIVITIES) {
+        await this.activities.create({ type: a.type, subject: a.subject, agentId: userId.get(a.agentKey)!, outcome: a.outcome });
+      }
+
       await this.tasks.create({ priority: "high", title: "Follow up with dormant leads", assigneeId: userId.get("ahmed")!, dueAt: new Date(now.getTime() + 2 * 86_400_000).toISOString() });
       await this.tasks.create({ priority: "medium", title: "Prepare North Hills handover pack", assigneeId: userId.get("youssef")!, dueAt: new Date(now.getTime() + 5 * 86_400_000).toISOString() });
 
@@ -183,6 +240,15 @@ export class DemoSeeder {
       }
       for (const i of DEMO_FEED_INSIGHTS) {
         await this.insights.create({ kind: "feed", tag: i.tag, confidence: i.confidence, text: i.text, detail: i.detail, cta: i.cta });
+      }
+
+      // `velocity_per_week` has no producer anywhere in the app (see
+      // `DEMO_PROJECT_VELOCITY`'s own comment) — set it directly per project so
+      // the dashboard's Sales Velocity chart isn't flat zero across the board.
+      for (const [key, velocity] of Object.entries(DEMO_PROJECT_VELOCITY)) {
+        const pid = projectId.get(key);
+        if (!pid) continue;
+        await realestateDb().updateTable("realestate_projects").set({ velocity_per_week: velocity.toFixed(2) }).where("id", "=", pid).execute();
       }
     });
 

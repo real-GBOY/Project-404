@@ -1,8 +1,8 @@
-// app/realestate/assistant — AI Copilot ("Ask Atlas"), stub: server-side
-// keyword-match answers (ported from the frontend's copilot-transcripts.ts),
-// no LLM. Real conversations/messages persisted so the UI is backend-driven;
-// upgradeable to a real LLM later without a schema change (mirrors Mizan
-// Copilot's own stub -> real-LLM upgrade path). Product domain (not Core).
+// app/realestate/assistant — AI Copilot ("Ask Atlas"). Real LLM (Groq ·
+// openai/gpt-oss-120b via an OpenAI-compatible Chat Completions client) with
+// tool-orchestration over the existing real-estate use cases — same shape as
+// Mizan Copilot (mizan/backend/app/lawfirm/assistant). See docs/atlas-assistant.md.
+// Product domain (not Core).
 
 model realestate_ai_conversations {
   id               String   @id
@@ -23,21 +23,21 @@ model realestate_ai_messages {
   id               String   @id
   organization_id  String
   conversation_id  String
-  /// @kyselyType('user' | 'ai')
+  /// @kyselyType('user' | 'assistant' | 'tool')
   role             String
-  text             String
-  detail           String?
-  recommend        String?
-  /// @kyselyType(Json<{ label: string; value: string; delta: string }[]>)
-  stats            Json?
-  /// @kyselyType(Json<{ name: string; value: string; meta: string }[]>)
-  rows             Json?
-  /// @kyselyType(Json<string[]>)
-  cites            Json?
-  /// @kyselyType(Json<string[]>)
-  follow           Json?
-  is_action        Boolean  @default(false)
+  content          String?
+  /// @kyselyType(Json<{ id: string; name: string; arguments: string }[]>)
+  tool_calls       Json?
+  tool_call_id     String?
+  tool_name        String?
+  /// @kyselyType(Json<Record<string, unknown>>)
+  metadata         Json?
   created_at       DateTime @default(now()) @db.Timestamptz(6)
+  /// Strictly increasing insertion order — the transcript's real sort key.
+  /// `created_at` alone ties when two messages land in separate, fast,
+  /// back-to-back transactions (Postgres's `CURRENT_TIMESTAMP` is the
+  /// transaction's start time, not per-statement).
+  seq              BigInt   @default(autoincrement())
 
   realestate_ai_conversations realestate_ai_conversations @relation(fields: [organization_id, conversation_id], references: [organization_id, id], onDelete: Cascade, onUpdate: NoAction, map: "realestate_ai_messages_conversation_fk")
 

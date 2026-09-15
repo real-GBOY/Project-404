@@ -55,30 +55,28 @@ export type realestate_ai_messages = {
   organization_id: string;
   conversation_id: string;
   /**
-   * @kyselyType('user' | 'ai')
+   * @kyselyType('user' | 'assistant' | 'tool')
    */
-  role: "user" | "ai";
-  text: string;
-  detail: string | null;
-  recommend: string | null;
+  role: "user" | "assistant" | "tool";
+  content: string | null;
   /**
-   * @kyselyType(Json<{ label: string; value: string; delta: string }[]>)
+   * @kyselyType(Json<{ id: string; name: string; arguments: string }[]>)
    */
-  stats: Json<{ label: string; value: string; delta: string }[]> | null;
+  tool_calls: Json<{ id: string; name: string; arguments: string }[]> | null;
+  tool_call_id: string | null;
+  tool_name: string | null;
   /**
-   * @kyselyType(Json<{ name: string; value: string; meta: string }[]>)
+   * @kyselyType(Json<Record<string, unknown>>)
    */
-  rows: Json<{ name: string; value: string; meta: string }[]> | null;
-  /**
-   * @kyselyType(Json<string[]>)
-   */
-  cites: Json<string[]> | null;
-  /**
-   * @kyselyType(Json<string[]>)
-   */
-  follow: Json<string[]> | null;
-  is_action: Generated<boolean>;
+  metadata: Json<Record<string, unknown>> | null;
   created_at: Generated<Timestamp>;
+  /**
+   * Strictly increasing insertion order — the transcript's real sort key.
+   * `created_at` alone ties when two messages land in separate, fast,
+   * back-to-back transactions (Postgres's `CURRENT_TIMESTAMP` is the
+   * transaction's start time, not per-statement).
+   */
+  seq: Generated<string>;
 };
 export type realestate_approvals = {
   id: string;

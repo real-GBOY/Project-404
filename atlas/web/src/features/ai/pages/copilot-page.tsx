@@ -3,31 +3,47 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { RowsSkeleton } from "@/components/feedback/skeleton";
 import { ErrorState } from "@/components/feedback/error-state";
-import { AiBubble, ActionBubble, CitationChip, FollowUpPill, UserBubble } from "@/components/domain/chat-bubble";
+import { AiBubble, UserBubble, FollowUpPill, ToolActivityRow } from "@/components/domain/chat-bubble";
 import { ApiError } from "@/config";
-import { useConversations, useMessages, useCopilotSuggestions, useAsk, type MessageRow } from "@/api/ai";
+import { useConversations, useConversation, useAsk } from "@/api/ai";
+
+const SUGGESTIONS = [
+  "Which projects have the highest sales velocity?",
+  "Show me the units most likely to sell soon.",
+  "Which high-value leads haven't been contacted recently?",
+  "How much revenue is currently outstanding?",
+  "Summarise a customer's history.",
+];
 
 /**
  * `isCopilot` screen — its own 230px history rail + chat pane, not the
- * standard `PageContainer`/`PageHeader` shell. Backed by the real assistant
- * module (`/api/realestate/copilot/*`) — a server-side keyword-matched
- * canned-answer stub, no LLM (see `assistant.domain.ts`).
+ * standard `PageContainer`/`PageHeader` shell. Backed by the real Atlas
+ * Copilot: a Groq-hosted LLM orchestrating tool calls over the existing
+ * real-estate use cases (`/api/realestate/copilot/ask`). See
+ * docs/atlas-assistant.md.
  */
 export function CopilotPage() {
   const conversations = useConversations();
-  const suggestions = useCopilotSuggestions();
   const ask = useAsk();
   const [activeId, setActiveId] = useState<string | undefined>(undefined);
   const [input, setInput] = useState("");
-  const messages = useMessages(activeId);
+  const [lastActivity, setLastActivity] = useState<Record<string, { name: string; ok: boolean }[]>>({});
+  const [lastQuestion, setLastQuestion] = useState("");
+  const conversation = useConversation(activeId);
 
   function handleAsk(question: string) {
     const text = question.trim();
     if (!text) return;
     setInput("");
+    setLastQuestion(text);
     ask.mutate(
       { conversationId: activeId, question: text },
-      { onSuccess: (data) => setActiveId(data.conversationId) },
+      {
+        onSuccess: (data) => {
+          setActiveId(data.conversationId);
+          setLastActivity((prev) => ({ ...prev, [data.conversationId]: data.toolActivity }));
+        },
+      },
     );
   }
 
@@ -39,7 +55,8 @@ export function CopilotPage() {
     );
   }
 
-  const chat: MessageRow[] = messages.data ?? [];
+  const turns = conversation.data?.messages ?? [];
+  const activity = activeId ? (lastActivity[activeId] ?? []) : [];
 
   return (
     <div className="flex h-full min-h-0">
@@ -67,7 +84,7 @@ export function CopilotPage() {
                 tabIndex={0}
                 className={`cursor-pointer truncate px-3 py-1.5 text-[11px] hover:bg-primary-surface-pale hover:text-primary ${c.id === activeId ? "bg-primary-surface-pale text-primary" : "text-body"}`}
               >
-                {c.title}
+                {c.title ?? "New conversation"}
               </div>
             ))
           )}
@@ -81,81 +98,53 @@ export function CopilotPage() {
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex-1 overflow-y-auto px-5 pb-2.5 pt-4">
           <div className="mx-auto flex max-w-[760px] flex-col gap-4">
-            {activeId && messages.isLoading && <RowsSkeleton rows={3} cols={1} />}
-            {!activeId && chat.length === 0 && (
+            {activeId && conversation.isLoading && <RowsSkeleton rows={3} cols={1} />}
+            {!activeId && turns.length === 0 && (
               <div className="mt-10 text-center text-[12px] text-subtle">Ask a question below to start a conversation.</div>
             )}
-            {chat.map((turn) =>
+            {conversation.error && (
+              <ErrorState
+                title="Couldn't load this conversation"
+                message={conversation.error instanceof ApiError ? conversation.error.message : "The request failed."}
+              />
+            )}
+            {turns.map((turn, i) =>
               turn.role === "user" ? (
-                <UserBubble key={turn.id} text={turn.text} />
-              ) : turn.isAction ? (
-                <ActionBubble key={turn.id} text={turn.text} detail={turn.detail ?? undefined} recommend={turn.recommend ?? undefined} cites={turn.cites ?? undefined} onAct={() => {}} onDismiss={() => {}} />
+                <UserBubble key={i} text={turn.content} />
               ) : (
-                <AiBubble key={turn.id}>
-                  <div className="text-pretty text-[12.5px] leading-relaxed">{turn.text}</div>
-
-                  {turn.stats && turn.stats.length > 0 && (
-                    <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-px overflow-hidden rounded-card border border-border bg-border">
-                      {turn.stats.map((s) => (
-                        <div key={s.label} className="bg-surface px-2.5 py-2">
-                          <div className="truncate text-[9px] font-semibold uppercase tracking-[0.09em] text-muted">{s.label}</div>
-                          <div className="mt-1 flex items-baseline gap-1.5">
-                            <span className="whitespace-nowrap text-[14px] font-semibold">{s.value}</span>
-                            {s.delta && <span className="text-[10px] font-semibold text-success">{s.delta}</span>}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {turn.rows && turn.rows.length > 0 && (
-                    <div className="overflow-hidden rounded-card border border-border">
-                      {turn.rows.map((r) => (
-                        <div key={r.name} className="grid grid-cols-[1.6fr_1fr_1fr] items-center gap-2.5 border-b border-border-row bg-surface px-2.5 py-1.5 last:border-b-0">
-                          <div className="min-w-0 truncate text-[11px] font-medium">{r.name}</div>
-                          <div className="text-right font-mono text-[11px]">{r.value}</div>
-                          <div className="text-right text-[10.5px] text-subtle">{r.meta}</div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {turn.cites && turn.cites.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="text-[9.5px] uppercase tracking-[0.07em] text-subtle">Sources</span>
-                      {turn.cites.map((c) => (
-                        <CitationChip key={c} label={c} />
-                      ))}
-                    </div>
-                  )}
-
-                  {turn.follow && turn.follow.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {turn.follow.map((f) => (
-                        <FollowUpPill key={f} label={f} onClick={() => handleAsk(f)} />
-                      ))}
-                    </div>
-                  )}
+                <AiBubble key={i}>
+                  <div className="text-pretty text-[12.5px] leading-relaxed">{turn.content}</div>
+                  {i === turns.length - 1 && <ToolActivityRow items={activity} />}
                 </AiBubble>
               ),
+            )}
+            {ask.isPending && (
+              <AiBubble>
+                <div className="flex items-center gap-1.5 text-[11px] text-subtle">
+                  <Icon name="spark" size={12} className="animate-pulse text-primary" />
+                  Thinking…
+                </div>
+              </AiBubble>
+            )}
+            {ask.isError && (
+              <ErrorState
+                title="Couldn't get a response"
+                message={ask.error instanceof ApiError ? ask.error.message : "The request failed."}
+                onRetry={() => handleAsk(lastQuestion)}
+              />
             )}
           </div>
         </div>
 
         <div className="flex-none border-t border-border bg-surface px-5 py-3">
           <div className="mx-auto max-w-[760px]">
-            <div className="mb-2 flex flex-wrap gap-1.5">
-              {(suggestions.data ?? []).map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => handleAsk(s)}
-                  className="rounded-pill border border-border bg-canvas px-2.5 py-1 text-[10.5px] text-body transition-colors hover:border-primary hover:bg-surface hover:text-primary"
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
+            {turns.length === 0 && (
+              <div className="mb-2 flex flex-wrap gap-1.5">
+                {SUGGESTIONS.map((s) => (
+                  <FollowUpPill key={s} label={s} onClick={() => handleAsk(s)} />
+                ))}
+              </div>
+            )}
             <div className="flex items-center gap-2 rounded-btn border border-border-elevated px-2.5 py-2">
               <Icon name="spark" size={14} className="flex-none text-primary" />
               <input

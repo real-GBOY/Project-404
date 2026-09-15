@@ -108,8 +108,7 @@ export const ENDPOINTS = {
   },
   copilot: {
     conversations: "/realestate/copilot/conversations",
-    messages: (conversationId: string) => `/realestate/copilot/conversations/${conversationId}/messages`,
-    suggestions: "/realestate/copilot/suggestions",
+    conversation: (conversationId: string) => `/realestate/copilot/conversations/${conversationId}`,
     ask: "/realestate/copilot/ask",
   },
 } as const;

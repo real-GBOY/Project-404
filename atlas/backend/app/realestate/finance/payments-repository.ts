@@ -42,21 +42,36 @@ export class PaymentsRepository {
   async create(input: CreatePaymentInput): Promise<PaymentRow> {
     const id = realestateId("pay");
     const org = this.org();
-    const reference = `PM-${Math.floor(10000 + Math.random() * 90000)}`;
-    await realestateDb()
-      .insertInto("realestate_payments")
-      .values({
-        id,
-        organization_id: org,
-        reference,
-        customer_id: input.customerId,
-        unit_id: input.unitId,
-        installment_id: input.installmentId ?? null,
-        amount_egp: input.amountEgp,
-        method: input.method,
-        status: "paid",
-      })
-      .execute();
+
+    // `reference` is a short human-readable code, not a globally-unique id —
+    // draw from a 5-digit space, but retry on the rare collision (the
+    // per-org unique constraint) rather than let it surface as a 500.
+    const maxAttempts = 5;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const reference = `PM-${Math.floor(10000 + Math.random() * 90000)}`;
+      try {
+        await realestateDb()
+          .insertInto("realestate_payments")
+          .values({
+            id,
+            organization_id: org,
+            reference,
+            customer_id: input.customerId,
+            unit_id: input.unitId,
+            installment_id: input.installmentId ?? null,
+            amount_egp: input.amountEgp,
+            method: input.method,
+            status: "paid",
+          })
+          .execute();
+        break;
+      } catch (err) {
+        const code = (err as { code?: string } | null)?.code;
+        if (code === "23505" && attempt < maxAttempts) continue;
+        throw err;
+      }
+    }
+
     const row = await realestateDb()
       .selectFrom("realestate_payments")
       .selectAll()

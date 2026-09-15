@@ -66,6 +66,26 @@ const CTA_GHOST = css(`border:1px solid ${SECONDARY_TEXT}; color:${PAPER}; paddi
 const EYEBROW = css(`font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:${OCHRE_DEEP};`);
 const H2 = css(`margin:0; font-size:clamp(27px,3.6vw,44px); font-weight:600; letter-spacing:-.03em; line-height:1.08; max-width:26ch;`);
 
+/** Hamburger / close glyph for the mobile nav toggle — square caps, no rounded joins, matching the identity's iconography rule. */
+function MenuGlyph({ open }: { open: boolean }) {
+  return (
+    <svg viewBox="0 0 18 18" width={18} height={18} stroke={PAPER} strokeWidth={1.6} strokeLinecap="butt" aria-hidden="true">
+      {open ? (
+        <>
+          <line x1={3} y1={3} x2={15} y2={15} />
+          <line x1={15} y1={3} x2={3} y2={15} />
+        </>
+      ) : (
+        <>
+          <line x1={2} y1={5} x2={16} y2={5} />
+          <line x1={2} y1={9} x2={16} y2={9} />
+          <line x1={2} y1={13} x2={16} y2={13} />
+        </>
+      )}
+    </svg>
+  );
+}
+
 /** The section-10 mark: same plate/quadrant/datum as `LogoMark`, but each rect's fill animates as the lifecycle scroll-stepper advances. */
 function LifecycleMark({ active }: { active: number }) {
   const lit = (i: number) => (active >= i ? PAPER : HAIRLINE_DARK);
@@ -87,10 +107,25 @@ export function LandingPage() {
   const rootRef = useRef<HTMLDivElement>(null);
   const lifecycleRef = useRef<HTMLElement>(null);
   const [active, setActive] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     document.title = "Atlas RE OS — One operating system for your real estate business";
   }, []);
+
+  // Close the mobile nav panel on Escape, or once the viewport is wide enough for
+  // the full nav row (matches the `760px` breakpoint in the scoped <style> below).
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMenuOpen(false);
+    const onResize = () => window.innerWidth > 760 && setMenuOpen(false);
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("resize", onResize);
+    };
+  }, [menuOpen]);
 
   // Reveal-on-scroll: sections already on screen at mount stay put; those below fade up.
   useEffect(() => {
@@ -173,20 +208,34 @@ export function LandingPage() {
         .atlas-landing a { color: ${OCHRE_DEEP}; text-decoration: none; border-bottom: 1px solid ${LINK_UNDERLINE}; }
         .atlas-landing a:hover { color: ${OCHRE}; border-bottom-color: ${OCHRE}; }
         @keyframes atlasLandingPulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+
+        /* Header nav: full row on desktop, hamburger + dropdown panel on phones/tablets.
+           The panel only ever exists in the DOM while open (React-gated); the media
+           query is a second guard so it can never show at desktop widths either. */
+        .atlas-nav-desktop { display: flex; align-items: center; gap: clamp(14px,2vw,26px); }
+        .atlas-nav-toggle { display: none; }
+        @media (max-width: 760px) {
+          .atlas-nav-desktop { display: none; }
+          .atlas-nav-toggle { display: inline-flex; }
+        }
+        @media (min-width: 761px) {
+          .atlas-nav-panel { display: none !important; }
+        }
       `}</style>
 
       <div className="atlas-landing">
         {/* ── Header ──────────────────────────────────────────── */}
         <header style={{ position: "sticky", top: 0, zIndex: 50, background: GRAPHITE, borderBottom: `1px solid ${HAIRLINE_DARK}` }}>
           <div style={{ maxWidth: 1280, margin: "0 auto", padding: "14px clamp(18px,4vw,48px)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 11, minWidth: 0 }}>
               <LogoMark size={28} tone="paper" />
-              <div style={{ display: "flex", alignItems: "flex-end", gap: 7, color: PAPER }}>
+              <div style={{ display: "flex", alignItems: "flex-end", gap: 7, color: PAPER, minWidth: 0 }}>
                 <span style={{ fontSize: 19, fontWeight: 700, letterSpacing: "-.03em", lineHeight: 1 }}>ATLAS</span>
                 <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 9, letterSpacing: ".18em", color: MUTED_TEXT, whiteSpace: "nowrap" }}>RE OS</span>
               </div>
             </div>
-            <nav style={{ display: "flex", alignItems: "center", gap: "clamp(14px,2vw,26px)", fontSize: 13, color: FAINT_TEXT, flexWrap: "wrap", justifyContent: "flex-end" }}>
+
+            <nav className="atlas-nav-desktop" aria-label="Primary" style={{ fontSize: 13, color: FAINT_TEXT }}>
               {NAV_LINKS.map(([id, label]) => (
                 <button
                   key={id}
@@ -201,7 +250,43 @@ export function LandingPage() {
                 Request a Demo
               </Link>
             </nav>
+
+            <button
+              type="button"
+              className="atlas-nav-toggle"
+              aria-label={menuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen((o) => !o)}
+              style={{ alignItems: "center", justifyContent: "center", width: 38, height: 38, flex: "none", background: "none", border: `1px solid ${HAIRLINE_DARK}`, cursor: "pointer" }}
+            >
+              <MenuGlyph open={menuOpen} />
+            </button>
           </div>
+
+          {menuOpen && (
+            <nav
+              className="atlas-nav-panel"
+              aria-label="Primary"
+              style={{ display: "flex", flexDirection: "column", gap: 2, borderTop: `1px solid ${HAIRLINE_DARK}`, background: GRAPHITE, padding: "8px clamp(18px,4vw,48px) 18px" }}
+            >
+              {NAV_LINKS.map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    scrollToId(id);
+                  }}
+                  style={{ textAlign: "left", padding: "12px 0", background: "none", border: "none", borderBottom: `1px solid ${HAIRLINE_DARK}`, color: FAINT_TEXT, fontSize: 14, cursor: "pointer" }}
+                >
+                  {label}
+                </button>
+              ))}
+              <Link to="/login" onClick={() => setMenuOpen(false)} style={{ ...CTA_PRIMARY, textAlign: "center", marginTop: 14 }}>
+                Request a Demo
+              </Link>
+            </nav>
+          )}
         </header>
 
         {/* ── Hero ────────────────────────────────────────────── */}

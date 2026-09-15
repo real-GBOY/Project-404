@@ -19,6 +19,6 @@ import { FinancialReportsService } from "./financial-reports-service.js";
     FinancialReportsRepository,
     FinancialReportsService,
   ],
-  exports: [PaymentsRepository, FinanceQueries],
+  exports: [PaymentsRepository, PaymentsService, FinanceQueries],
 })
 export class FinanceModule {}

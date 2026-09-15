@@ -26,6 +26,6 @@ import { FollowupsService } from "./followups-service.js";
     FollowupsRepository,
     FollowupsService,
   ],
-  exports: [LeadsRepository, LeadsService, CustomersRepository, CustomersService, ActivitiesRepository],
+  exports: [LeadsRepository, LeadsService, CustomersRepository, CustomersService, ActivitiesRepository, ActivitiesService],
 })
 export class CrmModule {}
