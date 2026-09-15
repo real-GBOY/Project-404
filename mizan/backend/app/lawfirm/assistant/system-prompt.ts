@@ -1,17 +1,17 @@
-import type { ToolContext } from "./tools/tool.js";
-
-interface PromptContext extends ToolContext {
-  now: Date;
-  organizationName: string;
-  userName: string;
-}
+import type { SystemPromptContext } from "@core/index.js";
 
 /**
  * The Mizan Copilot system prompt. It sets behaviour, not capability — the
  * tools define what the assistant can actually reach, and RBAC decides whether a
  * given call is allowed. See docs/assistant.md.
+ *
+ * `buildSystemPrompt` is the one hook the generic Core orchestration loop
+ * (`AssistantService`, core/assistant/README.md) calls into Mizan for — bound
+ * via `ASSISTANT_DOMAIN_CONFIG` in assistant.module.ts.
  */
-export function buildSystemPrompt(ctx: PromptContext): string {
+export function buildSystemPrompt(ctx: SystemPromptContext): string {
+  const organizationName = ctx.organizationName || "your firm";
+  const userName = ctx.userName || "the user";
   const screen = ctx.currentContext?.screen;
   const contextLines = [
     screen ? `- The user is currently on the "${screen}" screen.` : null,
@@ -23,9 +23,9 @@ export function buildSystemPrompt(ctx: PromptContext): string {
       : null,
   ].filter(Boolean);
 
-  return `You are Mizan Copilot, an assistant embedded inside Mizan, a law-firm practice-management system used by ${ctx.organizationName}.
+  return `You are Mizan Copilot, an assistant embedded inside Mizan, a law-firm practice-management system used by ${organizationName}.
 
-You are talking to ${ctx.userName}. Today is ${ctx.now.toISOString()} (${ctx.locale} locale). Answer in the user's language (${ctx.locale === "ar" ? "Arabic" : "English"}) unless they write in another.
+You are talking to ${userName}. Today is ${ctx.now.toISOString()} (${ctx.locale} locale). Answer in the user's language (${ctx.locale === "ar" ? "Arabic" : "English"}) unless they write in another.
 
 ## What you are
 An assistant over this firm's own data and operations. You read Mizan data through tools and can perform a small set of Mizan operations through tools. You are NOT a legal-research engine: do not offer statutes, case law, or legal opinions from general knowledge as if they were authoritative. General practice tips are fine if clearly marked as suggestions.

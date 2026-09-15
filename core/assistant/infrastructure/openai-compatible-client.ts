@@ -1,6 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { moduleLogger } from "@core/kernel/logging/logger.js";
-import { ASSISTANT_CONFIG, type AssistantConfig } from "../assistant-config.js";
+import { ASSISTANT_CONFIG } from "@core/kernel/tokens.js";
+import type { AssistantConfig } from "@core/assistant/domain/assistant-config.js";
 import {
   AiUpstreamError,
   type AiChatRequest,
@@ -8,7 +9,7 @@ import {
   type AiClient,
   type AiMessage,
   type AiToolCall,
-} from "./ai-client.js";
+} from "@core/assistant/domain/ai-client.js";
 
 const log = moduleLogger("assistant-ai");
 
@@ -34,7 +35,7 @@ interface WireResponse {
  * the module that knows the vendor wire format. No SDK — a single `fetch` with
  * an abort-based timeout keeps the dependency surface at zero.
  *
- * Ported from `mizan/backend/app/lawfirm/assistant/ai/openai-compatible-client.ts`.
+ * Extracted from Mizan Copilot verbatim — no behavior change.
  */
 @Injectable()
 export class OpenAiCompatibleClient implements AiClient {

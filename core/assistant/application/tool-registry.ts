@@ -2,18 +2,16 @@ import { Inject, Injectable } from "@nestjs/common";
 import { readInTenant } from "@core/kernel/db/db.js";
 import { AppError } from "@core/kernel/errors.js";
 import { moduleLogger } from "@core/kernel/logging/logger.js";
-import { PERMISSION_PROVIDER } from "@core/kernel/tokens.js";
+import { ASSISTANT_TOOLS, PERMISSION_PROVIDER } from "@core/kernel/tokens.js";
 import type { IPermissionProvider } from "@core/contracts/index.js";
-import type { AiToolDef } from "../ai/ai-client.js";
-import { ReadTools } from "./read-tools.js";
-import { WriteTools } from "./write-tools.js";
-import { zodToJsonSchema } from "./zod-to-json-schema.js";
-import type { AssistantTool, ToolContext, ToolResult } from "./tool.js";
+import type { AiToolDef } from "@core/assistant/domain/ai-client.js";
+import { zodToJsonSchema } from "@core/assistant/application/zod-to-json-schema.js";
+import type { AssistantTool, ToolContext, ToolResult } from "@core/assistant/domain/tool.js";
 
 const log = moduleLogger("assistant-tools");
 
 /**
- * The one place a model-requested tool call becomes an Atlas operation. The
+ * The one place a model-requested tool call becomes a product operation. The
  * gate order is deliberate and non-negotiable:
  *
  *   lookup → parse args → validate args → **RBAC check in tenant** → execute
@@ -22,21 +20,18 @@ const log = moduleLogger("assistant-tools");
  * can hand the real error back to the model and let it explain — it never
  * fabricates success.
  *
- * Ported from `mizan/backend/app/lawfirm/assistant/tools/tool-registry.ts`.
+ * The tool list itself is 100% product-supplied via `ASSISTANT_TOOLS` — Core
+ * assembles nothing and knows nothing about what any tool does.
  */
 @Injectable()
 export class ToolRegistry {
   private readonly byName: Map<string, AssistantTool>;
 
   constructor(
-    readTools: ReadTools,
-    writeTools: WriteTools,
+    @Inject(ASSISTANT_TOOLS) tools: AssistantTool[],
     @Inject(PERMISSION_PROVIDER) private readonly permissions: IPermissionProvider,
   ) {
-    this.byName = new Map();
-    for (const tool of [...readTools.tools(), ...writeTools.tools()]) {
-      this.byName.set(tool.name, tool);
-    }
+    this.byName = new Map(tools.map((tool) => [tool.name, tool]));
   }
 
   list(): AssistantTool[] {

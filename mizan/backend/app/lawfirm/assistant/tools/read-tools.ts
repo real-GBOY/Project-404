@@ -8,7 +8,7 @@ import { DocumentsService } from "@app/lawfirm/documents/documents-service.js";
 import { BillingService } from "@app/lawfirm/billing/billing-service.js";
 import { CalendarService } from "@app/lawfirm/calendar/calendar-service.js";
 import { DashboardService } from "@app/lawfirm/dashboard/dashboard-service.js";
-import type { AssistantTool, ToolContext } from "./tool.js";
+import type { AssistantTool, ToolContext } from "@core/index.js";
 
 const id = z.string().trim().min(1);
 

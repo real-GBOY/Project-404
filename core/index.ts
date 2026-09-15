@@ -17,6 +17,7 @@ export { FilesModule } from "@core/files/files.module.js";
 export { SecurityModule } from "@core/http/security.module.js";
 export { SeedService } from "@core/bootstrap/seed.service.js";
 export { migrateToLatest, migrationStatus } from "@core/kernel/db/migrate.js";
+export { getConfig, setConfigForTests, type AuricConfig } from "@core/kernel/config.js";
 
 export * from "@core/kernel/tokens.js";
 export type * from "@core/contracts/index.js";
@@ -26,3 +27,44 @@ export {
   isSystemContext,
   tenantContext,
 } from "@core/kernel/tenant.js";
+
+// AI Copilot infrastructure (core/assistant/README.md) — generic classes and
+// types only; each product supplies its own tools, prompt, and scope
+// vocabulary via the tokens above.
+export type {
+  AiChatRequest,
+  AiChatResponse,
+  AiClient,
+  AiMessage,
+  AiToolCall,
+  AiToolDef,
+  AiUsage,
+} from "@core/assistant/domain/ai-client.js";
+export { AiUpstreamError } from "@core/assistant/domain/ai-client.js";
+export type { AssistantConfig } from "@core/assistant/domain/assistant-config.js";
+export { assistantConfigFromAuricConfig } from "@core/assistant/domain/assistant-config.js";
+export type {
+  AssistantDomainConfig,
+  SystemPromptContext,
+} from "@core/assistant/domain/assistant-domain.js";
+export type { ScopeGuardConfig } from "@core/assistant/domain/scope-guard-config.js";
+export type { AssistantTool, ToolContext, ToolResult } from "@core/assistant/domain/tool.js";
+export { OpenAiCompatibleClient } from "@core/assistant/infrastructure/openai-compatible-client.js";
+export {
+  ConversationRepository,
+  type AppendMessageInput,
+  type ConversationRow,
+  type MessageRow,
+  type StoredRole,
+  type StoredToolCall,
+} from "@core/assistant/infrastructure/conversation-repository.js";
+export { guardResponse, type GuardedResponse } from "@core/assistant/application/response-guard.js";
+export { ScopeGuard, type ScopeDecision } from "@core/assistant/application/scope-guard.js";
+export { ToolRegistry } from "@core/assistant/application/tool-registry.js";
+export { zodToJsonSchema } from "@core/assistant/application/zod-to-json-schema.js";
+export {
+  AssistantService,
+  type ChatInput,
+  type ChatResult,
+  type ToolActivity,
+} from "@core/assistant/application/assistant-service.js";

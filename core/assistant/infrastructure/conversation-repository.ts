@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
+import { currentExecutor } from "@core/kernel/db/db.js";
+import { newId } from "@core/kernel/id.js";
 import { requireOrganizationId } from "@core/kernel/tenant.js";
-import { realestateDb } from "@atlas/realestate/db/executor.js";
-import { realestateId } from "@atlas/realestate/shared/ids.js";
 
 export type StoredRole = "user" | "assistant" | "tool";
 
@@ -42,13 +42,15 @@ export interface AppendMessageInput {
 }
 
 /**
- * The Copilot conversation store. Tenant-scoped like every other realestate
- * table (`organization_id` column + RLS). A conversation is private to its
- * owning user *within* its tenant — `findForOwner` is the only read path and
- * it filters on both.
+ * The AI Copilot conversation store — Core-owned (`ai_conversations` /
+ * `ai_messages`), tenant-scoped like every other AURIC table (`organization_id`
+ * column + RLS). A conversation is private to its owning user *within* its
+ * tenant — `findForOwner` is the only read path and it filters on both.
  *
- * Ported from `mizan/backend/app/lawfirm/assistant/conversation-repository.ts`
- * — replaces the old canned-answer `assistant-repository.ts`.
+ * Extracted from Mizan Copilot's `ConversationRepository`; the same store is
+ * now shared, at the schema level, by every product (each deployment has its
+ * own physical `ai_conversations`/`ai_messages` tables — see
+ * core/assistant/README.md).
  */
 @Injectable()
 export class ConversationRepository {
@@ -57,17 +59,17 @@ export class ConversationRepository {
   }
 
   async create(userId: string, title: string | null): Promise<ConversationRow> {
-    const id = realestateId("conv");
-    await realestateDb()
-      .insertInto("realestate_ai_conversations")
-      .values({ id, organization_id: this.org(), user_id: userId, title: title ?? "" })
+    const id = newId("conv");
+    await currentExecutor()
+      .insertInto("ai_conversations")
+      .values({ id, organization_id: this.org(), user_id: userId, title })
       .execute();
     return (await this.findById(id))!;
   }
 
   async findById(id: string): Promise<ConversationRow | null> {
-    const row = await realestateDb()
-      .selectFrom("realestate_ai_conversations")
+    const row = await currentExecutor()
+      .selectFrom("ai_conversations")
       .selectAll()
       .where("organization_id", "=", this.org())
       .where("id", "=", id)
@@ -77,8 +79,8 @@ export class ConversationRepository {
 
   /** The one authorized read: this conversation, only if `userId` owns it. */
   async findForOwner(id: string, userId: string): Promise<ConversationRow | null> {
-    const row = await realestateDb()
-      .selectFrom("realestate_ai_conversations")
+    const row = await currentExecutor()
+      .selectFrom("ai_conversations")
       .selectAll()
       .where("organization_id", "=", this.org())
       .where("id", "=", id)
@@ -88,8 +90,8 @@ export class ConversationRepository {
   }
 
   async listForOwner(userId: string, limit = 30): Promise<ConversationRow[]> {
-    const rows = await realestateDb()
-      .selectFrom("realestate_ai_conversations")
+    const rows = await currentExecutor()
+      .selectFrom("ai_conversations")
       .selectAll()
       .where("organization_id", "=", this.org())
       .where("user_id", "=", userId)
@@ -99,9 +101,19 @@ export class ConversationRepository {
     return rows.map(toConversation);
   }
 
+  async setTitleIfEmpty(id: string, title: string): Promise<void> {
+    await currentExecutor()
+      .updateTable("ai_conversations")
+      .set({ title })
+      .where("organization_id", "=", this.org())
+      .where("id", "=", id)
+      .where("title", "is", null)
+      .execute();
+  }
+
   async touch(id: string): Promise<void> {
-    await realestateDb()
-      .updateTable("realestate_ai_conversations")
+    await currentExecutor()
+      .updateTable("ai_conversations")
       .set({ updated_at: new Date() })
       .where("organization_id", "=", this.org())
       .where("id", "=", id)
@@ -109,9 +121,9 @@ export class ConversationRepository {
   }
 
   async appendMessage(input: AppendMessageInput): Promise<MessageRow> {
-    const id = realestateId("amsg");
-    await realestateDb()
-      .insertInto("realestate_ai_messages")
+    const id = newId("amsg");
+    await currentExecutor()
+      .insertInto("ai_messages")
       .values({
         id,
         organization_id: this.org(),
@@ -130,22 +142,20 @@ export class ConversationRepository {
 
   async recentMessages(conversationId: string, limit: number): Promise<MessageRow[]> {
     // Newest `limit`, returned oldest-first so the transcript reads in order.
-    // Sorted by `seq` (strict insertion order), not `created_at` — see the
-    // column's comment in the schema.
-    const rows = await realestateDb()
-      .selectFrom("realestate_ai_messages")
+    const rows = await currentExecutor()
+      .selectFrom("ai_messages")
       .selectAll()
       .where("organization_id", "=", this.org())
       .where("conversation_id", "=", conversationId)
-      .orderBy("seq", "desc")
+      .orderBy("created_at", "desc")
       .limit(limit)
       .execute();
     return rows.map(toMessage).reverse();
   }
 
   private async messageById(id: string): Promise<MessageRow | null> {
-    const row = await realestateDb()
-      .selectFrom("realestate_ai_messages")
+    const row = await currentExecutor()
+      .selectFrom("ai_messages")
       .selectAll()
       .where("organization_id", "=", this.org())
       .where("id", "=", id)

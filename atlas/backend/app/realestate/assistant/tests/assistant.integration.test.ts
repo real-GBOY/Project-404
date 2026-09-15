@@ -19,13 +19,15 @@ import {
   seedOrg,
   type SeededOrg,
 } from "@atlas/realestate/tests/helpers.js";
-import { AI_CLIENT, AiUpstreamError } from "@atlas/realestate/assistant/ai/ai-client.js";
 import {
+  AI_CLIENT,
+  AiUpstreamError,
   ASSISTANT_CONFIG,
-  readAssistantConfig,
+  AssistantService,
+  assistantConfigFromAuricConfig,
+  getConfig,
   type AssistantConfig,
-} from "@atlas/realestate/assistant/assistant-config.js";
-import { AssistantService } from "@atlas/realestate/assistant/assistant-service.js";
+} from "@core/index.js";
 import { InsightsRepository } from "@atlas/realestate/assistant/insights-repository.js";
 import { InsightsService } from "@atlas/realestate/assistant/insights-service.js";
 import { LeadsService } from "@atlas/realestate/crm/leads-service.js";
@@ -38,7 +40,7 @@ suite("realestate/assistant — Atlas Copilot", () => {
   let app: TestingModule;
   const ai = new ScriptedAiClient();
   // Mutable so a test can flip scope enforcement, like `ai.script(...)`.
-  const cfg: AssistantConfig = { ...readAssistantConfig(), scopeEnforcement: "strict" };
+  const cfg: AssistantConfig = { ...assistantConfigFromAuricConfig(getConfig()), scopeEnforcement: "strict" };
   let orgA: SeededOrg;
   let leadA: { id: string; name: string };
 

@@ -3,22 +3,30 @@ import type { UnitOfWork } from "@core/kernel/db/db.js";
 import { AppError } from "@core/kernel/errors.js";
 import { getContext } from "@core/kernel/logging/context.js";
 import { moduleLogger } from "@core/kernel/logging/logger.js";
-import { AUDIT_LOGGER, CLOCK, ORGANIZATION_PROVIDER, UNIT_OF_WORK } from "@core/kernel/tokens.js";
+import {
+  AI_CLIENT,
+  ASSISTANT_CONFIG,
+  ASSISTANT_DOMAIN_CONFIG,
+  AUDIT_LOGGER,
+  CLOCK,
+  ORGANIZATION_PROVIDER,
+  UNIT_OF_WORK,
+  USER_PROVIDER,
+} from "@core/kernel/tokens.js";
 import type { Clock } from "@core/kernel/clock.js";
-import type { IAuditLogger, IOrganizationProvider } from "@core/contracts/index.js";
-import { LawfirmDirectory } from "@app/lawfirm/shared/directory.js";
-import { AI_CLIENT, type AiClient, type AiMessage } from "./ai/ai-client.js";
-import { ASSISTANT_CONFIG, type AssistantConfig } from "./assistant-config.js";
+import type { IAuditLogger, IOrganizationProvider, IUserProvider } from "@core/contracts/index.js";
+import type { AiClient, AiMessage } from "@core/assistant/domain/ai-client.js";
+import type { AssistantConfig } from "@core/assistant/domain/assistant-config.js";
+import type { AssistantDomainConfig } from "@core/assistant/domain/assistant-domain.js";
+import type { ToolContext } from "@core/assistant/domain/tool.js";
 import {
   ConversationRepository,
   type MessageRow,
   type StoredToolCall,
-} from "./conversation-repository.js";
-import { guardResponse } from "./response-guard.js";
-import { ScopeGuard, outOfScopeReply } from "./scope-guard.js";
-import { buildSystemPrompt } from "./system-prompt.js";
-import { ToolRegistry } from "./tools/tool-registry.js";
-import type { ToolContext } from "./tools/tool.js";
+} from "@core/assistant/infrastructure/conversation-repository.js";
+import { guardResponse } from "@core/assistant/application/response-guard.js";
+import { ScopeGuard } from "@core/assistant/application/scope-guard.js";
+import { ToolRegistry } from "@core/assistant/application/tool-registry.js";
 
 const log = moduleLogger("assistant");
 
@@ -28,7 +36,7 @@ export interface ChatInput {
   locale: string;
   conversationId?: string;
   message: string;
-  currentContext?: { screen?: string; matterId?: string; clientId?: string };
+  currentContext?: { screen?: string; [hint: string]: string | undefined };
   signal?: AbortSignal;
 }
 
@@ -49,16 +57,26 @@ export interface ChatResult {
 /** Trim a tool result before it goes into the transcript / back upstream. */
 const MAX_TOOL_RESULT_CHARS = 6000;
 
+/**
+ * The generic AI Copilot orchestration loop — extracted from Mizan Copilot's
+ * `AssistantService`. Agent loop, conversation persistence, scope gate, audit,
+ * and observability are all product-agnostic; the only product-supplied inputs
+ * are the tool set (`ToolRegistry`, assembled from `ASSISTANT_TOOLS`), the
+ * system prompt and audit namespacing (`ASSISTANT_DOMAIN_CONFIG`), and the
+ * scope vocabulary (`ScopeGuard`, reading `SCOPE_GUARD_CONFIG`). See
+ * core/assistant/README.md.
+ */
 @Injectable()
 export class AssistantService {
   constructor(
     private readonly conversations: ConversationRepository,
     private readonly registry: ToolRegistry,
     private readonly scope: ScopeGuard,
-    private readonly directory: LawfirmDirectory,
     @Inject(AI_CLIENT) private readonly ai: AiClient,
     @Inject(ASSISTANT_CONFIG) private readonly config: AssistantConfig,
+    @Inject(ASSISTANT_DOMAIN_CONFIG) private readonly domain: AssistantDomainConfig,
     @Inject(ORGANIZATION_PROVIDER) private readonly orgs: IOrganizationProvider,
+    @Inject(USER_PROVIDER) private readonly users: IUserProvider,
     @Inject(AUDIT_LOGGER) private readonly audit: IAuditLogger,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
@@ -86,10 +104,10 @@ export class AssistantService {
     }
 
     // ── Identity for the prompt (same tenant, no elevated access) ────────────
-    const [organization, userName] = await this.uow.transaction(async () => {
+    const [organization, user] = await this.uow.transaction(async () => {
       const org = await this.orgs.getOrganization(organizationId);
-      const name = await this.directory.userName(input.userId);
-      return [org, name] as const;
+      const u = await this.users.getUser(input.userId);
+      return [org, u] as const;
     });
 
     // ── Conversation: load (owner-scoped) or create ─────────────────────────
@@ -120,10 +138,10 @@ export class AssistantService {
       }),
     );
 
-    // ── Scope gate — keep the assistant on Mizan's domain ──────────────────
+    // ── Scope gate — keep the assistant on the product's own domain ────────
     const scope = await this.scope.check(message, history.length > 0);
     if (!scope.inScope) {
-      const refusal = outOfScopeReply(input.locale);
+      const refusal = this.scope.outOfScopeReply(input.locale);
       await this.uow.transaction(async () => {
         await this.conversations.appendMessage({
           conversationId: conversation.id,
@@ -169,11 +187,11 @@ export class AssistantService {
     const messages: AiMessage[] = [
       {
         role: "system",
-        content: buildSystemPrompt({
+        content: this.domain.buildSystemPrompt({
           ...toolCtx,
           now: this.clock.now(),
-          organizationName: organization?.name ?? "your firm",
-          userName: userName ?? "the user",
+          organizationName: organization?.name ?? "",
+          userName: user?.displayName ?? "",
         }),
       },
       ...history.map(toAiMessage),
@@ -328,8 +346,8 @@ export class AssistantService {
       await this.uow.transaction(() =>
         this.audit.record({
           actorId: input.userId,
-          action: "lawfirm.assistant.write",
-          resourceType: "lawfirm_ai_conversation",
+          action: `${this.domain.domainKey}.assistant.write`,
+          resourceType: `${this.domain.domainKey}_ai_conversation`,
           resourceId: conversation.id,
           metadata: { tools: writes, correlationId },
         }),
@@ -363,8 +381,8 @@ export class AssistantService {
       await this.uow.transaction(() =>
         this.audit.record({
           actorId: userId,
-          action: "lawfirm.assistant.query",
-          resourceType: "lawfirm_ai_conversation",
+          action: `${this.domain.domainKey}.assistant.query`,
+          resourceType: `${this.domain.domainKey}_ai_conversation`,
           resourceId: conversationId,
           metadata: { ...metadata, correlationId },
         }),
@@ -431,7 +449,7 @@ export class AssistantService {
     });
   }
 
-  /** Observability — structured, and deliberately free of message/legal content. */
+  /** Observability — structured, and deliberately free of message content. */
   private observe(o: {
     correlationId: string;
     input: ChatInput;
@@ -481,7 +499,7 @@ function title(message: string): string {
   return trimmed.length > 80 ? `${trimmed.slice(0, 77)}…` : trimmed;
 }
 
-/** Pull Mizan-id-shaped values out of a tool call's raw JSON args, for the audit
+/** Pull id-shaped values out of a tool call's raw JSON args, for the audit
  *  trail. Purely observational — authorization never depends on this. */
 function extractResourceIds(rawArguments: string): string[] {
   try {

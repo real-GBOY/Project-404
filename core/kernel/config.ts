@@ -86,11 +86,43 @@ const schema = z.object({
   outboxPollIntervalMs: z.coerce.number().int().positive().default(2000),
   outboxMaxAttempts: z.coerce.number().int().positive().default(5),
   outboxBatchSize: z.coerce.number().int().positive().default(20),
+
+  // AI Copilot provider (core/assistant/README.md). Deliberately NOT
+  // AURIC_-prefixed: these are the exact env var names already deployed for
+  // Mizan Copilot's production config (docs/assistant.md) — renaming would
+  // require an ops change on the live VPS for no benefit. A domain-specific
+  // tool set, system prompt, and scope vocabulary are supplied by each
+  // product's own assistant module, not by Core.
+  aiProvider: z.enum(["groq", "openai"]).default("groq"),
+  aiModel: z.string().min(1).default("openai/gpt-oss-120b"),
+  aiBaseUrl: z.string().url().default("https://api.groq.com/openai/v1"),
+  aiApiKey: z.string().default(""),
+  /** Per upstream HTTP call, milliseconds. */
+  aiRequestTimeoutMs: z.coerce.number().int().positive().default(45_000),
+  /** Hard cap on agent-loop iterations (tool round-trips) before we stop. */
+  aiMaxToolIterations: z.coerce.number().int().positive().max(20).default(6),
+  /** Conversation turns sent upstream before the oldest are dropped. */
+  aiMaxHistoryMessages: z.coerce.number().int().positive().default(24),
+  /** Upper bound on assistant output tokens per turn. */
+  aiMaxOutputTokens: z.coerce.number().int().positive().default(1500),
+  /**
+   * Keeps the assistant on the product's own domain.
+   *   strict      — a pre-flight scope check refuses off-topic requests outright
+   *   prompt_only — no pre-check; the system prompt is the only guard
+   *   off         — no scope restriction
+   */
+  aiScopeEnforcement: z.enum(["strict", "prompt_only", "off"]).default("strict"),
 });
 
 export type AuricConfig = z.infer<typeof schema>;
 
 function readEnv(): AuricConfig {
+  const aiProvider = (process.env.AI_PROVIDER ?? "groq").toLowerCase();
+  const aiApiKey =
+    process.env.AI_API_KEY ??
+    (aiProvider === "openai" ? process.env.OPENAI_API_KEY : process.env.GROQ_API_KEY) ??
+    "";
+
   const parsed = schema.safeParse({
     nodeEnv: process.env.NODE_ENV,
     port: process.env.AURIC_PORT,
@@ -122,6 +154,18 @@ function readEnv(): AuricConfig {
     outboxPollIntervalMs: process.env.AURIC_OUTBOX_POLL_INTERVAL_MS,
     outboxMaxAttempts: process.env.AURIC_OUTBOX_MAX_ATTEMPTS,
     outboxBatchSize: process.env.AURIC_OUTBOX_BATCH_SIZE,
+
+    aiProvider,
+    aiModel: process.env.AI_MODEL,
+    aiBaseUrl:
+      process.env.AI_BASE_URL ??
+      (aiProvider === "openai" ? "https://api.openai.com/v1" : undefined),
+    aiApiKey,
+    aiRequestTimeoutMs: process.env.AI_REQUEST_TIMEOUT_MS,
+    aiMaxToolIterations: process.env.AI_MAX_TOOL_ITERATIONS,
+    aiMaxHistoryMessages: process.env.AI_MAX_HISTORY_MESSAGES,
+    aiMaxOutputTokens: process.env.AI_MAX_OUTPUT_TOKENS,
+    aiScopeEnforcement: process.env.AI_SCOPE_ENFORCEMENT,
   });
 
   if (!parsed.success) {

@@ -22,7 +22,9 @@ export type IdPrefix =
   | "vt" // verification token
   | "evt"
   | "obx"
-  | "dlq";
+  | "dlq"
+  | "conv" // AI Copilot conversation (core/assistant)
+  | "amsg"; // AI Copilot message
 
 export function newId(prefix: IdPrefix): string {
   return `${prefix}_${generate()}`;

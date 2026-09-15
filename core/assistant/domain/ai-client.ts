@@ -6,6 +6,9 @@ import { AppError } from "@core/kernel/errors.js";
  * format. v1 ships one implementation — an OpenAI-compatible **Chat Completions**
  * client (Groq's `openai/gpt-oss-120b`, or api.openai.com). A future Responses
  * API provider implements the same interface without touching the caller.
+ *
+ * Extracted from Mizan Copilot (mizan/backend/app/lawfirm/assistant) — see
+ * core/assistant/README.md for the Core/product split.
  */
 
 export interface AiToolDef {
@@ -51,8 +54,6 @@ export interface AiChatResponse {
   finishReason: string;
   usage: AiUsage;
 }
-
-export const AI_CLIENT = Symbol("mizan.assistant.aiClient");
 
 export interface AiClient {
   createChatCompletion(req: AiChatRequest): Promise<AiChatResponse>;

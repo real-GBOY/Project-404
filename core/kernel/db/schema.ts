@@ -5,6 +5,48 @@ export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
   : ColumnType<T, T | undefined, T>;
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
+export type ai_conversations = {
+    id: string;
+    organization_id: string;
+    /**
+     * The Core user who owns the conversation. A conversation is private to its
+     * owner within its tenant — never listed or loaded for anyone else.
+     */
+    user_id: string;
+    title: string | null;
+    created_at: Generated<Timestamp>;
+    updated_at: Generated<Timestamp>;
+};
+export type ai_messages = {
+    id: string;
+    organization_id: string;
+    conversation_id: string;
+    /**
+     * @kyselyType('user' | 'assistant' | 'tool')
+     */
+    role: 'user' | 'assistant' | 'tool';
+    /**
+     * Assistant / user free text. NULL on an assistant turn that only requested
+     * tool calls.
+     */
+    content: string | null;
+    /**
+     * Tool calls the assistant requested this turn: [{ id, name, arguments }].
+     * @kyselyType(Json<Array<{ id: string; name: string; arguments: string }>>)
+     */
+    tool_calls: Json<Array<{ id: string; name: string; arguments: string }>> | null;
+    /**
+     * For role='tool': which assistant tool_call this row answers, and its name.
+     */
+    tool_call_id: string | null;
+    tool_name: string | null;
+    /**
+     * Non-sensitive bookkeeping: model, latency_ms, token usage, ok/error.
+     * @kyselyType(Json<Record<string, unknown>>)
+     */
+    metadata: Json<Record<string, unknown>> | null;
+    created_at: Generated<Timestamp>;
+};
 export type audit_logs = {
     id: string;
     /**
@@ -101,48 +143,6 @@ export type lawfirm_activity_entries = {
     target_id: string;
     target_label: string;
     at: Generated<Timestamp>;
-    created_at: Generated<Timestamp>;
-};
-export type lawfirm_ai_conversations = {
-    id: string;
-    organization_id: string;
-    /**
-     * The Core user who owns the conversation. A conversation is private to its
-     * owner within its tenant — never listed or loaded for anyone else.
-     */
-    user_id: string;
-    title: string | null;
-    created_at: Generated<Timestamp>;
-    updated_at: Generated<Timestamp>;
-};
-export type lawfirm_ai_messages = {
-    id: string;
-    organization_id: string;
-    conversation_id: string;
-    /**
-     * @kyselyType('user' | 'assistant' | 'tool')
-     */
-    role: 'user' | 'assistant' | 'tool';
-    /**
-     * Assistant / user free text. NULL on an assistant turn that only requested
-     * tool calls.
-     */
-    content: string | null;
-    /**
-     * Tool calls the assistant requested this turn: [{ id, name, arguments }].
-     * @kyselyType(Json<Array<{ id: string; name: string; arguments: string }>>)
-     */
-    tool_calls: Json<Array<{ id: string; name: string; arguments: string }>> | null;
-    /**
-     * For role='tool': which assistant tool_call this row answers, and its name.
-     */
-    tool_call_id: string | null;
-    tool_name: string | null;
-    /**
-     * Non-sensitive bookkeeping: model, latency_ms, token usage, ok/error.
-     * @kyselyType(Json<Record<string, unknown>>)
-     */
-    metadata: Json<Record<string, unknown>> | null;
     created_at: Generated<Timestamp>;
 };
 export type lawfirm_calendar_events = {
@@ -613,12 +613,12 @@ export type verification_tokens = {
     created_at: Generated<Timestamp>;
 };
 export type Database = {
+    ai_conversations: ai_conversations;
+    ai_messages: ai_messages;
     audit_logs: audit_logs;
     dead_letter_messages: dead_letter_messages;
     files: files;
     lawfirm_activity_entries: lawfirm_activity_entries;
-    lawfirm_ai_conversations: lawfirm_ai_conversations;
-    lawfirm_ai_messages: lawfirm_ai_messages;
     lawfirm_calendar_events: lawfirm_calendar_events;
     lawfirm_clients: lawfirm_clients;
     lawfirm_contacts: lawfirm_contacts;

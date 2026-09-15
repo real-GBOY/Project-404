@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { z } from "zod";
 import { TasksService } from "@app/lawfirm/tasks/tasks-service.js";
-import type { AssistantTool, ToolContext } from "./tool.js";
+import type { AssistantTool, ToolContext } from "@core/index.js";
 
 const id = z.string().trim().min(1);
 const isoDate = z

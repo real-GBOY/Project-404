@@ -25,3 +25,15 @@ export const STORAGE_ADAPTER = Symbol("auric.storageAdapter");
 export const REQUIRE_EMAIL_VERIFICATION = Symbol("auric.requireEmailVerification");
 /** Whether the outbox worker starts on app bootstrap. `false` in tests (they drive tick()). */
 export const WORKER_AUTOSTART = Symbol("auric.workerAutostart");
+
+// ── AI Copilot infrastructure (core/assistant) — generic; every domain-specific
+// binding (tools, prompt, scope vocabulary) is provided by the product's own
+// assistant module. See core/assistant/README.md. ─────────────────────────────
+export const AI_CLIENT = Symbol("auric.aiClient");
+export const ASSISTANT_CONFIG = Symbol("auric.assistantConfig");
+/** The product's `AssistantTool[]`, assembled from its own domain services. */
+export const ASSISTANT_TOOLS = Symbol("auric.assistantTools");
+/** The product's `AssistantDomainConfig` (system prompt, audit namespacing). */
+export const ASSISTANT_DOMAIN_CONFIG = Symbol("auric.assistantDomainConfig");
+/** The product's `ScopeGuardConfig` (in/out-of-scope vocabulary, refusal text). */
+export const SCOPE_GUARD_CONFIG = Symbol("auric.scopeGuardConfig");

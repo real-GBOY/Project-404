@@ -1,8 +1,4 @@
-import type {
-  AiChatRequest,
-  AiChatResponse,
-  AiClient,
-} from "@app/lawfirm/assistant/ai/ai-client.js";
+import type { AiChatRequest, AiChatResponse, AiClient } from "@core/index.js";
 
 export type Turn = AiChatResponse | ((req: AiChatRequest, callIndex: number) => AiChatResponse);
 

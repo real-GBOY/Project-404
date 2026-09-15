@@ -6,8 +6,8 @@ import { PermissionGuard } from "@core/http/permission.guard.js";
 import { ZodBody } from "@core/http/zod.pipe.js";
 import type { Principal } from "@core/http/principal.js";
 import { getContext } from "@core/kernel/logging/context.js";
+import { AssistantService } from "@core/index.js";
 import { askSchema, type AskBody } from "./assistant.schema.js";
-import { AssistantService } from "./assistant-service.js";
 
 /**
  * Atlas Copilot HTTP surface. `POST /realestate/copilot/ask` is the one

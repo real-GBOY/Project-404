@@ -7,8 +7,8 @@ import { PermissionGuard } from "@core/http/permission.guard.js";
 import { ZodBody } from "@core/http/zod.pipe.js";
 import type { Principal } from "@core/http/principal.js";
 import { getContext } from "@core/kernel/logging/context.js";
+import { AssistantService } from "@core/index.js";
 import { chatRequestSchema } from "./assistant.schema.js";
-import { AssistantService } from "./assistant-service.js";
 
 /**
  * Mizan Copilot HTTP surface. `POST /api/ai/chat` is the one endpoint that

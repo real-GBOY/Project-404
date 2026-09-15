@@ -31,15 +31,16 @@ import {
 import { RbacService } from "@core/rbac/application/rbac-service.js";
 import { AUDIT_LOGGER } from "@core/kernel/tokens.js";
 import type { AuditEntry, IAuditLogger } from "@core/contracts/index.js";
-import { AI_CLIENT } from "@atlas/realestate/assistant/ai/ai-client.js";
 import {
+  AI_CLIENT,
   ASSISTANT_CONFIG,
-  readAssistantConfig,
+  AssistantService,
+  ToolRegistry,
+  assistantConfigFromAuricConfig,
+  getConfig,
   type AssistantConfig,
-} from "@atlas/realestate/assistant/assistant-config.js";
-import { AssistantService } from "@atlas/realestate/assistant/assistant-service.js";
+} from "@core/index.js";
 import { askSchema } from "@atlas/realestate/assistant/assistant.schema.js";
-import { ToolRegistry } from "@atlas/realestate/assistant/tools/tool-registry.js";
 import { LeadsService } from "@atlas/realestate/crm/leads-service.js";
 import { TasksService } from "@atlas/realestate/operations/tasks-service.js";
 import { ScriptedAiClient, callTool, echoLastToolResult, say } from "./scripted-ai-client.js";
@@ -49,7 +50,7 @@ const suite = hasTestDb ? describe : describe.skip;
 suite("realestate/assistant — Atlas Copilot security invariant", () => {
   let app: TestingModule;
   const ai = new ScriptedAiClient();
-  const cfg: AssistantConfig = { ...readAssistantConfig(), scopeEnforcement: "off" };
+  const cfg: AssistantConfig = { ...assistantConfigFromAuricConfig(getConfig()), scopeEnforcement: "off" };
   const auditEntries: AuditEntry[] = [];
   const recordingAudit: IAuditLogger = {
     record: async (e) => {
@@ -194,6 +195,7 @@ suite("realestate/assistant — Atlas Copilot security invariant", () => {
         ["search_leads", {}],
         ["get_tasks", {}],
         ["get_dashboard_summary", {}],
+        ["get_units_likely_to_sell", {}],
       ] as Array<[string, Record<string, unknown>]>) {
         const result = await invoke(orgB.adminId, orgB, tool, args);
         expect(result.ok).toBe(true);
@@ -238,6 +240,7 @@ suite("realestate/assistant — Atlas Copilot security invariant", () => {
         ["search_leads", {}],
         ["get_tasks", {}],
         ["get_dashboard_summary", {}],
+        ["get_units_likely_to_sell", {}],
         ["create_task", { title: "x", dueAt: "2026-10-01T09:00:00Z" }],
       ] as Array<[string, Record<string, unknown>]>) {
         const result = await invoke(noAccessId, orgA, tool, args);
@@ -251,6 +254,7 @@ suite("realestate/assistant — Atlas Copilot security invariant", () => {
         ["get_outstanding", {}],
         ["get_tasks", {}],
         ["get_dashboard_summary", {}],
+        ["get_units_likely_to_sell", {}],
       ] as Array<[string, Record<string, unknown>]>) {
         expect(await invoke(financeId, orgA, tool, args), tool).toMatchObject({ ok: true });
       }
@@ -272,6 +276,7 @@ suite("realestate/assistant — Atlas Copilot security invariant", () => {
         ["get_tasks", {}],
         ["get_collections", {}],
         ["get_dashboard_summary", {}],
+        ["get_units_likely_to_sell", {}],
       ] as Array<[string, Record<string, unknown>]>) {
         expect(await invoke(readerId, orgA, tool, args), tool).toMatchObject({ ok: true });
       }
@@ -295,7 +300,7 @@ suite("realestate/assistant — Atlas Copilot security invariant", () => {
       const dangerous = /sql|query|exec|eval|http|fetch|\braw\b|repository|database|db_|shell|script/i;
       expect(registry.list().some((t) => dangerous.test(t.name))).toBe(false);
       expect(registry.list().every((t) => t.permission !== null)).toBe(true);
-      expect(registry.list()).toHaveLength(22); // 20 read + 2 write
+      expect(registry.list()).toHaveLength(23); // 21 read + 2 write
     });
 
     it("an unknown tool name is refused, whatever the model puts in it", async () => {

@@ -15,13 +15,15 @@ import {
   seedFirm,
   type SeededFirm,
 } from "@app/lawfirm/tests/helpers.js";
-import { AI_CLIENT, AiUpstreamError } from "@app/lawfirm/assistant/ai/ai-client.js";
 import {
+  AI_CLIENT,
+  AiUpstreamError,
   ASSISTANT_CONFIG,
-  readAssistantConfig,
+  AssistantService,
+  assistantConfigFromAuricConfig,
+  getConfig,
   type AssistantConfig,
-} from "@app/lawfirm/assistant/assistant-config.js";
-import { AssistantService } from "@app/lawfirm/assistant/assistant-service.js";
+} from "@core/index.js";
 import { ClientsService } from "@app/lawfirm/clients/clients-service.js";
 import { MattersService } from "@app/lawfirm/matters/matters-service.js";
 import { TasksService } from "@app/lawfirm/tasks/tasks-service.js";
@@ -33,7 +35,7 @@ suite("lawfirm/assistant — Mizan Copilot", () => {
   let app: TestingModule;
   const ai = new ScriptedAiClient();
   // Mutable so a test can flip scope enforcement, like `ai.script(...)`.
-  const cfg: AssistantConfig = { ...readAssistantConfig(), scopeEnforcement: "strict" };
+  const cfg: AssistantConfig = { ...assistantConfigFromAuricConfig(getConfig()), scopeEnforcement: "strict" };
   let firmA: SeededFirm;
   let matterA: { id: string; title: string };
 

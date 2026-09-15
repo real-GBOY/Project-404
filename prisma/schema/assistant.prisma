@@ -1,0 +1,59 @@
+// core/assistant — AI Copilot orchestration infrastructure (see
+// core/assistant/README.md). Core-owned, domain-agnostic: a deliberately small
+// conversation store, one row per conversation, one row per message (user /
+// assistant / tool). Tool calls and results are kept as JSON on the message so
+// the agent loop can be replayed, and so a product's UI can show "what the
+// assistant did". No vector store, no embeddings.
+//
+// Renamed from Mizan Copilot's original `lawfirm_ai_conversations` /
+// `lawfirm_ai_messages` (migration 20260916120000_core_assistant_rename) as
+// part of the Core AI extraction — same shape, product-neutral name. Every
+// deployment (Mizan via this root schema, Atlas via its own copied schema
+// folder) has its own physical copy of these two tables.
+//
+// Hand-written SQL (RLS, CHECKs, updated_at trigger) lives in
+// ../migrations/*_core_assistant*; these models mirror the tables for the
+// Prisma -> Kysely type generator only.
+
+model ai_conversations {
+  id              String   @id
+  organization_id String
+  /// The Core user who owns the conversation. A conversation is private to its
+  /// owner within its tenant — never listed or loaded for anyone else.
+  user_id         String
+  title           String?
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  messages ai_messages[]
+
+  @@unique([organization_id, id], map: "ai_conversations_org_id_uq")
+  @@index([organization_id, user_id, updated_at], map: "ai_conversations_owner_idx")
+  @@map("ai_conversations")
+}
+
+model ai_messages {
+  id              String   @id
+  organization_id String
+  conversation_id String
+  /// @kyselyType('user' | 'assistant' | 'tool')
+  role            String
+  /// Assistant / user free text. NULL on an assistant turn that only requested
+  /// tool calls.
+  content         String?
+  /// Tool calls the assistant requested this turn: [{ id, name, arguments }].
+  /// @kyselyType(Json<Array<{ id: string; name: string; arguments: string }>>)
+  tool_calls      Json?
+  /// For role='tool': which assistant tool_call this row answers, and its name.
+  tool_call_id    String?
+  tool_name       String?
+  /// Non-sensitive bookkeeping: model, latency_ms, token usage, ok/error.
+  /// @kyselyType(Json<Record<string, unknown>>)
+  metadata        Json?
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  conversation ai_conversations @relation(fields: [organization_id, conversation_id], references: [organization_id, id], onDelete: Cascade, onUpdate: NoAction, map: "ai_messages_conversation_fk")
+
+  @@index([organization_id, conversation_id, created_at], map: "ai_messages_conversation_idx")
+  @@map("ai_messages")
+}

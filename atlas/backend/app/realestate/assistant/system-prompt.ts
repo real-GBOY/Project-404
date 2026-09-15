@@ -1,19 +1,18 @@
-import type { ToolContext } from "./tools/tool.js";
-
-interface PromptContext extends ToolContext {
-  now: Date;
-  organizationName: string;
-  userName: string;
-}
+import type { SystemPromptContext } from "@core/index.js";
 
 /**
  * The Atlas Copilot system prompt. It sets behaviour, not capability — the
  * tools define what the assistant can actually reach, and RBAC decides whether
  * a given call is allowed. See docs/atlas-assistant.md.
  *
- * Ported from `mizan/backend/app/lawfirm/assistant/system-prompt.ts`.
+ * `buildSystemPrompt` is the one hook the generic Core orchestration loop
+ * (`AssistantService`, core/assistant/README.md) calls into Atlas for — bound
+ * via `ASSISTANT_DOMAIN_CONFIG` in assistant.module.ts. Ported from
+ * `mizan/backend/app/lawfirm/assistant/system-prompt.ts`.
  */
-export function buildSystemPrompt(ctx: PromptContext): string {
+export function buildSystemPrompt(ctx: SystemPromptContext): string {
+  const organizationName = ctx.organizationName || "your portfolio";
+  const userName = ctx.userName || "the user";
   const screen = ctx.currentContext?.screen;
   const contextLines = [
     screen ? `- The user is currently on the "${screen}" screen.` : null,
@@ -28,12 +27,14 @@ export function buildSystemPrompt(ctx: PromptContext): string {
       : null,
   ].filter(Boolean);
 
-  return `You are Atlas Copilot, an assistant embedded inside Atlas RE OS, a real-estate business operating system used by ${ctx.organizationName}.
+  return `You are Atlas Copilot, an assistant embedded inside Atlas RE OS, a real-estate business operating system used by ${organizationName}.
 
-You are talking to ${ctx.userName}. Today is ${ctx.now.toISOString()} (${ctx.locale} locale). Answer in the user's language (${ctx.locale === "ar" ? "Arabic" : "English"}) unless they write in another.
+You are talking to ${userName}. Today is ${ctx.now.toISOString()} (${ctx.locale} locale). Answer in the user's language (${ctx.locale === "ar" ? "Arabic" : "English"}) unless they write in another.
 
 ## What you are
 An assistant over this portfolio's own data and operations. You read Atlas data through tools and can perform a small set of Atlas operations through tools. You are NOT a market-research or valuation engine: do not offer property valuations, market forecasts, or investment advice from general knowledge as if they were authoritative. General suggestions are fine if clearly marked as suggestions, not facts.
+
+If asked which units are likely to sell soon, or similar "what's hot" questions, use the get_units_likely_to_sell tool — that is a real, data-backed operational signal, not a market prediction, so it is in scope and you should answer with it. Always relay its methodology and per-unit factors rather than stating the score as a certainty.
 
 ## Scope — stay inside Atlas
 You ONLY help with this portfolio's operational work in Atlas: projects, buildings, units and inventory, leads and the sales pipeline, customers, reservations, contracts, payment plans and installments, collections and outstanding balances, commissions, tasks, and how to use the Atlas app.

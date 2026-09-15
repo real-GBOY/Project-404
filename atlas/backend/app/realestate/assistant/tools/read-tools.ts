@@ -11,7 +11,7 @@ import { PaymentPlansService } from "@atlas/realestate/sales/payment-plans-servi
 import { PaymentsService } from "@atlas/realestate/finance/payments-service.js";
 import { TasksService } from "@atlas/realestate/operations/tasks-service.js";
 import { DashboardService } from "@atlas/realestate/dashboard/dashboard-service.js";
-import type { AssistantTool, ToolContext } from "./tool.js";
+import type { AssistantTool, ToolContext } from "@core/index.js";
 
 const id = z.string().trim().min(1);
 
@@ -262,6 +262,19 @@ export class ReadTools {
           parameters: z.object({}),
         },
         () => this.dashboard.summary(),
+      ),
+      t(
+        {
+          name: "get_units_likely_to_sell",
+          description:
+            "Ranks currently available units by a composite, explainable likelihood-to-sell-soon score, " +
+            "built only from real Atlas data (active lead interest in that project/unit type, the project's " +
+            "real sell-through rate, inventory freshness). Not a market prediction — always relay the returned " +
+            "methodology and factors, don't state the score as a certainty.",
+          resource: "dashboard",
+          parameters: z.object({ limit: z.number().int().positive().max(30).optional() }),
+        },
+        (a) => this.dashboard.unitsLikelyToSell(a.limit ?? 15),
       ),
     ];
   }

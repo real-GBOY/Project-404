@@ -29,15 +29,16 @@ import {
 import { RbacService } from "@core/rbac/application/rbac-service.js";
 import { AUDIT_LOGGER } from "@core/kernel/tokens.js";
 import type { AuditEntry, IAuditLogger } from "@core/contracts/index.js";
-import { AI_CLIENT } from "@app/lawfirm/assistant/ai/ai-client.js";
 import {
+  AI_CLIENT,
   ASSISTANT_CONFIG,
-  readAssistantConfig,
+  AssistantService,
+  ToolRegistry,
+  assistantConfigFromAuricConfig,
+  getConfig,
   type AssistantConfig,
-} from "@app/lawfirm/assistant/assistant-config.js";
-import { AssistantService } from "@app/lawfirm/assistant/assistant-service.js";
+} from "@core/index.js";
 import { chatRequestSchema } from "@app/lawfirm/assistant/assistant.schema.js";
-import { ToolRegistry } from "@app/lawfirm/assistant/tools/tool-registry.js";
 import { BillingService } from "@app/lawfirm/billing/billing-service.js";
 import { ClientsService } from "@app/lawfirm/clients/clients-service.js";
 import { HearingsService } from "@app/lawfirm/hearings/hearings-service.js";
@@ -50,7 +51,7 @@ const suite = hasTestDb ? describe : describe.skip;
 suite("Mizan Copilot — security invariant", () => {
   let app: TestingModule;
   const ai = new ScriptedAiClient();
-  const cfg: AssistantConfig = { ...readAssistantConfig(), scopeEnforcement: "off" };
+  const cfg: AssistantConfig = { ...assistantConfigFromAuricConfig(getConfig()), scopeEnforcement: "off" };
   const auditEntries: AuditEntry[] = [];
   const recordingAudit: IAuditLogger = {
     record: async (e) => {

@@ -25,14 +25,6 @@ export type realestate_activities = {
   occurred_at: Generated<Timestamp>;
   created_at: Generated<Timestamp>;
 };
-export type realestate_ai_conversations = {
-  id: string;
-  organization_id: string;
-  user_id: string;
-  title: string;
-  created_at: Generated<Timestamp>;
-  updated_at: Generated<Timestamp>;
-};
 export type realestate_ai_insights = {
   id: string;
   organization_id: string;
@@ -49,34 +41,6 @@ export type realestate_ai_insights = {
   dismissed_by: string | null;
   dismissed_at: Timestamp | null;
   created_at: Generated<Timestamp>;
-};
-export type realestate_ai_messages = {
-  id: string;
-  organization_id: string;
-  conversation_id: string;
-  /**
-   * @kyselyType('user' | 'assistant' | 'tool')
-   */
-  role: "user" | "assistant" | "tool";
-  content: string | null;
-  /**
-   * @kyselyType(Json<{ id: string; name: string; arguments: string }[]>)
-   */
-  tool_calls: Json<{ id: string; name: string; arguments: string }[]> | null;
-  tool_call_id: string | null;
-  tool_name: string | null;
-  /**
-   * @kyselyType(Json<Record<string, unknown>>)
-   */
-  metadata: Json<Record<string, unknown>> | null;
-  created_at: Generated<Timestamp>;
-  /**
-   * Strictly increasing insertion order — the transcript's real sort key.
-   * `created_at` alone ties when two messages land in separate, fast,
-   * back-to-back transactions (Postgres's `CURRENT_TIMESTAMP` is the
-   * transaction's start time, not per-statement).
-   */
-  seq: Generated<string>;
 };
 export type realestate_approvals = {
   id: string;
@@ -505,9 +469,7 @@ export type realestate_workflows = {
 };
 export type RealestateTables = {
   realestate_activities: realestate_activities;
-  realestate_ai_conversations: realestate_ai_conversations;
   realestate_ai_insights: realestate_ai_insights;
-  realestate_ai_messages: realestate_ai_messages;
   realestate_approvals: realestate_approvals;
   realestate_buildings: realestate_buildings;
   realestate_commissions: realestate_commissions;

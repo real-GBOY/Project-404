@@ -1,50 +1,15 @@
 // app/realestate/assistant — AI Copilot ("Ask Atlas"). Real LLM (Groq ·
 // openai/gpt-oss-120b via an OpenAI-compatible Chat Completions client) with
-// tool-orchestration over the existing real-estate use cases — same shape as
-// Mizan Copilot (mizan/backend/app/lawfirm/assistant). See docs/atlas-assistant.md.
+// tool-orchestration over the existing real-estate use cases, now on top of
+// AURIC Core's generic assistant infrastructure (core/assistant/README.md).
 // Product domain (not Core).
-
-model realestate_ai_conversations {
-  id               String   @id
-  organization_id  String
-  user_id          String
-  title            String
-  created_at       DateTime @default(now()) @db.Timestamptz(6)
-  updated_at       DateTime @default(now()) @db.Timestamptz(6)
-
-  realestate_ai_messages realestate_ai_messages[]
-
-  @@unique([organization_id, id], map: "realestate_ai_conversations_org_id_uq")
-  @@index([organization_id, user_id], map: "realestate_ai_conversations_user_idx")
-  @@map("realestate_ai_conversations")
-}
-
-model realestate_ai_messages {
-  id               String   @id
-  organization_id  String
-  conversation_id  String
-  /// @kyselyType('user' | 'assistant' | 'tool')
-  role             String
-  content          String?
-  /// @kyselyType(Json<{ id: string; name: string; arguments: string }[]>)
-  tool_calls       Json?
-  tool_call_id     String?
-  tool_name        String?
-  /// @kyselyType(Json<Record<string, unknown>>)
-  metadata         Json?
-  created_at       DateTime @default(now()) @db.Timestamptz(6)
-  /// Strictly increasing insertion order — the transcript's real sort key.
-  /// `created_at` alone ties when two messages land in separate, fast,
-  /// back-to-back transactions (Postgres's `CURRENT_TIMESTAMP` is the
-  /// transaction's start time, not per-statement).
-  seq              BigInt   @default(autoincrement())
-
-  realestate_ai_conversations realestate_ai_conversations @relation(fields: [organization_id, conversation_id], references: [organization_id, id], onDelete: Cascade, onUpdate: NoAction, map: "realestate_ai_messages_conversation_fk")
-
-  @@unique([organization_id, id], map: "realestate_ai_messages_org_id_uq")
-  @@index([organization_id, conversation_id], map: "realestate_ai_messages_conversation_idx")
-  @@map("realestate_ai_messages")
-}
+//
+// The conversation store itself (`ai_conversations` / `ai_messages`) is
+// Core-owned and has no Prisma model in this project, the same way Core's
+// other baseline tables (users/organizations/roles/…) never do — see
+// datasource.prisma and ../migrations/20260916120000_core_assistant. Only
+// `realestate_ai_insights` (the dashboard insights banner — an unrelated
+// Atlas-only feature) is modelled here.
 
 model realestate_ai_insights {
   id               String    @id
