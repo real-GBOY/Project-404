@@ -17,6 +17,7 @@ import { toneOf } from "@/lib/tone";
 import { formatEgp, toNumber } from "@/lib/money";
 import { timeAgo } from "@/lib/time";
 import { titleCase } from "@/lib/text";
+import { downloadCsv } from "@/lib/csv-export";
 import { useTeamDirectory } from "@/api/team";
 import { useDashboardSummary, useInsights, useDismissInsight } from "@/api/dashboard";
 import { ApiError } from "@/config";
@@ -116,7 +117,25 @@ export function DashboardPage() {
         actions={
           <>
             <SegmentedControl value={range} onChange={setRange} options={RANGES} />
-            <Button variant="secondary" size="sm" icon="download">
+            <Button
+              variant="secondary"
+              size="sm"
+              icon="download"
+              onClick={() => {
+                downloadCsv(
+                  `portfolio-performance-${new Date().toISOString().slice(0, 10)}.csv`,
+                  d.projects.map((p) => ({
+                    project: p.name,
+                    soldUnits: p.soldUnits,
+                    totalUnits: p.totalUnits,
+                    revenueEgp: p.revenueEgp,
+                    velocityPerWeek: p.velocityPerWeek,
+                    sellThroughPct: p.sellThroughPct,
+                  })),
+                );
+                toast.push({ kind: "success", title: "Exported", body: "Project performance downloaded as CSV." });
+              }}
+            >
               Export
             </Button>
           </>

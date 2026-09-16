@@ -8,6 +8,7 @@ import { FilterDropdown } from "@/components/ui/dropdown-menu";
 import { SearchInput } from "@/components/ui/input";
 import { ListFooter } from "@/components/tables/list-pagination";
 import { DataTable } from "@/components/tables/data-table";
+import { DataGrid } from "@/components/tables/data-grid";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/feedback/empty-state";
 import { ErrorState } from "@/components/feedback/error-state";
@@ -15,6 +16,7 @@ import { QuickCreateModal } from "@/components/tables/quick-create-modal";
 import { useConfirm } from "@/lib/confirm/confirm-provider";
 import { useToast } from "@/lib/toast/toast-provider";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
+import { downloadCsv } from "@/lib/csv-export";
 import { ApiError } from "@/config";
 import { useTableConfig } from "./entity-table-registry";
 import type { EntityKey } from "./table-types";
@@ -72,6 +74,16 @@ export function EntityTablePage({ entity }: { entity: EntityKey }) {
     );
   }
 
+  function handleExport() {
+    if (rows.length === 0) {
+      toast.push({ kind: "danger", title: "Nothing to export", body: "No rows match the current filter." });
+      return;
+    }
+    const name = (config?.title ?? entity).toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    downloadCsv(`${name}-${new Date().toISOString().slice(0, 10)}.csv`, rows as Record<string, unknown>[]);
+    toast.push({ kind: "success", title: "Exported", body: `${rows.length} row${rows.length === 1 ? "" : "s"} downloaded as CSV.` });
+  }
+
   async function handlePrimaryAction() {
     if (config!.createForm) {
       setCreateOpen(true);
@@ -99,7 +111,7 @@ export function EntityTablePage({ entity }: { entity: EntityKey }) {
         actions={
           config?.headerExtra ?? (
             <>
-              <Button variant="secondary" size="sm" icon="download">
+              <Button variant="secondary" size="sm" icon="download" onClick={handleExport}>
                 Export
               </Button>
               {config?.primaryAction && (
@@ -155,26 +167,22 @@ export function EntityTablePage({ entity }: { entity: EntityKey }) {
           <ViewToggle value={view} onChange={setView} />
         </ListToolbar>
 
-        <DataTable
-          columns={config?.columns ?? []}
-          rows={pageRows}
-          rowKey={config?.rowKey ?? (() => "")}
-          loading={isLoading}
-          minWidth={config?.minWidth}
-          onRowClick={
-            config?.onRowClick
-              ? (row) => {
+        {(() => {
+          const tableProps = {
+            columns: config?.columns ?? [],
+            rows: pageRows,
+            rowKey: config?.rowKey ?? (() => ""),
+            loading: isLoading,
+            onRowClick: config?.onRowClick
+              ? (row: unknown) => {
                   const to = config!.onRowClick!(row);
                   if (to) navigate(to);
                 }
-              : undefined
-          }
-          emptyTitle={
-            config?.emptyTitle ?? (query ? `No ${(config?.title ?? entity).toLowerCase()} match “${query}”` : `No ${(config?.title ?? entity).toLowerCase()} found`)
-          }
-          emptyDescription={config?.emptyWhy}
-          emptyAction={
-            hasActiveFilter ? (
+              : undefined,
+            emptyTitle:
+              config?.emptyTitle ?? (query ? `No ${(config?.title ?? entity).toLowerCase()} match “${query}”` : `No ${(config?.title ?? entity).toLowerCase()} found`),
+            emptyDescription: config?.emptyWhy,
+            emptyAction: hasActiveFilter ? (
               <div className="flex items-center gap-1.5">
                 <Button
                   size="sm"
@@ -191,9 +199,10 @@ export function EntityTablePage({ entity }: { entity: EntityKey }) {
                   </Button>
                 )}
               </div>
-            ) : undefined
-          }
-        />
+            ) : undefined,
+          };
+          return view === "table" ? <DataTable {...tableProps} minWidth={config?.minWidth} /> : <DataGrid {...tableProps} />;
+        })()}
 
         <ListFooter total={rows.length} page={page} pageSize={PAGE_SIZE} onPageChange={setPage} />
       </Card>
