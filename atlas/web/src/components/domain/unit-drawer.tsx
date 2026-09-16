@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { Drawer, DrawerSection } from "@/components/ui/drawer";
 import { StatusBadge } from "@/components/ui/pill";
 import { ProgressBar } from "@/components/ui/progress-bar";
@@ -14,6 +15,7 @@ export interface UnitDrawerInstallment {
 
 export interface UnitDrawerData {
   code: string;
+  projectId: string;
   project: string;
   building: string;
   type: string;
@@ -40,6 +42,7 @@ export function UnitDrawer({
   onOpenChange: (open: boolean) => void;
   onReserve?: () => void;
 }) {
+  const navigate = useNavigate();
   if (!unit) return null;
   const canReserve = unit.status === "Available";
   const hasOwner = unit.status === "Sold" || unit.status === "Reserved";
@@ -57,7 +60,14 @@ export function UnitDrawer({
             Reserve unit
           </Button>
         ) : (
-          <Button variant="secondary" className="ms-auto">
+          <Button
+            variant="secondary"
+            className="ms-auto"
+            onClick={() => {
+              onOpenChange(false);
+              navigate(`/projects/${unit.projectId}`);
+            }}
+          >
             Open in project
           </Button>
         )

@@ -95,6 +95,7 @@ export const ENDPOINTS = {
     roles: "/realestate/rbac/roles",
   },
   auditLogs: "/realestate/audit-logs",
+  orgSettings: "/realestate/org-settings",
   notifications: {
     list: "/realestate/notifications",
     read: (id: string) => `/realestate/notifications/${id}/read`,

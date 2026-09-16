@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-import { get, ENDPOINTS } from "@/config";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { get, patch, ENDPOINTS } from "@/config";
 
 // ---------- Roles ----------
 
@@ -76,4 +76,32 @@ export function toAuditLogView(row: AuditLogRow): AuditLogView {
     action: row.action,
     entity: row.resource,
   };
+}
+
+// ---------- Organization settings ----------
+
+export interface OrgSettingsRow {
+  reservationHoldDays: number;
+  escalationDays: number;
+  defaultDiscountPct: string;
+  aiInsightRefreshMinutes: number;
+}
+
+export interface UpdateOrgSettingsBody {
+  reservationHoldDays?: number;
+  escalationDays?: number;
+  defaultDiscountPct?: number;
+  aiInsightRefreshMinutes?: number;
+}
+
+export function useOrgSettings() {
+  return useQuery({ queryKey: ["org-settings"], queryFn: () => get<OrgSettingsRow>(ENDPOINTS.orgSettings) });
+}
+
+export function useUpdateOrgSettings() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: UpdateOrgSettingsBody) => patch<OrgSettingsRow>(ENDPOINTS.orgSettings, body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["org-settings"] }),
+  });
 }

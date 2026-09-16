@@ -9,6 +9,8 @@ import { ErrorState } from "@/components/feedback/error-state";
 import { ApiError } from "@/config";
 import { useTeam } from "@/api/team";
 import { useLeads, useActivities, useFollowups } from "@/api/crm";
+import { downloadCsv } from "@/lib/csv-export";
+import { useToast } from "@/lib/toast/toast-provider";
 
 function followUpColor(pct: number): string {
   if (pct >= 85) return "var(--color-success)";
@@ -32,6 +34,7 @@ interface AgentRow {
 const QUALIFIED_STAGES = new Set(["qualified", "contacted", "viewing", "negotiation", "reserved", "contracted", "sold"]);
 
 export function AgentPerformancePage() {
+  const toast = useToast();
   const team = useTeam();
   const leads = useLeads();
   const activities = useActivities();
@@ -94,7 +97,28 @@ export function AgentPerformancePage() {
         title="Agent Performance"
         description={`Ranked by revenue this period across ${rows.length} agents`}
         actions={
-          <Button variant="secondary" size="sm" icon="download">
+          <Button
+            variant="secondary"
+            size="sm"
+            icon="download"
+            onClick={() => {
+              downloadCsv(
+                `agent-performance-${new Date().toISOString().slice(0, 10)}.csv`,
+                rows.map((a) => ({
+                  agent: a.name,
+                  role: a.role,
+                  leads: a.leads,
+                  qualified: a.qualified,
+                  viewings: a.viewings,
+                  sales: a.sales,
+                  conversionPct: a.conversionPct,
+                  revenueEgpM: a.revenueEgpM.toFixed(1),
+                  followUpPct: a.followUpPct,
+                })),
+              );
+              toast.push({ kind: "success", title: "Exported", body: "Agent performance downloaded as CSV." });
+            }}
+          >
             Export
           </Button>
         }

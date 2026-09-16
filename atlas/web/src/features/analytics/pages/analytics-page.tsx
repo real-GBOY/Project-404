@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageContainer, PageHeader } from "@/components/ui/page-header";
 import { KpiStrip, KpiTile } from "@/components/ui/kpi-tile";
@@ -9,6 +10,8 @@ import { RowsSkeleton } from "@/components/feedback/skeleton";
 import { DualBarChart } from "@/components/charts/bar-chart";
 import { LineChart, StatFooter } from "@/components/charts/line-chart";
 import { formatEgp, toNumber } from "@/lib/money";
+import { downloadCsv } from "@/lib/csv-export";
+import { useToast } from "@/lib/toast/toast-provider";
 import { ApiError } from "@/config";
 import { useDashboardSummary } from "@/api/dashboard";
 import { useLeads } from "@/api/crm";
@@ -23,13 +26,13 @@ const ROUTE_COPY: Record<AnalyticsRoute, { title: string; subtitle: string; bars
   an_inventory: { title: "Inventory Analytics", subtitle: "Unit status mix across the portfolio", bars: "Due vs. Collected by Project", line: "Sales Velocity by Project", breakdown: "Inventory by Project" },
 };
 
-const ANALYTICS_FILTERS = ["Project: All", "Period: This Quarter", "Agent: All"];
-
 export function AnalyticsPage({ route }: { route: AnalyticsRoute }) {
   const navigate = useNavigate();
+  const toast = useToast();
   const summary = useDashboardSummary();
   const leads = useLeads();
   const copy = ROUTE_COPY[route];
+  const [projectFilter, setProjectFilter] = useState<string>("all");
 
   if (summary.isLoading || leads.isLoading) {
     return (
@@ -89,8 +92,14 @@ export function AnalyticsPage({ route }: { route: AnalyticsRoute }) {
     ],
   };
 
-  const collectionsMax = Math.max(...d.collectionsByProject.map((c) => c.dueEgp), 1);
-  const bars = d.collectionsByProject.map((c) => ({
+  // "Project: All" filter narrows the by-project chart/breakdown to one
+  // project — the headline KPI strip above stays portfolio-wide (there's no
+  // project dimension on the lead-based KPIs to filter consistently).
+  const filteredProjects = projectFilter === "all" ? d.projects : d.projects.filter((p) => p.id === projectFilter);
+  const filteredCollections = projectFilter === "all" ? d.collectionsByProject : d.collectionsByProject.filter((c) => c.projectId === projectFilter);
+
+  const collectionsMax = Math.max(...filteredCollections.map((c) => c.dueEgp), 1);
+  const bars = filteredCollections.map((c) => ({
     label: (projectName.get(c.projectId) ?? c.projectId).slice(0, 8),
     top: formatEgp(c.dueEgp),
     a: Math.round((c.dueEgp / collectionsMax) * 100),
@@ -99,8 +108,8 @@ export function AnalyticsPage({ route }: { route: AnalyticsRoute }) {
 
   const lineSeries =
     route === "an_revenue"
-      ? d.collectionsByProject.map((c) => ({ label: (projectName.get(c.projectId) ?? c.projectId).slice(0, 3), value: c.collectionRatePct }))
-      : d.projects.map((p) => ({ label: p.name.slice(0, 3), value: toNumber(p.velocityPerWeek) }));
+      ? filteredCollections.map((c) => ({ label: (projectName.get(c.projectId) ?? c.projectId).slice(0, 3), value: c.collectionRatePct }))
+      : filteredProjects.map((p) => ({ label: p.name.slice(0, 3), value: toNumber(p.velocityPerWeek) }));
   const latest = lineSeries.length ? lineSeries[lineSeries.length - 1].value : 0;
   const first = lineSeries.length ? lineSeries[0].value : 0;
   const change = first !== 0 ? (((latest - first) / first) * 100).toFixed(1) : "0.0";
@@ -111,18 +120,36 @@ export function AnalyticsPage({ route }: { route: AnalyticsRoute }) {
         title={copy.title}
         description={copy.subtitle}
         actions={
-          <>
-            <Button variant="secondary" size="sm" icon="download">
-              Export
-            </Button>
-            <Button size="sm">Save view</Button>
-          </>
+          <Button
+            variant="secondary"
+            size="sm"
+            icon="download"
+            onClick={() => {
+              downloadCsv(
+                `${route}-${new Date().toISOString().slice(0, 10)}.csv`,
+                filteredProjects.map((p) => ({
+                  project: p.name,
+                  soldUnits: p.soldUnits,
+                  totalUnits: p.totalUnits,
+                  revenueEgp: p.revenueEgp,
+                  velocityPerWeek: p.velocityPerWeek,
+                  sellThroughPct: p.sellThroughPct,
+                })),
+              );
+              toast.push({ kind: "success", title: "Exported", body: `${copy.breakdown} downloaded as CSV.` });
+            }}
+          >
+            Export
+          </Button>
         }
         below={
           <div className="flex flex-wrap gap-1.5">
-            {ANALYTICS_FILTERS.map((f) => (
-              <Chip key={f} activeVariant="pale">
-                {f}
+            <Chip activeVariant="pale" active={projectFilter === "all"} onClick={() => setProjectFilter("all")}>
+              Project: All
+            </Chip>
+            {d.projects.map((p) => (
+              <Chip key={p.id} activeVariant="pale" active={projectFilter === p.id} onClick={() => setProjectFilter(p.id)}>
+                {p.name}
               </Chip>
             ))}
           </div>
@@ -163,7 +190,7 @@ export function AnalyticsPage({ route }: { route: AnalyticsRoute }) {
           <div className="text-end">Revenue</div>
           <div>Sell-through</div>
         </div>
-        {d.projects.map((p) => {
+        {filteredProjects.map((p) => {
           const sellThrough = toNumber(p.sellThroughPct);
           return (
             <div

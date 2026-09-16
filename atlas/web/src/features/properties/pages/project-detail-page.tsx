@@ -134,6 +134,7 @@ export function ProjectDetailPage() {
   const drawerUnit: UnitDrawerData | null = selectedUnit
     ? {
         code: selectedUnit.code,
+        projectId: project.id,
         project: selectedUnit.projectName,
         building: selectedUnit.buildingName,
         type: selectedUnit.type,

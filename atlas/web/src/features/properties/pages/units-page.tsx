@@ -15,10 +15,11 @@ import { useProjects, useUnits } from "@/api/properties";
 import { useCreateReservation } from "@/api/sales";
 import { BuildingInventory, type RealUnit } from "../building-inventory";
 
-function toUnitDrawerData(unit: RealUnit, customerName: (id: string | null) => string, agentName: (id: string | null) => string): UnitDrawerData {
+function toUnitDrawerData(unit: RealUnit, projectId: string, customerName: (id: string | null) => string, agentName: (id: string | null) => string): UnitDrawerData {
   const hasOwner = unit.status === "Sold" || unit.status === "Reserved";
   return {
     code: unit.code,
+    projectId,
     project: unit.projectName,
     building: unit.buildingName,
     type: unit.type,
@@ -113,7 +114,7 @@ export function UnitsPage() {
       {activeProjectId && <BuildingInventory projectId={activeProjectId} onUnitClick={handleUnitClick} />}
 
       <UnitDrawer
-        unit={selectedUnit ? toUnitDrawerData(selectedUnit, customerName, agentName) : null}
+        unit={selectedUnit ? toUnitDrawerData(selectedUnit, activeProjectId, customerName, agentName) : null}
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
         onReserve={handleDrawerReserve}
