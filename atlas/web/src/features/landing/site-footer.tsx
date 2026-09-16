@@ -27,10 +27,17 @@ const headingStyle: CSSProperties = {
 
 /** The site-wide marketing footer — shared by the landing page and every
  *  standalone info page (About/Careers/Contact/Privacy/Terms), so there's one
- *  place that defines where each link actually goes. */
+ *  place that defines where each link actually goes.
+ *
+ *  Self-contained underline reset: the landing page's global `.atlas-landing a`
+ *  rule draws its "link" look as a `border-bottom` (not `text-decoration`), so
+ *  the inline `textDecoration: "none"` on every link below doesn't cancel it —
+ *  these are footer nav items, meant to read as a plain list, not inline prose
+ *  links. Scoped here so it holds regardless of which page's chrome wraps it. */
 export function SiteFooter() {
   return (
-    <footer style={{ background: GRAPHITE_RAISED, color: MUTED_TEXT, padding: "clamp(36px,5vw,64px) clamp(18px,4vw,48px) 28px", borderTop: `1px solid ${HAIRLINE_DARK}` }}>
+    <footer className="atlas-footer" style={{ background: GRAPHITE_RAISED, color: MUTED_TEXT, padding: "clamp(36px,5vw,64px) clamp(18px,4vw,48px) 28px", borderTop: `1px solid ${HAIRLINE_DARK}` }}>
+      <style>{`.atlas-footer a { border-bottom: none; text-decoration: none; }`}</style>
       <div style={{ maxWidth: 1280, margin: "0 auto", display: "flex", flexDirection: "column", gap: 36 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 32 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: "34ch" }}>

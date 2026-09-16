@@ -1,4 +1,5 @@
-import { Route, Routes } from "react-router-dom";
+import { useEffect } from "react";
+import { Route, Routes, useLocation } from "react-router-dom";
 import { AppShell } from "@/app/layouts/app-shell";
 import { LoginPage } from "@/features/auth/login-page";
 import { AboutPage } from "@/features/landing/pages/about-page";
@@ -25,6 +26,20 @@ import { FeedPage } from "@/features/ai/pages/feed-page";
 import { CopilotPage } from "@/features/ai/pages/copilot-page";
 import { OrgSettingsPage } from "@/features/admin/pages/org-settings-page";
 
+/** A real route change (different pathname) lands at the top of the new page,
+ *  same as a fresh document load — React Router doesn't do this on its own.
+ *  A same-page hash change (a footer/nav link to "/#domains" while already on
+ *  "/") is left alone: `LandingPage`'s own effect smooth-scrolls to that
+ *  section, and this would otherwise fight it back to the top first. */
+function ScrollToTop() {
+  const { pathname, hash } = useLocation();
+  useEffect(() => {
+    if (hash) return;
+    window.scrollTo(0, 0);
+  }, [pathname, hash]);
+  return null;
+}
+
 /**
  * Route tree. Every CRM/Sales/Finance/Ops-list/Admin-list route renders the
  * SAME generic `EntityTablePage`, parameterized by an `entity` key that
@@ -33,6 +48,8 @@ import { OrgSettingsPage } from "@/features/admin/pages/org-settings-page";
  */
 export function AppRouter() {
   return (
+    <>
+    <ScrollToTop />
     <Routes>
       <Route path="/" element={<RootRoute />} />
       <Route path="login" element={<LoginPage />} />
@@ -111,5 +128,6 @@ export function AppRouter() {
 
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
+    </>
   );
 }
