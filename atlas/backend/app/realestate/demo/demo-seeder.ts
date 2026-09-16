@@ -235,21 +235,35 @@ export class DemoSeeder {
         steps: [{ label: "Legal review" }, { label: "Finance sign-off" }, { label: "Commercial Director approval", assigneeId: adminId }],
       });
 
-      for (const i of DEMO_DASHBOARD_INSIGHTS) {
-        await this.insights.create({ kind: "dashboard", tag: i.tag, confidence: i.confidence, text: i.text, detail: i.detail, cta: i.cta, targetRoute: i.targetRoute });
-      }
-      for (const i of DEMO_FEED_INSIGHTS) {
-        await this.insights.create({ kind: "feed", tag: i.tag, confidence: i.confidence, text: i.text, detail: i.detail, cta: i.cta });
-      }
+      // `InsightsRepository.create()` and the raw `realestateDb()` update below
+      // are the only two write paths in the whole seeder that don't go through a
+      // Service's own `uow.transaction()` — every other repo relies on that to
+      // `SET LOCAL app.organization_id` for the RLS `tenant_isolation` policy.
+      // Without an explicit transaction here, both inserts run outside any
+      // transaction that has that session variable set, and Postgres rejects
+      // them (`new row violates row-level security policy`) — which previously
+      // crashed the seed mid-way (after projects/leads/etc. had already
+      // committed) and left both insights and every project's velocity stuck at
+      // their column defaults, silently, since the crash just looked like a
+      // transient boot failure that a systemd restart "fixed" (by skipping the
+      // now-idempotent-guarded reseed entirely).
+      await unitOfWork.transaction(async () => {
+        for (const i of DEMO_DASHBOARD_INSIGHTS) {
+          await this.insights.create({ kind: "dashboard", tag: i.tag, confidence: i.confidence, text: i.text, detail: i.detail, cta: i.cta, targetRoute: i.targetRoute });
+        }
+        for (const i of DEMO_FEED_INSIGHTS) {
+          await this.insights.create({ kind: "feed", tag: i.tag, confidence: i.confidence, text: i.text, detail: i.detail, cta: i.cta });
+        }
 
-      // `velocity_per_week` has no producer anywhere in the app (see
-      // `DEMO_PROJECT_VELOCITY`'s own comment) — set it directly per project so
-      // the dashboard's Sales Velocity chart isn't flat zero across the board.
-      for (const [key, velocity] of Object.entries(DEMO_PROJECT_VELOCITY)) {
-        const pid = projectId.get(key);
-        if (!pid) continue;
-        await realestateDb().updateTable("realestate_projects").set({ velocity_per_week: velocity.toFixed(2) }).where("id", "=", pid).execute();
-      }
+        // `velocity_per_week` has no producer anywhere in the app (see
+        // `DEMO_PROJECT_VELOCITY`'s own comment) — set it directly per project so
+        // the dashboard's Sales Velocity chart isn't flat zero across the board.
+        for (const [key, velocity] of Object.entries(DEMO_PROJECT_VELOCITY)) {
+          const pid = projectId.get(key);
+          if (!pid) continue;
+          await realestateDb().updateTable("realestate_projects").set({ velocity_per_week: velocity.toFixed(2) }).where("id", "=", pid).execute();
+        }
+      });
     });
 
     log.info({ org: DEMO_SLUG, users: DEMO_TEAM.length, projects: DEMO_PROJECTS.length }, "demo data seeded");

@@ -200,7 +200,7 @@ Mizan: Vite 6 · React 19 · TypeScript · Tailwind v4 · Radix · TanStack Quer
 Atlas: Vite · React 19 · TypeScript · Tailwind 4 · Radix · TanStack Query v5 · React Router — English-only by design, no i18n layer.
 
 **Ops**
-Mizan: multi-stage `Dockerfile` (non-root, healthcheck) · `docker compose up --build` (one command: Postgres + migrate + provision RLS roles + seed + serve) · **GitHub Actions CI** — typecheck · lint · format · test-with-Postgres · build · image build, on every push/PR. Atlas runs the same checks by hand today; it isn't in `ci.yml` yet.
+Mizan: multi-stage `Dockerfile` (non-root, healthcheck) · `docker compose up --build` (one command: Postgres + migrate + provision RLS roles + seed + serve) · a **GitHub Actions** pipeline (typecheck · lint · format · test-with-Postgres · build · image build) exists but is currently `workflow_dispatch`-only, not wired to push/PR — both products deploy by hand instead (§ below). Atlas runs the same checks by hand too; it was never in `ci.yml`.
 
 **DI:** symbol tokens in `core/kernel/tokens.ts` — no string tokens, no magic. Same convention in `atlas/backend`.
 
@@ -217,7 +217,7 @@ Mizan: multi-stage `Dockerfile` (non-root, healthcheck) · `docker compose up --
 | **Total** | **287** tests, green (one Atlas integration test is flaky against the live Groq free-tier rate limit — a provider quota, not a code defect) |
 
 Backend includes integration suites that **boot the real app against a throwaway Postgres** — RLS, cross-tenant leakage, `WITH CHECK` containment, per-tenant outbox delivery — for both products. Mizan's suite runs the app as `auric_app` / `auric_system` so `FORCE ROW LEVEL SECURITY` is actually exercised; Atlas's does the same against its own database. Atlas also has a live-provider integration suite that calls the real Groq API (not mocked) to prove tool-calling and scope-refusal actually work.
-Mizan (`typecheck · lint · format:check · test · build` for both packages, plus the Docker image) runs in CI on every push/PR; Atlas is currently verified the same way by hand — see § 6.
+The full suite (`typecheck · lint · format:check · test · build` for both packages, plus the Docker image) is defined in CI but not wired to push/PR right now — both products are deployed and verified by hand instead. See § 6.
 
 ---
 

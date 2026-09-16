@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { LogoMark } from "@/components/ui/logo";
+import { SiteFooter } from "./site-footer";
 import {
   AI_ASKS,
   ANALYTICS_BAR_HEIGHTS,
@@ -112,6 +113,18 @@ export function LandingPage() {
   useEffect(() => {
     document.title = "Atlas RE OS — One operating system for your real estate business";
   }, []);
+
+  // Footer/nav links elsewhere in the site (e.g. from /about) point at "/#id" —
+  // a fresh page load resolves the hash natively (each section already sets
+  // `scrollMarginTop`), but a client-side route change into "/" does not, so
+  // resolve it ourselves once this page has mounted.
+  const location = useLocation();
+  useEffect(() => {
+    if (!location.hash) return;
+    const id = location.hash.slice(1);
+    const t = window.setTimeout(() => scrollToId(id), 0);
+    return () => window.clearTimeout(t);
+  }, [location.hash]);
 
   // Close the mobile nav panel on Escape, or once the viewport is wide enough for
   // the full nav row (matches the `760px` breakpoint in the scoped <style> below).
@@ -446,7 +459,7 @@ export function LandingPage() {
         </section>
 
         {/* ── 03 Product overview ─────────────────────────────── */}
-        <section style={{ padding: "clamp(48px,7vw,104px) clamp(18px,4vw,48px)", borderBottom: `1px solid ${HAIRLINE}` }}>
+        <section id="domains" style={{ padding: "clamp(48px,7vw,104px) clamp(18px,4vw,48px)", borderBottom: `1px solid ${HAIRLINE}`, scrollMarginTop: 58 }}>
           <div style={{ maxWidth: 1280, margin: "0 auto", display: "flex", flexDirection: "column", gap: "clamp(28px,4vw,40px)" }}>
             <div data-reveal="true" style={{ display: "flex", flexDirection: "column", gap: 16, ...reveal() }}>
               <div style={EYEBROW}>03 — Product overview</div>
@@ -826,54 +839,7 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* ── Footer ───────────────────────────────────────────── */}
-        <footer style={{ background: GRAPHITE_RAISED, color: MUTED_TEXT, padding: "clamp(36px,5vw,64px) clamp(18px,4vw,48px) 28px", borderTop: `1px solid ${HAIRLINE_DARK}` }}>
-          <div style={{ maxWidth: 1280, margin: "0 auto", display: "flex", flexDirection: "column", gap: 36 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 32 }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: "34ch" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <LogoMark size={26} tone="paper" />
-                  <div style={{ display: "flex", alignItems: "flex-end", gap: 7, color: PAPER }}>
-                    <span style={{ fontSize: 17, fontWeight: 700, letterSpacing: "-.03em", lineHeight: 1 }}>ATLAS</span>
-                    <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 9, letterSpacing: ".18em", whiteSpace: "nowrap" }}>RE OS</span>
-                  </div>
-                </div>
-                <div style={{ fontSize: 14, lineHeight: 1.55 }}>The operating system for real estate companies — from the first lead to the final payment.</div>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, fontSize: 13 }}>
-                <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 9, letterSpacing: ".16em", textTransform: "uppercase", color: SECONDARY_TEXT }}>Product</div>
-                <span>CRM &amp; Sales</span>
-                <span>Properties &amp; Inventory</span>
-                <span>Finance &amp; Collections</span>
-                <span>Operations</span>
-                <span>Analytics</span>
-                <span>AI Copilot</span>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, fontSize: 13 }}>
-                <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 9, letterSpacing: ".16em", textTransform: "uppercase", color: SECONDARY_TEXT }}>Platform</div>
-                <span>AURIC Core</span>
-                <span>Roles &amp; permissions</span>
-                <span>Documents</span>
-                <span>Notifications</span>
-                <span>Audit trail</span>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, fontSize: 13 }}>
-                <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 9, letterSpacing: ".16em", textTransform: "uppercase", color: SECONDARY_TEXT }}>Company</div>
-                <span>About</span>
-                <span>Careers</span>
-                <span>Contact</span>
-                <span>Request a Demo</span>
-              </div>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 18, flexWrap: "wrap", borderTop: `1px solid ${HAIRLINE_DARK}`, paddingTop: 20, fontFamily: "'IBM Plex Mono',monospace", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase" }}>
-              <span>Atlas RE OS — An AURIC product</span>
-              <span style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
-                <span>Privacy</span>
-                <span>Terms</span>
-              </span>
-            </div>
-          </div>
-        </footer>
+        <SiteFooter />
       </div>
     </div>
   );

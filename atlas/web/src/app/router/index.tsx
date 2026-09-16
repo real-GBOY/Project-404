@@ -1,6 +1,11 @@
 import { Route, Routes } from "react-router-dom";
 import { AppShell } from "@/app/layouts/app-shell";
 import { LoginPage } from "@/features/auth/login-page";
+import { AboutPage } from "@/features/landing/pages/about-page";
+import { CareersPage } from "@/features/landing/pages/careers-page";
+import { ContactPage } from "@/features/landing/pages/contact-page";
+import { PrivacyPage } from "@/features/landing/pages/privacy-page";
+import { TermsPage } from "@/features/landing/pages/terms-page";
 import { ProtectedRoute } from "./protected-route";
 import { RootRoute } from "./root-route";
 import { NotFoundPage } from "./not-found-page";
@@ -31,6 +36,11 @@ export function AppRouter() {
     <Routes>
       <Route path="/" element={<RootRoute />} />
       <Route path="login" element={<LoginPage />} />
+      <Route path="about" element={<AboutPage />} />
+      <Route path="careers" element={<CareersPage />} />
+      <Route path="contact" element={<ContactPage />} />
+      <Route path="privacy" element={<PrivacyPage />} />
+      <Route path="terms" element={<TermsPage />} />
 
       <Route element={<ProtectedRoute />}>
       <Route element={<AppShell />}>

@@ -44,10 +44,18 @@ value starting `http(s)://` is treated as absolute and kept intact in the reques
 URL; a relative value stays same-origin (dev proxy, tests, the VPS fallback
 bundle). `src/lib/export.ts` uses the same variable for binary downloads.
 
-## Continuous deployment
+## Continuous deployment — currently manual
 
-Every push to `main` that passes CI is deployed automatically by the `deploy` job
-in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml).
+`.github/workflows/ci.yml` still defines this whole pipeline, but its triggers
+are set to `workflow_dispatch` only — **pushing to `main` no longer runs CI or
+deploys anything automatically.** It was turned off deliberately: the `deploy`
+job's required secrets (`VPS_SSH_KEY` / `VPS_HOST` / `VPS_USER`) were never
+configured, so left on `push`, it would just fail on every merge. Until (if
+ever) those secrets are added and the triggers restored, deploy by hand with
+`scripts/deploy-local.sh` (§ below) — it does the same build-and-ship the
+`deploy` job would have done.
+
+The shape of that job, for when it's turned back on:
 
 ```
 push to main

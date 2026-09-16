@@ -1,9 +1,16 @@
 name: CI
 
+# Disabled from automatic triggers (no push/PR runs) — both products deploy by
+# hand now (scripts/deploy-local.sh for Mizan, scripts/deploy-atlas-local.sh
+# for Atlas; see docs/deployment.md and docs/atlas-deployment.md), and the
+# `deploy` job below has never had its VPS_SSH_KEY/VPS_HOST/VPS_USER secrets
+# configured, so it could only ever fail if it ran. The test/lint/typecheck
+# jobs are still fully functional — this was a deliberate "off" switch, not a
+# broken workflow. Run it by hand from the Actions tab (workflow_dispatch)
+# when actually useful; re-add the `push`/`pull_request` triggers below to
+# turn automatic CI back on.
 on:
-  push:
-    branches: [main]
-  pull_request:
+  workflow_dispatch: {}
 
 concurrency:
   group: ci-${{ github.ref }}

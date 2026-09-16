@@ -174,7 +174,7 @@ ubuntu ALL=(root) NOPASSWD: /bin/mkdir, /usr/bin/find, /bin/tar, /bin/cp, \
 
 ## Deploying
 
-No CI job yet (`README.md` § Continuous integration — Atlas isn't in `.github/workflows/ci.yml`).
+No CI job (Atlas was never added to `.github/workflows/ci.yml`), and CI itself is currently switched off site-wide — see `README.md` § Continuous integration.
 Deploy by hand with the bundled script, which builds `atlas/backend` +
 `atlas/web` at the current commit and ships both — the running site matches
 your tree:
