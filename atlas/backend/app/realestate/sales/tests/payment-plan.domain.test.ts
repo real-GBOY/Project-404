@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateInstallmentSchedule } from "@atlas/realestate/sales/payment-plan.domain.js";
+import { generateInstallmentSchedule } from "@atlas/realestate/sales/domain/payment-plan.domain.js";
 
 describe("realestate/sales payment-plan.domain", () => {
   it("splits total into a down payment plus N even installments summing back to the total", () => {

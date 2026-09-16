@@ -40,9 +40,9 @@ import {
   getConfig,
   type AssistantConfig,
 } from "@core/index.js";
-import { askSchema } from "@atlas/realestate/assistant/assistant.schema.js";
-import { LeadsService } from "@atlas/realestate/crm/leads-service.js";
-import { TasksService } from "@atlas/realestate/operations/tasks-service.js";
+import { askSchema } from "@atlas/realestate/assistant/validation/assistant.schema.js";
+import { LeadsService } from "@atlas/realestate/crm/application/leads-service.js";
+import { TasksService } from "@atlas/realestate/operations/application/tasks-service.js";
 import { ScriptedAiClient, callTool, echoLastToolResult, say } from "./scripted-ai-client.js";
 
 const suite = hasTestDb ? describe : describe.skip;

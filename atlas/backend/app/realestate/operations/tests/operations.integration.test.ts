@@ -8,9 +8,9 @@ import {
   seedOrg,
   type SeededOrg,
 } from "@atlas/realestate/tests/helpers.js";
-import { TasksService } from "@atlas/realestate/operations/tasks-service.js";
-import { ApprovalsService } from "@atlas/realestate/operations/approvals-service.js";
-import { WorkflowsService } from "@atlas/realestate/operations/workflows-service.js";
+import { TasksService } from "@atlas/realestate/operations/application/tasks-service.js";
+import { ApprovalsService } from "@atlas/realestate/operations/application/approvals-service.js";
+import { WorkflowsService } from "@atlas/realestate/operations/application/workflows-service.js";
 
 const suite = hasTestDb ? describe : describe.skip;
 

@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { z } from "zod";
-import { TasksService } from "@atlas/realestate/operations/tasks-service.js";
+import { TasksService } from "@atlas/realestate/operations/application/tasks-service.js";
 import type { AssistantTool, ToolContext } from "@core/index.js";
 
 const id = z.string().trim().min(1);

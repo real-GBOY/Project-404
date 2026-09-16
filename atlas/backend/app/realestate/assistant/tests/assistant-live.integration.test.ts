@@ -25,11 +25,11 @@ import {
   type SeededOrg,
 } from "@atlas/realestate/tests/helpers.js";
 import { AssistantService } from "@core/index.js";
-import { TasksService } from "@atlas/realestate/operations/tasks-service.js";
-import { ProjectsService } from "@atlas/realestate/properties/projects-service.js";
-import { BuildingsService } from "@atlas/realestate/properties/buildings-service.js";
-import { UnitsService } from "@atlas/realestate/properties/units-service.js";
-import { LeadsService } from "@atlas/realestate/crm/leads-service.js";
+import { TasksService } from "@atlas/realestate/operations/application/tasks-service.js";
+import { ProjectsService } from "@atlas/realestate/properties/application/projects-service.js";
+import { BuildingsService } from "@atlas/realestate/properties/application/buildings-service.js";
+import { UnitsService } from "@atlas/realestate/properties/application/units-service.js";
+import { LeadsService } from "@atlas/realestate/crm/application/leads-service.js";
 
 const HAVE_AI_KEY = Boolean(process.env.GROQ_API_KEY || process.env.AI_API_KEY);
 const live = hasTestDb && HAVE_AI_KEY ? describe : describe.skip;

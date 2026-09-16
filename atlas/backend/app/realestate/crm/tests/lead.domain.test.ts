@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { defaultStageFromStatus, isDeal } from "@atlas/realestate/crm/lead.domain.js";
+import { defaultStageFromStatus, isDeal } from "@atlas/realestate/crm/domain/lead.domain.js";
 
 describe("realestate/crm lead.domain", () => {
   it("defaultStageFromStatus maps a lead status straight onto the pipeline's stage superset", () => {

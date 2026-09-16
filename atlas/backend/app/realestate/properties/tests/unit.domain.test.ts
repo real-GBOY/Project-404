@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateUnitsForBuilding, unitAt, UNIT_TYPES } from "@atlas/realestate/properties/unit.domain.js";
+import { generateUnitsForBuilding, unitAt, UNIT_TYPES } from "@atlas/realestate/properties/domain/unit.domain.js";
 
 describe("realestate/properties unit.domain", () => {
   it("unitAt is deterministic for the same (buildingKey, floor, idx)", () => {

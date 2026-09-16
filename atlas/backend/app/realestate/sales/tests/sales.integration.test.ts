@@ -8,13 +8,13 @@ import {
   seedOrg,
   type SeededOrg,
 } from "@atlas/realestate/tests/helpers.js";
-import { ProjectsService } from "@atlas/realestate/properties/projects-service.js";
-import { BuildingsService } from "@atlas/realestate/properties/buildings-service.js";
-import { UnitsService } from "@atlas/realestate/properties/units-service.js";
-import { CustomersService } from "@atlas/realestate/crm/customers-service.js";
-import { ReservationsService } from "@atlas/realestate/sales/reservations-service.js";
-import { ContractsService } from "@atlas/realestate/sales/contracts-service.js";
-import { PaymentPlansService } from "@atlas/realestate/sales/payment-plans-service.js";
+import { ProjectsService } from "@atlas/realestate/properties/application/projects-service.js";
+import { BuildingsService } from "@atlas/realestate/properties/application/buildings-service.js";
+import { UnitsService } from "@atlas/realestate/properties/application/units-service.js";
+import { CustomersService } from "@atlas/realestate/crm/application/customers-service.js";
+import { ReservationsService } from "@atlas/realestate/sales/application/reservations-service.js";
+import { ContractsService } from "@atlas/realestate/sales/application/contracts-service.js";
+import { PaymentPlansService } from "@atlas/realestate/sales/application/payment-plans-service.js";
 
 const suite = hasTestDb ? describe : describe.skip;
 

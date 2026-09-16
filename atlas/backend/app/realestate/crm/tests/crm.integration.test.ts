@@ -8,8 +8,8 @@ import {
   seedOrg,
   type SeededOrg,
 } from "@atlas/realestate/tests/helpers.js";
-import { LeadsService } from "@atlas/realestate/crm/leads-service.js";
-import { CustomersService } from "@atlas/realestate/crm/customers-service.js";
+import { LeadsService } from "@atlas/realestate/crm/application/leads-service.js";
+import { CustomersService } from "@atlas/realestate/crm/application/customers-service.js";
 
 const suite = hasTestDb ? describe : describe.skip;
 

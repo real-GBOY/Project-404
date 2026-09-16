@@ -4,7 +4,7 @@ import {
   type LeadInterestInput,
   type LikelyToSellUnitInput,
   type ProjectVelocityInput,
-} from "@atlas/realestate/dashboard/likely-to-sell.domain.js";
+} from "@atlas/realestate/dashboard/domain/likely-to-sell.domain.js";
 
 const NOW = new Date("2026-09-15T00:00:00Z");
 const daysAgo = (n: number) => new Date(NOW.getTime() - n * 86_400_000);

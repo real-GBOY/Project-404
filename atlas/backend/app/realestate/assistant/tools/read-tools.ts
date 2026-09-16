@@ -1,16 +1,16 @@
 import { Injectable } from "@nestjs/common";
 import { z } from "zod";
-import { LeadsService } from "@atlas/realestate/crm/leads-service.js";
-import { CustomersService } from "@atlas/realestate/crm/customers-service.js";
-import { ActivitiesService } from "@atlas/realestate/crm/activities-service.js";
-import { ProjectsService } from "@atlas/realestate/properties/projects-service.js";
-import { UnitsService } from "@atlas/realestate/properties/units-service.js";
-import { ReservationsService } from "@atlas/realestate/sales/reservations-service.js";
-import { ContractsService } from "@atlas/realestate/sales/contracts-service.js";
-import { PaymentPlansService } from "@atlas/realestate/sales/payment-plans-service.js";
-import { PaymentsService } from "@atlas/realestate/finance/payments-service.js";
-import { TasksService } from "@atlas/realestate/operations/tasks-service.js";
-import { DashboardService } from "@atlas/realestate/dashboard/dashboard-service.js";
+import { LeadsService } from "@atlas/realestate/crm/application/leads-service.js";
+import { CustomersService } from "@atlas/realestate/crm/application/customers-service.js";
+import { ActivitiesService } from "@atlas/realestate/crm/application/activities-service.js";
+import { ProjectsService } from "@atlas/realestate/properties/application/projects-service.js";
+import { UnitsService } from "@atlas/realestate/properties/application/units-service.js";
+import { ReservationsService } from "@atlas/realestate/sales/application/reservations-service.js";
+import { ContractsService } from "@atlas/realestate/sales/application/contracts-service.js";
+import { PaymentPlansService } from "@atlas/realestate/sales/application/payment-plans-service.js";
+import { PaymentsService } from "@atlas/realestate/finance/application/payments-service.js";
+import { TasksService } from "@atlas/realestate/operations/application/tasks-service.js";
+import { DashboardService } from "@atlas/realestate/dashboard/application/dashboard-service.js";
 import type { AssistantTool, ToolContext } from "@core/index.js";
 
 const id = z.string().trim().min(1);

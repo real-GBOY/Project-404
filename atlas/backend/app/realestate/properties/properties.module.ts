@@ -1,17 +1,17 @@
 import { Module } from "@nestjs/common";
 import { AuditModule, EventsModule } from "@core/index.js";
-import { ProjectsController } from "./projects.controller.js";
-import { ProjectsRepository } from "./projects-repository.js";
-import { ProjectsService } from "./projects-service.js";
-import { BuildingsController } from "./buildings.controller.js";
-import { BuildingsRepository } from "./buildings-repository.js";
-import { BuildingsService } from "./buildings-service.js";
-import { UnitsController } from "./units.controller.js";
-import { UnitsRepository } from "./units-repository.js";
-import { UnitsService } from "./units-service.js";
-import { PriceListsController } from "./price-lists.controller.js";
-import { PriceListsRepository } from "./price-lists-repository.js";
-import { PriceListsService } from "./price-lists-service.js";
+import { ProjectsController } from "./api/projects.controller.js";
+import { ProjectsRepository } from "./infrastructure/projects-repository.js";
+import { ProjectsService } from "./application/projects-service.js";
+import { BuildingsController } from "./api/buildings.controller.js";
+import { BuildingsRepository } from "./infrastructure/buildings-repository.js";
+import { BuildingsService } from "./application/buildings-service.js";
+import { UnitsController } from "./api/units.controller.js";
+import { UnitsRepository } from "./infrastructure/units-repository.js";
+import { UnitsService } from "./application/units-service.js";
+import { PriceListsController } from "./api/price-lists.controller.js";
+import { PriceListsRepository } from "./infrastructure/price-lists-repository.js";
+import { PriceListsService } from "./application/price-lists-service.js";
 
 @Module({
   imports: [AuditModule, EventsModule],

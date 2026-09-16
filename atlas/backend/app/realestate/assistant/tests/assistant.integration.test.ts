@@ -28,10 +28,10 @@ import {
   getConfig,
   type AssistantConfig,
 } from "@core/index.js";
-import { InsightsRepository } from "@atlas/realestate/assistant/insights-repository.js";
-import { InsightsService } from "@atlas/realestate/assistant/insights-service.js";
-import { LeadsService } from "@atlas/realestate/crm/leads-service.js";
-import { TasksService } from "@atlas/realestate/operations/tasks-service.js";
+import { InsightsRepository } from "@atlas/realestate/assistant/infrastructure/insights-repository.js";
+import { InsightsService } from "@atlas/realestate/assistant/application/insights-service.js";
+import { LeadsService } from "@atlas/realestate/crm/application/leads-service.js";
+import { TasksService } from "@atlas/realestate/operations/application/tasks-service.js";
 import { ScriptedAiClient, callTool, echoLastToolResult, say } from "./scripted-ai-client.js";
 
 const suite = hasTestDb ? describe : describe.skip;

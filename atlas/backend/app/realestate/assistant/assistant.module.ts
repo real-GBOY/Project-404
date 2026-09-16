@@ -24,14 +24,14 @@ import { SalesModule } from "@atlas/realestate/sales/sales.module.js";
 import { FinanceModule } from "@atlas/realestate/finance/finance.module.js";
 import { OperationsModule } from "@atlas/realestate/operations/operations.module.js";
 import { DashboardModule } from "@atlas/realestate/dashboard/dashboard.module.js";
-import { AssistantController } from "./assistant.controller.js";
-import { atlasScopeVocabulary } from "./scope-vocabulary.js";
-import { buildSystemPrompt } from "./system-prompt.js";
+import { AssistantController } from "./api/assistant.controller.js";
+import { atlasScopeVocabulary } from "./application/scope-vocabulary.js";
+import { buildSystemPrompt } from "./application/system-prompt.js";
 import { ReadTools } from "./tools/read-tools.js";
 import { WriteTools } from "./tools/write-tools.js";
-import { InsightsController } from "./insights.controller.js";
-import { InsightsRepository } from "./insights-repository.js";
-import { InsightsService } from "./insights-service.js";
+import { InsightsController } from "./api/insights.controller.js";
+import { InsightsRepository } from "./infrastructure/insights-repository.js";
+import { InsightsService } from "./application/insights-service.js";
 
 /**
  * Atlas Copilot (atlas/backend/app/realestate/assistant) — the AI

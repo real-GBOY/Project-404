@@ -11,7 +11,7 @@ import {
 } from "@atlas/realestate/tests/helpers.js";
 import { PERMISSION_PROVIDER } from "@core/kernel/tokens.js";
 import type { IPermissionProvider } from "@core/contracts/index.js";
-import { ProjectsService } from "@atlas/realestate/properties/projects-service.js";
+import { ProjectsService } from "@atlas/realestate/properties/application/projects-service.js";
 
 const suite = hasTestDb ? describe : describe.skip;
 

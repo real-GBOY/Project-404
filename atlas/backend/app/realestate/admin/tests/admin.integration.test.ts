@@ -9,8 +9,8 @@ import {
   seedOrg,
   type SeededOrg,
 } from "@atlas/realestate/tests/helpers.js";
-import { AdminService } from "@atlas/realestate/admin/admin-service.js";
-import { OrgSettingsService } from "@atlas/realestate/admin/org-settings-service.js";
+import { AdminService } from "@atlas/realestate/admin/application/admin-service.js";
+import { OrgSettingsService } from "@atlas/realestate/admin/application/org-settings-service.js";
 
 const suite = hasTestDb ? describe : describe.skip;
 

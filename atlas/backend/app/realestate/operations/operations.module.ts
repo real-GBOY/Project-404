@@ -1,17 +1,17 @@
 import { Module } from "@nestjs/common";
 import { AuditModule } from "@core/index.js";
-import { TasksController } from "./tasks.controller.js";
-import { TasksRepository } from "./tasks-repository.js";
-import { TasksService } from "./tasks-service.js";
-import { WorkflowsController } from "./workflows.controller.js";
-import { WorkflowsRepository } from "./workflows-repository.js";
-import { WorkflowsService } from "./workflows-service.js";
-import { ApprovalsController } from "./approvals.controller.js";
-import { ApprovalsRepository } from "./approvals-repository.js";
-import { ApprovalsService } from "./approvals-service.js";
-import { DocumentsController } from "./documents.controller.js";
-import { DocumentsRepository } from "./documents-repository.js";
-import { DocumentsService } from "./documents-service.js";
+import { TasksController } from "./api/tasks.controller.js";
+import { TasksRepository } from "./infrastructure/tasks-repository.js";
+import { TasksService } from "./application/tasks-service.js";
+import { WorkflowsController } from "./api/workflows.controller.js";
+import { WorkflowsRepository } from "./infrastructure/workflows-repository.js";
+import { WorkflowsService } from "./application/workflows-service.js";
+import { ApprovalsController } from "./api/approvals.controller.js";
+import { ApprovalsRepository } from "./infrastructure/approvals-repository.js";
+import { ApprovalsService } from "./application/approvals-service.js";
+import { DocumentsController } from "./api/documents.controller.js";
+import { DocumentsRepository } from "./infrastructure/documents-repository.js";
+import { DocumentsService } from "./application/documents-service.js";
 
 @Module({
   imports: [AuditModule],
