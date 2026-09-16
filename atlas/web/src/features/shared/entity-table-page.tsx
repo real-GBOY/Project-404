@@ -32,6 +32,16 @@ const PAGE_SIZE = 12;
  * the corresponding backend repository's `q`/filter columns).
  */
 export function EntityTablePage({ entity }: { entity: EntityKey }) {
+  // Every route under AppShell renders through the same <Outlet/>, so React
+  // reconciles two EntityTablePage routes (e.g. /availability -> /pricing) as
+  // an update of ONE instance, not an unmount+remount — but useTableConfig
+  // switches to a genuinely different hook per entity, which is a Rules-of-
+  // Hooks violation the moment `entity` changes on that live instance. Keying
+  // on `entity` forces a fresh mount instead, resetting hook state cleanly.
+  return <EntityTablePageImpl key={entity} entity={entity} />;
+}
+
+function EntityTablePageImpl({ entity }: { entity: EntityKey }) {
   const navigate = useNavigate();
   const confirm = useConfirm();
   const toast = useToast();

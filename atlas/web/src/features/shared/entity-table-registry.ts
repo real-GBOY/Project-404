@@ -6,9 +6,14 @@ import { usePaymentsTableConfig, useInstallmentsTableConfig, useCollectionsTable
 import { useTasksTableConfig } from "@/features/operations/table-configs";
 import { useTeamTableConfig, useRolesTableConfig, useAuditTableConfig } from "@/features/admin/table-configs";
 
-// `entity` never changes across re-renders of a single mounted EntityTablePage instance
-// (each route gets its own instance), so exactly one branch's hook ever runs for that
-// instance's whole lifetime — safe despite looking conditional to the lint rule.
+// `entity` never changes across re-renders of a single mounted EntityTablePage instance:
+// EntityTablePage keys its real implementation on `entity` (see entity-table-page.tsx),
+// forcing a fresh mount whenever it changes, since React Router reconciles sibling
+// EntityTablePage routes as updates of the SAME instance otherwise (they all render
+// through one <Outlet/>) — without that key, this switch would call a different hook
+// on an existing instance mid-navigation, a real Rules-of-Hooks violation, not just a
+// lint false-positive. With the key in place, exactly one branch's hook ever runs for
+// a given instance's whole lifetime, so disabling the lint rule here is safe.
 /* eslint-disable react-hooks/rules-of-hooks */
 export function useTableConfig(entity: EntityKey, params: TableQueryParams): AnyTableConfigResult {
   switch (entity) {
