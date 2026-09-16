@@ -5,9 +5,9 @@ Postgres**, no Docker. The **API** lives on the box; the **frontend is hosted on
 Vercel** and calls the API directly over HTTPS. Secrets live only in
 `$VPS_BACKEND_DIR/.env` on the box.
 
-**Current box (API):** `https://13-220-157-42.sslip.io` (and `http://13.220.157.42`)
+**Current box (API):** `https://100-26-109-162.sslip.io` (and `http://100.26.109.162`)
 — AWS EC2 `t4g` (ARM64), Ubuntu 20.04, 921 MB RAM + 2 GB swap. SSH
-`ubuntu@13.220.157.42`. Service `mizan.service` runs as `User=auric`,
+`ubuntu@100.26.109.162`. Service `mizan.service` runs as `User=auric`,
 `WorkingDirectory=/opt/mizan`, `ExecStart=… node dist/main.js`. nginx serves
 `/var/www/mizan` (a fallback copy of the SPA), proxies `/api` → `127.0.0.1:3000`,
 and terminates TLS on 443 (Let's Encrypt via the `sslip.io` hostname). Postgres 12,
@@ -27,7 +27,7 @@ mobile browsers that force HTTPS can't reach it.
 
   | var | value | purpose |
   |---|---|---|
-  | `VITE_API_BASE` | `https://13-220-157-42.sslip.io/api` | absolute API base — baked into the bundle at build time |
+  | `VITE_API_BASE` | `https://100-26-109-162.sslip.io/api` | absolute API base — baked into the bundle at build time |
   | `VITE_DEMO_EMAIL` | `mahmoud.nayel@tawfikpartners.eg` | pre-fills the sign-in form (demo) |
   | `VITE_DEMO_PASSWORD` | `demo-password-2026` | pairs with the above |
 
@@ -85,8 +85,8 @@ using it and delete it). On any machine:
 ```bash
 ssh-keygen -t ed25519 -N '' -C 'mizan-ci-deploy' -f mizan_deploy
 # add the public half to the deploy user on the box:
-ssh ubuntu@13.220.157.42 'cat >> ~/.ssh/authorized_keys' < mizan_deploy.pub
-ssh-keyscan -H 13.220.157.42        # → value for VPS_SSH_KNOWN_HOSTS
+ssh ubuntu@100.26.109.162 'cat >> ~/.ssh/authorized_keys' < mizan_deploy.pub
+ssh-keyscan -H 100.26.109.162        # → value for VPS_SSH_KNOWN_HOSTS
 ```
 
 ### 2. Repo secrets — Settings → Secrets and variables → Actions → *Secrets*
@@ -94,9 +94,9 @@ ssh-keyscan -H 13.220.157.42        # → value for VPS_SSH_KNOWN_HOSTS
 | Secret | Required | Value |
 |---|---|---|
 | `VPS_SSH_KEY` | yes | full contents of the private key (`mizan_deploy`) |
-| `VPS_HOST` | yes | `13.220.157.42` |
+| `VPS_HOST` | yes | `100.26.109.162` |
 | `VPS_USER` | yes | `ubuntu` |
-| `VPS_SSH_KNOWN_HOSTS` | recommended | `ssh-keyscan -H 13.220.157.42` output. If unset, CI trusts the host on first contact (TOFU) with a warning. |
+| `VPS_SSH_KNOWN_HOSTS` | recommended | `ssh-keyscan -H 100.26.109.162` output. If unset, CI trusts the host on first contact (TOFU) with a warning. |
 | `VITE_DEMO_PASSWORD` | optional | pre-fills the sign-in form on the deployed site (demo instances only; pair with the `VITE_DEMO_EMAIL` variable) |
 
 ### 3. Repo variables — same page → *Variables* (all optional; defaults match the current box)
@@ -147,14 +147,14 @@ The API needs HTTPS (the Vercel SPA is served over HTTPS — a plain-HTTP API is
 blocked as mixed content) and must allow the Vercel origin.
 
 **TLS** — via a free `sslip.io` hostname, no domain purchase, no DNS to manage.
-`13-220-157-42.sslip.io` resolves to `13.220.157.42`:
+`100-26-109-162.sslip.io` resolves to `100.26.109.162`:
 
 ```bash
 sudo apt-get update && sudo apt-get install -y certbot python3-certbot-nginx
 # ensure the port-80 server block in /etc/nginx/sites-available/mizan carries
-#   server_name 13-220-157-42.sslip.io;
+#   server_name 100-26-109-162.sslip.io;
 sudo nginx -t && sudo systemctl reload nginx
-sudo certbot --nginx -d 13-220-157-42.sslip.io --non-interactive --agree-tos \
+sudo certbot --nginx -d 100-26-109-162.sslip.io --non-interactive --agree-tos \
   -m <admin-email> --redirect      # installs the cert + the renewal timer
 ```
 
@@ -166,7 +166,7 @@ AURIC_CORS_ORIGINS=https://<prod-alias>.vercel.app,*.vercel.app
 ```
 ```bash
 sudo systemctl restart mizan
-curl -si https://13-220-157-42.sslip.io/api/health   # 200, valid chain
+curl -si https://100-26-109-162.sslip.io/api/health   # 200, valid chain
 ```
 
 `AURIC_CORS_ORIGINS` is comma-separated; an entry starting `*.` is a host-suffix
@@ -183,7 +183,7 @@ matches your tree:
 bash scripts/deploy-local.sh
 ```
 
-It uses `me` as the SSH key and `ubuntu@13.220.157.42` by default; override with
+It uses `me` as the SSH key and `ubuntu@100.26.109.162` by default; override with
 `SSH_KEY=… SSH_USER=… SSH_HOST=… bash scripts/deploy-local.sh`. Pass `SKIP_BUILD=1`
 to ship the existing `dist/` folders without rebuilding. Needs `ssh` + `tar`
 locally and passwordless sudo on the box. `scripts/deploy-vps.sh` (run on the box,

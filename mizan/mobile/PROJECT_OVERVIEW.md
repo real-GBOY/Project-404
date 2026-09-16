@@ -194,7 +194,7 @@ indicator).
 - `npm run format:check` (`prettier`) — **clean**
 - `expo export` — **clean** for iOS, Android, and web
 - `expo-doctor` — **21 / 21**
-- Live‑API audit against `https://13-220-157-42.sslip.io/api`
+- Live‑API audit against `https://100-26-109-162.sslip.io/api`
   (demo login `mahmoud.nayel@tawfikpartners.eg`) — **28 / 28** reads plus
   auth / refresh / logout and key mutations, all response shapes matching the
   ported types.

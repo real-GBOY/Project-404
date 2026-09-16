@@ -5,7 +5,7 @@
 -- reconciles the live `users` row for the demo Managing Partner (usr_dev) with
 -- the current demo-data.ts. Idempotent; safe to run more than once.
 --
---   ssh -i me ubuntu@13.220.157.42 "sudo -u postgres psql -d auric -v ON_ERROR_STOP=1" < scripts/rename-demo-admin.sql
+--   ssh -i me ubuntu@100.26.109.162 "sudo -u postgres psql -d auric -v ON_ERROR_STOP=1" < scripts/rename-demo-admin.sql
 --
 -- (adjust -d if AURIC_DATABASE_URL in /opt/mizan/.env names a different database)
 

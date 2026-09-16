@@ -1,0 +1,26 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "sourceMap": false,
+    "declaration": false,
+    "removeComments": true,
+    "paths": {
+      "@core/*": ["../../core/*"],
+      "@atlas/*": ["./app/*"]
+    }
+  },
+  "include": ["../../core", "app", "scripts", "main.ts"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/tests/**",
+    "vitest.config.ts",
+    "prisma.config.ts"
+  ],
+  "tsc-alias": {
+    "resolveFullPaths": true,
+    "verbose": false
+  }
+}

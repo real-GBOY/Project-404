@@ -339,6 +339,8 @@ Every reusable capability carries its **architectural contract** next to the cod
 | [`docs/conventions.md`](docs/conventions.md) | code conventions |
 | [`docs/engineering-overview.md`](docs/engineering-overview.md) | one-file synthesis of the whole system |
 | [`docs/database-erd.md`](docs/database-erd.md) | the schema as a Mermaid ER diagram |
+| [`docs/deployment.md`](docs/deployment.md) | Mizan's VPS + Vercel deployment — the box, the CI `deploy` job, TLS, CORS |
+| [`docs/atlas-deployment.md`](docs/atlas-deployment.md) | Atlas's deployment — same VPS, a second independent systemd service + nginx block + database, no CI job yet |
 
 ---
 

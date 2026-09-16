@@ -10,6 +10,8 @@
   "scripts": {
     "dev": "node --watch --import @swc-node/register/esm-register main.ts",
     "serve": "node --import @swc-node/register/esm-register main.ts",
+    "build": "node scripts/build.mjs",
+    "start": "node dist/atlas/backend/main.js",
     "migrate": "node --import @swc-node/register/esm-register scripts/migrate.ts up",
     "migrate:status": "node --import @swc-node/register/esm-register scripts/migrate.ts status",
     "migrate:dev": "prisma migrate dev",

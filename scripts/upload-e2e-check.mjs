@@ -5,13 +5,13 @@
  * upload URL the API returns (an R2 presigned URL, or the local driver's
  * loopback route), confirms, downloads and byte-compares, then deletes.
  *
- *   API_BASE=https://13-220-157-42.sslip.io/api \
+ *   API_BASE=https://100-26-109-162.sslip.io/api \
  *   LOGIN_EMAIL=mahmoud.nayel@tawfikpartners.eg LOGIN_PASSWORD=demo-password-2026 \
  *   node scripts/upload-e2e-check.mjs
  *
  * Node 18+ (global fetch). No dependencies.
  */
-const API_BASE = (process.env.API_BASE ?? "https://13-220-157-42.sslip.io/api").replace(/\/$/, "");
+const API_BASE = (process.env.API_BASE ?? "https://100-26-109-162.sslip.io/api").replace(/\/$/, "");
 const EMAIL = process.env.LOGIN_EMAIL;
 const PASSWORD = process.env.LOGIN_PASSWORD;
 if (!EMAIL || !PASSWORD) {

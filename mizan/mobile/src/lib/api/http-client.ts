@@ -8,7 +8,7 @@ import { ApiError } from "./api-error";
  * `EXPO_PUBLIC_API_BASE_URL` per environment (see `.env.example`); falls back
  * to the VPS API for local development against the real backend.
  */
-const BASE = process.env.EXPO_PUBLIC_API_BASE_URL ?? "https://13-220-157-42.sslip.io/api";
+const BASE = process.env.EXPO_PUBLIC_API_BASE_URL ?? "https://100-26-109-162.sslip.io/api";
 
 type QueryValue = string | number | boolean | null | undefined;
 

@@ -5,3 +5,6 @@ dist-ssr
 .vite
 coverage
 node_modules/.tmp
+
+.vercel
+.env*

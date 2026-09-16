@@ -24,7 +24,7 @@ Mizan-shaped.
 
 ---
 
-## 2. Architecture — one repo, one hard seam
+## 2. Architecture — one hard seam, repeated for a second product
 
 The whole system, one picture:
 

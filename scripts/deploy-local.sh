@@ -11,7 +11,7 @@
 # passwordless sudo on the box. Override any of these:
 SSH_KEY="${SSH_KEY:-me}"                       # private key file (repo root)
 SSH_USER="${SSH_USER:-ubuntu}"
-SSH_HOST="${SSH_HOST:-13.220.157.42}"
+SSH_HOST="${SSH_HOST:-100.26.109.162}"
 BACKEND_DIR="${BACKEND_DIR:-/opt/mizan}"
 WEB_ROOT="${WEB_ROOT:-/var/www/mizan}"
 SERVICE="${SERVICE:-mizan}"
@@ -25,8 +25,11 @@ export VITE_DEMO_EMAIL VITE_DEMO_PASSWORD
 set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
-SSH="ssh -i $SSH_KEY -o StrictHostKeyChecking=accept-new $SSH_USER@$SSH_HOST"
-SCP="scp -i $SSH_KEY -o StrictHostKeyChecking=accept-new"
+# Arrays, not strings — a plain `SSH="ssh -i $SSH_KEY …"` word-splits on any
+# space in $SSH_KEY (e.g. an absolute path through this repo's own directory
+# name, "Project 404"), silently truncating the host argument.
+SSH=(ssh -i "$SSH_KEY" -o StrictHostKeyChecking=accept-new "$SSH_USER@$SSH_HOST")
+SCP=(scp -i "$SSH_KEY" -o StrictHostKeyChecking=accept-new)
 REV="$(git rev-parse --short HEAD)"
 [ -n "$(git status --porcelain)" ] && echo "⚠ working tree is dirty — deploying it anyway" >&2
 
@@ -43,12 +46,12 @@ fi
 # Transfer as two tar streams (one ssh round-trip each) — scp of the many small
 # backend files crawls on this box, and it has no rsync.
 echo "→ shipping backend + web to $SSH_USER@$SSH_HOST"
-tar -czf - -C dist . | $SSH "cat > /tmp/mizan-backend.tgz"
-tar -czf - -C mizan/web/dist . | $SSH "cat > /tmp/mizan-web.tgz"
-$SCP package.json package-lock.json scripts/deploy-vps.sh "$SSH_USER@$SSH_HOST:/tmp/"
+tar -czf - -C dist . | "${SSH[@]}" "cat > /tmp/mizan-backend.tgz"
+tar -czf - -C mizan/web/dist . | "${SSH[@]}" "cat > /tmp/mizan-web.tgz"
+"${SCP[@]}" package.json package-lock.json scripts/deploy-vps.sh "$SSH_USER@$SSH_HOST:/tmp/"
 
 echo "→ releasing on the box"
-$SSH "set -e
+"${SSH[@]}" "set -e
   sudo mkdir -p '$BACKEND_DIR/dist' '$WEB_ROOT'
   sudo find '$BACKEND_DIR/dist' -mindepth 1 -delete
   sudo tar --no-same-owner -xzf /tmp/mizan-backend.tgz -C '$BACKEND_DIR/dist'
