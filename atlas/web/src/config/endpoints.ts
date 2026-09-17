@@ -18,6 +18,8 @@ export const ENDPOINTS = {
     list: "/realestate/leads",
     byId: (id: string) => `/realestate/leads/${id}`,
     trackAsDeal: (id: string) => `/realestate/leads/${id}/track-as-deal`,
+    aiRequirements: (id: string) => `/realestate/leads/${id}/ai/requirements`,
+    aiBrief: (id: string) => `/realestate/leads/${id}/ai/brief`,
   },
   customers: {
     list: "/realestate/customers",

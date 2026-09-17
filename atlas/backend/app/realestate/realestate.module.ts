@@ -8,6 +8,7 @@ import { OperationsModule } from "@atlas/realestate/operations/operations.module
 import { AssistantModule } from "@atlas/realestate/assistant/assistant.module.js";
 import { AdminModule } from "@atlas/realestate/admin/admin.module.js";
 import { DashboardModule } from "@atlas/realestate/dashboard/dashboard.module.js";
+import { LeadIntelligenceModule } from "@atlas/realestate/lead-intelligence/lead-intelligence.module.js";
 
 /**
  * The Atlas real-estate product domain (mirrors
@@ -27,6 +28,7 @@ import { DashboardModule } from "@atlas/realestate/dashboard/dashboard.module.js
     AssistantModule,
     AdminModule,
     DashboardModule,
+    LeadIntelligenceModule,
   ],
 })
 export class RealestateModule {}

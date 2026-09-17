@@ -99,6 +99,7 @@ export function useLeadsTableConfig(params: TableQueryParams): TableConfigResult
       columns: leadsColumns,
       rows,
       rowKey: (r) => r.id,
+      onRowClick: (row) => `/leads/${row.id}`,
       searchPlaceholder: "Search leads by name, phone, ID…",
       kpis: [
         { label: "Total Leads", value: String(allRows.length) },

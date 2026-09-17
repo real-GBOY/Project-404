@@ -25,8 +25,93 @@ export interface LeadRow {
   agentId: string;
   probabilityPct: string | null;
   expectedCloseDate: string | null;
+  requirementsNotes: string | null;
+  requirements: LeadRequirements | null;
+  requirementsExtractedAt: string | null;
   lastActivityAt: string;
   createdAt: string;
+}
+
+// ---------- AI Lead Intelligence ----------
+// Backed by the real Atlas AI Lead Intelligence feature: AI requirement
+// extraction (validated, never trusted directly) + deterministic property
+// matching + a best-effort AI explanation/draft message. See
+// docs/lead-intelligence.md.
+
+export interface LeadRequirements {
+  budgetMinEgp: number | null;
+  budgetMaxEgp: number | null;
+  locations: string[];
+  propertyTypes: string[];
+  bedroomsMin: number | null;
+  bedroomsMax: number | null;
+  preferredFloors: number[];
+  deliveryWithinMonths: number | null;
+  otherPreferences: string[];
+  intent: "high" | "medium" | "low" | "unknown";
+  summary: string;
+}
+
+export interface MatchReason {
+  key: "budget" | "location" | "type" | "floor" | "delivery";
+  met: boolean;
+  label: string;
+}
+
+export interface UnitMatchResult {
+  id: string;
+  code: string;
+  projectId: string;
+  projectName: string;
+  unitType: string;
+  floor: number;
+  areaSqm: number;
+  basePriceEgp: number;
+  score: number;
+  reasons: MatchReason[];
+}
+
+export interface NextAction {
+  action: string;
+  reason: string;
+}
+
+export interface LeadIntelligenceBrief {
+  requirements: LeadRequirements;
+  requirementsNotes: string | null;
+  requirementsExtractedAt: string | null;
+  matches: UnitMatchResult[];
+  nextAction: NextAction;
+  explanation: string;
+  suggestedMessage: string;
+  /** false when the AI explanation call failed/was unavailable — `explanation`
+   *  and `suggestedMessage` are then the deterministic fallback text. */
+  aiGenerated: boolean;
+}
+
+export function useLead(id: string | undefined) {
+  return useQuery({
+    queryKey: ["leads", id],
+    queryFn: () => get<LeadRow>(ENDPOINTS.leads.byId(id!)),
+    enabled: !!id,
+  });
+}
+
+export function useExtractLeadRequirements() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, notes }: { id: string; notes: string }) => post<LeadRow>(ENDPOINTS.leads.aiRequirements(id), { notes }),
+    onSuccess: (_data, { id }) => {
+      qc.invalidateQueries({ queryKey: ["leads", id] });
+      qc.invalidateQueries({ queryKey: ["leads"] });
+    },
+  });
+}
+
+export function useLeadSalesBrief() {
+  return useMutation({
+    mutationFn: (id: string) => post<LeadIntelligenceBrief>(ENDPOINTS.leads.aiBrief(id), {}),
+  });
 }
 
 export interface CreateLeadBody {

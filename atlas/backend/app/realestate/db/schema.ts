@@ -277,6 +277,24 @@ export type realestate_leads = {
    */
   probability_pct: string | null;
   expected_close_date: Timestamp | null;
+  /**
+   * Raw natural-language notes an agent typed for AI requirement extraction
+   * (Lead AI Intelligence — atlas/backend/app/realestate/lead-intelligence).
+   * Kept verbatim so the extraction can be re-run/audited; independent of
+   * `interest_text` above, which stays a short one-line summary.
+   */
+  requirements_notes: string | null;
+  /**
+   * AI-extracted structured requirements — shape is `LeadRequirements` in
+   * lead-intelligence/domain/requirements.schema.ts, parsed/validated with
+   * Zod at the application boundary (same convention as `audit_logs.metadata`
+   * below not being a Prisma-typed shape either). Deliberately persisted:
+   * re-running the extraction costs an LLM call, and this is what the
+   * deterministic matching engine reads on every "Generate Sales Brief".
+   * @kyselyType(Json<Record<string, unknown>>)
+   */
+  requirements: Json<Record<string, unknown>> | null;
+  requirements_extracted_at: Timestamp | null;
   last_activity_at: Generated<Timestamp>;
   created_at: Generated<Timestamp>;
   updated_at: Generated<Timestamp>;

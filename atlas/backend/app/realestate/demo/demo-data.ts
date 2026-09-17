@@ -97,6 +97,13 @@ export interface DemoLead {
   stage?: DemoLeadStage;
   /** Also record it as a tracked opportunity (Pipeline board deal card). */
   trackAsDeal?: boolean;
+  /**
+   * Raw agent notes for the Lead AI Intelligence feature — seeded verbatim
+   * (never a pre-computed AI result: see demo-seeder.ts) so the "Analyze
+   * requirements" step has something real to demonstrate against, in both
+   * languages agents actually use.
+   */
+  requirementsNotes?: string;
 }
 
 /**
@@ -107,9 +114,27 @@ export interface DemoLead {
  * contracted 1 · sold 1 · lost 2 (28 leads total).
  */
 export const DEMO_LEADS: DemoLead[] = [
-  { name: "Tarek ElGohary", phone: "+201001234567", source: "referral", agentKey: "ahmed", interestText: "North Hills · 3-Bed", valueEgpM: 4.85, stage: "negotiation" },
+  {
+    name: "Tarek ElGohary",
+    phone: "+201001234567",
+    source: "referral",
+    agentKey: "ahmed",
+    interestText: "North Hills · 3-Bed",
+    valueEgpM: 4.85,
+    stage: "negotiation",
+    requirementsNotes: "عايز شقة في New Cairo حوالي 8 لـ 10 مليون، 3 bedrooms، preferably first floor، وعايز استلام خلال سنتين.",
+  },
   { name: "Hossam Adly", phone: "+201001234568", source: "website", agentKey: "sara", interestText: "Palm District · Duplex", valueEgpM: 15.2, stage: "viewing", trackAsDeal: true },
-  { name: "Mona Fahmy", phone: "+201001234569", source: "broker", agentKey: "ahmed", interestText: "North Hills · 4-Bed", valueEgpM: 5.6, stage: "qualified" },
+  {
+    name: "Mona Fahmy",
+    phone: "+201001234569",
+    source: "broker",
+    agentKey: "ahmed",
+    interestText: "North Hills · 4-Bed",
+    valueEgpM: 5.6,
+    stage: "qualified",
+    requirementsNotes: "Looking for a 4 bedroom apartment in North Hills, budget around 9 to 9.5 million EGP, no particular floor preference, wants to move in within a year.",
+  },
   { name: "Karim Abdelrahman", phone: "+201001234570", source: "exhibition", agentKey: "menna", interestText: "Cedar Residences · 2-Bed", valueEgpM: 4.2 },
   { name: "Rania Ezzat", phone: "+201001234571", source: "instagram", agentKey: "sara", interestText: "North Hills · 2-Bed", valueEgpM: 4.6 },
   { name: "Omar Shaker", phone: "+201001234572", source: "referral", agentKey: "kariman", interestText: "Skyline · Office", valueEgpM: 11.2 },

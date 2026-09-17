@@ -15,6 +15,7 @@ import { DashboardPage } from "@/features/dashboard";
 import { EntityTablePage } from "@/features/shared/entity-table-page";
 import { PipelinePage } from "@/features/crm/pages/pipeline-page";
 import { CustomerDetailPage } from "@/features/crm/pages/customer-detail-page";
+import { LeadDetailPage } from "@/features/crm/pages/lead-detail-page";
 import { UnitsPage } from "@/features/properties/pages/units-page";
 import { ProjectDetailPage } from "@/features/properties/pages/project-detail-page";
 import { PaymentPlansPage } from "@/features/sales/pages/payment-plans-page";
@@ -64,7 +65,10 @@ export function AppRouter() {
         <Route path="dashboard" element={<DashboardPage />} />
 
         {/* CRM */}
-        <Route path="leads" element={<EntityTablePage entity="leads" />} />
+        <Route path="leads">
+          <Route index element={<EntityTablePage entity="leads" />} />
+          <Route path=":id" element={<LeadDetailPage />} />
+        </Route>
         <Route path="customers">
           <Route index element={<EntityTablePage entity="customers" />} />
           <Route path=":id" element={<CustomerDetailPage />} />

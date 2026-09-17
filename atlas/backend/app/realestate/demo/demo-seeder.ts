@@ -10,6 +10,7 @@ import { ProjectsService } from "@atlas/realestate/properties/application/projec
 import { BuildingsService } from "@atlas/realestate/properties/application/buildings-service.js";
 import { UnitsService } from "@atlas/realestate/properties/application/units-service.js";
 import { LeadsService } from "@atlas/realestate/crm/application/leads-service.js";
+import { LeadsRepository } from "@atlas/realestate/crm/infrastructure/leads-repository.js";
 import { CustomersService } from "@atlas/realestate/crm/application/customers-service.js";
 import { ActivitiesService } from "@atlas/realestate/crm/application/activities-service.js";
 import { ReservationsService } from "@atlas/realestate/sales/application/reservations-service.js";
@@ -51,6 +52,7 @@ export class DemoSeeder {
     private readonly buildings: BuildingsService,
     private readonly units: UnitsService,
     private readonly leads: LeadsService,
+    private readonly leadsRepo: LeadsRepository,
     private readonly customers: CustomersService,
     private readonly activities: ActivitiesService,
     private readonly reservations: ReservationsService,
@@ -151,6 +153,9 @@ export class DemoSeeder {
         // a real, decaying funnel rather than one bar.
         if (l.stage && l.stage !== "new") await this.leads.moveStage(lead.id, l.stage, adminId);
         if (l.trackAsDeal) await this.leads.trackAsDeal(lead.id, { probabilityPct: 55, expectedCloseDate: "2026-12-15" }, adminId);
+        // Raw notes only — never a pre-computed AI result (see the field doc
+        // on DemoLead.requirementsNotes). "Analyze requirements" runs for real.
+        if (l.requirementsNotes) await this.leadsRepo.setRequirementsNotes(lead.id, l.requirementsNotes);
       }
 
       // One full reservation -> signed contract -> payment plan chain, using a real

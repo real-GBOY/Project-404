@@ -4,6 +4,7 @@ export const crmPermissions: PermissionDefinition[] = [
   { action: "read", resource: "lead", description: "View leads and the pipeline board." },
   { action: "create", resource: "lead", description: "Create leads." },
   { action: "update", resource: "lead", description: "Edit leads, change stage, track as a deal." },
+  { action: "analyze", resource: "lead", description: "Run AI requirement extraction and property matching for a lead (Lead AI Intelligence)." },
   { action: "read", resource: "customer", description: "View customers." },
   { action: "create", resource: "customer", description: "Create customers." },
   { action: "update", resource: "customer", description: "Edit customers." },

@@ -92,6 +92,10 @@ import { InsightsService } from "./application/insights-service.js";
     InsightsRepository,
     InsightsService,
   ],
-  exports: [InsightsRepository],
+  // AI_CLIENT/ASSISTANT_CONFIG are exported so other Atlas modules reuse the
+  // SAME provider boundary instead of standing up a second OpenAI-compatible
+  // client — see lead-intelligence/application/structured-ai.ts, the first
+  // (and, by design, only intended) other consumer.
+  exports: [InsightsRepository, AI_CLIENT, ASSISTANT_CONFIG],
 })
 export class AssistantModule {}

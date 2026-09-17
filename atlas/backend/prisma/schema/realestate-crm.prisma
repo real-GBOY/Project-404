@@ -24,6 +24,20 @@ model realestate_leads {
   /// set once a lead is tracked as a "deal" (Sales > Deals screen)
   probability_pct       Decimal?  @db.Decimal(5, 2)
   expected_close_date   DateTime? @db.Date
+  /// Raw natural-language notes an agent typed for AI requirement extraction
+  /// (Lead AI Intelligence — atlas/backend/app/realestate/lead-intelligence).
+  /// Kept verbatim so the extraction can be re-run/audited; independent of
+  /// `interest_text` above, which stays a short one-line summary.
+  requirements_notes     String?
+  /// AI-extracted structured requirements — shape is `LeadRequirements` in
+  /// lead-intelligence/domain/requirements.schema.ts, parsed/validated with
+  /// Zod at the application boundary (same convention as `audit_logs.metadata`
+  /// below not being a Prisma-typed shape either). Deliberately persisted:
+  /// re-running the extraction costs an LLM call, and this is what the
+  /// deterministic matching engine reads on every "Generate Sales Brief".
+  /// @kyselyType(Json<Record<string, unknown>>)
+  requirements           Json?
+  requirements_extracted_at DateTime? @db.Timestamptz(6)
   last_activity_at      DateTime  @default(now()) @db.Timestamptz(6)
   created_at            DateTime  @default(now()) @db.Timestamptz(6)
   updated_at            DateTime  @default(now()) @db.Timestamptz(6)

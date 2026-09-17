@@ -20,6 +20,12 @@ export interface LeadRow {
   agentId: string;
   probabilityPct: string | null;
   expectedCloseDate: string | null;
+  /** Raw natural-language notes an agent typed for AI requirement extraction. */
+  requirementsNotes: string | null;
+  /** AI-extracted structured requirements — untyped here; parsed with Zod at
+   *  the lead-intelligence application boundary (see LeadRequirements). */
+  requirements: Record<string, unknown> | null;
+  requirementsExtractedAt: Date | null;
   lastActivityAt: Date;
   createdAt: Date;
 }
@@ -138,6 +144,38 @@ export class LeadsRepository {
     return this.findById(id);
   }
 
+  /** Records raw agent notes WITHOUT running extraction — used only by the
+   *  demo seeder, so "Analyze requirements" has real notes to run against
+   *  rather than the seeder faking an AI result (see demo-data.ts). */
+  async setRequirementsNotes(id: string, notes: string): Promise<void> {
+    await realestateDb()
+      .updateTable("realestate_leads")
+      .set({ requirements_notes: notes })
+      .where("organization_id", "=", this.org())
+      .where("id", "=", id)
+      .execute();
+  }
+
+  /** Persists an AI requirement-extraction result (Lead AI Intelligence). Bumps
+   *  `last_activity_at` — analysing a lead's requirements is agent activity. */
+  async setRequirements(
+    id: string,
+    input: { notes: string; requirements: Record<string, unknown>; extractedAt: Date },
+  ): Promise<LeadRow | null> {
+    await realestateDb()
+      .updateTable("realestate_leads")
+      .set({
+        requirements_notes: input.notes,
+        requirements: JSON.stringify(input.requirements),
+        requirements_extracted_at: input.extractedAt,
+        last_activity_at: input.extractedAt,
+      })
+      .where("organization_id", "=", this.org())
+      .where("id", "=", id)
+      .execute();
+    return this.findById(id);
+  }
+
   private toRow(r: {
     id: string;
     name: string;
@@ -153,6 +191,9 @@ export class LeadsRepository {
     agent_id: string;
     probability_pct: string | null;
     expected_close_date: string | Date | null;
+    requirements_notes: string | null;
+    requirements: string | Record<string, unknown> | null;
+    requirements_extracted_at: Date | string | null;
     last_activity_at: Date | string;
     created_at: Date | string;
   }): LeadRow {
@@ -171,6 +212,9 @@ export class LeadsRepository {
       agentId: r.agent_id,
       probabilityPct: r.probability_pct,
       expectedCloseDate: r.expected_close_date ? new Date(r.expected_close_date).toISOString().slice(0, 10) : null,
+      requirementsNotes: r.requirements_notes,
+      requirements: typeof r.requirements === "string" ? JSON.parse(r.requirements) : r.requirements,
+      requirementsExtractedAt: r.requirements_extracted_at ? new Date(r.requirements_extracted_at) : null,
       lastActivityAt: new Date(r.last_activity_at),
       createdAt: new Date(r.created_at),
     };
