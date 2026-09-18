@@ -9,6 +9,7 @@ import {
   OrganizationsModule,
   NotificationsModule,
   FilesModule,
+  MessagingModule,
   SecurityModule,
   SeedService,
 } from "@core/index.js";
@@ -39,6 +40,7 @@ import { AppSeedService } from "./seed.js";
     OrganizationsModule,
     NotificationsModule,
     FilesModule,
+    MessagingModule,
     SecurityModule,
     RealestateModule,
     DemoModule,

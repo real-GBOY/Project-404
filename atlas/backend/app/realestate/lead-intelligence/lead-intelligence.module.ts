@@ -19,6 +19,8 @@ import { LeadIntelligenceService } from "./application/lead-intelligence-service
   imports: [CrmModule, PropertiesModule, AssistantModule, AuditModule],
   controllers: [LeadIntelligenceController],
   providers: [StructuredAi, LeadIntelligenceService],
-  exports: [LeadIntelligenceService],
+  // StructuredAi is exported so conversation-intelligence reuses this same
+  // single-shot JSON boundary over the Copilot's AI client (no second one).
+  exports: [LeadIntelligenceService, StructuredAi],
 })
 export class LeadIntelligenceModule {}

@@ -9,6 +9,7 @@ import { AssistantModule } from "@atlas/realestate/assistant/assistant.module.js
 import { AdminModule } from "@atlas/realestate/admin/admin.module.js";
 import { DashboardModule } from "@atlas/realestate/dashboard/dashboard.module.js";
 import { LeadIntelligenceModule } from "@atlas/realestate/lead-intelligence/lead-intelligence.module.js";
+import { ConversationIntelligenceModule } from "@atlas/realestate/conversation-intelligence/conversation-intelligence.module.js";
 
 /**
  * The Atlas real-estate product domain (mirrors
@@ -29,6 +30,7 @@ import { LeadIntelligenceModule } from "@atlas/realestate/lead-intelligence/lead
     AdminModule,
     DashboardModule,
     LeadIntelligenceModule,
+    ConversationIntelligenceModule,
   ],
 })
 export class RealestateModule {}

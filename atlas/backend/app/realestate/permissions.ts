@@ -7,6 +7,7 @@ import { operationsPermissions } from "@atlas/realestate/operations/permissions/
 import { assistantPermissions } from "@atlas/realestate/assistant/permissions/permissions.js";
 import { adminPermissions } from "@atlas/realestate/admin/permissions/permissions.js";
 import { dashboardPermissions } from "@atlas/realestate/dashboard/permissions/permissions.js";
+import { conversationIntelligencePermissions } from "@atlas/realestate/conversation-intelligence/permissions/permissions.js";
 
 /**
  * Every permission the real-estate domain contributes to Core RBAC. Seeded by
@@ -23,4 +24,5 @@ export const REALESTATE_PERMISSIONS: PermissionDefinition[] = [
   ...assistantPermissions,
   ...adminPermissions,
   ...dashboardPermissions,
+  ...conversationIntelligencePermissions,
 ];

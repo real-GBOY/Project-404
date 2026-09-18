@@ -106,6 +106,42 @@ export class LeadIntelligenceService {
   }
 
   /**
+   * Applies a requirement profile that came from somewhere else (today: a
+   * conversation's AI insights) to a lead — an EXPLICIT, audited replacement made
+   * on a person's request, never an AI side effect. The agent's own notes are kept
+   * (only seeded from the profile summary when the lead had none), and the previous
+   * profile is recorded in the audit trail so the change is reviewable.
+   */
+  async applyRequirements(
+    leadId: string,
+    requirements: LeadRequirements,
+    actorId: string,
+    source: { conversationId: string },
+  ): Promise<LeadRow> {
+    const existing = await readInTenant(() => this.leads.findById(leadId));
+    if (!existing) throw NotFound("lead.not_found", "Lead not found.");
+
+    const now = this.clock.now();
+    return this.uow.transaction(async () => {
+      const updated = await this.leads.setRequirements(leadId, {
+        notes: existing.requirementsNotes ?? requirements.summary,
+        requirements,
+        extractedAt: now,
+      });
+      await this.audit.record({
+        actorId,
+        action: "realestate.lead.requirements_applied_from_conversation",
+        resourceType: "realestate_lead",
+        resourceId: leadId,
+        before: existing.requirements ?? null,
+        after: requirements,
+        metadata: { conversationId: source.conversationId },
+      });
+      return updated!;
+    });
+  }
+
+  /**
    * Step 2-4: deterministic matching + next action, then a best-effort AI
    * explanation/draft message over exactly that (already-computed,
    * already-authorized) result. Requires step 1 to have run at least once.

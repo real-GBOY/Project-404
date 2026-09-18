@@ -12,9 +12,9 @@ import type { ScopeGuardConfig } from "@core/index.js";
 // Obviously in scope — real-estate entities, Atlas how-to, or a question about
 // the assistant itself. Skips the classifier call.
 const IN_SCOPE =
-  /\b(project|projects|building|buildings|unit|units|floor|lead|leads|customer|customers|pipeline|deal|deals|reservation|reservations|contract|contracts|payment plan|installment|installments|collection|collections|overdue|outstanding|revenue|commission|commissions|task|tasks|approval|approvals|workflow|inventory|sell.?through|velocity|dashboard|analytics|agent|sales|portfolio|atlas)\b/i;
+  /\b(project|projects|building|buildings|unit|units|floor|lead|leads|customer|customers|pipeline|deal|deals|reservation|reservations|contract|contracts|payment plan|installment|installments|collection|collections|overdue|outstanding|revenue|commission|commissions|task|tasks|approval|approvals|workflow|inventory|sell.?through|velocity|dashboard|analytics|agent|sales|portfolio|atlas|conversation|conversations|message|messages|chat|chats|follow.?up|follow.?ups|insight|insights)\b/i;
 const IN_SCOPE_AR =
-  /(مشروع|مشاريع|مبنى|مباني|وحدة|وحدات|طابق|عميل محتمل|عملاء|صفقة|صفقات|حجز|حجوزات|عقد|عقود|خطة سداد|قسط|أقساط|تحصيل|تحصيلات|متأخر|مستحق|إيراد|عمولة|مهمة|مهام|موافقة|موافقات|سير عمل|مخزون|لوحة|تحليلات|وكيل|مبيعات|أطلس)/;
+  /(مشروع|مشاريع|مبنى|مباني|وحدة|وحدات|طابق|عميل محتمل|عملاء|صفقة|صفقات|حجز|حجوزات|عقد|عقود|خطة سداد|قسط|أقساط|تحصيل|تحصيلات|متأخر|مستحق|إيراد|عمولة|مهمة|مهام|موافقة|موافقات|سير عمل|مخزون|لوحة|تحليلات|وكيل|مبيعات|أطلس|محادثة|محادثات|رسالة|رسائل|متابعة)/;
 const META =
   /\b(what can you do|who are you|what are you|how do (i|you)|how to|help me (with|use)|your (capabilities|features)|hello|hi there|hey|thanks|thank you)\b/i;
 const META_AR = /(ماذا تفعل|من أنت|كيف (أ|ا)ستخدم|كيف يمكنني|ساعدني|مرحبا|شكرا|أهلا)/;
@@ -23,7 +23,7 @@ const META_AR = /(ماذا تفعل|من أنت|كيف (أ|ا)ستخدم|كيف 
 const OUT_OF_SCOPE =
   /\b(write (me |a |some )?(code|a program|a script|a poem|an essay|a story|a song)|python|javascript|typescript|c\+\+|sql query|regex|recipe|weather|stock price|bitcoin|crypto|who (is|was) the|capital of|translate this|tell me a joke|current events|news|football|movie|celebrity)\b/i;
 
-const CLASSIFIER_PROMPT = `You route requests for "Atlas Copilot", an assistant that ONLY helps with one real-estate developer's portfolio data and workflows: projects, buildings, units and inventory, leads and the sales pipeline, customers, reservations, contracts, payment plans and installments, collections/outstanding balances, commissions, tasks, and how to use the Atlas app.
+const CLASSIFIER_PROMPT = `You route requests for "Atlas Copilot", an assistant that ONLY helps with one real-estate developer's portfolio data and workflows: projects, buildings, units and inventory, leads and the sales pipeline, customers, reservations, contracts, payment plans and installments, collections/outstanding balances, commissions, tasks, the team's conversations about leads and the AI insights derived from them, and how to use the Atlas app.
 
 Classify the user's message:
 - IN_SCOPE — asks about the portfolio's projects/units/leads/customers/reservations/contracts/collections/tasks/analytics, or how to do something in Atlas, or is a short follow-up to such a topic, or a greeting/thanks.

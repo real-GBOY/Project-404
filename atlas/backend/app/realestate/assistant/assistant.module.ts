@@ -10,6 +10,7 @@ import {
   CONFIG,
   ConversationRepository,
   IdentityModule,
+  MessagingModule,
   OpenAiCompatibleClient,
   OrganizationsModule,
   RbacModule,
@@ -29,13 +30,15 @@ import { atlasScopeVocabulary } from "./application/scope-vocabulary.js";
 import { buildSystemPrompt } from "./application/system-prompt.js";
 import { ReadTools } from "./tools/read-tools.js";
 import { WriteTools } from "./tools/write-tools.js";
+import { ConversationTools } from "./tools/conversation-tools.js";
+import { ConversationInsightsStoreModule } from "@atlas/realestate/conversation-intelligence/insights-store.module.js";
 import { InsightsController } from "./api/insights.controller.js";
 import { InsightsRepository } from "./infrastructure/insights-repository.js";
 import { InsightsService } from "./application/insights-service.js";
 
 /**
  * Atlas Copilot (atlas/backend/app/realestate/assistant) — the AI
- * orchestration layer. Domain-specific: its 22 tools call the existing
+ * orchestration layer. Domain-specific: its tools call the existing
  * real-estate services directly (the same path a screen uses), its system
  * prompt and scope vocabulary describe Atlas's own domain. The orchestration
  * mechanism itself (agent loop, tool registry, conversation store, scope-gate
@@ -61,17 +64,24 @@ import { InsightsService } from "./application/insights-service.js";
     FinanceModule,
     OperationsModule,
     DashboardModule,
+    // Core messaging + the AI-free insights store: what the conversation tools read.
+    // (Deliberately NOT ConversationIntelligenceModule — that one depends on THIS
+    // module for the AI client, so importing it here would be a cycle.)
+    MessagingModule,
+    ConversationInsightsStoreModule,
   ],
   controllers: [AssistantController, InsightsController],
   providers: [
     ReadTools,
     WriteTools,
+    ConversationTools,
     {
       provide: ASSISTANT_TOOLS,
-      inject: [ReadTools, WriteTools],
-      useFactory: (readTools: ReadTools, writeTools: WriteTools) => [
+      inject: [ReadTools, WriteTools, ConversationTools],
+      useFactory: (readTools: ReadTools, writeTools: WriteTools, conversationTools: ConversationTools) => [
         ...readTools.tools(),
         ...writeTools.tools(),
+        ...conversationTools.tools(),
       ],
     },
     {
