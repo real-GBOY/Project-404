@@ -39,7 +39,14 @@ const CORE_ADMIN_KEYS = [
  * REALESTATE_PERMISSIONS and not checked by `has()`. Membership in a conversation
  * is what actually opens it; these are the coarse "may use messaging" gates.
  */
-const MESSAGING_KEYS = ["read:conversation", "create:conversation", "send:message"];
+const MESSAGING_KEYS = [
+  "read:conversation",
+  "create:conversation",
+  "send:message",
+  // Attaching a file to a message uploads it through Core files (`POST /api/files/uploads`,
+  // gated on upload:file). Without this only administrators could attach anything.
+  "upload:file",
+];
 const MESSAGING_MODERATION = "moderate:message";
 
 export const REALESTATE_ROLES: RoleSeed[] = [

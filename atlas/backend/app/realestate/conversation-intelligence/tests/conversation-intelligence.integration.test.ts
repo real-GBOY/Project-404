@@ -14,7 +14,9 @@ import {
   ASSISTANT_CONFIG,
   AiUpstreamError,
   assistantConfigFromAuricConfig,
+  PERMISSION_PROVIDER,
   getConfig,
+  type IPermissionProvider,
   realtimeRooms,
   ToolRegistry,
   type AssistantConfig,
@@ -553,6 +555,19 @@ suite("realestate/conversation-intelligence", () => {
       expect(created).toMatchObject({ reason: body.reason, leadId, agentId: agent1, priority: "high" });
       const list = await inA(agent1, () => get<FollowupsService>(app, FollowupsService).list({}));
       expect(list.map((f) => f.id)).toContain(created.id);
+    });
+  });
+
+  // ── roles ──────────────────────────────────────────────────────────────────
+
+  describe("roles", () => {
+    it("every role that can send messages can also attach files (Core upload gate); read-only cannot send or upload", async () => {
+      const can = (user: string, action: string, resource: string) =>
+        asUser(user, orgA.orgId, () => get<IPermissionProvider>(app, PERMISSION_PROVIDER).can(user, action, resource));
+      expect(await can(agent1, "send", "message")).toBe(true);
+      expect(await can(agent1, "upload", "file")).toBe(true);
+      expect(await can(viewer, "send", "message")).toBe(false);
+      expect(await can(viewer, "upload", "file")).toBe(false);
     });
   });
 
