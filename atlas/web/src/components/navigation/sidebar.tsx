@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { NAV, type NavBadgeKey } from "@/app/router/nav";
 import { cn } from "@/lib/cn";
 import { useAuth } from "@/features/auth/auth-provider";
@@ -10,6 +11,9 @@ import { useFollowups } from "@/api/crm";
 import { useReservations } from "@/api/sales";
 import { useOutstanding } from "@/api/finance";
 import { useApprovals } from "@/api/operations";
+import { fetchConversations, messagingKeys } from "@/api/messaging";
+import { totalUnread } from "@/features/messages/lib/conversation-cache";
+import type { ConversationDto, Page } from "@/features/messages/contracts/messaging-types";
 
 const OPEN_KEY = "atlas.sidebar.groups";
 
@@ -21,8 +25,11 @@ function useNavBadgeCounts(): Partial<Record<NavBadgeKey, number>> {
   const reservations = useReservations({ status: "expiring" });
   const outstanding = useOutstanding();
   const approvals = useApprovals();
+  // Unread messages come from the realtime-maintained inbox cache — no separate fetch, no polling.
+  const conversations = useQuery<Page<ConversationDto>>({ queryKey: messagingKeys.conversations, queryFn: fetchConversations, staleTime: Infinity });
 
   return {
+    messages: conversations.data ? totalUnread(conversations.data) : undefined,
     followups: followups.data?.filter((f) => f.status === "overdue").length,
     reservations: reservations.data?.length,
     outstanding: outstanding.data?.length,

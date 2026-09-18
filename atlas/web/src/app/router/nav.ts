@@ -7,7 +7,7 @@
 /** Keys the sidebar resolves to a live count via its own data hooks
  *  (components/navigation/sidebar.tsx) — never a hardcoded number, so the
  *  badge can't go stale the moment the underlying data changes. */
-export type NavBadgeKey = "followups" | "reservations" | "outstanding" | "approvals";
+export type NavBadgeKey = "followups" | "reservations" | "outstanding" | "approvals" | "messages";
 
 export interface NavItem {
   to: string;
@@ -27,6 +27,10 @@ export const NAV: NavGroup[] = [
   {
     title: "Overview",
     items: [{ to: "/dashboard", label: "Executive Dashboard", icon: "dashboard" }],
+  },
+  {
+    title: "Communication",
+    items: [{ to: "/messages", label: "Messages", icon: "message", badgeKey: "messages" }],
   },
   {
     title: "CRM",

@@ -12,6 +12,26 @@ export const ENDPOINTS = {
     logout: "/auth/logout",
   },
   me: "/me",
+
+  // Core messaging (core/messaging) — REST is history/resync/writes; the live path is the socket.
+  conversations: {
+    list: "/conversations",
+    byId: (id: string) => `/conversations/${id}`,
+    members: (id: string) => `/conversations/${id}/members`,
+    messages: (id: string) => `/conversations/${id}/messages`,
+    sync: (id: string) => `/conversations/${id}/sync`,
+    read: (id: string) => `/conversations/${id}/read`,
+    attachment: (id: string, attachmentId: string) => `/conversations/${id}/attachments/${attachmentId}`,
+    // Atlas conversation intelligence (AI insights over a conversation)
+    insights: (id: string) => `/realestate/conversations/${id}/insights`,
+    insightsRefresh: (id: string) => `/realestate/conversations/${id}/insights/refresh`,
+    applyRequirements: (id: string) => `/realestate/conversations/${id}/insights/apply-requirements`,
+    createFollowup: (id: string) => `/realestate/conversations/${id}/insights/followups`,
+  },
+  files: {
+    createUpload: "/files/uploads",
+    confirm: (id: string) => `/files/${id}/confirm`,
+  },
   team: "/team",
 
   leads: {

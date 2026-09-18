@@ -87,6 +87,34 @@ http.interceptors.response.use(
   },
 );
 
+/** Seconds until a JWT's `exp`, or null when it cannot be read. Client-side only — the server is the authority. */
+function secondsUntilExpiry(token: string): number | null {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]!.replace(/-/g, "+").replace(/_/g, "/"))) as { exp?: number };
+    return typeof payload.exp === "number" ? payload.exp - Date.now() / 1000 : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * A usable access token for a non-HTTP consumer (the realtime socket): the
+ * current one if it has more than `minSeconds` left, otherwise a freshly refreshed
+ * one — sharing the single in-flight refresh with the axios interceptor, so a socket
+ * reconnect and a page full of queries never race two refreshes (the server treats
+ * a reused refresh token as theft). `null` (and the session is dropped) when the
+ * refresh cannot be recovered.
+ */
+export async function ensureFreshAccessToken(minSeconds = 45): Promise<string | null> {
+  const current = getAccessToken();
+  const left = current ? secondsUntilExpiry(current) : null;
+  if (current && left !== null && left > minSeconds) return current;
+  if (await tryRefresh()) return getAccessToken();
+  setTokens(null);
+  onSessionExpired?.();
+  return null;
+}
+
 /** GET, optionally with query params (undefined/null values are dropped). */
 export async function get<T = unknown>(url: string, params?: object): Promise<T> {
   const res = await http.get<T>(url, { params });
@@ -100,5 +128,10 @@ export async function post<T = unknown>(url: string, body?: unknown): Promise<T>
 
 export async function patch<T = unknown>(url: string, body?: unknown): Promise<T> {
   const res = await http.patch<T>(url, body);
+  return res.data;
+}
+
+export async function del<T = unknown>(url: string): Promise<T> {
+  const res = await http.delete<T>(url);
   return res.data;
 }

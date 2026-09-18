@@ -24,6 +24,12 @@ export default defineConfig({
         target: process.env.ATLAS_API_PROXY_TARGET ?? "http://localhost:3100",
         changeOrigin: true,
       },
+      // Realtime messaging: Socket.IO rides the same backend port. `ws: true` upgrades the WebSocket.
+      "/socket.io": {
+        target: process.env.ATLAS_API_PROXY_TARGET ?? "http://localhost:3100",
+        changeOrigin: true,
+        ws: true,
+      },
     },
   },
   test: {

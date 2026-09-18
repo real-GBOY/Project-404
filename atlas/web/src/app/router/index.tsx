@@ -25,6 +25,7 @@ import { WorkflowsApprovalsPage } from "@/features/operations/pages/workflows-ap
 import { DocumentsPage } from "@/features/operations/pages/documents-page";
 import { FeedPage } from "@/features/ai/pages/feed-page";
 import { CopilotPage } from "@/features/ai/pages/copilot-page";
+import { MessagesPage } from "@/features/messages/pages/messages-page";
 import { OrgSettingsPage } from "@/features/admin/pages/org-settings-page";
 
 /** A real route change (different pathname) lands at the top of the new page,
@@ -63,6 +64,12 @@ export function AppRouter() {
       <Route element={<ProtectedRoute />}>
       <Route element={<AppShell />}>
         <Route path="dashboard" element={<DashboardPage />} />
+
+        {/* Communication — Core real-time messaging */}
+        <Route path="messages">
+          <Route index element={<MessagesPage />} />
+          <Route path=":conversationId" element={<MessagesPage />} />
+        </Route>
 
         {/* CRM */}
         <Route path="leads">
