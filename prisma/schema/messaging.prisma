@@ -1,0 +1,131 @@
+// core/messaging — generic real-time messaging (core/messaging/README.md,
+// docs/messaging.md). Domain-agnostic: a product links a conversation to its
+// own entity through (subject_type, subject_id).
+//
+// Hand-written SQL (composite tenant FKs, CHECKs, partial indexes, RLS,
+// updated_at trigger) lives in ../migrations/*_core_messaging; these models
+// mirror the tables for the Prisma -> Kysely type generator only.
+//
+// Two per-conversation counters, bumped under a row lock so they are
+// commit-ordered: `last_seq` (creation order -> history pagination) and
+// `last_change_seq` (create/edit/delete -> reconnect resync).
+
+model messaging_conversations {
+  id              String    @id
+  organization_id String
+  /// @kyselyType('direct' | 'group' | 'channel')
+  type            String
+  title           String?
+  /// What the conversation is about, in the product's own vocabulary
+  /// (e.g. "lead"). Core never interprets it.
+  subject_type    String?
+  subject_id      String?
+  created_by      String
+  last_message_id String?
+  last_message_at DateTime? @db.Timestamptz(6)
+  /// @kyselyType(number)
+  last_seq        BigInt    @default(0)
+  /// @kyselyType(number)
+  last_change_seq BigInt    @default(0)
+  archived_at     DateTime? @db.Timestamptz(6)
+  /// @kyselyType(Json<Record<string, unknown>>)
+  metadata        Json      @default("{}")
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @default(now()) @db.Timestamptz(6)
+
+  members  messaging_conversation_members[]
+  messages messaging_messages[]
+
+  @@unique([organization_id, id], map: "messaging_conversations_org_id_uq")
+  // messaging_conversations_recent_idx is an expression index (COALESCE(last_message_at, created_at)) — migration SQL only.
+  @@map("messaging_conversations")
+}
+
+model messaging_conversation_members {
+  conversation_id      String
+  user_id              String
+  organization_id      String
+  /// @kyselyType('owner' | 'member')
+  role                 String    @default("member")
+  joined_at            DateTime  @default(now()) @db.Timestamptz(6)
+  left_at              DateTime? @db.Timestamptz(6)
+  /// Read cursor — one row per member, never one per (user x message).
+  last_read_message_id String?
+  last_read_at         DateTime? @db.Timestamptz(6)
+  muted                Boolean   @default(false)
+
+  conversation messaging_conversations @relation(fields: [organization_id, conversation_id], references: [organization_id, id], onDelete: Cascade, onUpdate: NoAction, map: "messaging_conversation_members_conversation_fk")
+
+  @@id([conversation_id, user_id])
+  @@map("messaging_conversation_members")
+}
+
+model messaging_messages {
+  id                  String    @id
+  conversation_id     String
+  organization_id     String
+  sender_id           String
+  body                String
+  /// @kyselyType('text' | 'system')
+  message_type        String    @default("text")
+  /// Client-generated UUID; (conversation, sender, client_message_id) is unique
+  /// so a retried send resolves to the original message.
+  client_message_id   String?
+  reply_to_message_id String?
+  /// @kyselyType(number)
+  seq                 BigInt
+  /// @kyselyType(number)
+  change_seq          BigInt
+  /// @kyselyType(Json<Record<string, unknown>>)
+  metadata            Json      @default("{}")
+  created_at          DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime  @default(now()) @db.Timestamptz(6)
+  edited_at           DateTime? @db.Timestamptz(6)
+  deleted_at          DateTime? @db.Timestamptz(6)
+
+  conversation messaging_conversations @relation(fields: [organization_id, conversation_id], references: [organization_id, id], onDelete: Cascade, onUpdate: NoAction, map: "messaging_messages_conversation_fk")
+  reply_to     messaging_messages?     @relation("reply", fields: [organization_id, reply_to_message_id], references: [organization_id, id], onDelete: NoAction, onUpdate: NoAction, map: "messaging_messages_reply_fk")
+  replies      messaging_messages[]    @relation("reply")
+  attachments  messaging_message_attachments[]
+  reactions    messaging_message_reactions[]
+
+  @@unique([organization_id, id], map: "messaging_messages_org_id_uq")
+  @@unique([conversation_id, seq], map: "messaging_messages_seq_uq")
+  @@index([conversation_id, change_seq], map: "messaging_messages_change_idx")
+  @@map("messaging_messages")
+}
+
+model messaging_message_attachments {
+  id              String   @id
+  message_id      String
+  conversation_id String
+  organization_id String
+  /// References Core `files` — no FK (file metadata outlives its uses).
+  file_id         String
+  /// Snapshot of the file's display metadata at send time.
+  file_name       String
+  content_type    String
+  /// @kyselyType(number)
+  byte_size       BigInt
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  message messaging_messages @relation(fields: [organization_id, message_id], references: [organization_id, id], onDelete: Cascade, onUpdate: NoAction, map: "messaging_message_attachments_message_fk")
+
+  @@unique([message_id, file_id], map: "messaging_message_attachments_uq")
+  @@index([conversation_id, message_id], map: "messaging_message_attachments_conversation_idx")
+  @@map("messaging_message_attachments")
+}
+
+model messaging_message_reactions {
+  message_id      String
+  user_id         String
+  emoji           String
+  organization_id String
+  conversation_id String
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  message messaging_messages @relation(fields: [organization_id, message_id], references: [organization_id, id], onDelete: Cascade, onUpdate: NoAction, map: "messaging_message_reactions_message_fk")
+
+  @@id([message_id, user_id, emoji])
+  @@map("messaging_message_reactions")
+}

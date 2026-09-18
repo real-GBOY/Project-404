@@ -458,6 +458,117 @@ export type lawfirm_time_entries = {
     created_at: Generated<Timestamp>;
     updated_at: Generated<Timestamp>;
 };
+export type messaging_conversation_members = {
+    conversation_id: string;
+    user_id: string;
+    organization_id: string;
+    /**
+     * @kyselyType('owner' | 'member')
+     */
+    role: Generated<'owner' | 'member'>;
+    joined_at: Generated<Timestamp>;
+    left_at: Timestamp | null;
+    /**
+     * Read cursor — one row per member, never one per (user x message).
+     */
+    last_read_message_id: string | null;
+    last_read_at: Timestamp | null;
+    muted: Generated<boolean>;
+};
+export type messaging_conversations = {
+    id: string;
+    organization_id: string;
+    /**
+     * @kyselyType('direct' | 'group' | 'channel')
+     */
+    type: 'direct' | 'group' | 'channel';
+    title: string | null;
+    /**
+     * What the conversation is about, in the product's own vocabulary
+     * (e.g. "lead"). Core never interprets it.
+     */
+    subject_type: string | null;
+    subject_id: string | null;
+    created_by: string;
+    last_message_id: string | null;
+    last_message_at: Timestamp | null;
+    /**
+     * @kyselyType(number)
+     */
+    last_seq: Generated<number>;
+    /**
+     * @kyselyType(number)
+     */
+    last_change_seq: Generated<number>;
+    archived_at: Timestamp | null;
+    /**
+     * @kyselyType(Json<Record<string, unknown>>)
+     */
+    metadata: Generated<Json<Record<string, unknown>>>;
+    created_at: Generated<Timestamp>;
+    updated_at: Generated<Timestamp>;
+};
+export type messaging_message_attachments = {
+    id: string;
+    message_id: string;
+    conversation_id: string;
+    organization_id: string;
+    /**
+     * References Core `files` — no FK (file metadata outlives its uses).
+     */
+    file_id: string;
+    /**
+     * Snapshot of the file's display metadata at send time.
+     */
+    file_name: string;
+    content_type: string;
+    /**
+     * @kyselyType(number)
+     */
+    byte_size: number;
+    created_at: Generated<Timestamp>;
+};
+export type messaging_message_reactions = {
+    message_id: string;
+    user_id: string;
+    emoji: string;
+    organization_id: string;
+    conversation_id: string;
+    created_at: Generated<Timestamp>;
+};
+export type messaging_messages = {
+    id: string;
+    conversation_id: string;
+    organization_id: string;
+    sender_id: string;
+    body: string;
+    /**
+     * @kyselyType('text' | 'system')
+     */
+    message_type: Generated<'text' | 'system'>;
+    /**
+     * Client-generated UUID; (conversation, sender, client_message_id) is unique
+     * so a retried send resolves to the original message.
+     */
+    client_message_id: string | null;
+    reply_to_message_id: string | null;
+    /**
+     * @kyselyType(number)
+     */
+    seq: number;
+    /**
+     * @kyselyType(number)
+     */
+    change_seq: number;
+    /**
+     * @kyselyType(Json<Record<string, unknown>>)
+     */
+    metadata: Generated<Json<Record<string, unknown>>>;
+    created_at: Generated<Timestamp>;
+    updated_at: Generated<Timestamp>;
+    edited_at: Timestamp | null;
+    deleted_at: Timestamp | null;
+};
 export type notification_templates = {
     id: string;
     key: string;
@@ -638,6 +749,11 @@ export type Database = {
     lawfirm_staff_profiles: lawfirm_staff_profiles;
     lawfirm_tasks: lawfirm_tasks;
     lawfirm_time_entries: lawfirm_time_entries;
+    messaging_conversation_members: messaging_conversation_members;
+    messaging_conversations: messaging_conversations;
+    messaging_message_attachments: messaging_message_attachments;
+    messaging_message_reactions: messaging_message_reactions;
+    messaging_messages: messaging_messages;
     notification_templates: notification_templates;
     notifications: notifications;
     organization_members: organization_members;
