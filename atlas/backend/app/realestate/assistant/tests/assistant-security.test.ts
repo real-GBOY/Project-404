@@ -300,7 +300,7 @@ suite("realestate/assistant — Atlas Copilot security invariant", () => {
       const dangerous = /sql|query|exec|eval|http|fetch|\braw\b|repository|database|db_|shell|script/i;
       expect(registry.list().some((t) => dangerous.test(t.name))).toBe(false);
       expect(registry.list().every((t) => t.permission !== null)).toBe(true);
-      expect(registry.list()).toHaveLength(23); // 21 read + 2 write
+      expect(registry.list()).toHaveLength(30); // 21 read + 2 write + 7 conversation (5 read, request analysis, create_followup)
     });
 
     it("an unknown tool name is refused, whatever the model puts in it", async () => {
