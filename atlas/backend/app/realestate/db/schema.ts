@@ -128,6 +128,50 @@ export type realestate_contracts = {
   created_at: Generated<Timestamp>;
   updated_at: Generated<Timestamp>;
 };
+export type realestate_conversation_ai_state = {
+  conversation_id: string;
+  organization_id: string;
+  summary: Generated<string>;
+  /**
+   * @kyselyType(Json<Array<{ label: string; value: string }>>)
+   */
+  key_facts: Generated<Json<Array<{ label: string; value: string }>>>;
+  /**
+   * @kyselyType(Json<Array<{ action: string; owner: 'agent' | 'customer' | 'unknown'; due: string | null }>>)
+   */
+  action_items: Generated<
+    Json<Array<{ action: string; owner: "agent" | "customer" | "unknown"; due: string | null }>>
+  >;
+  /**
+   * @kyselyType(Json<string[]>)
+   */
+  unresolved_questions: Generated<Json<string[]>>;
+  /**
+   * Same shape as realestate_leads.requirements (lead-intelligence).
+   * @kyselyType(Json<Record<string, unknown>>)
+   */
+  extracted_requirements: Json<Record<string, unknown>> | null;
+  /**
+   * The highest messaging `change_seq` already folded into this state.
+   * @kyselyType(number)
+   */
+  last_analyzed_change_seq: Generated<number>;
+  /**
+   * The highest messaging `seq` (creation order) already folded in.
+   * @kyselyType(number)
+   */
+  last_analyzed_seq: Generated<number>;
+  version: Generated<number>;
+  /**
+   * @kyselyType('idle' | 'running' | 'failed')
+   */
+  status: Generated<"idle" | "running" | "failed">;
+  running_at: Timestamp | null;
+  last_error: string | null;
+  analyzed_at: Timestamp | null;
+  created_at: Generated<Timestamp>;
+  updated_at: Generated<Timestamp>;
+};
 export type realestate_customer_units = {
   id: string;
   organization_id: string;
@@ -492,6 +536,7 @@ export type RealestateTables = {
   realestate_buildings: realestate_buildings;
   realestate_commissions: realestate_commissions;
   realestate_contracts: realestate_contracts;
+  realestate_conversation_ai_state: realestate_conversation_ai_state;
   realestate_customer_units: realestate_customer_units;
   realestate_customers: realestate_customers;
   realestate_documents: realestate_documents;

@@ -1,0 +1,37 @@
+// app/realestate/conversation-intelligence — the incremental AI analysis state
+// for Core messaging conversations (docs/messaging.md §7). Atlas-owned; Core's
+// `messaging_conversations` (created by the copied Core migration, no Prisma
+// model in this project — see datasource.prisma) is referenced by a composite
+// FK in the hand-written migration only.
+
+model realestate_conversation_ai_state {
+  conversation_id          String   @id
+  organization_id          String
+  summary                  String   @default("")
+  /// @kyselyType(Json<Array<{ label: string; value: string }>>)
+  key_facts                Json     @default("[]")
+  /// @kyselyType(Json<Array<{ action: string; owner: 'agent' | 'customer' | 'unknown'; due: string | null }>>)
+  action_items             Json     @default("[]")
+  /// @kyselyType(Json<string[]>)
+  unresolved_questions     Json     @default("[]")
+  /// Same shape as realestate_leads.requirements (lead-intelligence).
+  /// @kyselyType(Json<Record<string, unknown>>)
+  extracted_requirements   Json?
+  /// The highest messaging `change_seq` already folded into this state.
+  /// @kyselyType(number)
+  last_analyzed_change_seq BigInt   @default(0)
+  /// The highest messaging `seq` (creation order) already folded in.
+  /// @kyselyType(number)
+  last_analyzed_seq        BigInt   @default(0)
+  version                  Int      @default(0)
+  /// @kyselyType('idle' | 'running' | 'failed')
+  status                   String   @default("idle")
+  running_at               DateTime? @db.Timestamptz(6)
+  last_error               String?
+  analyzed_at              DateTime? @db.Timestamptz(6)
+  created_at               DateTime @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([organization_id, status], map: "realestate_conversation_ai_state_org_idx")
+  @@map("realestate_conversation_ai_state")
+}
