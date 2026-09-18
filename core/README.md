@@ -45,6 +45,9 @@ domain is not.
 - Deliver templated, bilingual in-app + email notifications (`notifications`).
 - Publish domain events in-process and drive external side effects through a
   transactional outbox + worker (`events`).
+- Provide generic real-time conversations — members, messages, read cursors,
+  typing, presence — over Socket.IO, tenant-safe and product-agnostic
+  (`messaging`; see `messaging/README.md`).
 - Provide locale/direction resolution and `ar-EG` formatting (`localization`).
 - Provide structured logging, correlation IDs, health + readiness
   (`observability`, `http`).
@@ -94,7 +97,8 @@ OutboxMessage**. Schema for these lives in `prisma/schema/<module>.prisma`.
 
 HTTP surface (mounted under `/api` by the composition root): `auth/*`, `me`,
 `rbac/*`, `organizations/*`, `files/*`, `audit-logs`, `notifications/*`,
-`health`, `health/ready`.
+`conversations/*` (when `MessagingModule` is imported), `health`, `health/ready`.
+The Socket.IO endpoint (`/socket.io`) is attached to the same HTTP server.
 
 ## 8. How a client application uses Core
 

@@ -142,12 +142,34 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
+    # Realtime messaging (Socket.IO). MUST be a WebSocket upgrade — the web client is
+    # WebSocket-only by default, so without these headers messaging cannot connect at all.
+    # The long timeout is deliberate — an idle socket is healthy, Socket.IO's own
+    # heartbeat keeps it alive.
+    location /socket.io/ {
+        proxy_pass http://127.0.0.1:3100;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+    }
+
     # SPA fallback — client-side routing.
     location / {
         try_files $uri $uri/ /index.html;
     }
 }
 ```
+
+> **Realtime messaging is single-process.** Socket.IO uses its in-memory adapter,
+> which is correct for this one-process systemd deployment. Running more than one
+> API process needs a shared adapter first — see `docs/messaging.md` §9. When the
+> frontend is served from another origin (Vercel), add it to `AURIC_CORS_ORIGINS`:
+> the socket uses the same allow-list as the REST API.
 
 ```bash
 sudo ln -s /etc/nginx/sites-available/atlas /etc/nginx/sites-enabled/atlas
