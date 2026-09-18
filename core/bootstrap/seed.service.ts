@@ -13,6 +13,7 @@ import { organizationPermissions } from "@core/organizations/permissions/permiss
 import { auditPermissions } from "@core/audit/permissions/permissions.js";
 import { filePermissions } from "@core/files/permissions/permissions.js";
 import { notificationPermissions } from "@core/notifications/permissions/permissions.js";
+import { messagingPermissions } from "@core/messaging/permissions/permissions.js";
 
 const ALL_PERMISSIONS: PermissionDefinition[] = [
   ...identityPermissions,
@@ -21,6 +22,7 @@ const ALL_PERMISSIONS: PermissionDefinition[] = [
   ...auditPermissions,
   ...filePermissions,
   ...notificationPermissions,
+  ...messagingPermissions,
 ];
 
 /**

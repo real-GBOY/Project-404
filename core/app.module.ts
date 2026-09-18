@@ -8,6 +8,7 @@ import { IdentityModule } from "@core/identity/identity.module.js";
 import { OrganizationsModule } from "@core/organizations/organizations.module.js";
 import { NotificationsModule } from "@core/notifications/notifications.module.js";
 import { FilesModule } from "@core/files/files.module.js";
+import { MessagingModule } from "@core/messaging/messaging.module.js";
 import { SecurityModule } from "@core/http/security.module.js";
 import { AppExceptionFilter } from "@core/http/app-exception.filter.js";
 import { RequestContextMiddleware } from "@core/http/request-context.middleware.js";
@@ -28,6 +29,7 @@ import { SeedService } from "@core/bootstrap/seed.service.js";
     OrganizationsModule,
     NotificationsModule,
     FilesModule,
+    MessagingModule,
     SecurityModule,
   ],
   controllers: [HealthController],

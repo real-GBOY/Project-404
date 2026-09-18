@@ -203,6 +203,13 @@ export class FileStorageService implements IFileStorage {
     await this.adapter.remove(row.storageKey);
   }
 
+  async describe(
+    fileId: string,
+  ): Promise<FileRef & { ownerId: string | null; status: "pending" | "stored" }> {
+    const row = await this.requireRow(fileId);
+    return { ...this.toRef(row), ownerId: row.ownerId, status: row.status };
+  }
+
   async getMetadata(id: string): Promise<FileRow> {
     return this.requireRow(id);
   }

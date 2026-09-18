@@ -38,6 +38,7 @@ export class OutboxWorker implements OnApplicationBootstrap, OnApplicationShutdo
   private timer: NodeJS.Timeout | undefined;
   private running = false;
   private ticking = false;
+  private nudged = false;
   private lastTickAt: Date | undefined;
   private lastError: string | undefined;
   private readonly opts: OutboxWorkerOptions;
@@ -85,6 +86,22 @@ export class OutboxWorker implements OnApplicationBootstrap, OnApplicationShutdo
     };
   }
 
+  /**
+   * Deliver freshly committed rows now instead of at the next poll. Callers
+   * invoke this AFTER their transaction commits (real-time messaging fans out
+   * within milliseconds). The outbox stays the single delivery path — this only
+   * shortens the wait. A no-op unless the worker is running (tests drive `tick()`
+   * by hand); a nudge that lands mid-tick is remembered and triggers one more.
+   */
+  nudge(): void {
+    if (!this.running) return;
+    if (this.ticking) {
+      this.nudged = true;
+      return;
+    }
+    setImmediate(() => void this.tick());
+  }
+
   /** Public so tests can drive the worker deterministically. */
   async tick(): Promise<number> {
     if (this.ticking) return 0;
@@ -117,6 +134,10 @@ export class OutboxWorker implements OnApplicationBootstrap, OnApplicationShutdo
     } finally {
       this.lastTickAt = this.clock.now();
       this.ticking = false;
+    }
+    if (this.nudged) {
+      this.nudged = false;
+      this.nudge();
     }
     return processed;
   }

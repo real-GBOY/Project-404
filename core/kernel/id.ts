@@ -24,7 +24,10 @@ export type IdPrefix =
   | "obx"
   | "dlq"
   | "conv" // AI Copilot conversation (core/assistant)
-  | "amsg"; // AI Copilot message
+  | "amsg" // AI Copilot message
+  | "mcv" // messaging conversation (core/messaging)
+  | "mmsg" // messaging message
+  | "matt"; // messaging attachment
 
 export function newId(prefix: IdPrefix): string {
   return `${prefix}_${generate()}`;

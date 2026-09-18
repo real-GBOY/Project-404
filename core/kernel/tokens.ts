@@ -37,3 +37,9 @@ export const ASSISTANT_TOOLS = Symbol("auric.assistantTools");
 export const ASSISTANT_DOMAIN_CONFIG = Symbol("auric.assistantDomainConfig");
 /** The product's `ScopeGuardConfig` (in/out-of-scope vocabulary, refusal text). */
 export const SCOPE_GUARD_CONFIG = Symbol("auric.scopeGuardConfig");
+
+// ── Messaging (core/messaging) ───────────────────────────────────────────────
+/** `IMessagingProvider` — the read contract other modules (e.g. a product's AI) use. */
+export const MESSAGING_PROVIDER = Symbol("auric.messagingProvider");
+/** `IRealtimeBroadcaster` — emit typed events to sockets without knowing the transport. */
+export const REALTIME_BROADCASTER = Symbol("auric.realtimeBroadcaster");

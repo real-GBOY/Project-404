@@ -144,6 +144,14 @@ export interface IFileStorage {
    * landed, records its real size, and flips the file to `stored`.
    */
   confirmUpload(fileId: string): Promise<FileRef>;
+  /**
+   * File metadata + ownership, tenant-scoped (a file of another tenant does not
+   * exist here). Lets a consumer validate a reference — "stored, and uploaded by
+   * this user" — without reading the `files` table itself.
+   */
+  describe(
+    fileId: string,
+  ): Promise<FileRef & { ownerId: string | null; status: "pending" | "stored" }>;
   getUrl(fileRef: Pick<FileRef, "id">): Promise<string>;
   getContent(fileRef: Pick<FileRef, "id">): Promise<{ content: Buffer; ref: FileRef }>;
   delete(fileRef: Pick<FileRef, "id">): Promise<void>;
@@ -179,4 +187,64 @@ import type { DomainEvent } from "./domain-event.js";
  */
 export interface IEventBus {
   publish(event: DomainEvent): Promise<void>;
+}
+
+// ─── Messaging ───────────────────────────────────────────────────────────────
+import type {
+  ConversationDto,
+  MessageDto,
+} from "@core/messaging/contracts/messaging-types.js";
+
+/**
+ * Read access to conversations FOR THE CURRENT USER — every method enforces
+ * conversation membership (a non-member, or another tenant's conversation,
+ * looks like "not found"). This is the seam a product's AI tools use: the AI
+ * reads exactly what the requesting user could read, never the tables.
+ */
+export interface IMessagingProvider {
+  getConversation(actorId: string, conversationId: string): Promise<ConversationDto>;
+  /** Most recent messages, oldest → newest. */
+  recentMessages(actorId: string, conversationId: string, limit?: number): Promise<MessageDto[]>;
+  searchMessages(
+    actorId: string,
+    input: { query: string; conversationId?: string; limit?: number },
+  ): Promise<Array<{ conversationId: string; message: MessageDto }>>;
+  /** Conversations the user belongs to about a given subject (e.g. a lead). */
+  conversationsForSubject(
+    actorId: string,
+    subjectType: string,
+    subjectId: string,
+  ): Promise<ConversationDto[]>;
+  /**
+   * Tenant-scoped, membership-free read for a background job acting on behalf of
+   * the tenant (no user in scope). Requires an active organization; RLS still
+   * applies. Output is derived data that must only be exposed through
+   * membership-checked endpoints.
+   */
+  changesForAnalysis(
+    conversationId: string,
+    afterChangeSeq: number,
+    limit: number,
+  ): Promise<{
+    conversation: Pick<ConversationDto, "id" | "type" | "title" | "subjectType" | "subjectId" | "members"> & {
+      lastChangeSeq: number;
+    };
+    messages: MessageDto[];
+    hasMore: boolean;
+  }>;
+}
+
+// ─── Realtime ────────────────────────────────────────────────────────────────
+/**
+ * Emit to connected sockets. Transport-agnostic: the Socket.IO gateway
+ * implements it today; a multi-node adapter can replace it without touching
+ * callers. `event`/`payload` are typed at the messaging call sites; a product
+ * can broadcast its own namespaced events (e.g. `atlas:…`) through the same seam.
+ */
+export interface IRealtimeBroadcaster {
+  toRoom(room: string, event: string, payload: unknown): void;
+  toUser(organizationId: string, userId: string, event: string, payload: unknown): void;
+  /** Make every live socket of the user join/leave a room (server-authorized membership sync). */
+  joinUser(organizationId: string, userId: string, room: string): void;
+  leaveUser(organizationId: string, userId: string, room: string): void;
 }
