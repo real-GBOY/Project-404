@@ -142,8 +142,15 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
           messagingStore.updatePending(p.conversationId, p.clientMessageId, { status: "failed", error: ack.error.message });
         }
       } catch {
-        // Offline or no ack in time. Stay "sending": it is re-sent on reconnect, and because the
-        // server dedupes on clientMessageId, a send that DID land will simply be acknowledged again.
+        // Offline: stay "sending" - it is re-sent on reconnect. Connected but no ack in time: surface it
+        // with a Retry instead of spinning forever. Either way the retry is safe, because the server
+        // dedupes on clientMessageId (a send that DID land is simply acknowledged again).
+        if (messagingStore.getState().status === "connected") {
+          messagingStore.updatePending(p.conversationId, p.clientMessageId, {
+            status: "failed",
+            error: "No response from the server.",
+          });
+        }
       }
     },
     [patchInbox, patchThread],

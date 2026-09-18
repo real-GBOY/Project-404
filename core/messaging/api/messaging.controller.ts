@@ -195,6 +195,8 @@ export class MessagingController {
     const { content, ref } = await this.messaging.downloadAttachment(user.userId, id, attachmentId);
     reply
       .header("Content-Type", ref.contentType)
+      // Uploaded content is untrusted: never let a browser sniff it into something executable.
+      .header("X-Content-Type-Options", "nosniff")
       .header("Content-Disposition", `attachment; filename="${encodeURIComponent(ref.originalName)}"`)
       .send(content);
   }

@@ -276,6 +276,21 @@ describe("Messages — sending", () => {
     expect(String(sends()[1]!.payload.clientMessageId)).toBe(first);
   });
 
+  it("connected but never acknowledged: shows 'No response' with Retry (safe - same clientMessageId), not an endless spinner", async () => {
+    socket.ackFor = () => {
+      throw new Error("operation has timed out");
+    };
+    await openConversation();
+    typeAndSend("did this land?");
+    expect(await thread().findByText("No response from the server.")).toBeInTheDocument();
+    const first = String(sends()[0]!.payload.clientMessageId);
+    socket.ackFor = (_e, p) => ({ ok: true, data: { message: msg(3, { senderId: ME, body: p.body as string, clientMessageId: p.clientMessageId as string }), deduplicated: true } });
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    await waitFor(() => expect(sends()).toHaveLength(2));
+    expect(String(sends()[1]!.payload.clientMessageId)).toBe(first);
+    await waitFor(() => expect(screen.queryByText("No response from the server.")).not.toBeInTheDocument());
+  });
+
   it("while disconnected the message stays 'sending' and is re-sent on reconnect with the same id (idempotent)", async () => {
     await openConversation();
     socket.drop();
