@@ -11,6 +11,7 @@ export { EventsModule } from "@core/events/events.module.js";
 export { AuditModule } from "@core/audit/audit.module.js";
 export { RbacModule } from "@core/rbac/rbac.module.js";
 export { IdentityModule } from "@core/identity/identity.module.js";
+export { UserDirectory, UNKNOWN_USER_NAME } from "@core/identity/application/user-directory.js";
 export { OrganizationsModule } from "@core/organizations/organizations.module.js";
 export { NotificationsModule } from "@core/notifications/notifications.module.js";
 export { FilesModule } from "@core/files/files.module.js";
