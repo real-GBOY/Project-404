@@ -50,6 +50,8 @@ export class StructuredAi {
     schema: S;
     /** Machine code for the "gave up after retry" error. */
     failureCode: string;
+    /** Output cap for this call (defaults to the configured one) — long analyses need headroom. */
+    maxOutputTokens?: number;
   }): Promise<z.infer<S>> {
     if (!this.config.enabled) throw AiUpstreamError.misconfigured();
 
@@ -58,7 +60,10 @@ export class StructuredAi {
       { role: "user" as const, content: opts.userPrompt },
     ];
 
-    const first = await this.ai.createChatCompletion({ messages, tools: [] });
+    // JSON mode: the provider guarantees well-formed JSON (the model otherwise leaves quotes unescaped
+    // when it repeats a customer's words). Zod still validates the SHAPE below.
+    const call = { tools: [], jsonMode: true, ...(opts.maxOutputTokens ? { maxOutputTokens: opts.maxOutputTokens } : {}) };
+    const first = await this.ai.createChatCompletion({ messages, ...call });
     const firstResult = tryParse(first.content, opts.schema);
     if (firstResult.ok) return firstResult.value;
 
@@ -74,7 +79,7 @@ export class StructuredAi {
           "no prose, no markdown code fences.",
       },
     ];
-    const second = await this.ai.createChatCompletion({ messages: retryMessages, tools: [] });
+    const second = await this.ai.createChatCompletion({ messages: retryMessages, ...call });
     const secondResult = tryParse(second.content, opts.schema);
     if (secondResult.ok) return secondResult.value;
 

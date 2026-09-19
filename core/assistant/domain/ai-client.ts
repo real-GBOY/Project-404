@@ -39,6 +39,14 @@ export interface AiChatRequest {
   tools: AiToolDef[];
   /** Signal from the caller (request abort / shutdown). */
   signal?: AbortSignal;
+  /**
+   * Ask the provider for a guaranteed-syntactically-valid JSON object (OpenAI-compatible
+   * `response_format: json_object`). Without it a model happily emits unescaped quotes inside
+   * string values — fatal when it quotes customer speech. The prompt must still say "JSON".
+   */
+  jsonMode?: boolean;
+  /** Override the configured output cap for this call (structured output can be long). */
+  maxOutputTokens?: number;
 }
 
 export interface AiUsage {

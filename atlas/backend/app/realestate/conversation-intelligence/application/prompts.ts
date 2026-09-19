@@ -37,6 +37,8 @@ Reply with ONLY a single JSON object, no prose, no markdown fences, exactly this
   }
 }
 
+Inside string values never use raw double-quote characters — paraphrase, or use single quotes when quoting someone.
+
 Never fabricate a number, place, name or commitment that the conversation does not support — leave it null/empty instead. Budgets are Egyptian Pounds unless another currency is explicitly named.`;
 
 export function buildAnalysisPrompt(input: {

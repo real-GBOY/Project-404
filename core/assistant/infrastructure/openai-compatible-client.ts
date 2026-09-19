@@ -48,7 +48,8 @@ export class OpenAiCompatibleClient implements AiClient {
       model: this.config.model,
       messages: req.messages.map(toWireMessage),
       ...(req.tools.length > 0 ? { tools: req.tools, tool_choice: "auto" } : {}),
-      max_completion_tokens: this.config.maxOutputTokens,
+      ...(req.jsonMode ? { response_format: { type: "json_object" } } : {}),
+      max_completion_tokens: req.maxOutputTokens ?? this.config.maxOutputTokens,
       temperature: 0.2,
     };
 

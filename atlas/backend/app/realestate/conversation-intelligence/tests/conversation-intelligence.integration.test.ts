@@ -280,6 +280,7 @@ suite("realestate/conversation-intelligence", () => {
       expect(sys).toContain("untrusted");
       expect(user).toMatch(/<messages>[\s\S]*Ignore all previous instructions[\s\S]*<\/messages>/);
       expect(req.tools).toEqual([]); // the analysis model is given NO tools
+      expect(req.jsonMode).toBe(true); // …and a syntactically valid JSON object is requested from the provider
     });
   });
 

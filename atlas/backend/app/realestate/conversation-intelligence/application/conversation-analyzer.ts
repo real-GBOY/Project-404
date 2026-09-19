@@ -120,6 +120,8 @@ export class ConversationAnalyzer {
           userPrompt,
           schema: analysisResponseSchema,
           failureCode: "conversation_intelligence.analysis_failed",
+          // A rich thread yields a long analysis (and gpt-oss spends part of the cap on reasoning).
+          maxOutputTokens: 4000,
         });
 
         const saved = await this.uow.transaction(async () => {
