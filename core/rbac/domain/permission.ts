@@ -13,6 +13,11 @@ export function permissionKey(action: string, resource: string): string {
   return `${action}:${resource}`;
 }
 
+/** Object form of `permissionKey` — `permKey({ action: "read", resource: "lead" })` → `"read:lead"`. */
+export function permKey(def: Pick<PermissionDefinition, "action" | "resource">): string {
+  return permissionKey(def.action, def.resource);
+}
+
 export function parsePermissionKey(key: string): { action: string; resource: string } | null {
   const idx = key.indexOf(":");
   if (idx <= 0 || idx === key.length - 1) return null;

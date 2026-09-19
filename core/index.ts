@@ -18,6 +18,13 @@ export { MessagingModule } from "@core/messaging/messaging.module.js";
 export { SecurityModule } from "@core/http/security.module.js";
 export { SeedService } from "@core/bootstrap/seed.service.js";
 export { migrateToLatest, migrationStatus } from "@core/kernel/db/migrate.js";
+
+// RBAC contracts + the generic seeding mechanism. Applications own their permissions,
+// roles and any role metadata; Core owns only the shapes and the seeding.
+export type { PermissionDefinition } from "@core/rbac/domain/permission.js";
+export { parsePermissionKey, permissionKey, permKey } from "@core/rbac/domain/permission.js";
+export type { RoleSeed } from "@core/rbac/domain/role.js";
+export { seedRbacDefinitions } from "@core/rbac/application/seed.js";
 export { getConfig, setConfigForTests, type AuricConfig } from "@core/kernel/config.js";
 
 export * from "@core/kernel/tokens.js";

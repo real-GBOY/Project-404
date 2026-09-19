@@ -4,7 +4,7 @@ import { UNIT_OF_WORK } from "@core/kernel/tokens.js";
 import type { UnitOfWork } from "@core/kernel/db/db.js";
 import { runAsSystem } from "@core/kernel/logging/context.js";
 import { moduleLogger } from "@core/kernel/logging/logger.js";
-import { parsePermissionKey } from "@core/rbac/domain/permission.js";
+import { seedRbacDefinitions } from "@core/rbac/application/seed.js";
 import { RbacRepository } from "@core/rbac/infrastructure/rbac-repository.js";
 import { CLOCK } from "@core/kernel/tokens.js";
 import type { Clock } from "@core/kernel/clock.js";
@@ -35,29 +35,7 @@ export class AppSeedService {
     await this.coreSeed.seed();
 
     await runAsSystem(() =>
-      this.uow.transaction(async () => {
-        for (const def of REALESTATE_PERMISSIONS) {
-          await this.rbac.upsertPermission(def);
-        }
-
-        for (const role of REALESTATE_ROLES) {
-          let stored = await this.rbac.findRoleByKey(role.key);
-          stored ??= await this.rbac.createRole({
-            key: role.key,
-            name: role.name,
-            description: role.description,
-            isSystem: true,
-          });
-
-          for (const key of role.permissionKeys) {
-            const parsed = parsePermissionKey(key);
-            if (!parsed)
-              throw new Error(`AppSeedService: invalid permission key "${key}" on role "${role.key}"`);
-            const permId = await this.rbac.upsertPermission(parsed);
-            await this.rbac.grantPermissionToRole(stored.id, permId);
-          }
-        }
-      }),
+      seedRbacDefinitions(this.rbac, this.uow, { permissions: REALESTATE_PERMISSIONS, roles: REALESTATE_ROLES }),
     );
 
     log.info(
