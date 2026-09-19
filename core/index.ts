@@ -70,6 +70,7 @@ export {
 export { guardResponse, type GuardedResponse } from "@core/assistant/application/response-guard.js";
 export { ScopeGuard, type ScopeDecision } from "@core/assistant/application/scope-guard.js";
 export { ToolRegistry } from "@core/assistant/application/tool-registry.js";
+export { StructuredAi } from "@core/assistant/application/structured-ai.js";
 export { zodToJsonSchema } from "@core/assistant/application/zod-to-json-schema.js";
 export {
   AssistantService,
