@@ -2,8 +2,8 @@
  * Token storage. The access token lives in memory only; the refresh token is persisted so a
  * page reload can re-establish the session.
  *
- * âš  Refresh-in-localStorage is exposed to XSS â€” move to an httpOnly cookie once the backend
- * sets one.
+ * WARNING: a refresh token in localStorage is exposed to XSS - move it to an httpOnly cookie once
+ * the backend sets one.
  */
 export interface KeyValueStorage {
   getItem(key: string): string | null;
@@ -26,7 +26,7 @@ export interface TokenStore {
   clear(): void;
 }
 
-/** What the transport needs from a store — claims decoding is the app's business. */
+/** What the transport needs from a store - claims decoding is the app's business. */
 export type TokenStoreCore = Pick<TokenStore, "getAccess" | "getRefresh" | "set" | "clear">;
 
 export interface TokenStoreOptions {
