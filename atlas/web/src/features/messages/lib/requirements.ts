@@ -1,4 +1,4 @@
-import type { InsightRequirements } from "../contracts/insights-types";
+import type { InsightRequirements } from "@atlas-contracts/insights";
 
 const egp = (n: number) => `${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M EGP`;
 

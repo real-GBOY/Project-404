@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { MessagingCommand, RealtimeSystemEvent, type RealtimeReadyPayload } from "../contracts/realtime-events";
+import { MessagingCommand, RealtimeSystemEvent, type RealtimeReadyPayload } from "@auric/contracts/messaging";
 import { RealtimeClient, type SocketLike } from "./realtime-client";
 
 type Handler = (...args: never[]) => void;

@@ -1,4 +1,4 @@
-import type { MessageDto, MessageHistoryPage, MessageSyncResult } from "../contracts/messaging-types";
+import type { MessageDto, MessageHistoryPage, MessageSyncResult } from "@auric/contracts/messaging";
 
 /**
  * The client-side copy of one conversation's messages — a pure data structure with

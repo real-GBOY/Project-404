@@ -7,8 +7,8 @@ import type {
   MessageSyncResult,
   Page,
   SendMessageResult,
-} from "@/features/messages/contracts/messaging-types";
-import type { ConversationInsightsDto } from "@/features/messages/contracts/insights-types";
+} from "@auric/contracts/messaging";
+import type { ConversationInsightsDto } from "@atlas-contracts/insights";
 import { threadFromHistory, type ThreadCache } from "@/features/messages/lib/thread-cache";
 
 /**

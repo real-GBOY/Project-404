@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { MessageDto, MessageSyncResult } from "../contracts/messaging-types";
+import type { MessageDto, MessageSyncResult } from "@auric/contracts/messaging";
 import { applyDeletion, applySync, emptyThread, prependHistory, resyncThread, upsertMessage, type ThreadCache } from "./thread-cache";
 
 const msg = (seq: number, over: Partial<MessageDto> = {}): MessageDto => ({

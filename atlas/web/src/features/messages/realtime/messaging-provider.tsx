@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { API_BASE_URL, ApiError, ensureFreshAccessToken } from "@/config";
 import { useAuth } from "@/features/auth/auth-provider";
 import { fetchHistory, fetchSync, messagingKeys, type UploadedAttachment } from "@/api/messaging";
-import type { ConversationDto, MessageDto, Page } from "../contracts/messaging-types";
+import type { ConversationDto, MessageDto, Page } from "@auric/contracts/messaging";
 import {
   type ConversationCreatedPayload,
   type ConversationMemberAddedPayload,
@@ -17,8 +17,8 @@ import {
   type MessageUpdatedPayload,
   type PresenceUpdatePayload,
   type TypingPayload,
-} from "../contracts/realtime-events";
-import { ATLAS_CONVERSATION_AI_UPDATED, type ConversationAiUpdatedPayload, type ConversationInsightsDto } from "../contracts/insights-types";
+} from "@auric/contracts/messaging";
+import { ATLAS_CONVERSATION_AI_UPDATED, type ConversationAiUpdatedPayload, type ConversationInsightsDto } from "@atlas-contracts/insights";
 import {
   applyMessageToInbox,
   applyReadToInbox,
