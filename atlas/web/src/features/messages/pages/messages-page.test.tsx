@@ -350,7 +350,7 @@ describe("Messages — reconnect and resync", () => {
     socket.drop();
     const { ApiError } = await import("@/config");
     get.mockImplementation(async (url: string) => {
-      if (url === ENDPOINTS.conversations.sync("c1")) throw new ApiError(404, "messaging.conversation_not_found", "Conversation not found.");
+      if (url === ENDPOINTS.conversations.sync("c1")) throw new ApiError(404, { code: "messaging.conversation_not_found", message: "Conversation not found." });
       if (url === ENDPOINTS.conversations.list) return { items: [conversation("c2")], nextCursor: null };
       return NO_INSIGHTS;
     });

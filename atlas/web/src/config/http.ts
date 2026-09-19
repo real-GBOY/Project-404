@@ -1,18 +1,11 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { API_BASE_URL } from "./env";
-import { getAccessToken, getRefreshToken, setTokens, type TokenPair } from "./token-store";
+import { ApiError, createRefresher } from "@auric/web";
+import { getAccessToken, getRefreshToken, setTokens, tokenStore, type TokenPair } from "./token-store";
 import { ENDPOINTS } from "./endpoints";
 
 /** Thrown for any non-2xx response, carrying the backend's own `{error:{code,message}}` shape. */
-export class ApiError extends Error {
-  constructor(
-    public readonly status: number,
-    public readonly code: string,
-    message: string,
-  ) {
-    super(message);
-  }
-}
+export { ApiError };
 
 /** Set once by `AuthProvider`; called when a request can't be recovered by refreshing. */
 let onSessionExpired: (() => void) | null = null;
@@ -36,28 +29,17 @@ http.interceptors.request.use((config: InternalAxiosRequestConfig) => {
  *  but the first lose that race and take the user's whole session down with
  *  them. Uses the bare `axios` client, not `http` — a failed refresh must not
  *  re-trigger this same interceptor. */
-let inFlightRefresh: Promise<boolean> | null = null;
-
-async function tryRefresh(): Promise<boolean> {
-  if (inFlightRefresh) return inFlightRefresh;
-
-  const refreshToken = getRefreshToken();
-  if (!refreshToken) return false;
-
-  inFlightRefresh = (async () => {
+const tryRefresh = createRefresher({
+  tokens: tokenStore,
+  exchange: async (refreshToken) => {
     try {
       const res = await axios.post<{ tokens: TokenPair }>(`${API_BASE_URL}${ENDPOINTS.auth.refresh}`, { refreshToken });
-      setTokens(res.data.tokens);
-      return true;
+      return res.data.tokens;
     } catch {
-      return false;
-    } finally {
-      inFlightRefresh = null;
+      return null;
     }
-  })();
-
-  return inFlightRefresh;
-}
+  },
+});
 
 interface RetriableConfig extends InternalAxiosRequestConfig {
   _retried?: boolean;
@@ -79,11 +61,10 @@ http.interceptors.response.use(
     }
 
     const body = error.response?.data;
-    throw new ApiError(
-      error.response?.status ?? 0,
-      body?.error?.code ?? "unknown",
-      body?.error?.message ?? "Something went wrong. Please try again.",
-    );
+    throw new ApiError(error.response?.status ?? 0, {
+      code: body?.error?.code ?? "unknown",
+      message: body?.error?.message ?? "Something went wrong. Please try again.",
+    });
   },
 );
 

@@ -16,7 +16,7 @@ export default defineConfig({
     },
   },
   test: {
-    include: ["core/**/*.test.ts", "mizan/backend/app/**/*.test.ts"],
+    include: ["core/**/*.test.ts", "mizan/backend/app/**/*.test.ts", "packages/**/*.test.ts"],
     environment: "node",
     globals: false,
     // Integration tests that need a live Postgres opt in via AURIC_TEST_DATABASE_URL.

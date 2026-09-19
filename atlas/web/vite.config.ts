@@ -8,6 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
+      "@auric/web": fileURLToPath(new URL("../../packages/web/src/index.ts", import.meta.url)),
     },
   },
   build: {
