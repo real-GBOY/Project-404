@@ -1,15 +1,12 @@
-import { customAlphabet } from "nanoid";
+import { createPrefixedId, hasIdPrefix } from "@core/kernel/id.js";
 
 /**
- * Prefixed identifiers for law-firm domain rows, mirroring Core's `newId`
- * convention (`core/kernel/id.ts`) — same alphabet and length, a separate
- * prefix set so the product doesn't reach into Core's `IdPrefix` union.
+ * Prefixed identifiers for law-firm domain rows. The format itself is Core's
+ * (`createPrefixedId`); this file owns only the law-firm prefix set, so the
+ * product doesn't reach into Core's `IdPrefix` union.
  *
  *   lawfirmId("mat") -> "mat_V1StGXR8Z5jdHi6BMyT4c"
  */
-const alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-const generate = customAlphabet(alphabet, 21);
-
 export type LawfirmIdPrefix =
   | "cli" // client
   | "cnt" // client contact
@@ -30,14 +27,8 @@ export type LawfirmIdPrefix =
   | "stf" // staff profile
   | "cal" // calendar event
   | "act" // activity entry
-  | "rmd" // reminder
-  | "conv" // assistant conversation
-  | "amsg"; // assistant message
+  | "rmd"; // reminder
 
-export function lawfirmId(prefix: LawfirmIdPrefix): string {
-  return `${prefix}_${generate()}`;
-}
+export const lawfirmId = (prefix: LawfirmIdPrefix): string => createPrefixedId(prefix);
 
-export function hasLawfirmPrefix(id: string, prefix: LawfirmIdPrefix): boolean {
-  return id.startsWith(`${prefix}_`);
-}
+export const hasLawfirmPrefix = (id: string, prefix: LawfirmIdPrefix): boolean => hasIdPrefix(id, prefix);
