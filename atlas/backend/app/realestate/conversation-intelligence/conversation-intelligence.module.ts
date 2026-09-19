@@ -1,4 +1,6 @@
-import { Module, type OnModuleInit } from "@nestjs/common";
+import { Inject, Module, type OnModuleInit } from "@nestjs/common";
+import { CLOCK } from "@core/kernel/tokens.js";
+import type { Clock } from "@core/kernel/clock.js";
 import { AuditModule, EventsModule, MessagingModule } from "@core/index.js";
 import { EventRegistry } from "@core/events/registry.js";
 import { CrmModule } from "@atlas/realestate/crm/crm.module.js";
@@ -39,6 +41,7 @@ export class ConversationIntelligenceModule implements OnModuleInit {
     private readonly state: ConversationAiStateRepository,
     private readonly requester: ConversationAnalysisRequester,
     private readonly analyzer: ConversationAnalyzer,
+    @Inject(CLOCK) private readonly clock: Clock,
   ) {}
 
   onModuleInit(): void {
@@ -46,6 +49,7 @@ export class ConversationIntelligenceModule implements OnModuleInit {
       state: this.state,
       requester: this.requester,
       analyzer: this.analyzer,
+      clock: this.clock,
     });
   }
 }

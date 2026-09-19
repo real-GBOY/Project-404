@@ -1,3 +1,4 @@
+import type { Clock } from "@core/kernel/clock.js";
 import type { EventRegistry } from "@core/events/registry.js";
 import {
   type MessageCreatedEvent,
@@ -22,21 +23,27 @@ import { AtlasConversationEvents, type AnalysisRequestedEvent } from "./events.j
  *     with its own retries/backoff/DLQ, isolated from Core's realtime-broadcast
  *     row (an LLM outage never re-broadcasts a message).
  */
+/** A queued marker older than this is presumed orphaned (request dead-lettered / worker crashed). */
+const QUEUE_STALE_MS = 5 * 60 * 1000;
+
 export function registerConversationIntelligenceSubscribers(
   registry: EventRegistry,
   deps: {
     state: ConversationAiStateRepository;
     requester: ConversationAnalysisRequester;
     analyzer: ConversationAnalyzer;
+    clock: Clock;
   },
 ): void {
   const onMessage = async (event: { payload: Record<string, unknown> }): Promise<void> => {
     const p = event.payload as MessageCreatedEvent | MessageUpdatedEvent | MessageDeletedEvent;
-    const eligible =
-      (p.subjectType !== null && AUTO_ANALYZED_SUBJECTS.includes(p.subjectType)) ||
-      // A conversation someone explicitly asked to analyse stays analysed.
-      (await deps.state.exists(p.conversationId));
-    if (eligible) await deps.requester.publish(p.conversationId, "message");
+    const auto = p.subjectType !== null && AUTO_ANALYZED_SUBJECTS.includes(p.subjectType);
+    // A conversation someone explicitly asked to analyse stays analysed.
+    if (!auto && !(await deps.state.exists(p.conversationId))) return;
+    // Coalesce: a burst of N messages queues ONE request, not N (each would call the LLM).
+    if (await deps.state.markQueued(p.conversationId, deps.clock.now(), QUEUE_STALE_MS)) {
+      await deps.requester.publish(p.conversationId, "message");
+    }
   };
 
   registry.onInProcess(MessagingDomainEvents.MessageCreated, onMessage);

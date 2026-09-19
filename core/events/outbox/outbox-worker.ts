@@ -14,6 +14,7 @@ import { unitOfWork } from "@core/kernel/db/db.js";
 import { newId } from "@core/kernel/id.js";
 import { EventRegistry } from "@core/events/registry.js";
 import { OutboxRepository, type OutboxRow } from "./outbox-repository.js";
+import { RetryAfter } from "./retry-after.js";
 
 const log = moduleLogger("outbox-worker");
 
@@ -178,7 +179,8 @@ export class OutboxWorker implements OnApplicationBootstrap, OnApplicationShutdo
           "outbox message dead-lettered after exhausting retries",
         );
       } else {
-        await unitOfWork.transaction(() => this.outbox.reschedule(row.id, attempt, message));
+        const delayMs = err instanceof RetryAfter ? err.retryAfterMs : undefined;
+        await unitOfWork.transaction(() => this.outbox.reschedule(row.id, attempt, message, delayMs));
         log.warn({ event: row.event_name, id: row.id, attempt, err }, "outbox message rescheduled");
       }
     }

@@ -167,6 +167,10 @@ export type realestate_conversation_ai_state = {
    */
   status: Generated<"idle" | "running" | "failed">;
   running_at: Timestamp | null;
+  /**
+   * An analysis request is already waiting for this conversation (see the queue migration).
+   */
+  queued_at: Timestamp | null;
   last_error: string | null;
   analyzed_at: Timestamp | null;
   created_at: Generated<Timestamp>;

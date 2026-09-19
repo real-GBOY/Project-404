@@ -105,8 +105,8 @@ export class OutboxRepository {
   }
 
   /** Transient failure: back to pending with exponential backoff. */
-  async reschedule(id: string, attempts: number, error: string): Promise<void> {
-    const backoffMs = Math.min(2 ** attempts * 1000, 60 * 60 * 1000);
+  async reschedule(id: string, attempts: number, error: string, delayMs?: number): Promise<void> {
+    const backoffMs = delayMs ?? Math.min(2 ** attempts * 1000, 60 * 60 * 1000);
     await currentExecutor()
       .updateTable("outbox_messages")
       .set({

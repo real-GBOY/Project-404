@@ -70,6 +70,32 @@ export class ConversationAiStateRepository {
   }
 
   /**
+   * Try to become THE queued analysis request for this conversation. Returns true only when
+   * the marker flipped (nothing was queued, or the marker was stale) — the caller enqueues
+   * exactly then. Everything that arrives while a request is waiting is absorbed by it.
+   */
+  async markQueued(conversationId: string, now: Date, staleMs: number): Promise<boolean> {
+    const staleBefore = new Date(now.getTime() - staleMs);
+    const row = await realestateDb()
+      .insertInto("realestate_conversation_ai_state")
+      .values({ conversation_id: conversationId, organization_id: this.org(), queued_at: now })
+      .onConflict((oc) =>
+        oc
+          .column("conversation_id")
+          .doUpdateSet({ queued_at: now })
+          .where((eb) =>
+            eb.or([
+              eb("realestate_conversation_ai_state.queued_at", "is", null),
+              eb("realestate_conversation_ai_state.queued_at", "<", staleBefore),
+            ]),
+          ),
+      )
+      .returning("conversation_id")
+      .executeTakeFirst();
+    return row !== undefined;
+  }
+
+  /**
    * Atomically take the analysis lock. Returns the row (the claim does not touch
    * the analysis content, so it is the previous state), or `null` when someone
    * else holds a live lock.
@@ -85,7 +111,8 @@ export class ConversationAiStateRepository {
     const staleBefore = new Date(now.getTime() - staleMs);
     const row = await realestateDb()
       .updateTable("realestate_conversation_ai_state")
-      .set({ status: "running", running_at: now })
+      // Claiming consumes the queued request: messages arriving from now on queue a fresh one.
+      .set({ status: "running", running_at: now, queued_at: null })
       .where("organization_id", "=", org)
       .where("conversation_id", "=", conversationId)
       .where((eb) =>

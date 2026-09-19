@@ -2,6 +2,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import type { UnitOfWork } from "@core/kernel/db/db.js";
 import { readInTenant } from "@core/kernel/db/db.js";
 import { AppError } from "@core/kernel/errors.js";
+import { RetryAfter } from "@core/events/outbox/retry-after.js";
 import { moduleLogger } from "@core/kernel/logging/logger.js";
 import { AUDIT_LOGGER, CLOCK, MESSAGING_PROVIDER, REALTIME_BROADCASTER, UNIT_OF_WORK } from "@core/kernel/tokens.js";
 import type { Clock } from "@core/kernel/clock.js";
@@ -20,6 +21,8 @@ const log = moduleLogger("conversation-analyzer");
 
 /** A `running` lock older than this is presumed to belong to a crashed worker. */
 const STALE_LOCK_MS = 5 * 60 * 1000;
+const RATE_LIMIT_RETRY_MS = 60_000;
+const PROVIDER_RETRY_MS = 15_000;
 /** Steps per run. A longer backlog continues in a follow-up run rather than hogging a worker. */
 const MAX_STEPS_PER_RUN = 5;
 
@@ -189,8 +192,12 @@ export class ConversationAnalyzer {
       const row = await this.uow.transaction(() => this.state.finish(conversationId, { status: "failed", error: code }));
       this.broadcast(conversationId, row, lastChangeSeq);
     }
-    const transient = err instanceof AppError && err.code.startsWith("assistant.");
-    if (transient || !(err instanceof AppError)) throw err;
+    if (err instanceof AppError && err.code.startsWith("assistant.")) {
+      // Provider trouble. Rate limits are per-minute, so wait a minute — retrying in 2s/4s/8s
+      // would burn the whole attempt budget while still limited.
+      throw new RetryAfter(err.message, err.code === "assistant.rate_limited" ? RATE_LIMIT_RETRY_MS : PROVIDER_RETRY_MS, { cause: err });
+    }
+    if (!(err instanceof AppError)) throw err;
     return { outcome: "failed", code };
   }
 

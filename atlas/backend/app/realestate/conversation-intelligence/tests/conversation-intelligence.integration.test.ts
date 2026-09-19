@@ -183,6 +183,23 @@ suite("realestate/conversation-intelligence", () => {
       spy.mockRestore();
     });
 
+    it("a burst of messages queues ONE analysis request, not one per message", async () => {
+      const conv = await newLeadConversation();
+      const requests = () =>
+        asSystem(() =>
+          currentExecutor().selectFrom("outbox_messages").select("id").where("event_name", "=", "atlas.conversation.analysis_requested").execute(),
+        );
+      const before = (await requests()).length;
+      for (let i = 0; i < 12; i++) await send(agent1, conv.id, `burst ${i}`);
+      expect((await requests()).length - before).toBe(1);
+
+      // once it is claimed (analysis started), the next message queues a fresh request
+      ai.script(say(JSON.stringify(ANALYSIS)));
+      await tick();
+      await send(agent1, conv.id, "after the run");
+      expect((await requests()).length - before).toBe(2);
+    });
+
     it("coalesces a burst: several messages → ONE LLM call, extra events are cheap no-ops", async () => {
       const conv = await newLeadConversation();
       ai.script(say(JSON.stringify(ANALYSIS)));
@@ -334,6 +351,11 @@ suite("realestate/conversation-intelligence", () => {
       );
       expect(rescheduled.length).toBeGreaterThan(0);
       expect(rescheduled[0]!.attempts).toBe(1);
+      // a rate limit is retried in about a minute, not in seconds
+      const due = await asSystem(() =>
+        currentExecutor().selectFrom("outbox_messages").select("next_attempt_at").where("event_name", "=", "atlas.conversation.analysis_requested").where("status", "=", "pending").executeTakeFirstOrThrow(),
+      );
+      expect(due.next_attempt_at.getTime() - Date.now()).toBeGreaterThan(50_000);
       expect((await getInsights(agent1, conv.id)).status).toBe("failed");
 
       ai.script(say(JSON.stringify(ANALYSIS)));
