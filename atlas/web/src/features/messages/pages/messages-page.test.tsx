@@ -6,10 +6,10 @@ import type * as ConfigModule from "@/config";
 import { ENDPOINTS } from "@/config/endpoints";
 import { PageChromeProvider } from "@/lib/page-chrome";
 import { ToastProvider } from "@/lib/toast/toast-provider";
-import type { ConversationDto, MessageDto } from "../contracts/messaging-types";
-import type { ConversationInsightsDto } from "../contracts/insights-types";
-import { ATLAS_CONVERSATION_AI_UPDATED } from "../contracts/insights-types";
-import { MessagingCommand, MessagingEvent, RealtimeSystemEvent } from "../contracts/realtime-events";
+import type { ConversationDto, MessageDto } from "@auric/contracts/messaging";
+import type { ConversationInsightsDto } from "@atlas-contracts/insights";
+import { ATLAS_CONVERSATION_AI_UPDATED } from "@atlas-contracts/insights";
+import { MessagingCommand, MessagingEvent, RealtimeSystemEvent } from "@auric/contracts/messaging";
 import { messagingStore } from "../realtime/messaging-store";
 import { MessagingProvider } from "../realtime/messaging-provider";
 import { MessagesPage } from "./messages-page";
@@ -350,7 +350,7 @@ describe("Messages — reconnect and resync", () => {
     socket.drop();
     const { ApiError } = await import("@/config");
     get.mockImplementation(async (url: string) => {
-      if (url === ENDPOINTS.conversations.sync("c1")) throw new ApiError(404, "messaging.conversation_not_found", "Conversation not found.");
+      if (url === ENDPOINTS.conversations.sync("c1")) throw new ApiError(404, { code: "messaging.conversation_not_found", message: "Conversation not found." });
       if (url === ENDPOINTS.conversations.list) return { items: [conversation("c2")], nextCursor: null };
       return NO_INSIGHTS;
     });

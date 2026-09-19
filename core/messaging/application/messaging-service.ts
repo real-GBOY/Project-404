@@ -13,7 +13,6 @@ import {
   PERMISSION_PROVIDER,
   REALTIME_BROADCASTER,
   UNIT_OF_WORK,
-  USER_PROVIDER,
 } from "@core/kernel/tokens.js";
 import type { Clock } from "@core/kernel/clock.js";
 import type {
@@ -24,9 +23,9 @@ import type {
   IOrganizationProvider,
   IPermissionProvider,
   IRealtimeBroadcaster,
-  IUserProvider,
 } from "@core/contracts/index.js";
 import { OutboxWorker } from "@core/events/outbox/outbox-worker.js";
+import { UserDirectory } from "@core/identity/application/user-directory.js";
 import type {
   ConversationDto,
   ConversationMemberDto,
@@ -83,7 +82,7 @@ export class MessagingService implements IMessagingProvider {
     @Inject(EVENT_BUS) private readonly events: IEventBus,
     @Inject(AUDIT_LOGGER) private readonly audit: IAuditLogger,
     @Inject(CLOCK) private readonly clock: Clock,
-    @Inject(USER_PROVIDER) private readonly users: IUserProvider,
+    private readonly directory: UserDirectory,
     @Inject(ORGANIZATION_PROVIDER) private readonly orgs: IOrganizationProvider,
     @Inject(PERMISSION_PROVIDER) private readonly permissions: IPermissionProvider,
     @Inject(FILE_STORAGE) private readonly files: IFileStorage,
@@ -779,15 +778,8 @@ export class MessagingService implements IMessagingProvider {
     return out;
   }
 
-  private async displayNames(userIds: string[]): Promise<Map<string, string>> {
-    const unique = [...new Set(userIds)];
-    const entries = await Promise.all(
-      unique.map(async (id) => {
-        const user = await this.users.getUser(id);
-        return [id, user?.displayName ?? user?.email ?? "—"] as const;
-      }),
-    );
-    return new Map(entries);
+  private displayNames(userIds: string[]): Promise<Map<string, string>> {
+    return this.directory.userNames(userIds);
   }
 
   private async toMessageDtos(rows: MessageRow[]): Promise<MessageDto[]> {

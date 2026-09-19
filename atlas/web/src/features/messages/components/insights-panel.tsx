@@ -9,8 +9,8 @@ import { useToast } from "@/lib/toast/toast-provider";
 import { timeAgo } from "@/lib/time";
 import { ApiError } from "@/config";
 import { useApplyRequirements, useCreateFollowup, useInsights, useRefreshInsights } from "@/api/messaging";
-import type { ConversationDto } from "../contracts/messaging-types";
-import type { ConversationInsightsDto, InsightActionItem } from "../contracts/insights-types";
+import type { ConversationDto } from "@auric/contracts/messaging";
+import type { ConversationInsightsDto, InsightActionItem } from "@atlas-contracts/insights";
 import { requirementLines } from "../lib/requirements";
 
 const OWNER_LABEL = { agent: "Agent", customer: "Customer", unknown: "—" } as const;

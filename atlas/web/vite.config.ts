@@ -8,6 +8,12 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
+      "@auric/web": fileURLToPath(new URL("../../packages/web/src/index.ts", import.meta.url)),
+      // Wire contracts are authored server-side and consumed in place — no copies.
+      "@auric/contracts/messaging": fileURLToPath(new URL("../../core/messaging/contracts/index.ts", import.meta.url)),
+      "@atlas-contracts/insights": fileURLToPath(
+        new URL("../backend/app/realestate/conversation-intelligence/contracts/insights-types.ts", import.meta.url),
+      ),
     },
   },
   build: {

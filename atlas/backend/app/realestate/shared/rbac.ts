@@ -1,29 +1,19 @@
-/**
- * RBAC building blocks for the real-estate domain — structurally identical to
- * Core's (`core/rbac/domain/permission.ts`) and to Mizan's
- * (`mizan/backend/app/lawfirm/shared/rbac.ts`), redeclared here so
- * `app/realestate` modules don't reach into a Core internal for a plain data
- * shape. Permission key format matches Core: `"<action>:<resource>"`.
- */
-export interface PermissionDefinition {
-  action: string;
-  resource: string;
-  description?: string;
-}
-
-export const permKey = (p: PermissionDefinition): string => `${p.action}:${p.resource}`;
+import type { RoleSeed as CoreRoleSeed } from "@core/rbac/domain/role.js";
 
 /**
- * A role the Atlas app seeds into Core RBAC on boot. Roles are global (only
- * `user_roles` assignments are tenant-scoped); nothing in the domain code
- * branches on a role key, only on permissions.
+ * RBAC building blocks for the real-estate domain. `PermissionDefinition` and `permKey`
+ * are Core's (`core/rbac/domain`), re-exported so `app/realestate` modules keep one
+ * stable local import. Permission key format: `"<action>:<resource>"`.
  */
-export interface RoleSeed {
-  key: string;
-  name: string;
-  description: string;
-  /** `"<action>:<resource>"` keys granted to the role. */
-  permissionKeys: string[];
+export type { PermissionDefinition } from "@core/rbac/domain/permission.js";
+export { permKey } from "@core/rbac/domain/permission.js";
+
+/**
+ * A role Atlas seeds into Core RBAC on boot: Core's `RoleSeed` plus Atlas-only display
+ * metadata. Roles are global (only `user_roles` assignments are tenant-scoped); nothing
+ * in the domain code branches on a role key, only on permissions.
+ */
+export interface RoleSeed extends CoreRoleSeed {
   /**
    * Pure display copy for the Roles & Permissions screen (`dataScope` /
    * `discountAuthority` / `canApprove` in the frontend fixture) — descriptive

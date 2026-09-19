@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { ConversationDto, MessageDto, Page } from "../contracts/messaging-types";
-import type { InsightRequirements } from "../contracts/insights-types";
+import type { ConversationDto, MessageDto, Page } from "@auric/contracts/messaging";
+import type { InsightRequirements } from "@atlas-contracts/insights";
 import {
   applyMessageToInbox,
   applyReadToInbox,

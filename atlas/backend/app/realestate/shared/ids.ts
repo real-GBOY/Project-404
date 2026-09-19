@@ -1,15 +1,12 @@
-import { customAlphabet } from "nanoid";
+import { createPrefixedId, hasIdPrefix } from "@core/kernel/id.js";
 
 /**
  * Prefixed identifiers for real-estate domain rows, mirroring Core's `newId`
- * convention (`core/kernel/id.ts`) and Mizan's `lawfirm/shared/ids.ts` — same
- * alphabet and length, a separate prefix set of its own.
+ * convention: the format is Core's `createPrefixedId` (`core/kernel/id.ts`);
+ * this file owns only the real-estate prefix set.
  *
  *   realestateId("prj") -> "prj_V1StGXR8Z5jdHi6BMyT4c"
  */
-const alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-const generate = customAlphabet(alphabet, 21);
-
 export type RealestateIdPrefix =
   | "prj" // project
   | "bld" // building
@@ -32,14 +29,9 @@ export type RealestateIdPrefix =
   | "wfs" // workflow step
   | "apr" // approval
   | "doc" // document
-  | "conv" // AI conversation
-  | "amsg" // AI message
   | "aig"; // AI insight
 
-export function realestateId(prefix: RealestateIdPrefix): string {
-  return `${prefix}_${generate()}`;
-}
+export const realestateId = (prefix: RealestateIdPrefix): string => createPrefixedId(prefix);
 
-export function hasRealestatePrefix(id: string, prefix: RealestateIdPrefix): boolean {
-  return id.startsWith(`${prefix}_`);
-}
+export const hasRealestatePrefix = (id: string, prefix: RealestateIdPrefix): boolean =>
+  hasIdPrefix(id, prefix);

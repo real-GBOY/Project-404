@@ -20,6 +20,7 @@ import { argon2Hasher } from "@core/identity/infrastructure/password-hasher.js";
 import { createJwtService } from "@core/identity/infrastructure/jwt-service.js";
 import { IdentityUserProvider } from "@core/identity/infrastructure/user-provider.js";
 import { IdentityService } from "@core/identity/application/identity-service.js";
+import { UserDirectory } from "@core/identity/application/user-directory.js";
 import { AuthController, MeController } from "@core/identity/api/auth.controller.js";
 
 /**
@@ -37,6 +38,7 @@ import { AuthController, MeController } from "@core/identity/api/auth.controller
     VerificationTokenRepository,
     IdentityUserProvider,
     IdentityService,
+    UserDirectory,
     { provide: USER_PROVIDER, useExisting: IdentityUserProvider },
     { provide: PASSWORD_HASHER, useValue: argon2Hasher },
     { provide: REQUIRE_EMAIL_VERIFICATION, useValue: true },
@@ -51,6 +53,6 @@ import { AuthController, MeController } from "@core/identity/api/auth.controller
         }),
     },
   ],
-  exports: [USER_PROVIDER, JWT_SERVICE],
+  exports: [USER_PROVIDER, JWT_SERVICE, UserDirectory],
 })
 export class IdentityModule {}

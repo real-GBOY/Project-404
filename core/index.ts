@@ -11,6 +11,7 @@ export { EventsModule } from "@core/events/events.module.js";
 export { AuditModule } from "@core/audit/audit.module.js";
 export { RbacModule } from "@core/rbac/rbac.module.js";
 export { IdentityModule } from "@core/identity/identity.module.js";
+export { UserDirectory, UNKNOWN_USER_NAME } from "@core/identity/application/user-directory.js";
 export { OrganizationsModule } from "@core/organizations/organizations.module.js";
 export { NotificationsModule } from "@core/notifications/notifications.module.js";
 export { FilesModule } from "@core/files/files.module.js";
@@ -18,6 +19,13 @@ export { MessagingModule } from "@core/messaging/messaging.module.js";
 export { SecurityModule } from "@core/http/security.module.js";
 export { SeedService } from "@core/bootstrap/seed.service.js";
 export { migrateToLatest, migrationStatus } from "@core/kernel/db/migrate.js";
+
+// RBAC contracts + the generic seeding mechanism. Applications own their permissions,
+// roles and any role metadata; Core owns only the shapes and the seeding.
+export type { PermissionDefinition } from "@core/rbac/domain/permission.js";
+export { parsePermissionKey, permissionKey, permKey } from "@core/rbac/domain/permission.js";
+export type { RoleSeed } from "@core/rbac/domain/role.js";
+export { seedRbacDefinitions } from "@core/rbac/application/seed.js";
 export { getConfig, setConfigForTests, type AuricConfig } from "@core/kernel/config.js";
 
 export * from "@core/kernel/tokens.js";
@@ -62,6 +70,7 @@ export {
 export { guardResponse, type GuardedResponse } from "@core/assistant/application/response-guard.js";
 export { ScopeGuard, type ScopeDecision } from "@core/assistant/application/scope-guard.js";
 export { ToolRegistry } from "@core/assistant/application/tool-registry.js";
+export { StructuredAi } from "@core/assistant/application/structured-ai.js";
 export { zodToJsonSchema } from "@core/assistant/application/zod-to-json-schema.js";
 export {
   AssistantService,

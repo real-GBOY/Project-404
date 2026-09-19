@@ -5,7 +5,7 @@ import {
   type MessagingClientEvents,
   RealtimeSystemEvent,
   type RealtimeReadyPayload,
-} from "../contracts/realtime-events";
+} from "@auric/contracts/messaging";
 
 export type ConnectionStatus = "idle" | "connecting" | "connected" | "reconnecting" | "offline";
 

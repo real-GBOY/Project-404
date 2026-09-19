@@ -13,7 +13,7 @@ import { useOutstanding } from "@/api/finance";
 import { useApprovals } from "@/api/operations";
 import { fetchConversations, messagingKeys } from "@/api/messaging";
 import { totalUnread } from "@/features/messages/lib/conversation-cache";
-import type { ConversationDto, Page } from "@/features/messages/contracts/messaging-types";
+import type { ConversationDto, Page } from "@auric/contracts/messaging";
 
 const OPEN_KEY = "atlas.sidebar.groups";
 

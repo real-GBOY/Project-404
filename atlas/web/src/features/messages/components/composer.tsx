@@ -4,7 +4,7 @@ import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/cn";
 import { ApiError } from "@/config";
 import { uploadAttachment, type UploadedAttachment } from "@/api/messaging";
-import type { MessageDto } from "../contracts/messaging-types";
+import type { MessageDto } from "@auric/contracts/messaging";
 import { useMessaging } from "../realtime/messaging-provider";
 
 const MAX_FILES = 10;

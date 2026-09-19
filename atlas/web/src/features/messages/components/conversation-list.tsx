@@ -7,7 +7,7 @@ import { RowsSkeleton } from "@/components/feedback/skeleton";
 import { EmptyState } from "@/components/feedback/empty-state";
 import { cn } from "@/lib/cn";
 import { timeAgo } from "@/lib/time";
-import type { ConversationDto } from "../contracts/messaging-types";
+import type { ConversationDto } from "@auric/contracts/messaging";
 import { conversationTitle } from "../lib/conversation-cache";
 import { useMessagingState } from "../realtime/messaging-store";
 

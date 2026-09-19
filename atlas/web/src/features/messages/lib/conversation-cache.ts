@@ -3,8 +3,8 @@ import type {
   ConversationMemberDto,
   MessageDto,
   Page,
-} from "../contracts/messaging-types";
-import type { ConversationReadPayload } from "../contracts/realtime-events";
+} from "@auric/contracts/messaging";
+import type { ConversationReadPayload } from "@auric/contracts/messaging";
 
 /**
  * Pure patches for the inbox (`Page<ConversationDto>`) driven by realtime events.

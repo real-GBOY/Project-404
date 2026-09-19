@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   parsePermissionKey,
+  permKey,
   permissionKey,
   permissionMatches,
 } from "@core/rbac/domain/permission.js";
@@ -15,6 +16,12 @@ describe("permission keys", () => {
     expect(parsePermissionKey("bad")).toBeNull();
     expect(parsePermissionKey(":employee")).toBeNull();
     expect(parsePermissionKey("create:")).toBeNull();
+  });
+
+  it("permKey (object form) always agrees with permissionKey and round-trips through parse", () => {
+    const def = { action: "read", resource: "lead", description: "ignored" };
+    expect(permKey(def)).toBe(permissionKey("read", "lead"));
+    expect(parsePermissionKey(permKey(def))).toEqual({ action: "read", resource: "lead" });
   });
 });
 

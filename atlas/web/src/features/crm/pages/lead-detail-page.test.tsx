@@ -105,7 +105,7 @@ describe("LeadDetailPage", () => {
 
   it("shows an error state with a retry action when the lead fails to load", async () => {
     const { ApiError } = await import("@/config");
-    get.mockRejectedValue(new ApiError(500, "internal", "Something broke"));
+    get.mockRejectedValue(new ApiError(500, { code: "internal", message: "Something broke" }));
     renderPage();
     await waitFor(() => expect(screen.getByText(/couldn't load this lead/i)).toBeInTheDocument());
     expect(screen.getByText("Something broke")).toBeInTheDocument();
@@ -159,7 +159,7 @@ describe("LeadDetailPage", () => {
   it("shows a validation error state if requirement extraction fails", async () => {
     mockDefaultGets();
     const { ApiError } = await import("@/config");
-    post.mockRejectedValue(new ApiError(400, "request.invalid_body", "The request body is invalid."));
+    post.mockRejectedValue(new ApiError(400, { code: "request.invalid_body", message: "The request body is invalid." }));
     renderPage();
     await waitFor(() => expect(screen.getByText("Ahmed Mostafa")).toBeInTheDocument());
     fireEvent.click(screen.getByRole("tab", { name: "AI Intelligence" }));
@@ -234,7 +234,7 @@ describe("LeadDetailPage", () => {
   it("shows an error state (e.g. permission denied) when generating the brief fails", async () => {
     mockDefaultGets({ requirements: VALID_REQUIREMENTS, requirementsExtractedAt: "2026-09-17T00:00:00Z" });
     const { ApiError } = await import("@/config");
-    post.mockRejectedValue(new ApiError(403, "auth.forbidden", "You do not have permission to do this."));
+    post.mockRejectedValue(new ApiError(403, { code: "auth.forbidden", message: "You do not have permission to do this." }));
     renderPage();
     await waitFor(() => expect(screen.getByText("Ahmed Mostafa")).toBeInTheDocument());
     fireEvent.click(screen.getByRole("tab", { name: "AI Intelligence" }));

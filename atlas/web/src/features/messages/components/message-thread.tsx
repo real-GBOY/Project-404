@@ -14,7 +14,7 @@ import {
   unreactToMessage,
   useThread,
 } from "@/api/messaging";
-import type { ConversationDto, MessageDto } from "../contracts/messaging-types";
+import type { ConversationDto, MessageDto } from "@auric/contracts/messaging";
 import { conversationTitle } from "../lib/conversation-cache";
 import { EMPTY_PENDING, type PendingMessage, useMessagingState } from "../realtime/messaging-store";
 import { useMessaging } from "../realtime/messaging-provider";
