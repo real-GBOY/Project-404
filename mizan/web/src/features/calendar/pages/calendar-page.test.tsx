@@ -13,7 +13,9 @@ describe("CalendarPage", () => {
       { path: "/calendar", perms: ["read:hearing"] },
     );
 
-    expect(await screen.findByText(/Merits hearing/)).toBeInTheDocument();
+    // Fixtures are dated relative to "today", so more than one hearing with this purpose can
+    // land in the visible window — assert presence, not uniqueness.
+    expect((await screen.findAllByText(/Merits hearing/)).length).toBeGreaterThan(0);
     expect(screen.getAllByText("Mon").length).toBeGreaterThan(0);
   });
 });
