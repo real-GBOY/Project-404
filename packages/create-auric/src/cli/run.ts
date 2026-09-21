@@ -57,12 +57,12 @@ const orCancel = <T>(value: T | null): T => {
 export function installWithPackageManager(dir: string, pm: PackageManager, verbose: boolean): Promise<void> {
   return new Promise((resolve, reject) => {
     const args = pm === "npm" ? ["install", "--no-audit", "--no-fund", "--loglevel=error"] : ["install"];
-    const child = spawn(pm, args, {
-      cwd: dir,
-      stdio: verbose ? "inherit" : ["ignore", "ignore", "pipe"],
-      // npm/pnpm/yarn are .cmd shims on Windows, which cannot be spawned without a shell.
-      shell: process.platform === "win32",
-    });
+    // npm/pnpm/yarn are .cmd shims on Windows, which cannot be spawned without a shell. With a shell, Node
+    // wants ONE command string (passing an args array raises DEP0190); every part here is a fixed literal.
+    const shell = process.platform === "win32";
+    const child = shell
+      ? spawn([pm, ...args].join(" "), { cwd: dir, stdio: verbose ? "inherit" : ["ignore", "ignore", "pipe"], shell: true })
+      : spawn(pm, args, { cwd: dir, stdio: verbose ? "inherit" : ["ignore", "ignore", "pipe"] });
     let stderr = "";
     child.stderr?.on("data", (d) => (stderr += d));
     child.on("error", reject);

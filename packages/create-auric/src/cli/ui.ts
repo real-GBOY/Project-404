@@ -15,6 +15,8 @@ import { resolveSelection, type Resolution } from "../resolve.js";
  * active step, ◇ for a finished one, ✓ / ✖ / ▲ for outcomes, gold for the brand.
  */
 export const TAGLINE = "Build your foundation. Own your code.";
+/** Who makes it — shown beside the version in the intro and the help header. */
+export const CREDIT = "by JINX";
 
 export const gold = (s: string) => pc.bold(pc.yellow(s));
 export const dim = pc.dim;
@@ -243,7 +245,7 @@ export function errorLines(err: AuricError, verbose: boolean): string[] {
 export function helpText(version: string, manifests: readonly Manifest[]): string {
   const modules = selectableModules(manifests);
   const width = Math.max(...modules.map((m) => m.name.length)) + 2;
-  return `${gold("AURIC")} ${dim(`create-auric ${version}`)}
+  return `${gold("AURIC")} ${dim(`create-auric ${version} · ${CREDIT}`)}
 ${TAGLINE}
 
 ${pc.bold("Usage")}
