@@ -404,6 +404,11 @@ describe("failing well", () => {
     expect(readme).toMatch(/empty/i);
     expect(readme).toContain('relation "audit_logs" already exists');
     expect(readme).toContain("/api/health");
+    // With no .env at all, Core falls back to a built-in URL. That must be THIS project's database too — a
+    // forgotten .env used to run the migrations against a shared `auric` and leave a failed-migration record there.
+    const config = readFileSync(join(cwd, "my-app", "src", "core", "kernel", "config.ts"), "utf8");
+    expect(config).toContain('localhost:5432/my_app"');
+    expect(config).not.toContain('localhost:5432/auric"');
   });
 
   it("accepts an existing EMPTY directory", async () => {

@@ -172,6 +172,15 @@ function envExample(manifests: readonly Manifest[], dbName: string): string {
   return `# Copy to .env and adjust. Only the variables of the modules you installed are listed.\n\n${blocks.join("\n\n")}\n`;
 }
 
+/** Rewrites the `databaseUrl` fallback in the generated `kernel/config.ts` to the project's own database. */
+function pointDatabaseFallbackAtProject(outCore: string, dbName: string): void {
+  const file = join(outCore, "kernel", "config.ts");
+  const source = readFileSync(file, "utf8");
+  const fallback = 'localhost:5432/auric"';
+  if (!source.includes(fallback)) throw new Error("kernel/config.ts has no default database URL to point at the project");
+  writeFileSync(file, source.replace(fallback, `localhost:5432/${dbName}"`));
+}
+
 const nameOf = (all: readonly Manifest[], id: string) => all.find((m) => m.name === id)?.title ?? id;
 
 /** `src/core/README.md` — what is installed, derived from the manifests (the monorepo's own module READMEs are not shipped). */
@@ -392,6 +401,10 @@ export async function generateProject(opts: GenerateOptions): Promise<GenerateRe
     put(`scripts/${script}`, readFileSync(join(repoRoot, "scripts", script), "utf8"));
   }
   put(".env.example", envExample(manifests, defaultDatabaseName(projectName)));
+  // Core falls back to a hard-coded database URL when no .env exists. In a generated project that fallback must
+  // be THIS project's database, never a shared `auric`: a forgotten .env would otherwise run migrations against
+  // (and leave a failed-migration record in) whatever AURIC database happens to be on the machine.
+  pointDatabaseFallbackAtProject(outCore, defaultDatabaseName(projectName));
   put("README.md", projectReadme(projectName, resolution, manifests, notes));
   put(
     "auric.json",
