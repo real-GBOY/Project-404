@@ -87,10 +87,9 @@ const schema = z.object({
   outboxMaxAttempts: z.coerce.number().int().positive().default(5),
   outboxBatchSize: z.coerce.number().int().positive().default(20),
 
-  // AI Copilot provider (core/assistant/README.md). Deliberately NOT
-  // AURIC_-prefixed: these are the exact env var names already deployed for
-  // Mizan Copilot's production config (docs/assistant.md) — renaming would
-  // require an ops change on the live VPS for no benefit. A domain-specific
+  // AI Copilot provider (core/assistant). Deliberately NOT AURIC_-prefixed:
+  // these are the conventional AI_* / GROQ_* / OPENAI_* names, kept stable so
+  // existing deployments never need an ops change. A domain-specific
   // tool set, system prompt, and scope vocabulary are supplied by each
   // product's own assistant module, not by Core.
   aiProvider: z.enum(["groq", "openai"]).default("groq"),

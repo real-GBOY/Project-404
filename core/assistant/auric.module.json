@@ -1,0 +1,85 @@
+{
+  "manifestVersion": 1,
+  "name": "assistant",
+  "title": "AI Assistant",
+  "description": "AI Copilot orchestration: tool-calling agent loop, scope guard and a conversation store. Products supply their own tools and prompt.",
+  "group": "infrastructure",
+  "paths": [
+    "assistant"
+  ],
+  "dependsOn": {
+    "base": "kernel, contracts, tenant-scoped storage"
+  },
+  "prisma": [
+    "assistant.prisma"
+  ],
+  "tables": [
+    "ai_conversations",
+    "ai_messages"
+  ],
+  "sql": {
+    "constraints": [
+      "assistant/scaffold/constraints.sql"
+    ],
+    "rls": [
+      "assistant/scaffold/rls.sql"
+    ]
+  },
+  "npm": {
+    "dependencies": []
+  },
+  "env": [
+    {
+      "name": "AI_PROVIDER",
+      "default": "groq",
+      "description": "groq | openai"
+    },
+    {
+      "name": "AI_API_KEY",
+      "secret": true,
+      "description": "Provider API key (GROQ_API_KEY / OPENAI_API_KEY also accepted)"
+    },
+    {
+      "name": "AI_MODEL",
+      "default": "openai/gpt-oss-120b",
+      "description": "Chat-completions model id"
+    },
+    {
+      "name": "AI_BASE_URL",
+      "default": "https://api.groq.com/openai/v1",
+      "description": "OpenAI-compatible base URL"
+    },
+    {
+      "name": "AI_REQUEST_TIMEOUT_MS",
+      "default": "45000",
+      "description": "Per upstream call"
+    },
+    {
+      "name": "AI_MAX_TOOL_ITERATIONS",
+      "default": "6",
+      "description": "Agent-loop cap (max 20)"
+    },
+    {
+      "name": "AI_MAX_HISTORY_MESSAGES",
+      "default": "24",
+      "description": "Turns sent upstream"
+    },
+    {
+      "name": "AI_MAX_OUTPUT_TOKENS",
+      "default": "1500",
+      "description": "Output token cap per turn"
+    },
+    {
+      "name": "AI_SCOPE_ENFORCEMENT",
+      "default": "strict",
+      "description": "strict | prompt_only | off"
+    }
+  ],
+  "permissions": [],
+  "wiring": {
+    "nestModules": []
+  },
+  "tests": [
+    "assistant/tests"
+  ]
+}

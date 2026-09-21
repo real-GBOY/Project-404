@@ -1,0 +1,49 @@
+{
+  "manifestVersion": 1,
+  "name": "identity",
+  "title": "Identity",
+  "description": "Users, registration, login, refresh-token rotation, email verification and password reset.",
+  "group": "foundation",
+  "paths": [
+    "identity"
+  ],
+  "dependsOn": {
+    "base": "kernel, HTTP, events, audit",
+    "organizations": "tenant memberships at login",
+    "rbac": "authorization"
+  },
+  "prisma": [
+    "identity.prisma"
+  ],
+  "tables": [
+    "users",
+    "refresh_tokens",
+    "verification_tokens"
+  ],
+  "sql": {
+    "constraints": [
+      "identity/scaffold/constraints.sql"
+    ]
+  },
+  "npm": {
+    "dependencies": [
+      "argon2",
+      "jsonwebtoken"
+    ]
+  },
+  "env": [],
+  "permissions": [
+    {
+      "symbol": "identityPermissions",
+      "from": "@core/identity/permissions/permissions.js"
+    }
+  ],
+  "wiring": {
+    "nestModules": [
+      "IdentityModule"
+    ]
+  },
+  "tests": [
+    "identity/tests"
+  ]
+}

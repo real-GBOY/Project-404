@@ -16,7 +16,7 @@ export interface SystemPromptContext extends ToolContext {
 export interface AssistantDomainConfig {
   /**
    * Short slug identifying the product, used only to namespace audit actions
-   * (`"lawfirm"` → `lawfirm.assistant.query` / `lawfirm_ai_conversation`).
+   * (`"orders"` → `orders.assistant.query`).
    * Carries no other meaning to Core.
    */
   domainKey: string;

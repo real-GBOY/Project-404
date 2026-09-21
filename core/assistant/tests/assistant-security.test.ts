@@ -3,7 +3,7 @@
  *
  * Proves the *generic* pipeline (core/assistant) enforces its boundary with no
  * knowledge of any product's business domain: a fake two-tool, two-permission
- * domain stands in for what Mizan/Atlas would supply via `ASSISTANT_TOOLS`.
+ * domain stands in for what a real product would supply via `ASSISTANT_TOOLS`.
  * Product-specific security (real tools against real services) is proven
  * separately in each product's own `tests/assistant-security.test.ts` — this
  * file is the "minimum verification checklist" from core/assistant/README.md:
@@ -52,7 +52,7 @@ import { callTool, say, ScriptedAiClient } from "./scripted-ai-client.js";
 
 const suite = hasTestDb ? describe : describe.skip;
 
-// ── A fake, minimal "product" domain — stands in for Mizan/Atlas's real tools ──
+// ── A fake, minimal "product" domain — stands in for a real product's tools ──
 const FAKE_TOOLS: AssistantTool[] = [
   {
     name: "ping",

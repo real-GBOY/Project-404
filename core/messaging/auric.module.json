@@ -1,0 +1,58 @@
+{
+  "manifestVersion": 1,
+  "name": "messaging",
+  "title": "Messaging",
+  "description": "Real-time conversations, messages, attachments and reactions over Socket.IO.",
+  "group": "infrastructure",
+  "paths": [
+    "messaging"
+  ],
+  "dependsOn": {
+    "base": "kernel, HTTP, events, audit",
+    "files": "message attachments",
+    "identity": "participants",
+    "organizations": "tenant ownership",
+    "rbac": "authorization"
+  },
+  "prisma": [
+    "messaging.prisma"
+  ],
+  "tables": [
+    "messaging_conversations",
+    "messaging_conversation_members",
+    "messaging_messages",
+    "messaging_message_attachments",
+    "messaging_message_reactions"
+  ],
+  "sql": {
+    "constraints": [
+      "messaging/scaffold/constraints.sql"
+    ],
+    "rls": [
+      "messaging/scaffold/rls.sql"
+    ]
+  },
+  "npm": {
+    "dependencies": [
+      "socket.io"
+    ],
+    "devDependencies": [
+      "socket.io-client"
+    ]
+  },
+  "env": [],
+  "permissions": [
+    {
+      "symbol": "messagingPermissions",
+      "from": "@core/messaging/permissions/permissions.js"
+    }
+  ],
+  "wiring": {
+    "nestModules": [
+      "MessagingModule"
+    ]
+  },
+  "tests": [
+    "messaging/tests"
+  ]
+}

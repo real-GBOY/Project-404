@@ -3,7 +3,7 @@
  * (type-only) the web clients. Pure types: no imports, no runtime code, so a
  * frontend can `import type` this file without pulling in any server code.
  *
- * Nothing here is real-estate (or law-firm) specific. A product attaches
+ * Nothing here is specific to any business domain. A product attaches
  * meaning through `subjectType`/`subjectId` and `metadata`.
  */
 

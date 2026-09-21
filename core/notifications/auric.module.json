@@ -1,0 +1,74 @@
+{
+  "manifestVersion": 1,
+  "name": "notifications",
+  "title": "Notifications",
+  "description": "In-app notifications and transactional email over the outbox, with bilingual templates.",
+  "group": "infrastructure",
+  "whenAbsent": [
+    "Email verification is switched off: Identity has no way to deliver verification or password-reset email, so new accounts can sign in immediately. Add Notifications later to turn it back on."
+  ],
+  "paths": [
+    "notifications"
+  ],
+  "dependsOn": {
+    "base": "kernel, HTTP, events, audit",
+    "identity": "recipients are users",
+    "organizations": "tenant-scoped delivery"
+  },
+  "prisma": [
+    "notifications.prisma"
+  ],
+  "tables": [
+    "notifications",
+    "notification_templates"
+  ],
+  "sql": {
+    "constraints": [
+      "notifications/scaffold/constraints.sql"
+    ],
+    "rls": [
+      "notifications/scaffold/rls.sql"
+    ]
+  },
+  "npm": {
+    "dependencies": [
+      "nodemailer"
+    ],
+    "devDependencies": [
+      "@types/nodemailer"
+    ]
+  },
+  "env": [
+    {
+      "name": "AURIC_MAIL_FROM",
+      "default": "no-reply@auric.local",
+      "description": "From address for outbound email"
+    },
+    {
+      "name": "AURIC_SMTP_URL",
+      "secret": true,
+      "description": "SMTP connection URL; unset = log-only email channel"
+    }
+  ],
+  "permissions": [
+    {
+      "symbol": "notificationPermissions",
+      "from": "@core/notifications/permissions/permissions.js"
+    }
+  ],
+  "seed": [
+    {
+      "symbol": "seedTemplates",
+      "from": "@core/notifications/templates/seed-templates.js",
+      "description": "bilingual notification templates"
+    }
+  ],
+  "wiring": {
+    "nestModules": [
+      "NotificationsModule"
+    ]
+  },
+  "tests": [
+    "tests/core.integration.test.ts"
+  ]
+}

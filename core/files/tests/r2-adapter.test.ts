@@ -10,7 +10,7 @@ const CONFIG = {
   accountId: "acc123",
   accessKeyId: "AKIDEXAMPLE",
   secretAccessKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
-  bucket: "mizan-files",
+  bucket: "example-files",
 };
 const KEY = "org_1/2026/09/file_abc";
 const HOST = "acc123.r2.cloudflarestorage.com";

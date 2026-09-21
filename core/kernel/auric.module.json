@@ -1,0 +1,201 @@
+{
+  "manifestVersion": 1,
+  "name": "base",
+  "title": "Base",
+  "description": "Kernel, HTTP/security, events (outbox), audit trail, localization and observability. Always installed.",
+  "group": "foundation",
+  "required": true,
+  "paths": [
+    "kernel",
+    "contracts",
+    "events",
+    "http",
+    "observability",
+    "localization",
+    "audit",
+    "bootstrap"
+  ],
+  "files": [
+    "app.module.ts",
+    "index.ts",
+    "version.ts"
+  ],
+  "dependsOn": {
+    "identity": "sign-in for the HTTP layer",
+    "rbac": "authorization guards"
+  },
+  "prisma": [
+    "audit.prisma",
+    "events.prisma"
+  ],
+  "tables": [
+    "audit_logs",
+    "outbox_messages",
+    "dead_letter_messages"
+  ],
+  "sql": {
+    "prelude": [
+      "kernel/scaffold/prelude.sql"
+    ],
+    "constraints": [
+      "audit/scaffold/constraints.sql",
+      "events/scaffold/constraints.sql"
+    ],
+    "roles": [
+      "kernel/scaffold/roles.sql"
+    ],
+    "rls": [
+      "audit/scaffold/rls.sql",
+      "events/scaffold/rls.sql"
+    ]
+  },
+  "npm": {
+    "dependencies": [
+      "@fastify/multipart",
+      "@fastify/static",
+      "@nestjs/common",
+      "@nestjs/core",
+      "@nestjs/platform-fastify",
+      "@nestjs/swagger",
+      "dotenv",
+      "fastify",
+      "jsonwebtoken",
+      "kysely",
+      "nanoid",
+      "pg",
+      "pino",
+      "prisma",
+      "reflect-metadata",
+      "rxjs",
+      "zod"
+    ],
+    "devDependencies": [
+      "@nestjs/testing",
+      "@swc-node/register",
+      "@swc/core",
+      "@types/jsonwebtoken",
+      "@types/node",
+      "@types/pg",
+      "pino-pretty",
+      "prisma-kysely",
+      "tsc-alias",
+      "typescript",
+      "unplugin-swc",
+      "vitest"
+    ]
+  },
+  "env": [
+    {
+      "name": "NODE_ENV",
+      "default": "development",
+      "description": "development | test | production"
+    },
+    {
+      "name": "AURIC_PORT",
+      "default": "3000",
+      "description": "HTTP port"
+    },
+    {
+      "name": "AURIC_LOG_LEVEL",
+      "default": "info",
+      "description": "pino log level"
+    },
+    {
+      "name": "AURIC_DATABASE_URL",
+      "default": "postgres://postgres:postgres@localhost:5432/auric",
+      "description": "Schema owner connection — used by migrations. The runtime falls back to it when the two role URLs below are unset (RLS is then NOT enforced)."
+    },
+    {
+      "name": "AURIC_APP_DATABASE_URL",
+      "description": "Runtime connection as the auric_app role (NOBYPASSRLS) — every tenant-scoped query is filtered by RLS."
+    },
+    {
+      "name": "AURIC_SYSTEM_DATABASE_URL",
+      "description": "Runtime connection as the auric_system role (BYPASSRLS) — signup, webhooks, the outbox worker."
+    },
+    {
+      "name": "AURIC_APP_DB_PASSWORD",
+      "secret": true,
+      "description": "Read by scripts/provision-db.ts to give auric_app a login."
+    },
+    {
+      "name": "AURIC_SYSTEM_DB_PASSWORD",
+      "secret": true,
+      "description": "Read by scripts/provision-db.ts to give auric_system a login."
+    },
+    {
+      "name": "AURIC_JWT_SECRET",
+      "default": "dev-only-insecure-change-me",
+      "secret": true,
+      "description": "JWT signing secret. Boot refuses the default in production."
+    },
+    {
+      "name": "AURIC_ACCESS_TOKEN_TTL",
+      "default": "900",
+      "description": "Access token lifetime, seconds"
+    },
+    {
+      "name": "AURIC_REFRESH_TOKEN_TTL",
+      "default": "2592000",
+      "description": "Refresh token lifetime, seconds"
+    },
+    {
+      "name": "AURIC_CORS_ORIGINS",
+      "default": "",
+      "description": "Comma-separated browser origins allowed cross-site (`*.` prefix = suffix match)"
+    },
+    {
+      "name": "AURIC_DEFAULT_LOCALE",
+      "default": "en",
+      "description": "Default locale"
+    },
+    {
+      "name": "AURIC_SUPPORTED_LOCALES",
+      "default": "ar,en",
+      "description": "Comma-separated supported locales"
+    },
+    {
+      "name": "AURIC_APP_NAME",
+      "default": "AURIC",
+      "description": "Product name used in outbound messages"
+    },
+    {
+      "name": "AURIC_APP_URL",
+      "default": "http://localhost:3000",
+      "description": "Public base URL used in links"
+    },
+    {
+      "name": "AURIC_OUTBOX_POLL_INTERVAL_MS",
+      "default": "2000",
+      "description": "Outbox worker poll interval"
+    },
+    {
+      "name": "AURIC_OUTBOX_MAX_ATTEMPTS",
+      "default": "5",
+      "description": "Attempts before a message is dead-lettered"
+    },
+    {
+      "name": "AURIC_OUTBOX_BATCH_SIZE",
+      "default": "20",
+      "description": "Outbox messages claimed per tick"
+    }
+  ],
+  "permissions": [],
+  "wiring": {
+    "nestModules": [
+      "KernelModule",
+      "EventsModule",
+      "AuditModule",
+      "SecurityModule"
+    ]
+  },
+  "tests": [
+    "kernel/tests",
+    "events/tests",
+    "http/tests",
+    "localization/tests",
+    "tests/helpers.ts",
+    "tests/setup.ts",
+    "tests/tenancy.integration.test.ts"
+  ]
+}

@@ -15,7 +15,7 @@ export interface ScopeDecision {
 }
 
 /**
- * Generic scope-gate engine, extracted from Mizan Copilot. The heuristic and
+ * Generic scope-gate engine. The heuristic and
  * classifier vocabulary is entirely product-supplied via `SCOPE_GUARD_CONFIG`
  * — this class owns only the decision order, not the domain content:
  *

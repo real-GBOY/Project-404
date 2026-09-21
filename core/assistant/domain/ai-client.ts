@@ -7,8 +7,7 @@ import { AppError } from "@core/kernel/errors.js";
  * client (Groq's `openai/gpt-oss-120b`, or api.openai.com). A future Responses
  * API provider implements the same interface without touching the caller.
  *
- * Extracted from Mizan Copilot (mizan/backend/app/lawfirm/assistant) — see
- * core/assistant/README.md for the Core/product split.
+ * The Core/product split: this module owns the loop, the product owns the tools.
  */
 
 export interface AiToolDef {

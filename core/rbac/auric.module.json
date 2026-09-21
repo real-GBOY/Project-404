@@ -1,0 +1,50 @@
+{
+  "manifestVersion": 1,
+  "name": "rbac",
+  "title": "RBAC",
+  "description": "Roles, permissions and per-tenant role assignments, plus the permission seeding mechanism.",
+  "group": "foundation",
+  "paths": [
+    "rbac"
+  ],
+  "dependsOn": {
+    "base": "kernel, HTTP, events, audit",
+    "identity": "role holders are users",
+    "organizations": "roles are per-tenant"
+  },
+  "prisma": [
+    "rbac.prisma"
+  ],
+  "tables": [
+    "roles",
+    "permissions",
+    "role_permissions",
+    "user_roles"
+  ],
+  "sql": {
+    "constraints": [
+      "rbac/scaffold/constraints.sql"
+    ],
+    "rls": [
+      "rbac/scaffold/rls.sql"
+    ]
+  },
+  "npm": {
+    "dependencies": []
+  },
+  "env": [],
+  "permissions": [
+    {
+      "symbol": "rbacPermissions",
+      "from": "@core/rbac/permissions/permissions.js"
+    }
+  ],
+  "wiring": {
+    "nestModules": [
+      "RbacModule"
+    ]
+  },
+  "tests": [
+    "rbac/tests"
+  ]
+}
