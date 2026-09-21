@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import pg from "pg";
@@ -201,6 +201,25 @@ describe.skipIf(!enabled)("the packed npm artifact", () => {
       expect(r.code, r.out.slice(-3000)).toBe(0);
       expect(r.out).toMatch(/Tests\s+\d+ passed/);
       expect(r.out).not.toMatch(/Tests[^\n]*\d+ failed/);
+    }, 900_000);
+
+    // The README's first step is `cp .env.example .env`. That file ships secrets as CHANGE_ME placeholders, and Core
+    // loads `.env` into the environment — a live-service test that mistook a placeholder for a credential then called
+    // real Cloudflare and failed (11 tests). Following the docs must leave the project's own suite green.
+    it("still passes its own tests after `cp .env.example .env`, as the README says", async () => {
+      const url = await createDatabase(testDb);
+      const dotenv = join(project, ".env");
+      copyFileSync(join(project, ".env.example"), dotenv);
+      try {
+        const r = await node([join(project, "node_modules", "vitest", "vitest.mjs"), "run", "--reporter=dot"], project, {
+          AURIC_TEST_DATABASE_URL: url,
+          CI: "",
+        });
+        expect(r.code, r.out.slice(-3000)).toBe(0);
+        expect(r.out).not.toMatch(/Tests[^\n]*\d+ failed/);
+      } finally {
+        rmSync(dotenv, { force: true });
+      }
     }, 900_000);
 
     it("migrates, provisions roles, enforces tenant isolation, boots and answers /api/health", async () => {

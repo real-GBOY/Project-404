@@ -1,6 +1,6 @@
 {
   "name": "create-auric",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Scaffold a developer-owned AURIC Core foundation — identity, organizations, RBAC, files, messaging, multi-tenant PostgreSQL with row-level security — into your own project.",
   "keywords": [
     "scaffold",

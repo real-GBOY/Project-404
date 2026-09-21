@@ -27,6 +27,8 @@ const envSchema = z
     default: z.string().optional(),
     description: z.string().min(1),
     secret: z.boolean().default(false),
+    /** Needed for the project to work at all, so `.env.example` ships it active (a secret as a CHANGE_ME placeholder). */
+    required: z.boolean().default(false),
   })
   .strict();
 
