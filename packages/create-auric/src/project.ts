@@ -160,12 +160,15 @@ function envExample(manifests: readonly Manifest[], dbName: string): string {
     .filter((m) => m.env.length > 0)
     .map((m) => {
       const lines = m.env.map((e) => {
-        const base = e.secret && e.default === undefined ? "CHANGE_ME" : (e.default ?? "");
+        const base = e.default ?? (e.required && e.secret ? "CHANGE_ME" : "");
         // A per-project database: a shared default name would collide with any other AURIC database.
         const value = e.name === "AURIC_DATABASE_URL" ? base.replace(/\/auric$/, `/${dbName}`) : base;
         const line = `${e.name}=${value}`;
-        // Optional / unset-by-default values ship commented out so the defaults apply.
-        return `# ${e.description}\n${e.default === undefined && !e.secret ? `# ${line}` : line}`;
+        // Anything without a default that the project does not NEED ships commented out, secrets included: an active
+        // `AURIC_SMTP_URL=CHANGE_ME` is not "unset" — Core would try to use it (nodemailer parses it as a URL, the
+        // R2 tests treat it as credentials) instead of falling back to log-only email / local disk.
+        const active = e.default !== undefined || e.required;
+        return `# ${e.description}\n${active ? line : `# ${line}`}`;
       });
       return `# ── ${m.title} ${"─".repeat(Math.max(4, 60 - m.title.length))}\n${lines.join("\n")}`;
     });

@@ -57,7 +57,7 @@ Files — message attachments reference stored files").
 | `prisma` / `tables` | Prisma files under `prisma/schema/` and the tables they map |
 | `sql.prelude` / `constraints` / `roles` / `rls` | hand-written SQL fragments, see §4 |
 | `npm` | package **names**; versions come from the monorepo `package.json` (one source of truth) |
-| `env` | variables → the generated `.env.example` |
+| `env` | variables → the generated `.env.example`. A variable with a `default` ships active; one without ships **commented out** unless it is `"required": true` (then a secret ships as a `CHANGE_ME` placeholder). An active placeholder is not "unset" — Core would try to use it — so optional secrets (SMTP URL, R2 keys, AI key) are never active. |
 | `permissions` / `seed` | RBAC catalogs and extra seeders the module contributes |
 | `wiring.nestModules` | Nest modules it adds to `AppModule` |
 | `tests` | test files/dirs copied with the module |

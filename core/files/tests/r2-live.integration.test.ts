@@ -23,7 +23,10 @@ import { asUser, createTestCore, get, hasTestDb } from "@core/tests/helpers.js";
  *     run core/files/tests/r2-live.integration.test.ts
  *   (with AURIC_R2_* + AURIC_TEST_DATABASE_URL set)
  */
-const HAVE_R2 = Boolean(process.env.AURIC_R2_ACCESS_KEY_ID && process.env.AURIC_R2_SECRET_ACCESS_KEY);
+// A generated project's `.env.example` ships secrets as CHANGE_ME, and Core loads `.env` into process.env — so a
+// placeholder is present but is not a credential. Treating it as one made a fresh `npm test` call live Cloudflare.
+const isSet = (v: string | undefined) => Boolean(v) && v !== "CHANGE_ME";
+const HAVE_R2 = isSet(process.env.AURIC_R2_ACCESS_KEY_ID) && isSet(process.env.AURIC_R2_SECRET_ACCESS_KEY);
 const live = hasTestDb && HAVE_R2 ? describe : describe.skip;
 
 const R2_CONFIG = {

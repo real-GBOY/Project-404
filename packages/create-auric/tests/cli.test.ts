@@ -411,6 +411,21 @@ describe("failing well", () => {
     expect(config).not.toContain('localhost:5432/auric"');
   });
 
+  // `cp .env.example .env` is the README's first step, and Core loads `.env` into the environment. An ACTIVE
+  // `AURIC_SMTP_URL=CHANGE_ME` is not "unset": nodemailer parses it as a URL, so every email dead-letters; the R2 keys
+  // made a live-service test call Cloudflare. Optional secrets ship commented out; only what the project needs is active.
+  it("ships optional secrets commented out, and only required ones as active placeholders", async () => {
+    expect((await cli(["all-in", "--modules", "files,messaging,notifications,assistant", "--yes"])).code).toBe(0);
+    const env = readFileSync(join(cwd, "all-in", ".env.example"), "utf8").split("\n");
+    const active = env.filter((l) => l.trim() && !l.startsWith("#"));
+    const placeholders = active.filter((l) => l.endsWith("=CHANGE_ME")).map((l) => l.split("=")[0]);
+    expect(placeholders.sort()).toEqual(["AURIC_APP_DB_PASSWORD", "AURIC_SYSTEM_DB_PASSWORD"]);
+    for (const optional of ["AURIC_SMTP_URL", "AURIC_R2_ACCESS_KEY_ID", "AURIC_R2_SECRET_ACCESS_KEY", "AI_API_KEY"]) {
+      expect(env, `${optional} stays documented`).toContain(`# ${optional}=`);
+      expect(active.some((l) => l.startsWith(`${optional}=`)), `${optional} must not be active`).toBe(false);
+    }
+  });
+
   it("accepts an existing EMPTY directory", async () => {
     mkdirSync(join(cwd, "empty"));
     expect((await cli(["empty", "--yes"])).code).toBe(0);

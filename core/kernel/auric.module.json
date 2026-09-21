@@ -116,11 +116,13 @@
     {
       "name": "AURIC_APP_DB_PASSWORD",
       "secret": true,
+      "required": true,
       "description": "Read by scripts/provision-db.ts to give auric_app a login."
     },
     {
       "name": "AURIC_SYSTEM_DB_PASSWORD",
       "secret": true,
+      "required": true,
       "description": "Read by scripts/provision-db.ts to give auric_system a login."
     },
     {
