@@ -1,0 +1,26 @@
+// AURIC — Prisma datasource & generator.
+//
+// Prisma owns the schema definition and the migration history; its generated
+// types are the source for Kysely's `Database` interface (types flow
+// Prisma → Kysely). Prisma Client is NOT used for runtime queries — Kysely is
+// the query builder.
+//
+// Models live in the sibling *.prisma files, one per Core module you selected.
+// Migrations are in ../migrations, applied with `prisma migrate deploy`.
+// You own all of it: add models, add migrations, remove what you don't need.
+//
+// NOTE: `citext` is created by the baseline migration (CREATE EXTENSION), not
+// declared here.
+
+datasource db {
+  provider = "postgresql"
+}
+
+generator kysely {
+  provider        = "prisma-kysely"
+  output          = "../../src/core/kernel/db"
+  fileName        = "schema.ts"
+  importExtension = ".js"
+  dbTypeName      = "Database"
+  banner          = "import type { Json } from \"./json.js\";"
+}
