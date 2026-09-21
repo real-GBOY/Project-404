@@ -1,6 +1,6 @@
 import * as p from "@clack/prompts";
 import pc from "picocolors";
-import { dim, gold, type ErrorParts, type SuccessParts } from "./ui.js";
+import { CREDIT, dim, gold, type ErrorParts, type SuccessParts } from "./ui.js";
 
 /** A running unit of work in the generation progress list. */
 export interface Task {
@@ -52,7 +52,7 @@ export class PlainRenderer implements Renderer {
   }
 
   intro(version: string, tagline: string): void {
-    this.write(`${gold("◆ AURIC")}  ${dim(version)}\n${RAIL}  ${tagline}\n${RAIL}\n`);
+    this.write(`${gold("◆ AURIC")}  ${dim(`${version} · ${CREDIT}`)}\n${RAIL}  ${tagline}\n${RAIL}\n`);
   }
 
   step(title: string, lines: string[] = []): void {
@@ -102,7 +102,7 @@ export class ClackRenderer implements Renderer {
   constructor(private readonly verbose = false) {}
 
   intro(version: string, tagline: string): void {
-    p.intro(`${gold("AURIC")}  ${dim(version)}`);
+    p.intro(`${gold("AURIC")}  ${dim(`${version} · ${CREDIT}`)}`);
     p.log.message(tagline, { symbol: pc.dim("│") });
   }
 

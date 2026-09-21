@@ -7,7 +7,7 @@ import { loadManifests } from "../src/manifest.js";
 import { resolveSelection } from "../src/resolve.js";
 import { parseArgs } from "../src/cli/args.js";
 import { PlainRenderer, type Prompter } from "../src/cli/render.js";
-import { run } from "../src/cli/run.js";
+import { installWithPackageManager, run } from "../src/cli/run.js";
 import { errorLines, errorParts, foundationModules, moduleOptions, selectableModules, shortDescription, successLines, suggestModule } from "../src/cli/ui.js";
 import { projectNameProblem } from "../src/cli/validate.js";
 import { repoRoot, stripAnsi } from "./support.js";
@@ -143,6 +143,38 @@ describe("help and version", () => {
     expect(text).toMatch(/always included/);
     for (const flag of ["--modules", "--yes", "--install", "--no-install", "--verbose", "--help", "--version"]) expect(text).toContain(flag);
     expect(text).toContain("npx create-auric");
+  });
+});
+
+describe("branding", () => {
+  it("credits JINX beside the version in the help header and in the intro", async () => {
+    expect((await cli(["--help"])).text.split("\n")[0]).toBe("AURIC create-auric 9.9.9 · by JINX");
+    const { text } = await cli(["nothing-here", "--modules", "bogus", "--yes"]);
+    expect(text).toContain("◆ AURIC  9.9.9 · by JINX");
+  });
+
+  it("keeps --version bare, because scripts read it", async () => {
+    expect((await cli(["--version"])).text).toBe("9.9.9\n");
+  });
+});
+
+describe("dependency installation process", () => {
+  // Spawning a package-manager .cmd shim on Windows needs a shell; passing an args ARRAY with `shell: true`
+  // makes Node print `DeprecationWarning: DEP0190` in the middle of the CLI's own output.
+  it("does not raise Node's DEP0190 deprecation warning", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "auric-install-"));
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "no-deps", version: "1.0.0" }));
+    const warnings: string[] = [];
+    const onWarning = (w: Error & { code?: string }) => void warnings.push(w.code ?? w.name);
+    process.on("warning", onWarning);
+    try {
+      await installWithPackageManager(dir, "npm", false);
+      await new Promise((r) => setTimeout(r, 50)); // warnings are delivered on a later tick
+    } finally {
+      process.off("warning", onWarning);
+      rmSync(dir, { recursive: true, force: true });
+    }
+    expect(warnings).not.toContain("DEP0190");
   });
 });
 
@@ -372,6 +404,11 @@ describe("failing well", () => {
     expect(readme).toMatch(/empty/i);
     expect(readme).toContain('relation "audit_logs" already exists');
     expect(readme).toContain("/api/health");
+    // With no .env at all, Core falls back to a built-in URL. That must be THIS project's database too — a
+    // forgotten .env used to run the migrations against a shared `auric` and leave a failed-migration record there.
+    const config = readFileSync(join(cwd, "my-app", "src", "core", "kernel", "config.ts"), "utf8");
+    expect(config).toContain('localhost:5432/my_app"');
+    expect(config).not.toContain('localhost:5432/auric"');
   });
 
   it("accepts an existing EMPTY directory", async () => {
