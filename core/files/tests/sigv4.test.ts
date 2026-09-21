@@ -98,7 +98,7 @@ describe("signRequest — Authorization-header signing", () => {
   const opts = {
     method: "PUT",
     host: "acct123.r2.cloudflarestorage.com",
-    path: "/mizan-files/org_1/2026/09/file_abc",
+    path: "/example-files/org_1/2026/09/file_abc",
     service: "s3",
     region: "auto",
     accessKeyId: "AKIDEXAMPLE",
@@ -109,14 +109,16 @@ describe("signRequest — Authorization-header signing", () => {
   it("produces a well-formed, deterministic SigV4 Authorization header", () => {
     const signed = signRequest({ ...opts, payloadHash: sha256Hex("hello r2") });
     expect(signed.url).toBe(
-      "https://acct123.r2.cloudflarestorage.com/mizan-files/org_1/2026/09/file_abc",
+      "https://acct123.r2.cloudflarestorage.com/example-files/org_1/2026/09/file_abc",
     );
     expect(signed.headers["x-amz-date"]).toBe("20260908T123456Z");
     expect(signed.headers["x-amz-content-sha256"]).toBe(sha256Hex("hello r2"));
     expect(signed.headers.authorization).toBe(
       "AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20260908/auto/s3/aws4_request, " +
         "SignedHeaders=host;x-amz-content-sha256;x-amz-date, " +
-        "Signature=114690bdd40366a7d338c3f3655ce6ac44d208a4056d368d4ddb13068f14a332",
+        // Pinned from an independent from-the-spec SigV4 implementation (which also reproduces this
+        // suite's earlier vectors), so this checks core/files rather than restating its own output.
+        "Signature=d297b471ada60c25c219d769f2c1469e470fd7f7b375d155eccf4ea9692077fe",
     );
   });
 
@@ -124,7 +126,7 @@ describe("signRequest — Authorization-header signing", () => {
     const signed = signRequest({ ...opts, method: "HEAD" });
     expect(signed.headers["x-amz-content-sha256"]).toBe(EMPTY_SHA256);
     expect(signed.headers.authorization).toContain(
-      "Signature=9c1599f998075216b180c2336c8ecc2250b788564f56801fca3f0c63cf43441e",
+      "Signature=f92af80594c4635d0ef3babd78408c47b17731acdd1cd7b2aa790e572b7df0f3",
     );
   });
 });

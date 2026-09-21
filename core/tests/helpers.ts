@@ -11,7 +11,9 @@ import {
   REQUIRE_EMAIL_VERIFICATION,
   WORKER_AUTOSTART,
 } from "@core/kernel/tokens.js";
+// @auric-begin notifications
 import type { EmailChannel } from "@core/notifications/infrastructure/email-channel.js";
+// @auric-end notifications
 import { migrateToLatest } from "@core/kernel/db/migrate.js";
 import { SeedService } from "@core/bootstrap/seed.service.js";
 
@@ -114,7 +116,9 @@ export function applyTestConfig(): void {
 
 export interface TestCoreOptions {
   clock?: Clock;
+  // @auric-begin notifications
   emailChannel?: EmailChannel;
+  // @auric-end notifications
   requireEmailVerification?: boolean;
 }
 
@@ -133,7 +137,9 @@ export async function createTestCore(opts: TestCoreOptions = {}): Promise<Testin
     .overrideProvider(WORKER_AUTOSTART)
     .useValue(false);
   if (opts.clock) builder.overrideProvider(CLOCK).useValue(opts.clock);
+  // @auric-begin notifications
   if (opts.emailChannel) builder.overrideProvider(EMAIL_CHANNEL).useValue(opts.emailChannel);
+  // @auric-end notifications
   if (opts.requireEmailVerification !== undefined) {
     builder.overrideProvider(REQUIRE_EMAIL_VERIFICATION).useValue(opts.requireEmailVerification);
   }

@@ -31,7 +31,7 @@ const R2_CONFIG = {
   r2AccountId: process.env.AURIC_R2_ACCOUNT_ID,
   r2AccessKeyId: process.env.AURIC_R2_ACCESS_KEY_ID,
   r2SecretAccessKey: process.env.AURIC_R2_SECRET_ACCESS_KEY,
-  r2Bucket: process.env.AURIC_R2_BUCKET ?? "mizan-files",
+  r2Bucket: process.env.AURIC_R2_BUCKET ?? "example-files",
   r2Endpoint: process.env.AURIC_R2_ENDPOINT,
 };
 

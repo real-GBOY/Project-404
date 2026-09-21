@@ -35,7 +35,6 @@ interface WireResponse {
  * the module that knows the vendor wire format. No SDK — a single `fetch` with
  * an abort-based timeout keeps the dependency surface at zero.
  *
- * Extracted from Mizan Copilot verbatim — no behavior change.
  */
 @Injectable()
 export class OpenAiCompatibleClient implements AiClient {

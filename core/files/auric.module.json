@@ -1,0 +1,98 @@
+{
+  "manifestVersion": 1,
+  "name": "files",
+  "title": "Files",
+  "description": "Presigned file uploads with local-disk and Cloudflare R2 storage drivers.",
+  "group": "infrastructure",
+  "paths": [
+    "files"
+  ],
+  "dependsOn": {
+    "base": "kernel, HTTP, events, audit",
+    "rbac": "file permissions"
+  },
+  "prisma": [
+    "files.prisma"
+  ],
+  "tables": [
+    "files"
+  ],
+  "sql": {
+    "constraints": [
+      "files/scaffold/constraints.sql"
+    ],
+    "rls": [
+      "files/scaffold/rls.sql"
+    ]
+  },
+  "npm": {
+    "dependencies": []
+  },
+  "env": [
+    {
+      "name": "AURIC_FILE_STORAGE_DRIVER",
+      "default": "local",
+      "description": "local | r2"
+    },
+    {
+      "name": "AURIC_FILE_STORAGE_PATH",
+      "default": "./storage/files",
+      "description": "Disk path for the local driver"
+    },
+    {
+      "name": "AURIC_R2_ACCOUNT_ID",
+      "description": "Required when the driver is r2"
+    },
+    {
+      "name": "AURIC_R2_ACCESS_KEY_ID",
+      "secret": true,
+      "description": "Required when the driver is r2"
+    },
+    {
+      "name": "AURIC_R2_SECRET_ACCESS_KEY",
+      "secret": true,
+      "description": "Required when the driver is r2"
+    },
+    {
+      "name": "AURIC_R2_BUCKET",
+      "description": "Required when the driver is r2"
+    },
+    {
+      "name": "AURIC_R2_ENDPOINT",
+      "description": "Optional custom R2 endpoint"
+    },
+    {
+      "name": "AURIC_R2_PUBLIC_BASE_URL",
+      "description": "Optional public base URL for public files"
+    },
+    {
+      "name": "AURIC_FILE_PRESIGN_TTL_SECONDS",
+      "default": "900",
+      "description": "Presigned URL lifetime"
+    },
+    {
+      "name": "AURIC_FILE_MAX_UPLOAD_BYTES",
+      "default": "26214400",
+      "description": "Hard cap on one upload (25 MiB)"
+    },
+    {
+      "name": "AURIC_FILE_ALLOWED_MIME_TYPES",
+      "default": "",
+      "description": "Comma-separated allowlist; empty = any"
+    }
+  ],
+  "permissions": [
+    {
+      "symbol": "filePermissions",
+      "from": "@core/files/permissions/permissions.js"
+    }
+  ],
+  "wiring": {
+    "nestModules": [
+      "FilesModule"
+    ]
+  },
+  "tests": [
+    "files/tests"
+  ]
+}

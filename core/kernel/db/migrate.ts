@@ -1,4 +1,5 @@
 import { execFile } from "node:child_process";
+import { existsSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -22,8 +23,23 @@ import { rootLogger } from "@core/kernel/logging/logger.js";
 const execFileAsync = promisify(execFile);
 const require = createRequire(import.meta.url);
 
-/** …/core/kernel/db → package root, where `prisma.config.ts` and `prisma/` are. */
-const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
+/**
+ * The project root — the nearest ancestor holding `prisma.config.ts` (and the
+ * `prisma/` folder beside it). Searched upward rather than a fixed `../../..`
+ * so Core works wherever the project places it: `core/` at the repo root,
+ * `src/core/` in a scaffolded project, or `dist/core/` after a build.
+ */
+function findPackageRoot(): string {
+  const start = dirname(fileURLToPath(import.meta.url));
+  for (let dir = start; ; dir = dirname(dir)) {
+    if (existsSync(resolve(dir, "prisma.config.ts"))) return dir;
+    if (dirname(dir) === dir) {
+      throw new Error(`prisma.config.ts not found in any parent directory of ${start}`);
+    }
+  }
+}
+
+let packageRoot: string | undefined;
 
 interface PrismaResult {
   stdout: string;
@@ -37,7 +53,7 @@ async function runPrisma(args: string[], databaseUrl?: string): Promise<PrismaRe
 
   try {
     const { stdout, stderr } = await execFileAsync(process.execPath, [prismaCli, ...args], {
-      cwd: packageRoot,
+      cwd: (packageRoot ??= findPackageRoot()),
       env,
     });
     return { stdout: stdout.trim(), stderr: stderr.trim() };

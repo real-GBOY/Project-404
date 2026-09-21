@@ -27,7 +27,9 @@ export function setupOpenApi(
     .addTag("notifications", "in-app inbox")
     .addTag("audit", "the append-only trail")
     .addTag("health", "liveness + readiness (outbox backlog)")
+    // @auric-begin product-lawfirm
     .addTag("lawfirm", "Mizan domain — matters, hearings, tasks, documents, billing, …")
+    // @auric-end product-lawfirm
     .build();
 
   const document = SwaggerModule.createDocument(app, config, {

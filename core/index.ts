@@ -13,9 +13,15 @@ export { RbacModule } from "@core/rbac/rbac.module.js";
 export { IdentityModule } from "@core/identity/identity.module.js";
 export { UserDirectory, UNKNOWN_USER_NAME } from "@core/identity/application/user-directory.js";
 export { OrganizationsModule } from "@core/organizations/organizations.module.js";
+// @auric-begin notifications
 export { NotificationsModule } from "@core/notifications/notifications.module.js";
+// @auric-end notifications
+// @auric-begin files
 export { FilesModule } from "@core/files/files.module.js";
+// @auric-end files
+// @auric-begin messaging
 export { MessagingModule } from "@core/messaging/messaging.module.js";
+// @auric-end messaging
 export { SecurityModule } from "@core/http/security.module.js";
 export { SeedService } from "@core/bootstrap/seed.service.js";
 export { migrateToLatest, migrationStatus } from "@core/kernel/db/migrate.js";
@@ -37,6 +43,7 @@ export {
   tenantContext,
 } from "@core/kernel/tenant.js";
 
+// @auric-begin assistant
 // AI Copilot infrastructure (core/assistant/README.md) — generic classes and
 // types only; each product supplies its own tools, prompt, and scope
 // vocabulary via the tokens above.
@@ -78,7 +85,9 @@ export {
   type ChatResult,
   type ToolActivity,
 } from "@core/assistant/application/assistant-service.js";
+// @auric-end assistant
 
+// @auric-begin messaging
 // Messaging (core/messaging/README.md) — generic real-time conversations. Wire
 // types and the realtime event contract are type-only/const modules the web can share.
 export type * from "@core/messaging/contracts/messaging-types.js";
@@ -94,3 +103,4 @@ export type {
   MessageUpdatedEvent,
 } from "@core/messaging/events/events.js";
 export { messagingPermissions } from "@core/messaging/permissions/permissions.js";
+// @auric-end messaging

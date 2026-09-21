@@ -1,0 +1,48 @@
+{
+  "manifestVersion": 1,
+  "name": "organizations",
+  "title": "Organizations",
+  "description": "Tenants: organizations, memberships and the tenant-selection flow that RLS is keyed on.",
+  "group": "foundation",
+  "paths": [
+    "organizations"
+  ],
+  "dependsOn": {
+    "base": "kernel, HTTP, events, audit",
+    "identity": "members are users",
+    "rbac": "organization permissions"
+  },
+  "prisma": [
+    "organizations.prisma"
+  ],
+  "tables": [
+    "organizations",
+    "organization_members"
+  ],
+  "sql": {
+    "constraints": [
+      "organizations/scaffold/constraints.sql"
+    ],
+    "rls": [
+      "organizations/scaffold/rls.sql"
+    ]
+  },
+  "npm": {
+    "dependencies": []
+  },
+  "env": [],
+  "permissions": [
+    {
+      "symbol": "organizationPermissions",
+      "from": "@core/organizations/permissions/permissions.js"
+    }
+  ],
+  "wiring": {
+    "nestModules": [
+      "OrganizationsModule"
+    ]
+  },
+  "tests": [
+    "organizations/tests"
+  ]
+}

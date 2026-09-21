@@ -5,15 +5,10 @@
 // the agent loop can be replayed, and so a product's UI can show "what the
 // assistant did". No vector store, no embeddings.
 //
-// Renamed from Mizan Copilot's original `lawfirm_ai_conversations` /
-// `lawfirm_ai_messages` (migration 20260916120000_core_assistant_rename) as
-// part of the Core AI extraction — same shape, product-neutral name. Every
-// deployment (Mizan via this root schema, Atlas via its own copied schema
-// folder) has its own physical copy of these two tables.
+// Every deployment has its own physical copy of these two tables.
 //
 // Hand-written SQL (RLS, CHECKs, updated_at trigger) lives in
-// ../migrations/*_core_assistant*; these models mirror the tables for the
-// Prisma -> Kysely type generator only.
+// the module's scaffold fragments (core/assistant/scaffold) and your migrations.
 
 model ai_conversations {
   id              String   @id

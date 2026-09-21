@@ -58,8 +58,7 @@ export interface ChatResult {
 const MAX_TOOL_RESULT_CHARS = 6000;
 
 /**
- * The generic AI Copilot orchestration loop — extracted from Mizan Copilot's
- * `AssistantService`. Agent loop, conversation persistence, scope gate, audit,
+ * The generic AI Copilot orchestration loop. Agent loop, conversation persistence, scope gate, audit,
  * and observability are all product-agnostic; the only product-supplied inputs
  * are the tool set (`ToolRegistry`, assembled from `ASSISTANT_TOOLS`), the
  * system prompt and audit namespacing (`ASSISTANT_DOMAIN_CONFIG`), and the

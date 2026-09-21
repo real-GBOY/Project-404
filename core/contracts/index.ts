@@ -189,6 +189,7 @@ export interface IEventBus {
   publish(event: DomainEvent): Promise<void>;
 }
 
+// @auric-begin messaging
 // ─── Messaging ───────────────────────────────────────────────────────────────
 import type {
   ConversationDto,
@@ -239,7 +240,7 @@ export interface IMessagingProvider {
  * Emit to connected sockets. Transport-agnostic: the Socket.IO gateway
  * implements it today; a multi-node adapter can replace it without touching
  * callers. `event`/`payload` are typed at the messaging call sites; a product
- * can broadcast its own namespaced events (e.g. `atlas:…`) through the same seam.
+ * can broadcast its own namespaced events (e.g. `myapp:…`) through the same seam.
  */
 export interface IRealtimeBroadcaster {
   toRoom(room: string, event: string, payload: unknown): void;
@@ -248,3 +249,4 @@ export interface IRealtimeBroadcaster {
   joinUser(organizationId: string, userId: string, room: string): void;
   leaveUser(organizationId: string, userId: string, room: string): void;
 }
+// @auric-end messaging

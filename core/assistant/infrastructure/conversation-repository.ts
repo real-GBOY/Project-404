@@ -47,10 +47,8 @@ export interface AppendMessageInput {
  * column + RLS). A conversation is private to its owning user *within* its
  * tenant — `findForOwner` is the only read path and it filters on both.
  *
- * Extracted from Mizan Copilot's `ConversationRepository`; the same store is
- * now shared, at the schema level, by every product (each deployment has its
- * own physical `ai_conversations`/`ai_messages` tables — see
- * core/assistant/README.md).
+ * The store is domain-agnostic: every product using this module gets its own
+ * physical `ai_conversations`/`ai_messages` tables.
  */
 @Injectable()
 export class ConversationRepository {

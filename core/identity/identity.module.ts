@@ -41,7 +41,14 @@ import { AuthController, MeController } from "@core/identity/api/auth.controller
     UserDirectory,
     { provide: USER_PROVIDER, useExisting: IdentityUserProvider },
     { provide: PASSWORD_HASHER, useValue: argon2Hasher },
+    // Login is gated on a verified email; only the Notifications module sends that
+    // email. A scaffold without it flips the gate off (the else branch) so users are
+    // not locked out with no way to verify.
+    // @auric-begin notifications
     { provide: REQUIRE_EMAIL_VERIFICATION, useValue: true },
+    // @auric-else notifications
+    // { provide: REQUIRE_EMAIL_VERIFICATION, useValue: false },
+    // @auric-end notifications
     {
       provide: JWT_SERVICE,
       inject: [CONFIG, CLOCK],

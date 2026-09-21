@@ -48,8 +48,8 @@ describe("createPrefixedId — the shared, prefix-agnostic factory", () => {
   });
 
   it("a product wrapper keeps its own typed prefix set while sharing the format", () => {
-    type DemoPrefix = "cli" | "mat";
-    const demoId = (p: DemoPrefix) => createPrefixedId(p);
-    expect(demoId("cli")).toMatch(/^cli_[0-9A-Za-z]{21}$/);
+    type SamplePrefix = "cli" | "mat";
+    const sampleId = (p: SamplePrefix) => createPrefixedId(p);
+    expect(sampleId("cli")).toMatch(/^cli_[0-9A-Za-z]{21}$/);
   });
 });
