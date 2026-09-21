@@ -29,7 +29,9 @@
     "format:check": "prettier --check \"{core,mizan/backend,scripts}/**/*.ts\" \"main.ts\"",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:cov": "vitest run --coverage"
+    "test:cov": "vitest run --coverage",
+    "create-auric:build": "node packages/create-auric/scripts/build.mjs",
+    "create-auric:pack": "npm pack --pack-destination . ./packages/create-auric"
   },
   "dependencies": {
     "@fastify/multipart": "^9.0.3",
@@ -54,6 +56,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@clack/prompts": "^1.8.1",
     "@eslint/js": "^9.39.5",
     "@nestjs/testing": "^11.2.3",
     "@swc-node/register": "^1.12.1",
@@ -65,6 +68,7 @@
     "@vitest/coverage-v8": "^3.2.7",
     "eslint": "^9.39.5",
     "globals": "^15.15.0",
+    "picocolors": "^1.1.1",
     "pino-pretty": "^13.0.0",
     "prettier": "^3.9.6",
     "prisma-kysely": "^3.2.1",

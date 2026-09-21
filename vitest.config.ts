@@ -17,6 +17,8 @@ export default defineConfig({
   },
   test: {
     include: ["core/**/*.test.ts", "mizan/backend/app/**/*.test.ts", "packages/**/*.test.ts"],
+    // The create-auric build output holds a snapshot of Core (with its tests) — never run that copy here.
+    exclude: ["**/node_modules/**", "**/dist/**", "packages/create-auric/assets/**"],
     environment: "node",
     globals: false,
     // Integration tests that need a live Postgres opt in via AURIC_TEST_DATABASE_URL.

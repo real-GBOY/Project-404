@@ -19,11 +19,11 @@
     "resolveJsonModule": true,
     "declaration": true,
     "sourceMap": true,
+    "baseUrl": ".",
     "paths": {
-      "@core/*": ["./core/*"],
-      "@app/*": ["./mizan/backend/app/*"]
+      "@core/*": ["./src/core/*"]
     }
   },
-  "include": ["core", "packages", "mizan/backend/app", "scripts", "main.ts", "vitest.config.ts", "prisma.config.ts"],
-  "exclude": ["node_modules", "dist", "packages/create-auric/assets", "packages/create-auric/dist"]
+  "include": ["src", "scripts", "vitest.config.ts", "prisma.config.ts"],
+  "exclude": ["node_modules", "dist"]
 }
