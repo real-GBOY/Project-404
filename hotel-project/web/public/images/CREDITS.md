@@ -22,5 +22,3 @@ No attribution is required and commercial use is allowed; sources are listed for
 | `post-suites.jpg` | Free hotel room image | CC0 | [rawpixel](https://www.rawpixel.com/image/5922902/photo-image-public-domain-free-bedroom) |
 | `post-staycation.jpg` | Luxury resort pool, real estate | CC0 | [rawpixel](https://www.rawpixel.com/image/6035194/photo-image-public-domain-water-free) |
 | `post-booking.jpg` | Free hotel room image | CC0 | [rawpixel](https://www.rawpixel.com/image/5921464/free-hotel-room-image-public-domain-cc0-photo) |
-
-`pattern1.png` / `pattern2.png` are decorative dots from the TemplatesJungle "Mellow" template (free for commercial use).
