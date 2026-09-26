@@ -117,6 +117,11 @@
     font-family: var(--font-heading);
     font-weight: 400;
     text-transform: capitalize;
+    margin-bottom: 0.5rem; /* Bootstrap reboot spacing the design relies on */
+  }
+
+  p {
+    margin-bottom: 1rem;
   }
 
   a {
