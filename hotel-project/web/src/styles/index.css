@@ -1,0 +1,139 @@
+@import "tailwindcss";
+
+/*
+ * Visual identity: the "Mellow" hotel template (TemplatesJungle, free for commercial use).
+ * Every value below is lifted from its style.css / Bootstrap 5 build so the page renders
+ * the same as the design. Content lives in src/features/landing/data.ts.
+ */
+@theme {
+  /* Breakpoints match Bootstrap 5 so column splits land where the original does. */
+  --breakpoint-sm: 576px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 992px;
+  --breakpoint-xl: 1200px;
+  --breakpoint-2xl: 1400px;
+
+  --color-primary: #d16806;
+  --color-secondary: #f9f6f3;
+  --color-ink: #1a1a1a;
+  --color-body: #353535;
+  --color-muted: #777f81;
+  --color-light: #fdfdfd;
+  --color-accent: #ecb27b; /* icon tint */
+  --color-hairline: #f4e2d8; /* service card border */
+  --color-field: #e9e9e9; /* form field border */
+
+  --font-heading: "Cormorant Upright", serif;
+  --font-sans: "Sora", sans-serif;
+
+  --radius-btn: 10px;
+}
+
+/* Bootstrap's responsive display scale (RFS), capped at the same desktop sizes. */
+@utility display-1 {
+  font-size: min(5rem, calc(1.625rem + 4.5vw));
+  line-height: 1.2;
+}
+@utility display-3 {
+  font-size: min(4rem, calc(1.525rem + 3.3vw));
+  line-height: 1.2;
+}
+@utility display-5 {
+  font-size: min(3rem, calc(1.425rem + 2.1vw));
+  line-height: 1.2;
+}
+@utility display-6 {
+  font-size: min(2.5rem, calc(1.375rem + 1.5vw));
+  line-height: 1.2;
+}
+@utility fs-4 {
+  font-size: min(1.5rem, calc(1.275rem + 0.3vw));
+}
+
+/* `.container-fluid.padding-side`: Bootstrap gutter (0.75rem) + the template's side padding. */
+@utility px-side {
+  padding-inline: 1.75rem;
+  @media (width >= 576px) {
+    padding-inline: 2.75rem;
+  }
+  @media (width >= 768px) {
+    padding-inline: 3.75rem;
+  }
+  @media (width >= 992px) {
+    padding-inline: 4.75rem;
+  }
+  @media (width >= 1200px) {
+    padding-inline: 5.75rem;
+  }
+  @media (width >= 1400px) {
+    padding-inline: 6.75rem;
+  }
+}
+
+/* Bootstrap `.container` max-widths, used by the stats and gallery sections. */
+@utility container-bs {
+  width: 100%;
+  margin-inline: auto;
+  padding-inline: 0.75rem;
+  @media (width >= 576px) {
+    max-width: 540px;
+  }
+  @media (width >= 768px) {
+    max-width: 720px;
+  }
+  @media (width >= 992px) {
+    max-width: 960px;
+  }
+  @media (width >= 1200px) {
+    max-width: 1140px;
+  }
+  @media (width >= 1400px) {
+    max-width: 1320px;
+  }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: #fff;
+    color: var(--color-body);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.64;
+    letter-spacing: 0.32px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--color-ink);
+    font-family: var(--font-heading);
+    font-weight: 400;
+    text-transform: capitalize;
+  }
+
+  a {
+    transition: color 0.3s ease-in-out;
+  }
+
+  a:hover {
+    color: var(--color-primary);
+  }
+
+  input,
+  select {
+    outline: 0;
+  }
+
+  /* Anchored sections clear the header when jumped to from the nav. */
+  section[id] {
+    scroll-margin-top: 1rem;
+  }
+}
