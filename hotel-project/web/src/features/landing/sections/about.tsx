@@ -6,12 +6,12 @@ import { about, stats } from "../data";
 export function About() {
   const { wide, main, small } = about.images;
   return (
-    <section id="about-us" className="py-32">
+    <section id="about-us" className="py-20 md:py-24 lg:py-32">
       <Reveal className="px-side">
-        <h3 className="display-3 mx-auto text-center lg:w-1/3">{about.title}</h3>
-        <div className="mt-4 grid items-start gap-x-6 lg:mt-12 lg:grid-cols-2">
+        <h3 className="display-3 mx-auto text-center md:w-2/3 lg:w-1/2 xl:w-1/3">{about.title}</h3>
+        <div className="mt-4 grid items-start gap-x-6 md:mt-8 md:grid-cols-2 lg:mt-12">
           <div>
-            <div className="p-6 sm:p-12">
+            <div className="py-6 md:p-6 lg:p-12">
               <p>{about.body}</p>
               <ArrowLink href={about.cta.href} className="mt-4">
                 {about.cta.label}
@@ -19,9 +19,9 @@ export function About() {
             </div>
             <img src={wide.src} alt={wide.alt} loading="lazy" className="mt-6 h-auto max-w-full rounded-2xl" />
           </div>
-          <div className="mt-12 lg:mt-0">
+          <div className="mt-6 md:mt-0">
             <img src={main.src} alt={main.alt} loading="lazy" className="h-auto max-w-full rounded-2xl" />
-            <img src={small.src} alt={small.alt} loading="lazy" className="mt-6 h-auto max-w-full rounded-2xl" />
+            <img src={small.src} alt={small.alt} loading="lazy" className="mt-6 h-auto w-full max-w-[519px] rounded-2xl" />
           </div>
         </div>
       </Reveal>
@@ -57,7 +57,7 @@ export function Stats() {
   return (
     <section id="info" aria-label="Hotel in numbers">
       <Reveal className="container-bs">
-        <div className="grid gap-y-6 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-y-10 md:grid-cols-4">
           {stats.map((s, i) => (
             <div key={s.label} className="text-center">
               <h3 className="display-1 text-primary!">

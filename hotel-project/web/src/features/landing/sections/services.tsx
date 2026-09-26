@@ -33,9 +33,9 @@ function ServiceCard({ service }: { service: Service }) {
 
 export function Services() {
   return (
-    <section id="services" className="py-32">
+    <section id="services" className="py-20 md:py-24 lg:py-32">
       <Reveal className="px-side">
-        <h3 className="display-3 mx-auto text-center lg:w-1/3">{servicesSection.title}</h3>
+        <h3 className="display-3 mx-auto text-center md:w-2/3 lg:w-1/2 xl:w-1/3">{servicesSection.title}</h3>
         <div className="isolate mt-12 grid items-start gap-x-6 gap-y-6 md:grid-cols-2 xl:grid-cols-3">
           {services.map((s) => (
             <ServiceCard key={s.title} service={s} />

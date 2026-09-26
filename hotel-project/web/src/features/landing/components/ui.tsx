@@ -63,3 +63,10 @@ export function Reveal({ children, className, delay = 0 }: { children: ReactNode
     </motion.div>
   );
 }
+
+/** Text wordmark (no image logo): the brand name in the heading serif, italic caps, letter-spaced. */
+export function Wordmark({ name, className = "" }: { name: string; className?: string }) {
+  return (
+    <span className={`font-heading text-[2.25rem] leading-none font-semibold tracking-[0.18em] text-ink uppercase italic ${className}`}>{name}</span>
+  );
+}
