@@ -1,5 +1,4 @@
-// Generated from the Mellow template's inline SVG sprite (mellow-template/index.html) so the
-// glyphs match the design exactly. `chevronDown` and `close` are hand-added; the social brand
+// Inline SVG icon set for the landing page. `chevronDown` and `close` are hand-drawn; the social brand
 // marks (facebook, instagram, tiktok, x, youtube) are the official shapes from Simple Icons (CC0).
 import type { SVGProps } from "react";
 

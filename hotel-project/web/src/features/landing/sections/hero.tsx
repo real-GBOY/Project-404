@@ -16,7 +16,7 @@ const addDays = (iso: string, days: number) => {
   d.setDate(d.getDate() + days);
   return toIso(d);
 };
-// "Thu, 28 Mar 2024" — the design's format (en-GB would print "Sept").
+// "Thu, 28 Mar 2024" format (en-GB would print "Sept").
 // The weekday is dropped on the narrowest phones so the full date always fits.
 function PrettyDate({ iso }: { iso: string }) {
   const d = new Date(`${iso}T00:00:00`);
@@ -31,7 +31,7 @@ function PrettyDate({ iso }: { iso: string }) {
 const nightsBetween = (a: string, b: string) =>
   Math.round((new Date(`${b}T00:00:00`).getTime() - new Date(`${a}T00:00:00`).getTime()) / 86_400_000);
 
-/** Styled date field (template look) backed by the native picker for accessibility and mobile. */
+/** Styled date field backed by the native date picker for accessibility and mobile. */
 function DateField({ label, value, min, onChange }: { label: string; value: string; min: string; onChange: (v: string) => void }) {
   const id = useId();
   const input = useRef<HTMLInputElement>(null);

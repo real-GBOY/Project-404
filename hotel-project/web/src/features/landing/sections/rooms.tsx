@@ -3,9 +3,9 @@ import { motion, type PanInfo } from "motion/react";
 import { ArrowLink, Reveal } from "../components/ui";
 import { rooms, roomsSection, type Room } from "../data";
 
-const GAP = 20; // Swiper spaceBetween
+const GAP = 20; // px between cards
 
-// 1 card on phones, 2 on tablets (the template waited until 1024px, which made tablet cards huge), 3 from 1280px.
+// Cards per view: 1 on phones, 2 on tablets (from 576px), 3 from 1280px.
 function perViewFor(width: number) {
   return width >= 1280 ? 3 : width >= 576 ? 2 : 1;
 }
@@ -42,7 +42,7 @@ function RoomCard({ room }: { room: Room }) {
   ];
   return (
     <article>
-      {/* Template hover: photo dims + zooms, details slide up from the bottom. Also on keyboard focus. */}
+      {/* Hover: photo dims + zooms, details slide up from the bottom. Also on keyboard focus. */}
       <a
         href="#rooms"
         className="group relative block overflow-hidden rounded-2xl bg-black"

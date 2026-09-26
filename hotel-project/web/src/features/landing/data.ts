@@ -3,9 +3,8 @@ import type { IconName } from "./components/icon";
 /*
  * All landing-page content in one place. Layout and styling never hard-code copy — edit here.
  *
- * Section structure comes from the Mellow template; photos are CC0 (rawpixel, see public/images/CREDITS.md); the template's placeholder
- * content (lorem ipsum, "+666 333 9999", "Relaxingland", one description repeated on every
- * service card…) has been replaced with DEMO data. Swap in the real hotel's details before launch.
+ * Photos are CC0 (rawpixel, see public/images/CREDITS.md). Names, prices, contact details and
+ * copy below are DEMO data — swap in the real hotel's details before launch.
  */
 
 export const brand = {

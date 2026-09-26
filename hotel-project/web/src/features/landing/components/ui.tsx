@@ -3,7 +3,7 @@ import { motion } from "motion/react";
 import { Icon } from "./icon";
 
 /*
- * Template `.btn.btn-primary.btn-arrow`: on hover the label slides left and an arrow fades in
+ * Arrow button: on hover the label slides left and an arrow fades in
  * on its right. `variant="link"` is the underlined text-only version used on service cards.
  */
 const BTN_BASE =
@@ -49,7 +49,7 @@ export function ArrowButton({ className = "", children, ...rest }: ComponentProp
   );
 }
 
-/** Scroll-in reveal matching the template's AOS `fade-up` (1s, once). */
+/** Scroll-in reveal: fades and slides each section up once as it enters the viewport (1s). */
 export function Reveal({ children, className, delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
   return (
     <motion.div

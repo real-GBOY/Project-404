@@ -4,7 +4,7 @@ import { Reveal } from "../components/ui";
 import { Icon } from "../components/icon";
 import { gallery } from "../data";
 
-// Swiper `effect: "fade"` with prev/next buttons that dim at either end (no loop), as in the template.
+// Cross-fading slider with prev/next buttons that dim at either end (no loop).
 function Arrow({ dir, disabled, onClick, className }: { dir: "prev" | "next"; disabled: boolean; onClick: () => void; className: string }) {
   return (
     <button

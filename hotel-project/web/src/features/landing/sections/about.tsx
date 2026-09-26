@@ -50,7 +50,7 @@ function CountUp({ value, suffix }: { value: number; suffix: string }) {
   );
 }
 
-// Each number has the template's soft peach dot tucked behind it at a slightly different spot.
+// Each number has a soft peach dot tucked behind it at a slightly different spot.
 const DOT_POSITIONS = ["left-[12%] top-[58%]", "left-[18%] top-[40%]", "left-[30%] top-[72%]", "left-[14%] top-[36%]"];
 
 export function Stats() {
