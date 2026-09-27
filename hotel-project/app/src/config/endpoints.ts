@@ -73,4 +73,14 @@ export const ENDPOINTS = {
     voidCharge: (chargeId: string) => `/hotel/charges/${chargeId}/void`,
     invoice: (id: string) => `/hotel/invoices/${id}`,
   },
+  housekeeping: {
+    tasks: "/hotel/housekeeping/tasks",
+    action: (id: string, command: string) => `/hotel/housekeeping/tasks/${id}/${command}`,
+  },
+  maintenance: {
+    tickets: "/hotel/maintenance/tickets",
+    byId: (id: string) => `/hotel/maintenance/tickets/${id}`,
+    action: (id: string, action: string) => `/hotel/maintenance/tickets/${id}/${action}`,
+  },
+  dashboard: "/hotel/dashboard",
 } as const;

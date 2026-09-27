@@ -33,6 +33,8 @@ export interface TaskFilter {
   open?: boolean;
   assigneeId?: string;
   dueOn?: IsoDate;
+  /** The board: every open task, plus tasks due this day that are already done. */
+  boardFor?: IsoDate;
 }
 
 @Injectable()
@@ -77,6 +79,15 @@ export class HousekeepingRepository {
     if (filter.open) q = q.where("k.status", "in", [...OPEN_TASK_STATUSES]);
     if (filter.assigneeId) q = q.where("k.assignee_id", "=", filter.assigneeId);
     if (filter.dueOn) q = q.where(sql<boolean>`k.due_date = ${filter.dueOn}::date`);
+    if (filter.boardFor) {
+      const day = filter.boardFor;
+      q = q.where((eb) =>
+        eb.or([
+          eb("k.status", "in", [...OPEN_TASK_STATUSES]),
+          eb("k.due_date", ">=", sql<Date>`${day}::date`),
+        ]),
+      );
+    }
     const rows = await q
       .orderBy(sql`CASE k.priority WHEN 'high' THEN 0 WHEN 'normal' THEN 1 ELSE 2 END`)
       .orderBy("k.due_date")

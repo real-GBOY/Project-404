@@ -25,6 +25,8 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: "Calendar", to: "/calendar", permission: "read:reservation" },
       { label: "Front Desk", to: "/front-desk", permission: "check_in:reservation" },
       { label: "Rooms", to: "/rooms", permission: "read:room" },
+      { label: "Housekeeping", to: "/housekeeping", permission: "read:housekeeping" },
+      { label: "Maintenance", to: "/maintenance", permission: "read:maintenance" },
     ],
   },
   { label: "Guests", items: [{ label: "Guests", to: "/guests", permission: "read:guest" }] },

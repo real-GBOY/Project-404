@@ -127,6 +127,16 @@ export class RoomsRepository {
       .execute();
   }
 
+  /** Only maintenance workflows call this — the room form never edits service status. */
+  async setServiceStatus(id: string, status: ServiceStatus): Promise<void> {
+    await hotelDb()
+      .updateTable("hotel_rooms")
+      .set({ service_status: status })
+      .where("organization_id", "=", requireOrganizationId())
+      .where("id", "=", id)
+      .execute();
+  }
+
   /** Row-lock a room for the rest of the transaction (serialises check-ins into one room). */
   async lock(id: string): Promise<void> {
     await hotelDb()

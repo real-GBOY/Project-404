@@ -114,6 +114,8 @@ model hotel_room_allocations {
   /// @kyselyType('reservation' | 'block')
   kind            String
   reservation_id  String?
+  /// the maintenance ticket that owns a block (kind = block)
+  ticket_id       String?
   /// daterange [start, end) — read/written through SQL (lower()/upper()/daterange()).
   stay            Unsupported("daterange")
   active          Boolean                   @default(true)

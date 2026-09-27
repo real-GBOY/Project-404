@@ -36,6 +36,7 @@ export interface HistoryContext {
 
 interface OpenStay {
   id: string;
+  roomId: string | null;
   departure: IsoDate;
   method: PaymentMethod;
   prepaid: boolean;
@@ -158,7 +159,13 @@ export class DemoHistory {
                 clerk,
               );
             }
-            open.push({ id: r.id, departure: addDays(day, nights), method, prepaid });
+            open.push({
+              id: r.id,
+              roomId: r.roomId,
+              departure: addDays(day, nights),
+              method,
+              prepaid,
+            });
             stays++;
           } catch (err) {
             // A sold-out type or a room not yet turned is a normal day at a hotel — skip it.
@@ -167,6 +174,56 @@ export class DemoHistory {
         }
       });
     }
+
+    // This morning: most of today's departures have already left and housekeeping is part-way
+    // through turning their rooms — some done (and inspected), some being cleaned, some assigned,
+    // some not yet picked up. The rest (at least three) are still at the desk. Stayover service is
+    // due on some occupied rooms too. Rooms move through the stages in turn, so every column of
+    // the board has work whatever the random draw.
+    const STAGES = ["done", "cleaning", "waiting", "assigned", "inspected", "cleaning"] as const;
+    let turned = 0;
+    const turnover = async (task: string) => {
+      const stage = STAGES[turned++ % STAGES.length]!;
+      const cleaner = pick(ctx.housekeeperIds);
+      if (stage === "waiting") return;
+      await this.housekeeping.assign(task, cleaner, ctx.ownerId);
+      if (stage === "assigned") return;
+      await this.housekeeping.start(task, cleaner);
+      if (stage === "cleaning") return;
+      await this.housekeeping.complete(task, null, cleaner);
+      if (stage === "inspected") await this.housekeeping.inspect(task, ctx.ownerId);
+    };
+    await runAsOf(ctx.today, async () => {
+      const leaving = open.filter((s) => s.departure === ctx.today);
+      const stillAtDesk = Math.max(3, Math.ceil(leaving.length * 0.35));
+      for (const stay of leaving.slice(stillAtDesk)) {
+        const folio = await this.billing.folio(stay.id);
+        const out = await this.desk.checkOut(
+          stay.id,
+          folio.totals.balance > 0
+            ? {
+                payment: {
+                  method: stay.method,
+                  amount: folio.totals.balance,
+                  idempotencyKey: key(),
+                },
+              }
+            : {},
+          pick(ctx.receptionistIds),
+        );
+        await turnover(out.housekeepingTaskId);
+        open.splice(open.indexOf(stay), 1);
+      }
+      // Stayover service for guests staying on (not those leaving today), at every stage.
+      for (const stay of open) {
+        if (!stay.roomId || stay.departure === ctx.today || rand() < 0.5) continue;
+        const { id: task } = await this.housekeeping.create(
+          { roomId: stay.roomId, kind: "stayover", priority: "low", notes: null },
+          ctx.ownerId,
+        );
+        await turnover(task);
+      }
+    });
 
     // Guests still in house today with nothing paid yet leave a deposit on half the stays, so the
     // desk shows a realistic mix of paid, partial and unpaid folios.

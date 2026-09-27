@@ -20,7 +20,9 @@ export type HotelIdPrefix =
   | "pay" // payment
   | "inv" // invoice
   | "ivi" // invoice item
-  | "hkt"; // housekeeping task
+  | "hkt" // housekeeping task
+  | "mtk" // maintenance ticket
+  | "mte"; // maintenance event
 
 export const hotelId = (prefix: HotelIdPrefix): string => createPrefixedId(prefix);
 

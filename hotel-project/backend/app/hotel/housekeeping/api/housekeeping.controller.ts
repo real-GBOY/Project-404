@@ -32,6 +32,7 @@ export class HousekeepingController {
       items: await this.service.list({
         status: q.status as TaskStatus | undefined,
         open: q.open,
+        board: q.board,
         assigneeId: q.mine ? user.userId : undefined,
       }),
     };

@@ -666,3 +666,75 @@ export const DEMO_RESERVATIONS: DemoReservation[] = [
     notes: "Anniversary — flowers in room.",
   },
 ];
+
+export interface DemoTicket {
+  /** Candidate rooms, in order; the first one the ledger lets us use is taken. */
+  rooms: string[];
+  title: string;
+  description: string;
+  priority: "low" | "medium" | "high" | "urgent";
+  roomImpact: "none" | "maintenance" | "out_of_service";
+  /** Days from today the room is expected back (room-impacting tickets only). */
+  backIn?: number;
+  reportedBy: string;
+  /** How far the ticket has progressed. */
+  stage: "open" | "assigned" | "in_progress" | "resolved" | "verified";
+  cost?: number;
+  note?: string;
+}
+
+export const DEMO_TICKETS: DemoTicket[] = [
+  {
+    rooms: ["104", "103", "108", "107"],
+    title: "Bathroom leak under the sink",
+    description: "Water pooling behind the vanity; the cabinet base is swelling. Needs re-sealing.",
+    priority: "high",
+    roomImpact: "out_of_service",
+    backIn: 4,
+    reportedBy: "housekeeping1",
+    stage: "in_progress",
+    cost: 1200,
+    note: "Supply pipe replaced; waiting for the sealant to cure before tiling.",
+  },
+  {
+    rooms: ["207", "206", "208"],
+    title: "AC not cooling",
+    description: "Guest reports the room stays at 27°C with the AC on full.",
+    priority: "high",
+    roomImpact: "none",
+    reportedBy: "reception1",
+    stage: "in_progress",
+    cost: 450,
+    note: "Compressor checked — capacitor ordered from the supplier.",
+  },
+  {
+    rooms: ["301", "302"],
+    title: "Door lock sticking",
+    description: "Key card works on the third or fourth attempt.",
+    priority: "medium",
+    roomImpact: "none",
+    reportedBy: "reception2",
+    stage: "open",
+  },
+  {
+    rooms: ["405", "406"],
+    title: "TV remote not pairing",
+    description: "Remote doesn't control the smart TV.",
+    priority: "low",
+    roomImpact: "none",
+    reportedBy: "housekeeping2",
+    stage: "verified",
+    note: "Replaced the batteries and re-paired the remote.",
+  },
+  {
+    rooms: ["505", "506"],
+    title: "Balcony door handle loose",
+    description: "Handle turns but the door doesn't latch properly.",
+    priority: "medium",
+    roomImpact: "none",
+    reportedBy: "housekeeping1",
+    stage: "resolved",
+    cost: 180,
+    note: "Tightened the spindle and replaced a worn grub screw.",
+  },
+];

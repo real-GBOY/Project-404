@@ -71,6 +71,9 @@ export const HOTEL_ROLES: RoleSeed[] = [
         "create:payment",
         "read:invoice",
         "read:housekeeping",
+        "read:maintenance",
+        "create:maintenance",
+        "read:dashboard",
       ),
       ...CORE_FILE_KEYS,
     ],
@@ -89,6 +92,7 @@ export const HOTEL_ROLES: RoleSeed[] = [
       "void:charge",
       "create:payment",
       "read:invoice",
+      "read:dashboard",
     ),
   },
   {
@@ -101,6 +105,8 @@ export const HOTEL_ROLES: RoleSeed[] = [
       "read:reservation",
       "read:housekeeping",
       "update:housekeeping",
+      "read:maintenance",
+      "create:maintenance",
     ),
   },
   {
@@ -108,7 +114,14 @@ export const HOTEL_ROLES: RoleSeed[] = [
     name: "Maintenance",
     description: "Maintenance tickets and room issues.",
     permissionKeys: [
-      ...has("read:hotel_settings", "read:room", "read:reservation"),
+      ...has(
+        "read:hotel_settings",
+        "read:room",
+        "read:reservation",
+        "read:maintenance",
+        "create:maintenance",
+        "update:maintenance",
+      ),
       ...CORE_FILE_KEYS,
     ],
   },

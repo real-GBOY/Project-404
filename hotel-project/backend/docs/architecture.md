@@ -164,6 +164,13 @@ Frontend permission checks (`useAuth().can`, `visibleNav`) are UX only; the back
 | 3 | `runAsOf(date, fn)` pins the business date via AsyncLocalStorage; no HTTP route reaches it | The demo plays 14 days of real history through the real workflows; tests walk stays across days |
 | 3 | Extend-stay for in-house guests re-claims the same room through the exclusion constraint, then prices and posts the extra nights | Overstays are never silent: check-out after the booked departure is refused until the stay is extended |
 | 3 | `@auric/web` client accepts per-request headers (cannot override Authorization/Content-Type) | Needed for `Idempotency-Key`; generic and backwards-compatible |
+| 4 | Maintenance **room blocks live in the same allocation ledger** as reservations (`kind = 'block'`, `ticket_id`), under the same exclusion constraint | A block can never overlap a booked stay and a stay can never be sold over a block — in either direction, by the database. Refusals name the bookings in the way |
+| 4 | Sellability is decided by the ledger only; allocation no longer consults the room's *current* `service_status` | A room out of service today is sellable for nights after its block ends. The earlier shortcut made future sales of a blocked room impossible (caught in Slice 4, fixed) |
+| 4 | Maintenance lifecycle open → assigned → in_progress → resolved → verified (reopen from resolved). The block is released and the room returns to service **only on verify**; unused block nights go back on sale | A repair isn't done until a supervisor has seen it |
+| 4 | Anyone with `create:maintenance` reports; taking a room out of sale, assigning, verifying, reopening and extending a block need `manage:maintenance` (checked against live RBAC). Technicians work only their own tickets | Housekeeping can raise issues without being able to pull inventory |
+| 4 | Housekeeping board = open tasks + tasks due today that are done (`?board=true`) | The Ready column shows this morning's work, not two weeks of history |
+| 4 | Dashboard is one read (`GET /hotel/dashboard`, `read:dashboard`) computed from the ledgers: occupancy = rooms on the books ÷ sellable rooms (blocked rooms excluded), revenue = room nights posted per day | No stored counters to drift. Roles without `read:dashboard` (housekeeping, maintenance) see their own queue instead |
+| 4 | The demo morning has departures part-way through turnover and stayover service at every stage | The board, the dashboard and the front desk look like a real morning |
 
 ## 7. Quality gate
 

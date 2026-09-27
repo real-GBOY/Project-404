@@ -227,9 +227,6 @@ export class ReservationsService {
           `Room ${room.number} is not a ${r.roomTypeName}. Change the room type by rebooking.`,
         );
       }
-      if (room.serviceStatus === "out_of_service") {
-        throw Conflict("reservation.room_out_of_service", `Room ${room.number} is out of service.`);
-      }
       try {
         await withSavepoint(() =>
           this.repo.reallocate(id, { roomId, arrival: r.arrival, departure: r.departure }),
@@ -384,9 +381,6 @@ export class ReservationsService {
       const room = await this.rooms.findById(preferredRoomId);
       if (!room || room.archivedAt || room.roomTypeId !== roomTypeId) {
         throw ValidationError("reservation.unknown_room", "Choose a room of the booked room type.");
-      }
-      if (room.serviceStatus === "out_of_service") {
-        throw Conflict("reservation.room_out_of_service", `Room ${room.number} is out of service.`);
       }
       try {
         await withSavepoint(() => this.repo.allocate(room.id, reservationId, arrival, departure));

@@ -16,10 +16,11 @@ export interface DeskDay {
   inHouse: DeskReservation[];
 }
 
-export function useDeskDay() {
+export function useDeskDay(enabled = true) {
   return useQuery({
     queryKey: ["front-desk", "today"],
     queryFn: () => http<DeskDay>(ENDPOINTS.frontDesk.today),
+    enabled,
     refetchInterval: 60_000,
   });
 }

@@ -48,9 +48,12 @@ export class HousekeepingService {
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
 
-  async list(filter: TaskFilter) {
+  async list(filter: TaskFilter & { board?: boolean }) {
     return readInTenant(async () => {
-      const tasks = await this.repo.list(filter);
+      const { board, ...rest } = filter;
+      const tasks = await this.repo.list(
+        board ? { ...rest, boardFor: await this.settings.today() } : rest,
+      );
       const names = await this.directory.userNames(tasks.map((t) => t.assigneeId));
       return tasks.map((t) => this.view(t, names));
     });

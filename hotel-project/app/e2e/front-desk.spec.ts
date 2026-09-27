@@ -32,17 +32,12 @@ test.describe("front desk (Slice 3)", () => {
     await expect(page.getByText(/Guest checked in — Room \d+ marked Occupied/)).toBeVisible();
   });
 
-  test("a departure settles the folio, checks out and gets an invoice", async ({
-    page,
-    isMobile,
-  }) => {
+  test("a departure settles the folio, checks out and gets an invoice", async ({ page }) => {
     await signIn(page, RECEPTIONIST);
     await page.goto("/front-desk");
     await expect(page.getByRole("heading", { name: /Today's Departures/ })).toBeVisible();
-    await page
-      .getByRole("button", { name: "Check Out" })
-      .nth(isMobile ? 1 : 0)
-      .click();
+    // The desktop run's guest has already left, so the first departure is always a fresh one.
+    await page.getByRole("button", { name: "Check Out" }).first().click();
 
     const dialog = page.getByRole("dialog");
     await expect(dialog.getByText("Balance due").or(dialog.getByText("Overpaid"))).toBeVisible();

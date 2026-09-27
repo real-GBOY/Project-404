@@ -402,8 +402,9 @@ export class ReservationsRepository {
   }
 
   /**
-   * Rooms of a type that are sellable for the whole stay: not archived, not out of service, and
-   * with no active allocation overlapping. Only a starting point for allocation — the exclusion
+   * Rooms of a type that are sellable for the whole stay: not archived, with no active allocation
+   * (stay OR maintenance block) overlapping. A room's CURRENT service status is deliberately not
+   * consulted: blocks in the ledger cover exactly the nights it can't be sold. Only a starting point for allocation — the exclusion
    * constraint decides; a room can still be taken by a concurrent transaction in between.
    */
   async candidateRooms(
@@ -419,7 +420,6 @@ export class ReservationsRepository {
        WHERE r.organization_id = ${org}
          AND r.room_type_id = ${roomTypeId}
          AND r.archived_at IS NULL
-         AND r.service_status <> 'out_of_service'
          AND NOT EXISTS (
            SELECT 1 FROM hotel_room_allocations a
             WHERE a.organization_id = ${org}
@@ -441,7 +441,6 @@ export class ReservationsRepository {
         FROM hotel_rooms r
        WHERE r.organization_id = ${org}
          AND r.archived_at IS NULL
-         AND r.service_status <> 'out_of_service'
          AND NOT EXISTS (
            SELECT 1 FROM hotel_room_allocations a
             WHERE a.organization_id = ${org}
@@ -468,17 +467,90 @@ export class ReservationsRepository {
       status: ReservationStatus | null;
       guest_name: string | null;
     }>`
-      SELECT a.room_id, a.kind, lower(a.stay)::text AS start, upper(a.stay)::text AS "end", a.reason,
+      SELECT a.room_id, a.kind, lower(a.stay)::text AS start, upper(a.stay)::text AS "end",
+             COALESCE(mt.number || ' · ' || mt.title, a.reason) AS reason,
              r.id AS reservation_id, r.code, r.status, g.full_name AS guest_name
         FROM hotel_room_allocations a
         LEFT JOIN hotel_reservations r ON r.organization_id = a.organization_id AND r.id = a.reservation_id
         LEFT JOIN hotel_guests g ON g.organization_id = r.organization_id AND g.id = r.guest_id
+        LEFT JOIN hotel_maintenance_tickets mt ON mt.organization_id = a.organization_id AND mt.id = a.ticket_id
        WHERE a.organization_id = ${org}
          AND a.active
          AND a.stay && daterange(${from}::date, ${to}::date, '[)')
        ORDER BY lower(a.stay)
     `.execute(hotelDb());
     return rows.rows;
+  }
+
+  // ─── maintenance blocks (same ledger, same exclusion constraint) ──────────
+
+  /** Take a room's nights out of sale for a ticket. Raw 23P01 if any stay overlaps. */
+  async insertBlock(roomId: string, ticketId: string, from: IsoDate, to: IsoDate): Promise<void> {
+    await sql`
+      INSERT INTO hotel_room_allocations (id, organization_id, room_id, kind, ticket_id, stay)
+      VALUES (${hotelId("ral")}, ${this.org()}, ${roomId}, 'block', ${ticketId},
+              daterange(${from}::date, ${to}::date, '[)'))
+    `.execute(hotelDb());
+  }
+
+  /** Move a ticket's block end date. Raw 23P01 if the new nights are booked. */
+  async extendBlock(ticketId: string, to: IsoDate): Promise<void> {
+    await sql`
+      UPDATE hotel_room_allocations
+         SET stay = daterange(lower(stay), ${to}::date, '[)')
+       WHERE organization_id = ${this.org()} AND ticket_id = ${ticketId} AND active
+    `.execute(hotelDb());
+  }
+
+  /**
+   * End a ticket's block today: nights already past stay on record, the rest return to sale.
+   * A block that hasn't started yet is simply released.
+   */
+  async releaseBlock(ticketId: string, today: IsoDate): Promise<void> {
+    await sql`
+      UPDATE hotel_room_allocations
+         SET active = lower(stay) < ${today}::date,
+             stay = CASE WHEN lower(stay) < ${today}::date
+                         THEN daterange(lower(stay), LEAST(upper(stay), ${today}::date), '[)')
+                         ELSE stay END
+       WHERE organization_id = ${this.org()} AND ticket_id = ${ticketId} AND active
+    `.execute(hotelDb());
+  }
+
+  /** Reservation codes whose active stays on a room overlap [from, to) — for a helpful conflict. */
+  async overlappingStays(roomId: string, from: IsoDate, to: IsoDate): Promise<string[]> {
+    const rows = await sql<{ code: string }>`
+      SELECT r.code
+        FROM hotel_room_allocations a
+        JOIN hotel_reservations r ON r.organization_id = a.organization_id AND r.id = a.reservation_id
+       WHERE a.organization_id = ${this.org()}
+         AND a.room_id = ${roomId}
+         AND a.active
+         AND a.stay && daterange(${from}::date, ${to}::date, '[)')
+       ORDER BY lower(a.stay)
+    `.execute(hotelDb());
+    return rows.rows.map((r) => r.code);
+  }
+
+  /** The strongest active block impact covering `day` on a room, if any. */
+  async blockImpactOn(
+    roomId: string,
+    day: IsoDate,
+  ): Promise<"maintenance" | "out_of_service" | null> {
+    const rows = await sql<{ room_impact: "maintenance" | "out_of_service" }>`
+      SELECT mt.room_impact
+        FROM hotel_room_allocations a
+        JOIN hotel_maintenance_tickets mt ON mt.organization_id = a.organization_id AND mt.id = a.ticket_id
+       WHERE a.organization_id = ${this.org()}
+         AND a.room_id = ${roomId}
+         AND a.kind = 'block'
+         AND a.active
+         AND a.stay @> ${day}::date
+    `.execute(hotelDb());
+    const impacts = rows.rows.map((r) => r.room_impact);
+    if (impacts.includes("out_of_service")) return "out_of_service";
+    if (impacts.includes("maintenance")) return "maintenance";
+    return null;
   }
 
   private toRecord(r: {

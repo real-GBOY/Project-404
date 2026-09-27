@@ -132,6 +132,57 @@ export type hotel_invoices = {
   voided_at: Timestamp | null;
   void_reason: string | null;
 };
+export type hotel_maintenance_events = {
+  id: string;
+  organization_id: string;
+  ticket_id: string;
+  seq: Generated<string>;
+  /**
+   * @kyselyType('reported' | 'assigned' | 'started' | 'note' | 'cost' | 'resolved' | 'reopened' | 'verified' | 'block_extended')
+   */
+  kind:
+    | "reported"
+    | "assigned"
+    | "started"
+    | "note"
+    | "cost"
+    | "resolved"
+    | "reopened"
+    | "verified"
+    | "block_extended";
+  body: string | null;
+  actor_id: string | null;
+  created_at: Generated<Timestamp>;
+};
+export type hotel_maintenance_tickets = {
+  id: string;
+  organization_id: string;
+  number: string;
+  room_id: string;
+  title: string;
+  description: string | null;
+  /**
+   * @kyselyType('low' | 'medium' | 'high' | 'urgent')
+   */
+  priority: Generated<"low" | "medium" | "high" | "urgent">;
+  /**
+   * @kyselyType('open' | 'assigned' | 'in_progress' | 'resolved' | 'verified')
+   */
+  status: Generated<"open" | "assigned" | "in_progress" | "resolved" | "verified">;
+  assignee_id: string | null;
+  cost: Generated<string>;
+  /**
+   * @kyselyType('none' | 'maintenance' | 'out_of_service')
+   */
+  room_impact: Generated<"none" | "maintenance" | "out_of_service">;
+  expected_back: Timestamp | null;
+  resolution_notes: string | null;
+  reported_by: string | null;
+  resolved_at: Timestamp | null;
+  verified_at: Timestamp | null;
+  created_at: Generated<Timestamp>;
+  updated_at: Generated<Timestamp>;
+};
 export type hotel_payments = {
   id: string;
   organization_id: string;
@@ -239,6 +290,10 @@ export type hotel_room_allocations = {
    */
   kind: "reservation" | "block";
   reservation_id: string | null;
+  /**
+   * the maintenance ticket that owns a block (kind = block)
+   */
+  ticket_id: string | null;
   active: Generated<boolean>;
   reason: string | null;
   created_at: Generated<Timestamp>;
@@ -313,6 +368,8 @@ export type HotelTables = {
   hotel_housekeeping_tasks: hotel_housekeeping_tasks;
   hotel_invoice_items: hotel_invoice_items;
   hotel_invoices: hotel_invoices;
+  hotel_maintenance_events: hotel_maintenance_events;
+  hotel_maintenance_tickets: hotel_maintenance_tickets;
   hotel_payments: hotel_payments;
   hotel_rate_rules: hotel_rate_rules;
   hotel_reservation_status_history: hotel_reservation_status_history;

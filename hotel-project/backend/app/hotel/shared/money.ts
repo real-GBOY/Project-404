@@ -21,3 +21,8 @@ export function moneyNumber(value: string | number): number {
 export function moneyString(value: number): string {
   return (toPiastres(value) / 100).toFixed(2);
 }
+
+/** "7,722.60 EGP" — for human-readable text the server writes (alerts, timeline entries). */
+export function formatEgp(value: number): string {
+  return `${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} EGP`;
+}

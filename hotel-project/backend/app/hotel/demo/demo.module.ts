@@ -8,6 +8,7 @@ import { ReservationsModule } from "@hotel/hotel/reservations/reservations.modul
 import { BillingModule } from "@hotel/hotel/billing/billing.module.js";
 import { HousekeepingModule } from "@hotel/hotel/housekeeping/housekeeping.module.js";
 import { FrontDeskModule } from "@hotel/hotel/front-desk/front-desk.module.js";
+import { MaintenanceModule } from "@hotel/hotel/maintenance/maintenance.module.js";
 import { DemoHistory } from "./demo-history.js";
 import { DemoSeeder } from "./demo-seeder.js";
 
@@ -23,6 +24,7 @@ import { DemoSeeder } from "./demo-seeder.js";
     BillingModule,
     HousekeepingModule,
     FrontDeskModule,
+    MaintenanceModule,
   ],
   providers: [DemoSeeder, DemoHistory],
   exports: [DemoSeeder],

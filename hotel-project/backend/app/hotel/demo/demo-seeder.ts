@@ -14,7 +14,10 @@ import { PricingService } from "@hotel/hotel/pricing/application/pricing-service
 import { ReservationsService } from "@hotel/hotel/reservations/application/reservations-service.js";
 import { addDays } from "@hotel/hotel/shared/dates.js";
 import { DemoHistory } from "./demo-history.js";
+import { MaintenanceService } from "@hotel/hotel/maintenance/application/maintenance-service.js";
+import { AppError } from "@core/kernel/errors.js";
 import {
+  DEMO_TICKETS,
   DEMO_HISTORY_DAYS,
   DEMO_DISCOUNTS,
   DEMO_GUESTS,
@@ -49,6 +52,7 @@ export class DemoSeeder {
     private readonly pricing: PricingService,
     private readonly reservations: ReservationsService,
     private readonly history: DemoHistory,
+    private readonly maintenance: MaintenanceService,
   ) {}
 
   async seed(clock: Clock): Promise<void> {
@@ -182,6 +186,43 @@ export class DemoSeeder {
         today,
         days: DEMO_HISTORY_DAYS,
       });
+
+      // Maintenance, through the real ticket workflow (a room-impacting ticket claims a block).
+      const techId = userIds.get("maintenance")!;
+      for (const t of DEMO_TICKETS) {
+        let ticket: { id: string } | null = null;
+        for (const number of t.rooms) {
+          try {
+            ticket = await this.maintenance.report(
+              {
+                roomId: roomIds.get(number)!,
+                title: t.title,
+                description: t.description,
+                priority: t.priority,
+                roomImpact: t.roomImpact,
+                expectedBack: t.backIn ? addDays(today, t.backIn) : null,
+              },
+              t.roomImpact === "none" ? userIds.get(t.reportedBy)! : ownerId,
+            );
+            break;
+          } catch (err) {
+            // That room is booked across the repair window — try the next candidate.
+            if (!(err instanceof AppError)) throw err;
+          }
+        }
+        if (!ticket) continue;
+        if (t.stage === "open") continue;
+        await this.maintenance.assign(ticket.id, techId, ownerId);
+        if (t.stage === "assigned") continue;
+        await this.maintenance.start(ticket.id, techId);
+        if (t.cost) await this.maintenance.setCost(ticket.id, t.cost, techId);
+        if (t.stage === "in_progress") {
+          if (t.note) await this.maintenance.addNote(ticket.id, t.note, techId);
+          continue;
+        }
+        await this.maintenance.resolve(ticket.id, t.note ?? null, techId);
+        if (t.stage === "verified") await this.maintenance.verify(ticket.id, ownerId);
+      }
     });
 
     log.info(

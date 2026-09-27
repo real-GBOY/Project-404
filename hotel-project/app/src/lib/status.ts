@@ -20,6 +20,7 @@ const TONES: Record<string, Tone> = {
   partial: "warning",
   open: "warning",
   medium: "warning",
+  normal: "info",
 
   assigned: "info",
   confirmed: "info",
@@ -34,6 +35,7 @@ const TONES: Record<string, Tone> = {
   no_show: "danger",
   failed: "danger",
   high: "danger",
+  urgent: "danger",
   maintenance: "danger",
 
   out_of_service: "neutral",
