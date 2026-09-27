@@ -14,7 +14,7 @@ const LABEL = "mb-3 text-sm tracking-[0.2em] text-primary uppercase";
 function FooterLink({ href, children, className = "" }: { href: string; children: string; className?: string }) {
   return (
     <a
-      href={href}
+      href={href || undefined}
       className={`relative text-body transition-colors after:absolute after:-bottom-0.5 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-primary after:transition-transform after:duration-300 hover:text-primary hover:after:scale-x-100 ${className}`}
     >
       {children}
@@ -86,7 +86,7 @@ export function Footer() {
                 {socials.map((s) => (
                   <li key={s.name}>
                     <a
-                      href={s.href}
+                      href={s.href || undefined}
                       aria-label={s.label}
                       className="grid size-10 place-items-center rounded-full border border-hairline bg-white text-accent transition-all duration-300 hover:-translate-y-0.5 hover:border-primary hover:text-primary"
                     >
