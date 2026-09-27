@@ -4,7 +4,7 @@ HotelOS is the operations platform behind **Hotel Nayel**, the third AURIC produ
 (law firms) and Atlas (real estate). This file records the decisions that shape it and, more
 importantly, *why* — so a future change can tell a deliberate constraint from an accident.
 
-Status: **Slice 0 (foundation) complete.** Sections marked *(planned)* describe the locked design
+Status: **Slices 0–1 complete** (foundation; property setup — settings, staff & roles, room types, rooms, guests). Sections marked *(planned)* describe the locked design
 for later slices; they become as-built as each slice lands.
 
 ## 1. Topology
@@ -116,7 +116,20 @@ Frontend permission checks (`useAuth().can`, `visibleNav`) are UX only; the back
 `PermissionGuard` is the security boundary. English-only for v1; all formatting goes through
 `src/lib/format.ts` so AURIC localization can be introduced later without hunting call sites.
 
-## 6. Quality gate
+## 6. Decisions made while building
+
+| Slice | Decision | Why |
+|---|---|---|
+| 1 | Six hotel roles (owner, manager, receptionist, accountant, housekeeping, maintenance) seeded into Core RBAC; permission keys `action:resource` per module | Reuse Core RBAC; the backend PermissionGuard is the boundary, the app only hides what a role can't use |
+| 1 | **The role matrix is read-only** | Core roles are global to a deployment (only assignments are per-tenant). Letting one hotel edit a role would change it for every hotel — a cross-tenant privilege change. Editable roles need per-tenant roles in Core first |
+| 1 | Owner-role escalation guard: only `manage:role` may grant/revoke Owner, checked against **live** RBAC, not token claims (which can be up to 15 min stale); no self role change/removal; always ≥ 1 owner | Staff management must not become a privilege-escalation path |
+| 1 | Core change: `IdentityModule` exports `IdentityService`, `OrganizationsModule` exports `OrganizationService` | Adding staff needs Core's own register + add-member use cases (with their audit/events); the alternative was a second account path. Two export lines; Core/Mizan (266 tests) and Atlas unaffected |
+| 1 | Staff get a manager-issued temporary password; Core's email-verification policy still applies | No second auth flow; onboarding stays inside Core identity |
+| 1 | Room housekeeping/service status is **not** editable from the room form | They change only through housekeeping and maintenance workflows (Slice 4) |
+| 1 | Guest audit entries record *which fields changed*, not values | Identity-document numbers are personal data; the audit log should not duplicate them. The UI masks document numbers |
+| 1 | Guests need a phone **or** an email; email unique per hotel, case-insensitive (partial unique index) | Enforced at API, domain and database |
+
+## 7. Quality gate
 
 Run after every slice; nothing moves forward red.
 

@@ -33,6 +33,7 @@ export const colors = {
   successSoft: "oklch(94% 0.045 150)",
   warning: "oklch(55% 0.15 75)",
   warningSoft: "oklch(95% 0.06 75)",
+  warningStrong: "oklch(45% 0.13 75)",
   danger: "oklch(50% 0.18 22)",
   dangerSoft: "oklch(95% 0.045 22)",
   info: "oklch(50% 0.1 230)",

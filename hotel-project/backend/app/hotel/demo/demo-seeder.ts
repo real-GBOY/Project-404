@@ -1,26 +1,44 @@
 import { Injectable } from "@nestjs/common";
 import { currentExecutor, unitOfWork } from "@core/kernel/db/db.js";
 import { newId } from "@core/kernel/id.js";
-import { runAsSystem } from "@core/kernel/logging/context.js";
+import { runAsSystem, withContext } from "@core/kernel/logging/context.js";
 import { moduleLogger } from "@core/kernel/logging/logger.js";
 import { argon2Hasher } from "@core/identity/infrastructure/password-hasher.js";
 import { RbacService } from "@core/rbac/application/rbac-service.js";
 import type { Clock } from "@core/kernel/clock.js";
-import { DEMO_ORG, DEMO_PASSWORD, DEMO_STAFF } from "./demo-data.js";
+import { SettingsService } from "@hotel/hotel/settings/application/settings-service.js";
+import { RoomTypesService } from "@hotel/hotel/rooms/application/room-types-service.js";
+import { RoomsService } from "@hotel/hotel/rooms/application/rooms-service.js";
+import { GuestsService } from "@hotel/hotel/guests/application/guests-service.js";
+import {
+  DEMO_GUESTS,
+  DEMO_ORG,
+  DEMO_PASSWORD,
+  DEMO_ROOMS,
+  DEMO_ROOM_TYPES,
+  DEMO_SETTINGS,
+  DEMO_STAFF,
+} from "./demo-data.js";
 
 const log = moduleLogger("hotel-demo-seed");
 
 /**
  * Opt-in demo dataset (`HOTEL_SEED_DEMO=true`, run from `AppSeedService` only). Idempotent: skips
  * entirely if the demo organization already exists. Mirrors
- * `atlas/backend/app/realestate/demo/demo-seeder.ts`: staff accounts are inserted directly with
- * a pre-verified email (the demo must be one click from signed-in), then roles go through Core
- * RBAC. Hotel data is created through the hotel domain services as those modules land — never by
- * raw inserts that would skip their invariants.
+ * `atlas/backend/app/realestate/demo/demo-seeder.ts`: staff accounts are inserted directly with a
+ * pre-verified email (the demo must be one click from signed-in) and get their roles through Core
+ * RBAC; everything hotel-specific is created through the hotel domain services, acting as the
+ * owner, so every invariant and audit entry is real.
  */
 @Injectable()
 export class DemoSeeder {
-  constructor(private readonly rbac: RbacService) {}
+  constructor(
+    private readonly rbac: RbacService,
+    private readonly settings: SettingsService,
+    private readonly roomTypes: RoomTypesService,
+    private readonly rooms: RoomsService,
+    private readonly guests: GuestsService,
+  ) {}
 
   async seed(clock: Clock): Promise<void> {
     const already = await runAsSystem(() =>
@@ -83,6 +101,35 @@ export class DemoSeeder {
       await runAsSystem(() => this.rbac.assignRole(userIds.get(s.key)!, s.roleKey, ownerId, orgId));
     }
 
-    log.info({ org: DEMO_ORG.slug, staff: DEMO_STAFF.length }, "demo hotel seeded");
+    await withContext({ userId: ownerId, organizationId: orgId }, async () => {
+      await this.settings.update(DEMO_SETTINGS, ownerId);
+
+      const typeIds = new Map<string, string>();
+      for (const [i, t] of DEMO_ROOM_TYPES.entries()) {
+        const created = await this.roomTypes.create({ ...t, sortOrder: i }, ownerId);
+        typeIds.set(t.code, created.id);
+      }
+      for (const [number, floor, code] of DEMO_ROOMS) {
+        await this.rooms.create({ number, floor, roomTypeId: typeIds.get(code)! }, ownerId);
+      }
+
+      for (const g of DEMO_GUESTS) {
+        const { key: _key, notes, ...input } = g;
+        const created = await this.guests.create(input, ownerId);
+        for (const note of notes ?? []) {
+          await this.guests.addNote(created.id, note, ownerId);
+        }
+      }
+    });
+
+    log.info(
+      {
+        org: DEMO_ORG.slug,
+        staff: DEMO_STAFF.length,
+        rooms: DEMO_ROOMS.length,
+        guests: DEMO_GUESTS.length,
+      },
+      "demo hotel seeded",
+    );
   }
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { PUBLIC_SITE_URL } from "@/config";
 import { useAuth } from "@/features/auth/use-auth";
+import { useMyRole } from "@/api/staff";
 import { Brand } from "@/components/ui/brand";
 import { cn } from "@/lib/cn";
 import { initials } from "@/lib/format";
@@ -18,6 +19,7 @@ export function AppShell() {
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const groups = visibleNav(NAV_GROUPS, auth.can);
+  const role = useMyRole(auth.status === "authenticated");
 
   useEffect(() => setDrawerOpen(false), [location.pathname]);
 
@@ -113,7 +115,9 @@ export function AppShell() {
             </div>
             <div className="hidden sm:block">
               <div className="text-small leading-tight font-bold">{auth.user?.displayName}</div>
-              <div className="text-micro leading-tight text-faint">{auth.user?.email}</div>
+              <div className="text-micro leading-tight text-faint">
+                {role.data?.roleName ?? auth.user?.email}
+              </div>
             </div>
           </div>
           <button

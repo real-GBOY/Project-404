@@ -1,19 +1,11 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { tokenStore } from "@/config";
-import { AuthProvider } from "@/features/auth/auth-provider";
+import { json, renderApp } from "@/test/render";
 import { AppRouter } from "./router";
 
 const OWNER = { id: "usr_1", email: "ahmed.nabil@hotelnayel.com", displayName: "Ahmed Nabil" };
-
-function json(status: number, body: unknown): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "content-type": "application/json" },
-  });
-}
 
 /** A tiny stand-in for the HotelOS API: Core's login, /me and logout routes. */
 function fakeApi(opts: { password: string }) {
@@ -30,25 +22,20 @@ function fakeApi(opts: { password: string }) {
         organizations: [],
       });
     }
+    if (url.endsWith("/hotel/me/role")) return json(200, { roleKey: "owner", roleName: "Owner" });
     if (url.endsWith("/me")) {
       const auth = new Headers(init?.headers).get("authorization");
       if (auth !== "Bearer a1") return json(401, { error: { code: "auth", message: "no" } });
-      return json(200, { user: OWNER, organizationId: "org_1", permissions: ["*:*"] });
+      return json(200, {
+        user: OWNER,
+        organizationId: "org_1",
+        permissions: ["read:room", "read:guest"],
+      });
     }
     if (url.endsWith("/auth/logout")) return new Response(null, { status: 204 });
     if (url.endsWith("/auth/refresh")) return json(401, { error: { code: "auth", message: "no" } });
     return json(404, { error: { code: "not_found", message: "not found" } });
   });
-}
-
-function renderApp(path = "/") {
-  return render(
-    <MemoryRouter initialEntries={[path]}>
-      <AuthProvider>
-        <AppRouter />
-      </AuthProvider>
-    </MemoryRouter>,
-  );
 }
 
 describe("HotelOS app shell", () => {
@@ -57,13 +44,13 @@ describe("HotelOS app shell", () => {
 
   it("sends a signed-out visitor to the sign-in page", async () => {
     vi.stubGlobal("fetch", fakeApi({ password: "pw" }));
-    renderApp("/");
+    renderApp(<AppRouter />, "/");
     expect(await screen.findByRole("heading", { name: "Sign in" })).toBeInTheDocument();
   });
 
   it("shows a friendly error for a wrong password and stays on sign-in", async () => {
     vi.stubGlobal("fetch", fakeApi({ password: "pw" }));
-    renderApp("/login");
+    renderApp(<AppRouter />, "/login");
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Email"), OWNER.email);
     await user.type(screen.getByLabelText("Password"), "wrong");
@@ -72,9 +59,9 @@ describe("HotelOS app shell", () => {
     expect(tokenStore.getRefresh()).toBeNull();
   });
 
-  it("signs in into the shell, greets the user by first name, and signs out", async () => {
+  it("signs in, shows role-appropriate navigation and the role label, then signs out", async () => {
     vi.stubGlobal("fetch", fakeApi({ password: "pw" }));
-    renderApp("/login");
+    renderApp(<AppRouter />, "/login");
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Email"), OWNER.email);
     await user.type(screen.getByLabelText("Password"), "pw");
@@ -82,8 +69,11 @@ describe("HotelOS app shell", () => {
 
     expect(await screen.findByRole("heading", { name: /, Ahmed$/ })).toBeInTheDocument();
     const nav = screen.getByRole("complementary", { name: "Main navigation" });
-    expect(nav).toHaveTextContent("Dashboard");
-    expect(screen.getByText("Ahmed Nabil")).toBeInTheDocument();
+    expect(nav).toHaveTextContent("Rooms");
+    expect(nav).toHaveTextContent("Guests");
+    // No read:staff / read:hotel_settings → the Administration group is hidden entirely.
+    expect(nav).not.toHaveTextContent("Administration");
+    expect(await screen.findByText("Owner")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Sign out" }));
     await waitFor(() =>

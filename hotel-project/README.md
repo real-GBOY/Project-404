@@ -31,7 +31,16 @@ npm install
 npm run dev                   # http://localhost:4600, proxies /api → :3200
 ```
 
-Demo sign-in (with `HOTEL_SEED_DEMO=true`): `ahmed.nabil@hotelnayel.com` / `demo-password-2026`.
+Demo sign-in (with `HOTEL_SEED_DEMO=true`), password `demo-password-2026` for everyone:
+
+| Role | Email |
+|---|---|
+| Owner | ahmed.nabil@hotelnayel.com |
+| Manager | mona.farid@hotelnayel.com |
+| Receptionist | youssef.adly@hotelnayel.com, rania.kamal@hotelnayel.com |
+| Accountant | dina.samir@hotelnayel.com |
+| Housekeeping | hassan.ali@hotelnayel.com, salma.mahmoud@hotelnayel.com |
+| Maintenance | omar.tarek@hotelnayel.com |
 
 ## Checks
 

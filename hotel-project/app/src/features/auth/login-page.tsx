@@ -3,7 +3,7 @@ import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { ApiError, DEMO_EMAIL, DEMO_PASSWORD } from "@/config";
 import { Brand } from "@/components/ui/brand";
 import { Button } from "@/components/ui/button";
-import { TextField } from "@/components/ui/text-field";
+import { InputField } from "@/components/ui/fields";
 import { useAuth } from "./use-auth";
 
 /**
@@ -55,7 +55,7 @@ export function LoginPage() {
           <h1 className="m-0 mb-1 text-[20px] font-bold">Sign in</h1>
           <p className="m-0 mb-6 text-body text-muted">Hotel Nayel staff workspace</p>
           <div className="flex flex-col gap-4">
-            <TextField
+            <InputField
               label="Email"
               type="email"
               autoComplete="username"
@@ -63,7 +63,7 @@ export function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
-            <TextField
+            <InputField
               label="Password"
               type="password"
               autoComplete="current-password"

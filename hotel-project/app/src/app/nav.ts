@@ -18,6 +18,15 @@ export interface NavGroup {
 
 export const NAV_GROUPS: NavGroup[] = [
   { label: "Overview", items: [{ label: "Dashboard", to: "/" }] },
+  { label: "Operations", items: [{ label: "Rooms", to: "/rooms", permission: "read:room" }] },
+  { label: "Guests", items: [{ label: "Guests", to: "/guests", permission: "read:guest" }] },
+  {
+    label: "Administration",
+    items: [
+      { label: "Staff & Permissions", to: "/staff", permission: "read:staff" },
+      { label: "Settings", to: "/settings", permission: "read:hotel_settings" },
+    ],
+  },
 ];
 
 export function visibleNav(groups: NavGroup[], can: (permission: string) => boolean): NavGroup[] {

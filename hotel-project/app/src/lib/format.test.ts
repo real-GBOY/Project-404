@@ -19,3 +19,21 @@ describe("hotel-local formatting", () => {
     expect(initials(null)).toBe("");
   });
 });
+
+describe("money and relative time", () => {
+  it("formats EGP like the design", async () => {
+    const { formatEgp } = await import("./format");
+    expect(formatEgp(4200)).toBe("4,200 EGP");
+    expect(formatEgp(1234.5)).toBe("1,234.50 EGP");
+  });
+
+  it("describes last-active times in words", async () => {
+    const { formatRelative } = await import("./format");
+    const now = new Date("2026-09-27T12:00:00Z");
+    expect(formatRelative(null, now)).toBe("Never");
+    expect(formatRelative("2026-09-27T11:59:40Z", now)).toBe("Just now");
+    expect(formatRelative("2026-09-27T11:48:00Z", now)).toBe("12 min ago");
+    expect(formatRelative("2026-09-27T09:00:00Z", now)).toBe("3 hr ago");
+    expect(formatRelative("2026-09-26T09:00:00Z", now)).toBe("Yesterday");
+  });
+});

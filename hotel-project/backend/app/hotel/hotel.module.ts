@@ -1,5 +1,9 @@
 import { Module } from "@nestjs/common";
 import { HotelSharedModule } from "@hotel/hotel/shared/shared.module.js";
+import { SettingsModule } from "@hotel/hotel/settings/settings.module.js";
+import { StaffModule } from "@hotel/hotel/staff/staff.module.js";
+import { RoomsModule } from "@hotel/hotel/rooms/rooms.module.js";
+import { GuestsModule } from "@hotel/hotel/guests/guests.module.js";
 
 /**
  * The HotelOS product domain (mirrors `atlas/backend/app/realestate/realestate.module.ts`).
@@ -8,6 +12,6 @@ import { HotelSharedModule } from "@hotel/hotel/shared/shared.module.js";
  * hotel-specific behaviour never moves into Core. Architecture: `docs/architecture.md`.
  */
 @Module({
-  imports: [HotelSharedModule],
+  imports: [HotelSharedModule, SettingsModule, StaffModule, RoomsModule, GuestsModule],
 })
 export class HotelModule {}

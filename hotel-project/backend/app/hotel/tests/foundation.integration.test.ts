@@ -165,7 +165,7 @@ describe.skipIf(!hasTestDb)("HotelOS foundation", () => {
       };
       expect(me.user.displayName).toBe("Ahmed Nabil");
       expect(me.organizationId).toMatch(/^org_/);
-      expect(me.permissions).toContain("*:*");
+      expect(me.permissions).toEqual(expect.arrayContaining(["manage:staff", "manage:role"]));
     });
 
     it("does not leak internals on a wrong password", async () => {

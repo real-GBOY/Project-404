@@ -109,7 +109,7 @@ export interface SeededHotel {
 
 let seq = 0;
 
-/** Register an owner, create their hotel organization, and grant Core's `admin` role. */
+/** Register an owner, create their hotel organization, and grant the hotel `owner` role. */
 export async function seedHotel(app: TestingModule, name = "Test Hotel"): Promise<SeededHotel> {
   const identity = get<IdentityService>(app, IdentityService);
   const orgs = get<OrganizationService>(app, OrganizationService);
@@ -122,7 +122,7 @@ export async function seedHotel(app: TestingModule, name = "Test Hotel"): Promis
     displayName: "Hotel Owner",
   });
   const org = await orgs.createOrganization({ name, createdBy: owner.id });
-  await asSystem(() => rbac.assignRole(owner.id, "admin", owner.id, org.id));
+  await asSystem(() => rbac.assignRole(owner.id, "owner", owner.id, org.id));
   return { orgId: org.id, ownerId: owner.id, ownerEmail };
 }
 
