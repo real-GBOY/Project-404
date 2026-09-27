@@ -30,6 +30,8 @@ export interface Room {
   housekeepingStatus: HousekeepingStatus;
   serviceStatus: ServiceStatus;
   displayStatus: RoomDisplayStatus;
+  /** In-house or arriving guest tonight. */
+  currentGuest: string | null;
   notes: string | null;
   archivedAt: string | null;
 }

@@ -10,7 +10,12 @@ export type HotelIdPrefix =
   | "rmt" // room type
   | "rom" // room
   | "gst" // guest
-  | "gnt"; // guest note
+  | "gnt" // guest note
+  | "rtr" // rate rule
+  | "dsc" // discount code
+  | "rsv" // reservation
+  | "ral" // room allocation
+  | "rsh"; // reservation status history
 
 export const hotelId = (prefix: HotelIdPrefix): string => createPrefixedId(prefix);
 

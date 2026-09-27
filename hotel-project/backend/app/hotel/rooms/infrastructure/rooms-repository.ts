@@ -1,8 +1,17 @@
 import { Injectable } from "@nestjs/common";
+import { sql } from "kysely";
 import { requireOrganizationId } from "@core/kernel/tenant.js";
 import { hotelDb } from "@hotel/hotel/db/executor.js";
 import { hotelId } from "@hotel/hotel/shared/ids.js";
+import type { IsoDate } from "@hotel/hotel/shared/dates.js";
 import type { HousekeepingStatus, ServiceStatus } from "../domain/room-status.js";
+
+export interface RoomOccupancyRow {
+  roomId: string;
+  occupied: boolean;
+  arrivingToday: boolean;
+  guestName: string | null;
+}
 
 export interface RoomRecord {
   id: string;
@@ -115,6 +124,43 @@ export class RoomsRepository {
       .where("organization_id", "=", requireOrganizationId())
       .where("id", "=", id)
       .execute();
+  }
+
+  /**
+   * Tonight's occupancy per room, read from the allocation ledger: a checked-in stay covering
+   * `today` = occupied; a confirmed arrival due `today` = arriving. A read model only — status
+   * changes never happen here.
+   */
+  async occupancy(today: IsoDate): Promise<Map<string, RoomOccupancyRow>> {
+    const org = requireOrganizationId();
+    const rows = await sql<{
+      room_id: string;
+      status: string;
+      arrival: string;
+      guest_name: string;
+    }>`
+      SELECT a.room_id, r.status, r.arrival::text AS arrival, g.full_name AS guest_name
+        FROM hotel_room_allocations a
+        JOIN hotel_reservations r ON r.organization_id = a.organization_id AND r.id = a.reservation_id
+        JOIN hotel_guests g ON g.organization_id = r.organization_id AND g.id = r.guest_id
+       WHERE a.organization_id = ${org}
+         AND a.active
+         AND a.stay @> ${today}::date
+         AND r.status IN ('checked_in', 'confirmed')
+    `.execute(hotelDb());
+    const map = new Map<string, RoomOccupancyRow>();
+    for (const row of rows.rows) {
+      const occupied = row.status === "checked_in";
+      const arrivingToday = row.status === "confirmed" && row.arrival === today;
+      if (!occupied && !arrivingToday) continue;
+      map.set(row.room_id, {
+        roomId: row.room_id,
+        occupied,
+        arrivingToday,
+        guestName: row.guest_name,
+      });
+    }
+    return map;
   }
 
   private toRecord(r: {

@@ -3,6 +3,8 @@ import { settingsPermissions } from "@hotel/hotel/settings/permissions/permissio
 import { staffPermissions } from "@hotel/hotel/staff/permissions/permissions.js";
 import { roomsPermissions } from "@hotel/hotel/rooms/permissions/permissions.js";
 import { guestsPermissions } from "@hotel/hotel/guests/permissions/permissions.js";
+import { pricingPermissions } from "@hotel/hotel/pricing/permissions/permissions.js";
+import { reservationsPermissions } from "@hotel/hotel/reservations/permissions/permissions.js";
 
 /**
  * Every permission the hotel domain contributes to Core RBAC, seeded by `AppSeedService` on boot
@@ -15,4 +17,6 @@ export const HOTEL_PERMISSIONS: PermissionDefinition[] = [
   ...staffPermissions,
   ...roomsPermissions,
   ...guestsPermissions,
+  ...pricingPermissions,
+  ...reservationsPermissions,
 ];

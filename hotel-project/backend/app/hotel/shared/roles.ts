@@ -54,7 +54,17 @@ export const HOTEL_ROLES: RoleSeed[] = [
     name: "Receptionist",
     description: "Reservations, guests, check-in, check-out and payment collection.",
     permissionKeys: [
-      ...has("read:hotel_settings", "read:room", "read:guest", "create:guest", "update:guest"),
+      ...has(
+        "read:hotel_settings",
+        "read:room",
+        "read:guest",
+        "create:guest",
+        "update:guest",
+        "read:rate",
+        "read:reservation",
+        "create:reservation",
+        "update:reservation",
+      ),
       ...CORE_FILE_KEYS,
     ],
   },
@@ -62,19 +72,28 @@ export const HOTEL_ROLES: RoleSeed[] = [
     key: "accountant",
     name: "Accountant",
     description: "Invoices, payments, refunds and financial reports.",
-    permissionKeys: has("read:hotel_settings", "read:room", "read:guest"),
+    permissionKeys: has(
+      "read:hotel_settings",
+      "read:room",
+      "read:guest",
+      "read:rate",
+      "read:reservation",
+    ),
   },
   {
     key: "housekeeping",
     name: "Housekeeping",
     description: "Room cleaning and inspection workflows.",
-    permissionKeys: has("read:hotel_settings", "read:room"),
+    permissionKeys: has("read:hotel_settings", "read:room", "read:reservation"),
   },
   {
     key: "maintenance",
     name: "Maintenance",
     description: "Maintenance tickets and room issues.",
-    permissionKeys: [...has("read:hotel_settings", "read:room"), ...CORE_FILE_KEYS],
+    permissionKeys: [
+      ...has("read:hotel_settings", "read:room", "read:reservation"),
+      ...CORE_FILE_KEYS,
+    ],
   },
 ];
 

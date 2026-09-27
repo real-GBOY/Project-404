@@ -164,6 +164,9 @@ function RoomCard({ room, onEdit }: { room: Room; onEdit?: () => void }) {
       <div className="text-label text-muted">
         {room.roomTypeName} · Floor {room.floor}
       </div>
+      {room.currentGuest ? (
+        <div className="mt-1.5 truncate text-label font-semibold">{room.currentGuest}</div>
+      ) : null}
     </>
   );
   const cls = "block h-full w-full rounded-[11px] border border-border bg-surface p-3.5 text-left";

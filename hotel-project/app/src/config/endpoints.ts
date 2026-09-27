@@ -36,4 +36,27 @@ export const ENDPOINTS = {
     remove: (userId: string) => `/hotel/staff/${userId}/remove`,
   },
   roles: "/hotel/roles",
+
+  rates: {
+    list: "/hotel/rates",
+    rules: "/hotel/rates/rules",
+    discounts: "/hotel/rates/discounts",
+    archiveRule: (id: string) => `/hotel/rates/rules/${id}/archive`,
+    archiveDiscount: (id: string) => `/hotel/rates/discounts/${id}/archive`,
+  },
+
+  availability: {
+    search: "/hotel/availability",
+    rooms: "/hotel/availability/rooms",
+  },
+  calendar: "/hotel/calendar",
+  reservations: {
+    list: "/hotel/reservations",
+    byId: (id: string) => `/hotel/reservations/${id}`,
+    confirm: (id: string) => `/hotel/reservations/${id}/confirm`,
+    cancel: (id: string) => `/hotel/reservations/${id}/cancel`,
+    noShow: (id: string) => `/hotel/reservations/${id}/no-show`,
+    changeRoom: (id: string) => `/hotel/reservations/${id}/change-room`,
+    changeDates: (id: string) => `/hotel/reservations/${id}/change-dates`,
+  },
 } as const;

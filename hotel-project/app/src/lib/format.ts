@@ -74,3 +74,51 @@ export function formatRelative(value: string | Date | null, now: Date = new Date
   if (diffHr < 48) return "Yesterday";
   return formatDate(value);
 }
+
+// ─── hotel calendar dates ("YYYY-MM-DD", never browser-local instants) ────────
+
+function isoToUtc(date: string): Date {
+  return new Date(`${date}T00:00:00Z`);
+}
+
+/** "Sep 27" (or "Sep 27, 2026" with `withYear`) for a hotel date string. */
+export function formatIsoDate(date: string, withYear = false): string {
+  return new Intl.DateTimeFormat(LOCALE, {
+    timeZone: "UTC",
+    month: "short",
+    day: "numeric",
+    ...(withYear ? { year: "numeric" } : {}),
+  }).format(isoToUtc(date));
+}
+
+/** "Tue 29" — calendar column headers. */
+export function formatDayHeader(date: string): string {
+  const d = isoToUtc(date);
+  const wd = new Intl.DateTimeFormat(LOCALE, { timeZone: "UTC", weekday: "short" }).format(d);
+  return `${wd} ${d.getUTCDate()}`;
+}
+
+/** "Sep 27 → Sep 30" — the design's stay format. */
+export function formatStay(arrival: string, departure: string): string {
+  return `${formatIsoDate(arrival)} → ${formatIsoDate(departure)}`;
+}
+
+export function addIsoDays(date: string, days: number): string {
+  const d = isoToUtc(date);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+export function isoDaysBetween(from: string, to: string): number {
+  return Math.round((isoToUtc(to).getTime() - isoToUtc(from).getTime()) / 86_400_000);
+}
+
+/** Today's date at the hotel (Cairo), as "YYYY-MM-DD". */
+export function hotelToday(now: Date = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: HOTEL_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+}

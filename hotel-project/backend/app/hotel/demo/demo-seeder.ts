@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { currentExecutor, unitOfWork } from "@core/kernel/db/db.js";
+import { currentExecutor, readInTenant, unitOfWork } from "@core/kernel/db/db.js";
 import { newId } from "@core/kernel/id.js";
 import { runAsSystem, withContext } from "@core/kernel/logging/context.js";
 import { moduleLogger } from "@core/kernel/logging/logger.js";
@@ -10,8 +10,14 @@ import { SettingsService } from "@hotel/hotel/settings/application/settings-serv
 import { RoomTypesService } from "@hotel/hotel/rooms/application/room-types-service.js";
 import { RoomsService } from "@hotel/hotel/rooms/application/rooms-service.js";
 import { GuestsService } from "@hotel/hotel/guests/application/guests-service.js";
+import { PricingService } from "@hotel/hotel/pricing/application/pricing-service.js";
+import { ReservationsService } from "@hotel/hotel/reservations/application/reservations-service.js";
+import { addDays } from "@hotel/hotel/shared/dates.js";
 import {
+  DEMO_DISCOUNTS,
   DEMO_GUESTS,
+  DEMO_RATE_RULES,
+  DEMO_RESERVATIONS,
   DEMO_ORG,
   DEMO_PASSWORD,
   DEMO_ROOMS,
@@ -38,6 +44,8 @@ export class DemoSeeder {
     private readonly roomTypes: RoomTypesService,
     private readonly rooms: RoomsService,
     private readonly guests: GuestsService,
+    private readonly pricing: PricingService,
+    private readonly reservations: ReservationsService,
   ) {}
 
   async seed(clock: Clock): Promise<void> {
@@ -109,16 +117,56 @@ export class DemoSeeder {
         const created = await this.roomTypes.create({ ...t, sortOrder: i }, ownerId);
         typeIds.set(t.code, created.id);
       }
+      const roomIds = new Map<string, string>();
       for (const [number, floor, code] of DEMO_ROOMS) {
-        await this.rooms.create({ number, floor, roomTypeId: typeIds.get(code)! }, ownerId);
+        const room = await this.rooms.create(
+          { number, floor, roomTypeId: typeIds.get(code)! },
+          ownerId,
+        );
+        roomIds.set(number, room.id);
       }
 
+      const guestIds = new Map<string, string>();
       for (const g of DEMO_GUESTS) {
-        const { key: _key, notes, ...input } = g;
+        const { key, notes, ...input } = g;
         const created = await this.guests.create(input, ownerId);
+        guestIds.set(key, created.id);
         for (const note of notes ?? []) {
           await this.guests.addNote(created.id, note, ownerId);
         }
+      }
+
+      for (const { roomTypeCode, ...rule } of DEMO_RATE_RULES) {
+        await this.pricing.createRule(
+          { ...rule, roomTypeId: roomTypeCode ? typeIds.get(roomTypeCode)! : null },
+          ownerId,
+        );
+      }
+      for (const d of DEMO_DISCOUNTS) {
+        await this.pricing.createDiscount({ ...d, validFrom: null, validTo: null }, ownerId);
+      }
+
+      // Upcoming business relative to the hotel's today, booked through the real engine.
+      const today = await readInTenant(() => this.settings.today());
+      for (const r of DEMO_RESERVATIONS) {
+        const arrival = addDays(today, r.arriveIn);
+        const created = await this.reservations.create(
+          {
+            guestId: guestIds.get(r.guestKey)!,
+            roomTypeId: typeIds.get(r.roomTypeCode)!,
+            roomId: r.room ? roomIds.get(r.room)! : null,
+            arrival,
+            departure: addDays(arrival, r.nights),
+            adults: r.adults,
+            children: r.children ?? 0,
+            source: r.source,
+            notes: r.notes ?? null,
+            discountCode: r.discountCode ?? null,
+            confirm: r.confirm,
+          },
+          ownerId,
+        );
+        if (r.cancel) await this.reservations.cancel(created.id, r.cancel, ownerId);
       }
     });
 
@@ -128,6 +176,7 @@ export class DemoSeeder {
         staff: DEMO_STAFF.length,
         rooms: DEMO_ROOMS.length,
         guests: DEMO_GUESTS.length,
+        reservations: DEMO_RESERVATIONS.length,
       },
       "demo hotel seeded",
     );

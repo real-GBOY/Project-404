@@ -4,6 +4,8 @@ import { SettingsModule } from "@hotel/hotel/settings/settings.module.js";
 import { StaffModule } from "@hotel/hotel/staff/staff.module.js";
 import { RoomsModule } from "@hotel/hotel/rooms/rooms.module.js";
 import { GuestsModule } from "@hotel/hotel/guests/guests.module.js";
+import { PricingModule } from "@hotel/hotel/pricing/pricing.module.js";
+import { ReservationsModule } from "@hotel/hotel/reservations/reservations.module.js";
 
 /**
  * The HotelOS product domain (mirrors `atlas/backend/app/realestate/realestate.module.ts`).
@@ -12,6 +14,14 @@ import { GuestsModule } from "@hotel/hotel/guests/guests.module.js";
  * hotel-specific behaviour never moves into Core. Architecture: `docs/architecture.md`.
  */
 @Module({
-  imports: [HotelSharedModule, SettingsModule, StaffModule, RoomsModule, GuestsModule],
+  imports: [
+    HotelSharedModule,
+    SettingsModule,
+    StaffModule,
+    RoomsModule,
+    GuestsModule,
+    PricingModule,
+    ReservationsModule,
+  ],
 })
 export class HotelModule {}

@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { AuditModule } from "@core/index.js";
+import { SettingsModule } from "@hotel/hotel/settings/settings.module.js";
 import { RoomTypesController } from "./api/room-types.controller.js";
 import { RoomsController } from "./api/rooms.controller.js";
 import { RoomTypesService } from "./application/room-types-service.js";
@@ -8,7 +9,7 @@ import { RoomTypesRepository } from "./infrastructure/room-types-repository.js";
 import { RoomsRepository } from "./infrastructure/rooms-repository.js";
 
 @Module({
-  imports: [AuditModule],
+  imports: [AuditModule, SettingsModule],
   controllers: [RoomTypesController, RoomsController],
   providers: [RoomTypesRepository, RoomsRepository, RoomTypesService, RoomsService],
   exports: [RoomTypesRepository, RoomsRepository, RoomTypesService, RoomsService],

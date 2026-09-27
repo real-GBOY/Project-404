@@ -1,6 +1,9 @@
 import { useState, type FormEvent } from "react";
 import { useParams } from "react-router-dom";
 import { useAddGuestNote, useGuest } from "@/api/guests";
+import { useReservations } from "@/api/reservations";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/features/auth/use-auth";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -9,7 +12,7 @@ import { FormError } from "@/components/ui/fields";
 import { PageHeader } from "@/components/ui/page-header";
 import { ErrorState, LoadingState } from "@/components/ui/states";
 import { errorMessage } from "@/lib/errors";
-import { formatDate, formatRelative } from "@/lib/format";
+import { formatDate, formatEgp, formatIsoDate, formatRelative, formatStay } from "@/lib/format";
 import { GuestDialog } from "./guest-dialog";
 import { VipBadge } from "./vip-badge";
 
@@ -62,6 +65,8 @@ export function GuestProfilePage() {
         }
       />
 
+      {auth.can("read:reservation") ? <StayHistory guestId={g.id} /> : null}
+
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr_1fr]">
         <Card>
           <CardTitle>Profile</CardTitle>
@@ -92,6 +97,64 @@ export function GuestProfilePage() {
 
       {editing ? <GuestDialog guest={g} onClose={() => setEditing(false)} /> : null}
     </>
+  );
+}
+
+/** Stats + the design's Reservation History, read from the guest's reservations. */
+function StayHistory({ guestId }: { guestId: string }) {
+  const res = useReservations({ guestId, page: 1, pageSize: 100 });
+  if (!res.data) return null;
+  const items = res.data.items;
+  const stays = items.filter((r) => r.status === "checked_out");
+  const lastStay = stays
+    .map((r) => r.departure)
+    .sort()
+    .at(-1);
+  const booked = items
+    .filter((r) => r.status !== "cancelled" && r.status !== "no_show")
+    .reduce((sum, r) => sum + r.total, 0);
+  return (
+    <>
+      <div className="mb-[22px] grid grid-cols-1 gap-3.5 sm:grid-cols-3">
+        <Stat label="Completed stays" value={String(stays.length)} />
+        <Stat label="Booked value (before VAT)" value={formatEgp(booked)} />
+        <Stat label="Last stay" value={lastStay ? formatIsoDate(lastStay, true) : "—"} />
+      </div>
+      <Card className="mb-4">
+        <CardTitle>Reservation History</CardTitle>
+        {items.length === 0 ? (
+          <p className="m-0 text-small text-faint">No reservations yet.</p>
+        ) : (
+          <ul className="m-0 list-none p-0">
+            {items.map((r) => (
+              <li key={r.id} className="border-b border-divider last:border-b-0">
+                <Link
+                  to={`/reservations/${r.id}`}
+                  className="flex items-center justify-between py-[11px]"
+                >
+                  <div>
+                    <div className="text-small font-semibold">
+                      {formatStay(r.arrival, r.departure)} · Room {r.roomNumber ?? "—"}
+                    </div>
+                    <div className="font-mono text-micro text-faint">#{r.code}</div>
+                  </div>
+                  <StatusBadge status={r.status} />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+    </>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-card border border-border bg-surface p-4">
+      <div className="mb-1.5 text-label text-muted">{label}</div>
+      <div className="text-[20px] font-extrabold">{value}</div>
+    </div>
   );
 }
 

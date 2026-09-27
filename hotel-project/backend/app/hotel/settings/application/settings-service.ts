@@ -1,7 +1,9 @@
 import { Inject, Injectable } from "@nestjs/common";
 import type { UnitOfWork } from "@core/kernel/db/db.js";
 import { readInTenant } from "@core/kernel/db/db.js";
-import { AUDIT_LOGGER, UNIT_OF_WORK } from "@core/kernel/tokens.js";
+import { AUDIT_LOGGER, CLOCK, UNIT_OF_WORK } from "@core/kernel/tokens.js";
+import type { Clock } from "@core/kernel/clock.js";
+import { hotelDate, type IsoDate } from "@hotel/hotel/shared/dates.js";
 import type { IAuditLogger } from "@core/contracts/index.js";
 import {
   SettingsRepository,
@@ -31,8 +33,15 @@ export class SettingsService {
   constructor(
     private readonly repo: SettingsRepository,
     @Inject(AUDIT_LOGGER) private readonly audit: IAuditLogger,
+    @Inject(CLOCK) private readonly clock: Clock,
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
+
+  /** The hotel's current calendar date in its own time zone (inside a tenant transaction). */
+  async today(): Promise<IsoDate> {
+    const { timeZone } = await this.current();
+    return hotelDate(this.clock.now(), timeZone);
+  }
 
   get(): Promise<HotelSettings> {
     return readInTenant(() => this.current());

@@ -15,6 +15,7 @@ import { DemoSeeder } from "@hotel/hotel/demo/demo-seeder.js";
 import {
   DEMO_GUESTS,
   DEMO_PASSWORD,
+  DEMO_RESERVATIONS,
   DEMO_ROOMS,
   DEMO_ROOM_TYPES,
   DEMO_STAFF,
@@ -397,6 +398,15 @@ describe.skipIf(!hasTestDb)("HotelOS property setup (Slice 1)", () => {
       expect((guestsRes.json() as { total: number }).total).toBe(DEMO_GUESTS.length);
       const staffRes = await http.inject({ method: "GET", url: "/api/hotel/staff", headers: auth });
       expect((staffRes.json() as { items: unknown[] }).items).toHaveLength(DEMO_STAFF.length);
+
+      const resRes = await http.inject({
+        method: "GET",
+        url: "/api/hotel/reservations?pageSize=100",
+        headers: auth,
+      });
+      const booked = resRes.json() as { total: number; items: Array<{ status: string }> };
+      expect(booked.total).toBe(DEMO_RESERVATIONS.length);
+      expect(booked.items.filter((r) => r.status === "cancelled")).toHaveLength(1);
     });
   });
 });

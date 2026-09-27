@@ -16,3 +16,9 @@ export function isUniqueViolation(err: unknown, constraint?: string): boolean {
   const pg = asPg(err);
   return pg?.code === "23505" && (!constraint || pg.constraint === constraint);
 }
+
+/** 23P01 exclusion_violation — e.g. two active room allocations overlapping. */
+export function isExclusionViolation(err: unknown, constraint?: string): boolean {
+  const pg = asPg(err);
+  return pg?.code === "23P01" && (!constraint || pg.constraint === constraint);
+}

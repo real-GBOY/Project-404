@@ -4,7 +4,7 @@ HotelOS is the operations platform behind **Hotel Nayel**, the third AURIC produ
 (law firms) and Atlas (real estate). This file records the decisions that shape it and, more
 importantly, *why* — so a future change can tell a deliberate constraint from an accident.
 
-Status: **Slices 0–1 complete** (foundation; property setup — settings, staff & roles, room types, rooms, guests). Sections marked *(planned)* describe the locked design
+Status: **Slices 0–2 complete** (foundation; property setup; the reservation engine — pricing, availability, allocation, lifecycle, calendar). Sections marked *(planned)* describe the locked design
 for later slices; they become as-built as each slice lands.
 
 ## 1. Topology
@@ -54,7 +54,7 @@ real-time chat — but its tables exist because the copied Core baseline is kept
 - **Hotel dates** — nights are `date` values in the hotel's time zone (Africa/Cairo); "today"
   comes from the injected `Clock` + the hotel's zone, never UTC midnight.
 
-## 3. No double booking *(constraint planned for Slice 2; prerequisite installed in Slice 0)*
+## 3. No double booking *(as built — Slice 2)*
 
 The invariant lives in the database, not in the application:
 
@@ -62,7 +62,7 @@ The invariant lives in the database, not in the application:
 EXCLUDE USING gist (organization_id WITH =, room_id WITH =, stay WITH &&) WHERE (active)
 ```
 
-on the room-allocation table, where `stay` is a `daterange` `[arrival, departure)` (half-open, so a
+on `hotel_room_allocations`, where `stay` is a `daterange` `[arrival, departure)` (half-open, so a
 departure and the next arrival on the same day do not collide). Mixing `=` on a text column with
 `&&` on a range needs **btree_gist**, installed by migration `20260927120000_hotel_foundation`.
 
@@ -75,9 +75,26 @@ install it, the documented fallback is a `room_nights (organization_id, room_id,
 a `UNIQUE` constraint, written in the same transaction as the allocation — the invariant is never
 silently downgraded to an application check.
 
-Concurrent attempts: the losing transaction gets SQLSTATE `23P01`; the booking service maps it to
-`409 reservation.room_unavailable` (auto-assignment may retry once on the next free room). A test
-that fires concurrent bookings at the same inventory is a Slice 2 acceptance criterion.
+**One ledger for all claims.** `hotel_room_allocations` holds every claim on a room's nights with
+a `kind` of `reservation` or `block` (maintenance, from the operations slice). Because both live
+under the same exclusion constraint, a booking can never overlap a maintenance block either —
+two separate tables could not guarantee that. Releasing a claim (cancel, no-show, the unused nights
+of an early check-out) clears `active` in the same transaction as the status change.
+
+**Allocation never checks then writes.** A reservation claims its room by INSERTing an allocation.
+The candidate query ("rooms of this type with no overlapping claim") is only a starting point; the
+insert decides. Concurrent attempts on the same nights serialise on the constraint: the loser gets
+SQLSTATE `23P01`. For a named room that becomes `409 reservation.room_unavailable`. For
+auto-assignment each attempt runs inside a SAVEPOINT (a failed statement would otherwise abort the
+whole transaction), the next candidate is tried, and candidates are re-read each round so rooms
+committed by competitors are seen — `409 reservation.no_availability` is returned only when no
+room of the type is actually free.
+
+**Proven by tests** (`app/hotel/tests/reservations.integration.test.ts`): an overlapping allocation
+inserted directly in SQL is rejected; 20 simultaneous bookings of one room → exactly 1 wins;
+12 simultaneous auto-assigned bookings for 3 rooms → exactly 3 win, on 3 different rooms, with no
+orphaned reservations; staggered overlapping ranges racing for one room → zero overlaps. Each test
+ends with a self-join over the ledger asserting no two active claims overlap.
 
 ## 4. Domain rules locked for later slices *(planned)*
 
@@ -128,6 +145,14 @@ Frontend permission checks (`useAuth().can`, `visibleNav`) are UX only; the back
 | 1 | Room housekeeping/service status is **not** editable from the room form | They change only through housekeeping and maintenance workflows (Slice 4) |
 | 1 | Guest audit entries record *which fields changed*, not values | Identity-document numbers are personal data; the audit log should not duplicate them. The UI masks document numbers |
 | 1 | Guests need a phone **or** an email; email unique per hotel, case-insensitive (partial unique index) | Enforced at API, domain and database |
+| 2 | Pricing is a pure function; per night the single highest-priority applicable rule wins (no stacking); strictest `min_nights` of any rule touching the stay applies; discount codes take % off the room total | Explainable prices — every night records the rule that priced it. The request schema has no price field at all |
+| 2 | Money arithmetic in integer piastres; totals stored as `numeric(12,2)` with a CHECK that `total = room_total − discount_amount` | No float drift; the database rejects an inconsistent row |
+| 2 | Hotel dates are `YYYY-MM-DD` strings end to end; repositories select DATE columns as `::text`; "today" = `Clock` + the hotel's time zone | node-postgres would build a JS Date at local midnight and shift dates across zones |
+| 2 | Status history has a `seq` column | Transitions in one transaction share `CURRENT_TIMESTAMP`; `seq` keeps their order |
+| 2 | State changes only through explicit actions (`/confirm`, `/cancel`, `/no-show`, `/change-room`, `/change-dates`); each row-locks the reservation first | No generic PATCH can set a status or price; concurrent actions on one booking serialise |
+| 2 | No-show only on/after the arrival date; cancel needs its own permission (`cancel:reservation`, not held by receptionists) | Matches the design's role matrix |
+| 2 | Core fix: JWT `signAccessToken` now issues `iat`/`exp` from the injected `Clock` (verify already used it) | Core's own rule — no wall-clock time in Core logic. Under any non-real clock fresh tokens were judged expired; Core/Mizan suites (341 tests) pass with the fix |
+| 2 | Tests pin `HOTEL_SEED_DEMO=false` | A developer's local `.env` must never change test behaviour |
 
 ## 7. Quality gate
 

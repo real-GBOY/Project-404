@@ -18,12 +18,20 @@ export interface NavGroup {
 
 export const NAV_GROUPS: NavGroup[] = [
   { label: "Overview", items: [{ label: "Dashboard", to: "/" }] },
-  { label: "Operations", items: [{ label: "Rooms", to: "/rooms", permission: "read:room" }] },
+  {
+    label: "Operations",
+    items: [
+      { label: "Reservations", to: "/reservations", permission: "read:reservation" },
+      { label: "Calendar", to: "/calendar", permission: "read:reservation" },
+      { label: "Rooms", to: "/rooms", permission: "read:room" },
+    ],
+  },
   { label: "Guests", items: [{ label: "Guests", to: "/guests", permission: "read:guest" }] },
   {
     label: "Administration",
     items: [
       { label: "Staff & Permissions", to: "/staff", permission: "read:staff" },
+      { label: "Rates & Discounts", to: "/rates", permission: "read:rate" },
       { label: "Settings", to: "/settings", permission: "read:hotel_settings" },
     ],
   },

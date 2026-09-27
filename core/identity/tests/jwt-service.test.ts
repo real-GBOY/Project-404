@@ -55,17 +55,30 @@ describe("JwtService — access tokens", () => {
     expect(() => svc.verifyAccessToken(tampered)).toThrow();
   });
 
-  it("honours expiry against the injected clock", () => {
+  it("issues and expires tokens on the injected clock, never the wall clock", () => {
+    // Signed at the injected clock's 12:00 — not at whatever the machine's time is.
     const token = make().signAccessToken({ sub: "u", email: "", org: null, perms: [] });
+    expect(jwt.decode(token)).toMatchObject({
+      iat: Date.parse("2026-08-29T12:00:00.000Z") / 1000,
+      exp: Date.parse("2026-08-29T12:15:00.000Z") / 1000,
+    });
 
-    // clock 20 minutes ahead — past the 15-minute TTL
-    const later = fixedClock(new Date(Date.now() + 20 * 60 * 1000).toISOString());
-    expect(() => make({ clock: later }).verifyAccessToken(token)).toThrow(jwt.TokenExpiredError);
-
-    // clock at "now" — still valid
+    // 5 minutes later on the same clock — still valid.
     expect(() =>
-      make({ clock: fixedClock(new Date().toISOString()) }).verifyAccessToken(token),
+      make({ clock: fixedClock("2026-08-29T12:05:00.000Z") }).verifyAccessToken(token),
     ).not.toThrow();
+
+    // 20 minutes later — past the 15-minute TTL.
+    expect(() =>
+      make({ clock: fixedClock("2026-08-29T12:20:00.000Z") }).verifyAccessToken(token),
+    ).toThrow(jwt.TokenExpiredError);
+  });
+
+  it("a token issued under a clock ahead of real time is valid on that clock (regression)", () => {
+    const ahead = fixedClock(new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString());
+    const svc = make({ clock: ahead });
+    const token = svc.signAccessToken({ sub: "u", email: "", org: null, perms: [] });
+    expect(() => svc.verifyAccessToken(token)).not.toThrow();
   });
 
   it("defaults email and perms when the payload omits them", () => {

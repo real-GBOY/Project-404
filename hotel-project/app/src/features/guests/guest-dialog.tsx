@@ -14,7 +14,16 @@ import { errorMessage } from "@/lib/errors";
 import { useToast } from "@/components/ui/toast";
 
 /** Create or edit a guest. A guest needs a phone or an email; ID number goes with its type. */
-export function GuestDialog({ guest, onClose }: { guest?: Guest; onClose: () => void }) {
+export function GuestDialog({
+  guest,
+  onClose,
+  onCreated,
+}: {
+  guest?: Guest;
+  onClose: () => void;
+  /** When set, a newly created guest is handed back instead of opening their profile. */
+  onCreated?: (guest: Guest) => void;
+}) {
   const save = useSaveGuest();
   const toast = useToast();
   const navigate = useNavigate();
@@ -55,7 +64,10 @@ export function GuestDialog({ guest, onClose }: { guest?: Guest; onClose: () => 
       });
       toast(guest ? "Guest updated" : `${saved.fullName} added`);
       onClose();
-      if (!guest) navigate(`/guests/${saved.id}`);
+      if (!guest) {
+        if (onCreated) onCreated(saved);
+        else navigate(`/guests/${saved.id}`);
+      }
     } catch (err) {
       setError(errorMessage(err));
     }

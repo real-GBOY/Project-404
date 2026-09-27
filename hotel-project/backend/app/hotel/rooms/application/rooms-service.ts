@@ -6,18 +6,22 @@ import { AUDIT_LOGGER, CLOCK, UNIT_OF_WORK } from "@core/kernel/tokens.js";
 import type { Clock } from "@core/kernel/clock.js";
 import type { IAuditLogger } from "@core/contracts/index.js";
 import { isUniqueViolation } from "@hotel/hotel/shared/pg-errors.js";
-import { displayStatus, type RoomDisplayStatus } from "../domain/room-status.js";
+import { SettingsService } from "@hotel/hotel/settings/application/settings-service.js";
+import { displayStatus, NO_OCCUPANCY, type RoomDisplayStatus } from "../domain/room-status.js";
 import { RoomTypesRepository } from "../infrastructure/room-types-repository.js";
 import {
   RoomsRepository,
   type RoomFilter,
   type RoomInput,
+  type RoomOccupancyRow,
   type RoomRecord,
 } from "../infrastructure/rooms-repository.js";
 
 export interface RoomView extends RoomRecord {
   /** Derived for the rooms board — never stored (docs/architecture.md §4). */
   displayStatus: RoomDisplayStatus;
+  /** The in-house or arriving guest tonight, if any. */
+  currentGuest: string | null;
 }
 
 @Injectable()
@@ -25,20 +29,29 @@ export class RoomsService {
   constructor(
     private readonly repo: RoomsRepository,
     private readonly roomTypes: RoomTypesRepository,
+    private readonly settings: SettingsService,
     @Inject(AUDIT_LOGGER) private readonly audit: IAuditLogger,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
 
   async list(filter: RoomFilter = {}): Promise<RoomView[]> {
-    const rooms = await readInTenant(() => this.repo.list(filter));
-    return rooms.map((r) => this.view(r));
+    return readInTenant(async () => {
+      const [rooms, occupancy] = await Promise.all([
+        this.repo.list(filter),
+        this.settings.today().then((d) => this.repo.occupancy(d)),
+      ]);
+      return rooms.map((r) => this.view(r, occupancy.get(r.id)));
+    });
   }
 
   async get(id: string): Promise<RoomView> {
-    const room = await readInTenant(() => this.repo.findById(id));
-    if (!room) throw NotFound("room.not_found", "Room not found.");
-    return this.view(room);
+    return readInTenant(async () => {
+      const room = await this.repo.findById(id);
+      if (!room) throw NotFound("room.not_found", "Room not found.");
+      const occupancy = await this.repo.occupancy(await this.settings.today());
+      return this.view(room, occupancy.get(id));
+    });
   }
 
   async create(input: RoomInput, actorId: string): Promise<RoomView> {
@@ -120,7 +133,15 @@ export class RoomsService {
     return err;
   }
 
-  private view(room: RoomRecord): RoomView {
-    return { ...room, displayStatus: displayStatus(room.housekeepingStatus, room.serviceStatus) };
+  private view(room: RoomRecord, occupancy?: RoomOccupancyRow): RoomView {
+    return {
+      ...room,
+      displayStatus: displayStatus(
+        room.housekeepingStatus,
+        room.serviceStatus,
+        occupancy ?? NO_OCCUPANCY,
+      ),
+      currentGuest: occupancy?.guestName ?? null,
+    };
   }
 }
