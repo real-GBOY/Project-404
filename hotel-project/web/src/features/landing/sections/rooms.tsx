@@ -3,11 +3,11 @@ import { motion, type PanInfo } from "motion/react";
 import { ArrowLink, Reveal } from "../components/ui";
 import { rooms, roomsSection, type Room } from "../data";
 
-const GAP = 20; // Swiper spaceBetween
+const GAP = 20; // px between cards
 
-// Swiper breakpoints from the template: 1 / 2 (≥1024) / 3 (≥1280) cards per view.
+// Cards per view: 1 on phones, 2 on tablets (from 576px), 3 from 1280px.
 function perViewFor(width: number) {
-  return width >= 1280 ? 3 : width >= 1024 ? 2 : 1;
+  return width >= 1280 ? 3 : width >= 576 ? 2 : 1;
 }
 
 function useViewportWidth() {
@@ -42,7 +42,7 @@ function RoomCard({ room }: { room: Room }) {
   ];
   return (
     <article>
-      {/* Template hover: photo dims + zooms, details slide up from the bottom. Also on keyboard focus. */}
+      {/* Hover: photo dims + zooms, details slide up from the bottom. Also on keyboard focus. */}
       <a
         href="#rooms"
         className="group relative block overflow-hidden rounded-2xl bg-black"
@@ -56,9 +56,9 @@ function RoomCard({ room }: { room: Room }) {
           draggable={false}
           className="aspect-[991/1234] w-full rounded-2xl object-cover transition-all duration-500 ease-in-out group-hover:scale-110 group-hover:opacity-50 group-focus-visible:scale-110 group-focus-visible:opacity-50"
         />
-        <div className="absolute -bottom-[125px] p-8 text-left opacity-0 transition-all duration-500 ease-in-out group-hover:bottom-5 group-hover:opacity-100 group-focus-visible:bottom-5 group-focus-visible:opacity-100 sm:p-12 md:max-2xl:-bottom-[180px]">
+        <div className="absolute -bottom-[125px] p-5 text-left opacity-0 transition-all duration-500 ease-in-out group-hover:bottom-5 group-hover:opacity-100 group-focus-visible:bottom-5 group-focus-visible:opacity-100 lg:p-8 2xl:p-12 md:max-2xl:-bottom-[180px]">
           <h4 className="display-6 text-white!">{room.name}</h4>
-          <p className="text-white">{room.description}</p>
+          <p className="line-clamp-2 text-white">{room.description}</p>
           <table className="text-white">
             <tbody>
               {rows.map(([k, v]) => (
@@ -76,8 +76,12 @@ function RoomCard({ room }: { room: Room }) {
         <h4 className="display-6">
           <a href="#rooms">{room.name}</a>
         </h4>
-        <p>
+        <p className="mb-1">
           <span className="fs-4 text-primary">${room.price}</span>/night
+        </p>
+        {/* Always visible — touch screens never see the hover panel. */}
+        <p className="mb-0 text-sm text-muted">
+          {room.capacity} · {room.size} · {room.bed}
         </p>
       </div>
     </article>
@@ -101,7 +105,7 @@ export function Rooms() {
   };
 
   return (
-    <section id="rooms" className="py-32">
+    <section id="rooms" className="py-20 md:py-24 lg:py-32">
       <Reveal className="px-side">
         <div className="flex flex-wrap items-center justify-between">
           <h3 className="display-3 text-center">{roomsSection.title}</h3>

@@ -1,12 +1,11 @@
 @import "tailwindcss";
 
 /*
- * Visual identity: the "Mellow" hotel template (TemplatesJungle, free for commercial use).
- * Every value below is lifted from its style.css / Bootstrap 5 build so the page renders
- * the same as the design. Content lives in src/features/landing/data.ts.
+ * Hotel Nayel visual identity: colours, type, breakpoints and spacing tokens.
+ * Content lives in src/features/landing/data.ts.
  */
 @theme {
-  /* Breakpoints match Bootstrap 5 so column splits land where the original does. */
+  /* Breakpoints: phone < 576 · tablet 576–991 · laptop 992–1199 · desktop 1200+ · wide 1400+ */
   --breakpoint-sm: 576px;
   --breakpoint-md: 768px;
   --breakpoint-lg: 992px;
@@ -29,7 +28,7 @@
   --radius-btn: 10px;
 }
 
-/* Bootstrap's responsive display scale (RFS), capped at the same desktop sizes. */
+/* Fluid display type scale: grows with the viewport, capped at desktop sizes. */
 @utility display-1 {
   font-size: min(5rem, calc(1.625rem + 4.5vw));
   line-height: 1.2;
@@ -50,7 +49,7 @@
   font-size: min(1.5rem, calc(1.275rem + 0.3vw));
 }
 
-/* `.container-fluid.padding-side`: Bootstrap gutter (0.75rem) + the template's side padding. */
+/* Page side padding: grows with the viewport (1.75rem on phones up to 6.75rem on wide desktops). */
 @utility px-side {
   padding-inline: 1.75rem;
   @media (width >= 576px) {
@@ -70,7 +69,7 @@
   }
 }
 
-/* Bootstrap `.container` max-widths, used by the stats and gallery sections. */
+/* Centered container with stepped max-widths, used by the stats and gallery sections. */
 @utility container-bs {
   width: 100%;
   margin-inline: auto;
@@ -93,10 +92,6 @@
 }
 
 @layer base {
-  html {
-    scroll-behavior: smooth;
-  }
-
   body {
     background: #fff;
     color: var(--color-body);
@@ -117,7 +112,7 @@
     font-family: var(--font-heading);
     font-weight: 400;
     text-transform: capitalize;
-    margin-bottom: 0.5rem; /* Bootstrap reboot spacing the design relies on */
+    margin-bottom: 0.5rem; /* default heading spacing */
   }
 
   p {

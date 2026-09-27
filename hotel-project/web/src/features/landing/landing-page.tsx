@@ -7,7 +7,7 @@ import { Services } from "./sections/services";
 import { Blog } from "./sections/blog";
 import { Footer } from "./sections/footer";
 
-// Section order follows the Mellow design (Figma + its HTML build). Content: ./data.ts.
+// Page sections, top to bottom. All copy and content lives in ./data.ts.
 export function LandingPage() {
   return (
     <>
