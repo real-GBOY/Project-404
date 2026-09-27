@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { AuditModule, EventsModule } from "@core/index.js";
+import { AuditModule, EventsModule, RbacModule } from "@core/index.js";
 import { HotelSharedModule } from "@hotel/hotel/shared/shared.module.js";
 import { SettingsModule } from "@hotel/hotel/settings/settings.module.js";
 import { ReservationsModule } from "@hotel/hotel/reservations/reservations.module.js";
@@ -14,7 +14,14 @@ import { SimulatedPaymentProvider } from "./infrastructure/simulated-payment-pro
  * `PaymobPaymentProvider` here and nothing else in the domain changes.
  */
 @Module({
-  imports: [AuditModule, EventsModule, HotelSharedModule, SettingsModule, ReservationsModule],
+  imports: [
+    AuditModule,
+    EventsModule,
+    RbacModule,
+    HotelSharedModule,
+    SettingsModule,
+    ReservationsModule,
+  ],
   controllers: [BillingController],
   providers: [
     BillingRepository,

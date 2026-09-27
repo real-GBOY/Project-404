@@ -6,6 +6,7 @@ import { fromPiastres, toPiastres } from "@hotel/hotel/shared/money.js";
  *
  *   total   = Σ active charges + Σ their VAT          (after check-in)
  *           = booked room total + VAT at today's rate (before check-in: what the stay will cost)
+ *           = 0                                       (cancelled before check-in: nothing owed)
  *   paid    = Σ completed payments − Σ refunds
  *   balance = total − paid
  */
@@ -99,4 +100,51 @@ export function folioTotals(input: {
     ),
     posted,
   };
+}
+
+/**
+ * What a not-yet-posted booking is expected to cost (pre-tax). A cancelled booking owes nothing,
+ * so any deposit on it becomes a credit to refund. (No-shows keep their booked total: the
+ * deposit is not automatically owed back.)
+ */
+export function expectedRoomTotal(status: string, bookedTotal: number): number {
+  return status === "cancelled" ? 0 : bookedTotal;
+}
+
+/** Totals from pre-summed ledger figures (list screens: one query for many folios). */
+export function totalsFromSums(input: {
+  chargeCount: number;
+  charges: number;
+  tax: number;
+  paid: number;
+  refunded: number;
+  expected: { roomTotal: number; taxRate: number };
+}): FolioTotals {
+  return folioTotals({
+    charges:
+      input.chargeCount > 0 ? [{ amount: input.charges, taxAmount: input.tax, voided: false }] : [],
+    completedPayments: input.paid > 0 ? [input.paid] : [],
+    refunds: input.refunded > 0 ? [input.refunded] : [],
+    expected: input.expected,
+  });
+}
+
+/**
+ * Split a refund across the payments it goes back to — most recent first, each limited to what
+ * is still refundable on it. Returns null if the payments can't cover the amount.
+ */
+export function allocateRefund(
+  amount: number,
+  payments: Array<{ id: string; refundable: number }>,
+): Array<{ paymentId: string; amount: number }> | null {
+  let leftP = toPiastres(amount);
+  const out: Array<{ paymentId: string; amount: number }> = [];
+  for (const p of payments) {
+    if (leftP <= 0) break;
+    const takeP = Math.min(leftP, toPiastres(p.refundable));
+    if (takeP <= 0) continue;
+    out.push({ paymentId: p.id, amount: fromPiastres(takeP) });
+    leftP -= takeP;
+  }
+  return leftP > 0 ? null : out;
 }

@@ -79,21 +79,6 @@ export class DashboardRepository {
   }
 
   /** Σ (charges + VAT − completed payments) over guests in house. */
-  async outstanding(): Promise<number> {
-    const org = this.org();
-    const rows = await sql<{ outstanding: string }>`
-      SELECT COALESCE(sum(
-               COALESCE((SELECT sum(c.amount + c.tax_amount) FROM hotel_folio_charges c
-                          WHERE c.organization_id = r.organization_id AND c.reservation_id = r.id AND c.voided_at IS NULL), 0)
-             - COALESCE((SELECT sum(p.amount) FROM hotel_payments p
-                          WHERE p.organization_id = r.organization_id AND p.reservation_id = r.id AND p.status = 'completed'), 0)
-             ), 0)::text AS outstanding
-        FROM hotel_reservations r
-       WHERE r.organization_id = ${org} AND r.status = 'checked_in'
-    `.execute(hotelDb());
-    return moneyNumber(rows.rows[0]!.outstanding);
-  }
-
   async recentReservations(limit: number) {
     const org = this.org();
     const rows = await sql<{
@@ -163,7 +148,9 @@ export class DashboardRepository {
                (COALESCE((SELECT sum(c.amount + c.tax_amount) FROM hotel_folio_charges c
                            WHERE c.organization_id = r.organization_id AND c.reservation_id = r.id AND c.voided_at IS NULL), 0)
               - COALESCE((SELECT sum(p.amount) FROM hotel_payments p
-                           WHERE p.organization_id = r.organization_id AND p.reservation_id = r.id AND p.status = 'completed'), 0))::text AS balance
+                           WHERE p.organization_id = r.organization_id AND p.reservation_id = r.id AND p.status = 'completed'), 0)
+              + COALESCE((SELECT sum(f.amount) FROM hotel_refunds f
+                           WHERE f.organization_id = r.organization_id AND f.reservation_id = r.id AND f.status = 'completed'), 0))::text AS balance
           FROM hotel_reservations r
           JOIN hotel_guests g ON g.organization_id = r.organization_id AND g.id = r.guest_id
          WHERE r.organization_id = ${org} AND r.status = 'checked_in' AND r.departure <= ${day}::date

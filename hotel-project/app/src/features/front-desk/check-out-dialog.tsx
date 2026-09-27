@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { METHOD_LABEL, newIdempotencyKey, useFolio, type PaymentMethod } from "@/api/billing";
 import { useCheckOut } from "@/api/front-desk";
 import type { Reservation } from "@/api/reservations";
+import { useAuth } from "@/features/auth/use-auth";
+import { ApiError } from "@/config";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { FormError, SelectField } from "@/components/ui/fields";
@@ -15,6 +17,8 @@ import { formatEgp } from "@/lib/format";
  * Check-out (a design gap): the folio summary, settle the balance in the same action, and done —
  * the server issues the invoice, marks the room dirty and opens the cleaning task. The
  * idempotency key is fixed for this dialog, so a double-click or retry can't charge twice.
+ * Staff who may refund (`create:refund`) also return any overpayment in the same step — including
+ * credit that only appears when an early departure releases unused nights.
  */
 export function CheckOutDialog({
   reservation,
@@ -23,6 +27,8 @@ export function CheckOutDialog({
   reservation: Reservation;
   onClose: () => void;
 }) {
+  const auth = useAuth();
+  const canRefund = auth.can("create:refund");
   const folio = useFolio(reservation.id);
   const checkOut = useCheckOut();
   const toast = useToast();
@@ -40,12 +46,21 @@ export function CheckOutDialog({
       const out = await checkOut.mutateAsync({
         id: reservation.id,
         payment: balance > 0 ? { method, amount: balance } : null,
+        refund: canRefund,
         idempotencyKey: key,
       });
-      toast(`Guest checked out — Room ${reservation.roomNumber} marked Dirty`);
+      toast(
+        out.refunded
+          ? `Guest checked out and the overpayment refunded — Room ${reservation.roomNumber} marked Dirty`
+          : `Guest checked out — Room ${reservation.roomNumber} marked Dirty`,
+      );
       setInvoiceId(out.invoiceId);
     } catch (err) {
-      setError(errorMessage(err));
+      setError(
+        err instanceof ApiError && err.code === "checkout.refund_due"
+          ? `${errorMessage(err)} Ask a manager or accountant to refund it.`
+          : errorMessage(err),
+      );
     }
   }
 
@@ -76,13 +91,15 @@ export function CheckOutDialog({
             <Button
               size="sm"
               onClick={() => void submit()}
-              disabled={!totals || balance < 0 || checkOut.isPending}
+              disabled={!totals || (balance < 0 && !canRefund) || checkOut.isPending}
             >
               {checkOut.isPending
                 ? "Checking out…"
                 : balance > 0
                   ? `Take ${formatEgp(balance)} & check out`
-                  : "Check out"}
+                  : balance < 0
+                    ? `Refund ${formatEgp(-balance)} & check out`
+                    : "Check out"}
             </Button>
           </>
         )
@@ -123,7 +140,9 @@ export function CheckOutDialog({
           ) : null}
           {balance < 0 ? (
             <p className="m-0 rounded-control bg-warning-soft px-3.5 py-2.5 text-small font-semibold text-warning-strong">
-              The guest has overpaid. Refund the difference before checking out.
+              {canRefund
+                ? "The guest has overpaid. The difference is refunded to their payments as part of check-out."
+                : "The guest has overpaid. A manager or accountant must refund the difference before check-out."}
             </p>
           ) : null}
           <FormError message={error} />

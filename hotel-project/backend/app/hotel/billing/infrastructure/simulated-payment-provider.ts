@@ -1,6 +1,11 @@
 import { Injectable } from "@nestjs/common";
 import { createPrefixedId } from "@core/kernel/id.js";
-import type { PaymentProvider, PaymentRequest, PaymentResult } from "../domain/payment-provider.js";
+import type {
+  PaymentProvider,
+  PaymentRequest,
+  PaymentResult,
+  RefundRequest,
+} from "../domain/payment-provider.js";
 
 /**
  * v1 provider: every payment settles immediately, as it would at the desk (cash, a card terminal,
@@ -16,6 +21,14 @@ export class SimulatedPaymentProvider implements PaymentProvider {
     return {
       status: "completed",
       providerReference: createPrefixedId(`sim_${request.method}`),
+      failureReason: null,
+    };
+  }
+
+  async refund(request: RefundRequest): Promise<PaymentResult> {
+    return {
+      status: "completed",
+      providerReference: createPrefixedId(`sim_refund_${request.method}`),
       failureReason: null,
     };
   }

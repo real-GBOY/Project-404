@@ -1,12 +1,13 @@
 import { Module } from "@nestjs/common";
 import { SettingsModule } from "@hotel/hotel/settings/settings.module.js";
 import { RoomsModule } from "@hotel/hotel/rooms/rooms.module.js";
+import { BillingModule } from "@hotel/hotel/billing/billing.module.js";
 import { DashboardController } from "./api/dashboard.controller.js";
 import { DashboardService } from "./application/dashboard-service.js";
 import { DashboardRepository } from "./infrastructure/dashboard-repository.js";
 
 @Module({
-  imports: [SettingsModule, RoomsModule],
+  imports: [SettingsModule, RoomsModule, BillingModule],
   controllers: [DashboardController],
   providers: [DashboardRepository, DashboardService],
 })

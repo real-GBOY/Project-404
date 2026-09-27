@@ -23,9 +23,21 @@ export interface PaymentResult {
   failureReason: string | null;
 }
 
+export interface RefundRequest {
+  /** Our refund id. */
+  reference: string;
+  /** The gateway's reference for the payment being refunded (null for desk-settled payments). */
+  paymentReference: string | null;
+  amount: number;
+  currency: "EGP";
+  method: PaymentMethod;
+  reason: string;
+}
+
 export interface PaymentProvider {
   readonly name: string;
   charge(request: PaymentRequest): Promise<PaymentResult>;
+  refund(request: RefundRequest): Promise<PaymentResult>;
 }
 
 export const PAYMENT_PROVIDER = Symbol("hotel.paymentProvider");

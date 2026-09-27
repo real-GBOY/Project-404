@@ -1,19 +1,25 @@
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useInvoice } from "@/api/billing";
 import { useSettings } from "@/api/settings";
+import { useAuth } from "@/features/auth/use-auth";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ErrorState, LoadingState } from "@/components/ui/states";
 import { formatEgp, formatIsoDate, formatDate } from "@/lib/format";
+import { VoidInvoiceDialog } from "./refund-dialogs";
 
 /**
  * Invoice (design: "Invoice"): the frozen snapshot issued at check-out — items, subtotal, VAT at
- * the rate in force, total. Print uses the browser's print-to-PDF.
+ * the rate in force, total. Print uses the browser's print-to-PDF. Finance staff can void it
+ * (with a reason); a void invoice stays readable, clearly marked, with why it was voided.
  */
 export function InvoicePage() {
   const { invoiceId = "" } = useParams();
   const invoice = useInvoice(invoiceId);
   const settings = useSettings();
+  const auth = useAuth();
+  const [voiding, setVoiding] = useState(false);
   if (invoice.isLoading) return <LoadingState />;
   if (invoice.error || !invoice.data) return <ErrorState error={invoice.error} />;
   const inv = invoice.data;
@@ -26,6 +32,15 @@ export function InvoicePage() {
       >
         ← Back to reservation {inv.reservation.code}
       </Link>
+      {inv.status === "void" ? (
+        <div
+          role="status"
+          className="mb-3.5 max-w-[560px] rounded-control bg-danger-soft px-3.5 py-2.5 text-small font-semibold text-danger print:hidden"
+        >
+          Void{inv.voidedAt ? ` since ${formatDate(inv.voidedAt)}` : ""}
+          {inv.voidReason ? ` — ${inv.voidReason}` : ""}
+        </div>
+      ) : null}
       <article className="max-w-[560px] rounded-card border border-border bg-surface p-6 sm:p-9 print:border-0 print:p-0">
         <header className="mb-7 flex items-start justify-between gap-4">
           <div>
@@ -78,7 +93,24 @@ export function InvoicePage() {
         <Button className="mt-6 w-full print:hidden" onClick={() => window.print()}>
           Print / Download PDF
         </Button>
+        {inv.status === "issued" && auth.can("void:invoice") ? (
+          <Button
+            variant="secondary"
+            className="mt-2 w-full print:hidden"
+            onClick={() => setVoiding(true)}
+          >
+            Void invoice
+          </Button>
+        ) : null}
       </article>
+      {voiding ? (
+        <VoidInvoiceDialog
+          invoiceId={inv.id}
+          number={inv.number}
+          reservationId={inv.reservation.id}
+          onClose={() => setVoiding(false)}
+        />
+      ) : null}
     </>
   );
 }

@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { folioTotals, paymentStatusFor, splitRoomCharges, taxFor } from "./folio.js";
+import {
+  allocateRefund,
+  expectedRoomTotal,
+  folioTotals,
+  paymentStatusFor,
+  splitRoomCharges,
+  taxFor,
+  totalsFromSums,
+} from "./folio.js";
 
 describe("folio ledger", () => {
   it("computes VAT per line in whole piastres", () => {
@@ -61,5 +69,45 @@ describe("folio ledger", () => {
     expect(paymentStatusFor(100, 40, 0)).toBe("partial");
     expect(paymentStatusFor(100, 100, 0)).toBe("paid");
     expect(paymentStatusFor(100, 0, 100)).toBe("refunded");
+  });
+
+  it("owes nothing on a cancelled booking, so its deposit becomes a credit", () => {
+    expect(expectedRoomTotal("cancelled", 9000)).toBe(0);
+    expect(expectedRoomTotal("no_show", 9000)).toBe(9000);
+    const t = totalsFromSums({
+      chargeCount: 0,
+      charges: 0,
+      tax: 0,
+      paid: 2000,
+      refunded: 0,
+      expected: { roomTotal: expectedRoomTotal("cancelled", 9000), taxRate: 0.14 },
+    });
+    expect(t).toMatchObject({ total: 0, paid: 2000, balance: -2000 });
+  });
+
+  it("counts completed refunds against what was paid", () => {
+    const t = totalsFromSums({
+      chargeCount: 2,
+      charges: 8000,
+      tax: 1120,
+      paid: 10000,
+      refunded: 880,
+      expected: { roomTotal: 0, taxRate: 0.14 },
+    });
+    expect(t).toMatchObject({ total: 9120, paid: 9120, refunded: 880, balance: 0 });
+    expect(paymentStatusFor(0, 0, 500)).toBe("refunded");
+  });
+
+  it("allocates a refund to the most recent payments first, never beyond what each can return", () => {
+    expect(
+      allocateRefund(700, [
+        { id: "pay_new", refundable: 500 },
+        { id: "pay_old", refundable: 1000 },
+      ]),
+    ).toEqual([
+      { paymentId: "pay_new", amount: 500 },
+      { paymentId: "pay_old", amount: 200 },
+    ]);
+    expect(allocateRefund(0.1, [{ id: "p", refundable: 0.05 }])).toBeNull();
   });
 });

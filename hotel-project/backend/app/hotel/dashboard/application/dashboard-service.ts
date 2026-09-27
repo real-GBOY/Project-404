@@ -1,10 +1,10 @@
-import { formatEgp } from "@hotel/hotel/shared/money.js";
 import { Injectable } from "@nestjs/common";
 import { readInTenant } from "@core/kernel/db/db.js";
 import { addDays } from "@hotel/hotel/shared/dates.js";
-import { fromPiastres, toPiastres } from "@hotel/hotel/shared/money.js";
+import { formatEgp, fromPiastres, toPiastres } from "@hotel/hotel/shared/money.js";
 import { SettingsService } from "@hotel/hotel/settings/application/settings-service.js";
 import { RoomsService } from "@hotel/hotel/rooms/application/rooms-service.js";
+import { BillingService } from "@hotel/hotel/billing/application/billing-service.js";
 import type { RoomDisplayStatus } from "@hotel/hotel/rooms/domain/room-status.js";
 import { DashboardRepository } from "../infrastructure/dashboard-repository.js";
 
@@ -16,7 +16,7 @@ export type AlertType = "maintenance" | "housekeeping" | "finance" | "guest";
  * "What is happening in the hotel today?" — every figure is computed from the ledgers:
  *   occupancy   = rooms with a stay tonight ÷ rooms in service tonight
  *   revenue     = folio charges posted for that service date (pre-VAT)
- *   outstanding = Σ in-house folio balances
+ *   outstanding = Σ folio balances still owed (the same figure as Finance → Balances)
  * Nothing on the dashboard is a stored counter or a placeholder.
  */
 @Injectable()
@@ -25,6 +25,7 @@ export class DashboardService {
     private readonly repo: DashboardRepository,
     private readonly rooms: RoomsService,
     private readonly settings: SettingsService,
+    private readonly billing: BillingService,
   ) {}
 
   overview() {
@@ -35,7 +36,7 @@ export class DashboardService {
         this.repo.dailySeries(from, addDays(today, 1)),
         this.repo.roomCount(),
         this.repo.movements(today),
-        this.repo.outstanding(),
+        this.billing.balances(),
         this.repo.recentReservations(6),
         this.repo.alerts(today),
         this.rooms.list(),
@@ -111,7 +112,11 @@ export class DashboardService {
             0,
           ),
           totalRooms: roomCount,
-          outstanding: fromPiastres(toPiastres(outstanding)),
+          outstanding: fromPiastres(
+            outstanding
+              .filter((b) => b.kind === "due")
+              .reduce((s, b) => s + toPiastres(b.balance), 0),
+          ),
         },
         trend,
         roomStatus: statusCounts,

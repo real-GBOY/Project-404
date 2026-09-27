@@ -14,4 +14,16 @@ export const billingPermissions: PermissionDefinition[] = [
   },
   { action: "create", resource: "payment", description: "Take payments." },
   { action: "read", resource: "invoice", description: "View invoices." },
+  {
+    action: "read",
+    resource: "payment",
+    description: "View the payments ledger, refunds and outstanding balances.",
+  },
+  { action: "create", resource: "refund", description: "Refund an overpayment to a guest." },
+  { action: "void", resource: "invoice", description: "Void an issued invoice, with a reason." },
+  {
+    action: "issue",
+    resource: "invoice",
+    description: "Issue a new invoice after a void, once the folio is settled.",
+  },
 ];

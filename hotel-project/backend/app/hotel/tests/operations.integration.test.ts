@@ -14,6 +14,7 @@ import { GuestsService } from "@hotel/hotel/guests/application/guests-service.js
 import { ReservationsService } from "@hotel/hotel/reservations/application/reservations-service.js";
 import { FrontDeskService } from "@hotel/hotel/front-desk/application/front-desk-service.js";
 import { BillingService } from "@hotel/hotel/billing/application/billing-service.js";
+import { AvailabilityService } from "@hotel/hotel/reservations/application/availability-service.js";
 import { MaintenanceService } from "@hotel/hotel/maintenance/application/maintenance-service.js";
 import { DashboardService } from "@hotel/hotel/dashboard/application/dashboard-service.js";
 import { HousekeepingService } from "@hotel/hotel/housekeeping/application/housekeeping-service.js";
@@ -158,6 +159,16 @@ describe.skipIf(!hasTestDb)("HotelOS operations (Slice 4)", () => {
       await expect(book(h, h.roomIds[0]!, "2026-10-02", "2026-10-03")).rejects.toMatchObject({
         code: "reservation.room_unavailable",
       });
+      // Availability never offers the blocked room (regression: blocks were invisible to the
+      // free-room list, though the constraint still refused the booking).
+      const free = await h.as(TODAY, () =>
+        get<AvailabilityService>(app, AvailabilityService).freeRooms(
+          h.typeId,
+          "2026-10-02",
+          "2026-10-03",
+        ),
+      );
+      expect(free.map((r) => r.id)).toEqual([h.roomIds[1]]);
       const auto = await book(h, null, "2026-10-02", "2026-10-03");
       expect(auto.roomId).toBe(h.roomIds[1]);
       await expect(book(h, null, "2026-10-02", "2026-10-03")).rejects.toMatchObject({

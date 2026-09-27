@@ -192,6 +192,12 @@ export class ReservationsRepository {
     return row ? this.toRecord(row) : null;
   }
 
+  async findByIds(ids: string[]): Promise<ReservationRecord[]> {
+    if (ids.length === 0) return [];
+    const rows = await this.base().where("r.id", "in", ids).execute();
+    return rows.map((r) => this.toRecord(r));
+  }
+
   /** Row-locks the reservation for the rest of the transaction (serialises state changes). */
   async lock(id: string): Promise<boolean> {
     const row = await hotelDb()
@@ -426,7 +432,9 @@ export class ReservationsRepository {
               AND a.room_id = r.id
               AND a.active
               AND a.stay && daterange(${arrival}::date, ${departure}::date, '[)')
-              AND a.reservation_id IS DISTINCT FROM ${excludeReservationId ?? null}
+              -- Blocks (reservation_id NULL) always count; only the stay being moved is ignored.
+              AND (a.reservation_id IS NULL
+                   OR a.reservation_id IS DISTINCT FROM ${excludeReservationId ?? null})
          )
        ORDER BY r.floor, length(r.number), r.number
     `.execute(hotelDb());

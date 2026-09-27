@@ -467,7 +467,11 @@ export interface DemoReservation {
   confirm: boolean;
   discountCode?: string;
   notes?: string;
+  /** Deposit taken at booking (EGP). Otherwise every third confirmed booking leaves 30%. */
+  deposit?: number;
   cancel?: string;
+  /** For a cancelled booking with a deposit: the accountant has already returned it. */
+  refundDeposit?: boolean;
 }
 
 /** Upcoming business, relative to seed day. In-house and past stays arrive with the front desk. */
@@ -641,7 +645,21 @@ export const DEMO_RESERVATIONS: DemoReservation[] = [
     adults: 1,
     source: "expedia",
     confirm: true,
+    deposit: 2000,
     cancel: "Flight cancelled.",
+    refundDeposit: true,
+  },
+  {
+    guestKey: "g10",
+    roomTypeCode: "DLX",
+    room: null,
+    arriveIn: 9,
+    nights: 2,
+    adults: 2,
+    source: "booking_com",
+    confirm: true,
+    deposit: 1500,
+    cancel: "Guest cancelled — refund waiting on bank details.",
   },
   {
     guestKey: "g02",

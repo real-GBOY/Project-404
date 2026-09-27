@@ -1,14 +1,14 @@
 import { Inject, Injectable } from "@nestjs/common";
 import type { UnitOfWork } from "@core/kernel/db/db.js";
 import { readInTenant } from "@core/kernel/db/db.js";
-import { Conflict, ValidationError } from "@core/kernel/errors.js";
+import { Conflict, Forbidden, ValidationError } from "@core/kernel/errors.js";
 import { AUDIT_LOGGER, CLOCK, UNIT_OF_WORK } from "@core/kernel/tokens.js";
 import type { Clock } from "@core/kernel/clock.js";
 import type { IAuditLogger } from "@core/contracts/index.js";
 import { addDays, daysBetween, type IsoDate } from "@hotel/hotel/shared/dates.js";
 import { isExclusionViolation } from "@hotel/hotel/shared/pg-errors.js";
 import { withSavepoint } from "@hotel/hotel/shared/savepoint.js";
-import { fromPiastres, toPiastres } from "@hotel/hotel/shared/money.js";
+import { formatEgp, fromPiastres, toPiastres } from "@hotel/hotel/shared/money.js";
 import { SettingsService } from "@hotel/hotel/settings/application/settings-service.js";
 import { RoomsRepository } from "@hotel/hotel/rooms/infrastructure/rooms-repository.js";
 import { ReservationsService } from "@hotel/hotel/reservations/application/reservations-service.js";
@@ -18,8 +18,6 @@ import {
 } from "@hotel/hotel/reservations/infrastructure/reservations-repository.js";
 import { PricingService } from "@hotel/hotel/pricing/application/pricing-service.js";
 import { BillingService } from "@hotel/hotel/billing/application/billing-service.js";
-import { BillingRepository } from "@hotel/hotel/billing/infrastructure/billing-repository.js";
-import { paymentStatusFor, taxFor } from "@hotel/hotel/billing/domain/folio.js";
 import type { PaymentMethod } from "@hotel/hotel/billing/domain/payment-provider.js";
 import { HousekeepingService } from "@hotel/hotel/housekeeping/application/housekeeping-service.js";
 import { transition } from "@hotel/hotel/reservations/domain/reservation-state.js";
@@ -37,7 +35,6 @@ export class FrontDeskService {
     private readonly reservationsRepo: ReservationsRepository,
     private readonly rooms: RoomsRepository,
     private readonly billing: BillingService,
-    private readonly billingRepo: BillingRepository,
     private readonly pricing: PricingService,
     private readonly housekeeping: HousekeepingService,
     private readonly settings: SettingsService,
@@ -50,29 +47,20 @@ export class FrontDeskService {
   today() {
     return readInTenant(async () => {
       const today = await this.settings.today();
-      const { taxRate } = await this.settings.current();
       const lists = await this.reservationsRepo.frontDesk(today);
       const all = [...lists.arrivals, ...lists.inHouse];
-      const [aggregates, rooms] = await Promise.all([
-        this.billingRepo.aggregates(all.map((r) => r.id)),
-        this.rooms.list({}),
-      ]);
+      const [folios, rooms] = await Promise.all([this.billing.summaries(all), this.rooms.list({})]);
       const roomById = new Map(rooms.map((r) => [r.id, r]));
       const decorate = (r: ReservationRecord) => {
-        const a = aggregates.get(r.id);
-        const posted = (a?.chargeCount ?? 0) > 0;
-        const totalP = posted
-          ? toPiastres(a!.charges) + toPiastres(a!.tax)
-          : toPiastres(r.total) + toPiastres(taxFor(r.total, taxRate));
-        const paidP = toPiastres(a?.paid ?? 0);
+        const f = folios.get(r.id)!;
         const room = r.roomId ? roomById.get(r.roomId) : undefined;
         return {
           ...r,
           folio: {
-            total: fromPiastres(totalP),
-            paid: fromPiastres(paidP),
-            balance: fromPiastres(totalP - paidP),
-            paymentStatus: paymentStatusFor(fromPiastres(totalP), fromPiastres(paidP), 0),
+            total: f.total,
+            paid: f.paid,
+            balance: f.balance,
+            paymentStatus: f.paymentStatus,
           },
           room: room
             ? {
@@ -147,13 +135,24 @@ export class FrontDeskService {
    */
   async checkOut(
     reservationId: string,
-    input: { payment?: { method: PaymentMethod; amount: number; idempotencyKey: string } | null },
+    input: {
+      payment?: { method: PaymentMethod; amount: number; idempotencyKey: string } | null;
+      /** Return any overpayment as part of the departure (needs `create:refund`). */
+      refund?: { idempotencyKey: string } | null;
+    },
     actorId: string,
   ) {
     if (input.payment) {
       await this.billing.collectPayment(reservationId, input.payment, actorId);
     }
-    return this.uow.transaction(async () => {
+    if (input.refund && !(await this.billing.canRefund(actorId))) {
+      throw Forbidden(
+        "refund.not_allowed",
+        "Only finance staff or a manager can refund. Ask one to check this guest out.",
+      );
+    }
+    const staged: string[] = [];
+    const result = await this.uow.transaction(async () => {
       const r = await this.reservations.lockAndLoad(reservationId);
       if (r.status !== "checked_in") {
         // Let the state machine produce the canonical error.
@@ -172,19 +171,38 @@ export class FrontDeskService {
         await this.billing.voidUnusedNights(r.id, lastNightEnd, this.clock.now());
         await this.reservationsRepo.shrinkStay(r.id, lastNightEnd);
       }
+      if (input.refund) {
+        // Early departure can leave the guest in credit: return it (to the payments it came from)
+        // as part of this check-out. Rows are written pending here; the provider is called after
+        // the transaction commits.
+        const credit = await this.billing.openCredit(r);
+        if (credit > 0) {
+          const rows = await this.billing.stageRefund(
+            r,
+            {
+              amount: credit,
+              reason: "Overpayment returned at check-out",
+              idempotencyKey: input.refund.idempotencyKey,
+            },
+            actorId,
+          );
+          staged.push(...rows.map((f) => f.id));
+        }
+      }
       const totals = await this.billing.totals(r);
+      const owedBack = await this.billing.openCredit(r);
       if (totals.balance > 0) {
         throw Conflict(
           "checkout.balance_due",
-          `${totals.balance.toFixed(2)} EGP is still outstanding. Take payment before checking out.`,
+          `${formatEgp(totals.balance)} is still outstanding. Take payment before checking out.`,
           { balance: totals.balance },
         );
       }
-      if (totals.balance < 0) {
+      if (owedBack > 0) {
         throw Conflict(
           "checkout.refund_due",
-          `The guest has overpaid by ${(-totals.balance).toFixed(2)} EGP. Refund it before checking out.`,
-          { balance: totals.balance },
+          `The guest has overpaid by ${formatEgp(owedBack)}. Refund it before checking out.`,
+          { balance: -owedBack },
         );
       }
       const invoiceId = await this.billing.issueInvoice(r, actorId);
@@ -205,6 +223,8 @@ export class FrontDeskService {
       });
       return { reservation: checkedOut, invoiceId, housekeepingTaskId: taskId };
     });
+    await this.billing.settleRefunds(staged, actorId);
+    return { ...result, refunded: staged.length > 0 };
   }
 
   /**

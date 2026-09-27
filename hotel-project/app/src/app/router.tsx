@@ -13,6 +13,9 @@ import { CalendarPage } from "@/features/calendar/calendar-page";
 import { RatesPage } from "@/features/rates/rates-page";
 import { FrontDeskPage } from "@/features/front-desk/front-desk-page";
 import { InvoicePage } from "@/features/billing/invoice-page";
+import { PaymentsPage } from "@/features/finance/payments-page";
+import { InvoicesPage } from "@/features/finance/invoices-page";
+import { BalancesPage } from "@/features/finance/balances-page";
 import { HousekeepingPage } from "@/features/housekeeping/housekeeping-page";
 import { MaintenancePage } from "@/features/maintenance/maintenance-page";
 import { TicketDetailPage } from "@/features/maintenance/ticket-detail-page";
@@ -32,6 +35,9 @@ export function AppRouter() {
           <Route path="reservations/:reservationId" element={<ReservationDetailPage />} />
           <Route path="calendar" element={<CalendarPage />} />
           <Route path="front-desk" element={<FrontDeskPage />} />
+          <Route path="payments" element={<PaymentsPage />} />
+          <Route path="balances" element={<BalancesPage />} />
+          <Route path="invoices" element={<InvoicesPage />} />
           <Route path="invoices/:invoiceId" element={<InvoicePage />} />
           <Route path="rooms" element={<RoomsPage />} />
           <Route path="housekeeping" element={<HousekeepingPage />} />

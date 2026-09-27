@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useReservations, type ReservationStatus } from "@/api/reservations";
+import { useFolioSummaries, type FolioTotals } from "@/api/billing";
 import { useAuth } from "@/features/auth/use-auth";
 import { Button } from "@/components/ui/button";
 import { FilterTabs } from "@/components/ui/filter-tabs";
@@ -24,8 +25,32 @@ const FILTERS: Array<{ value: Filter; label: string }> = [
 
 const PAGE_SIZE = 25;
 const COLS = "md:grid-cols-[100px_1.2fr_70px_1.4fr_60px_110px_110px]";
+const COLS_WITH_PAYMENT = "md:grid-cols-[100px_1.2fr_60px_1.3fr_50px_110px_130px_110px]";
 
-/** Reservations (design: "Reservations"): status pills, search, and the bookings table. */
+/** The design's payment cell: "Paid in full" or "paid / total", from the ledger. */
+function PaymentCell({ f }: { f: FolioTotals | undefined }) {
+  if (!f) return <div className="text-label text-faint">…</div>;
+  if (f.balance < 0)
+    return (
+      <div className="text-label font-semibold text-warning-strong">
+        Credit {formatEgp(-f.balance)}
+      </div>
+    );
+  if (f.paymentStatus === "refunded")
+    return <div className="text-label font-semibold text-muted">Refunded</div>;
+  if (f.total > 0 && f.balance === 0)
+    return <div className="text-label font-semibold text-success">Paid in full</div>;
+  return (
+    <div className="text-label font-semibold text-danger">
+      {formatEgp(f.paid)} / {formatEgp(f.total)}
+    </div>
+  );
+}
+
+/**
+ * Reservations (design: "Reservations"): status pills, search, and the bookings table. Staff who
+ * can read folios also see each booking's payment state (one batched request per page).
+ */
 export function ReservationsPage() {
   const auth = useAuth();
   const navigate = useNavigate();
@@ -39,6 +64,11 @@ export function ReservationsPage() {
     page,
     pageSize: PAGE_SIZE,
   });
+  const showPayment = auth.can("read:folio");
+  const ids = (list.data?.items ?? []).map((r) => r.id);
+  const folios = useFolioSummaries(ids, showPayment);
+  const folioById = new Map((folios.data ?? []).map((f) => [f.reservationId, f]));
+  const cols = showPayment ? COLS_WITH_PAYMENT : COLS;
   const total = list.data?.total ?? 0;
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -82,7 +112,7 @@ export function ReservationsPage() {
       ) : (
         <div className="overflow-hidden rounded-card border border-border bg-surface">
           <div
-            className={`hidden border-b border-border bg-canvas px-4 py-3 text-micro font-bold tracking-[0.03em] text-faint uppercase md:grid ${COLS}`}
+            className={`hidden border-b border-border bg-canvas px-4 py-3 text-micro font-bold tracking-[0.03em] text-faint uppercase md:grid ${cols}`}
           >
             <div>Booking</div>
             <div>Guest</div>
@@ -90,6 +120,7 @@ export function ReservationsPage() {
             <div>Dates</div>
             <div>Guests</div>
             <div>Amount</div>
+            {showPayment ? <div>Payment</div> : null}
             <div>Status</div>
           </div>
           {list.data!.items.length === 0 ? (
@@ -105,16 +136,23 @@ export function ReservationsPage() {
                 <li key={r.id} className="border-b border-divider last:border-b-0">
                   <Link
                     to={`/reservations/${r.id}`}
-                    className={`grid grid-cols-2 items-center gap-x-3 gap-y-1 px-4 py-3.5 hover:bg-canvas ${COLS}`}
+                    className={`grid grid-cols-2 items-center gap-x-3 gap-y-1 px-4 py-3.5 hover:bg-canvas ${cols}`}
                   >
                     <div className="font-mono text-label text-muted">{r.code}</div>
                     <div className="text-small font-semibold">{r.guestName}</div>
-                    <div className="text-small">{r.roomNumber ?? "—"}</div>
+                    <div className="text-small">
+                      <span className="md:hidden">Room </span>
+                      {r.roomNumber ?? "—"}
+                    </div>
                     <div className="text-label text-muted">
                       {formatStay(r.arrival, r.departure)}
                     </div>
-                    <div className="text-small">{r.adults + r.children}</div>
+                    <div className="text-small">
+                      {r.adults + r.children}
+                      <span className="md:hidden"> guests</span>
+                    </div>
                     <div className="text-small font-semibold">{formatEgp(r.total)}</div>
+                    {showPayment ? <PaymentCell f={folioById.get(r.id)} /> : null}
                     <StatusBadge status={r.status} />
                   </Link>
                 </li>

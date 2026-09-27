@@ -131,6 +131,7 @@ export type hotel_invoices = {
   issued_at: Generated<Timestamp>;
   voided_at: Timestamp | null;
   void_reason: string | null;
+  voided_by: string | null;
 };
 export type hotel_maintenance_events = {
   id: string;
@@ -201,6 +202,7 @@ export type hotel_payments = {
   provider_reference: string | null;
   failure_reason: string | null;
   idempotency_key: string;
+  business_date: Timestamp;
   received_by: string | null;
   created_at: Generated<Timestamp>;
   completed_at: Timestamp | null;
@@ -230,6 +232,30 @@ export type hotel_rate_rules = {
   archived_at: Timestamp | null;
   created_at: Generated<Timestamp>;
   updated_at: Generated<Timestamp>;
+};
+export type hotel_refunds = {
+  id: string;
+  organization_id: string;
+  reservation_id: string;
+  payment_id: string;
+  /**
+   * @kyselyType('cash' | 'card' | 'bank_transfer' | 'online')
+   */
+  method: "cash" | "card" | "bank_transfer" | "online";
+  amount: string;
+  reason: string;
+  /**
+   * @kyselyType('pending' | 'completed' | 'failed')
+   */
+  status: "pending" | "completed" | "failed";
+  provider: string;
+  provider_reference: string | null;
+  failure_reason: string | null;
+  idempotency_key: string;
+  business_date: Timestamp;
+  refunded_by: string | null;
+  created_at: Generated<Timestamp>;
+  completed_at: Timestamp | null;
 };
 export type hotel_reservation_status_history = {
   id: string;
@@ -372,6 +398,7 @@ export type HotelTables = {
   hotel_maintenance_tickets: hotel_maintenance_tickets;
   hotel_payments: hotel_payments;
   hotel_rate_rules: hotel_rate_rules;
+  hotel_refunds: hotel_refunds;
   hotel_reservation_status_history: hotel_reservation_status_history;
   hotel_reservations: hotel_reservations;
   hotel_room_allocations: hotel_room_allocations;

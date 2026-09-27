@@ -31,6 +31,14 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   { label: "Guests", items: [{ label: "Guests", to: "/guests", permission: "read:guest" }] },
   {
+    label: "Finance",
+    items: [
+      { label: "Payments", to: "/payments", permission: "read:payment" },
+      { label: "Balances", to: "/balances", permission: "read:payment" },
+      { label: "Invoices", to: "/invoices", permission: "read:invoice" },
+    ],
+  },
+  {
     label: "Administration",
     items: [
       { label: "Staff & Permissions", to: "/staff", permission: "read:staff" },

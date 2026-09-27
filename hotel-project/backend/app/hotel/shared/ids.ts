@@ -18,6 +18,7 @@ export type HotelIdPrefix =
   | "rsh" // reservation status history
   | "fch" // folio charge
   | "pay" // payment
+  | "rfd" // refund
   | "inv" // invoice
   | "ivi" // invoice item
   | "hkt" // housekeeping task

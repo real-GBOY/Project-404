@@ -49,12 +49,12 @@ export class FrontDeskController {
     @Headers("idempotency-key") key: string | undefined,
     @CurrentUser() user: Principal,
   ) {
+    const idempotencyKey = key ?? createPrefixedId("idem");
     return this.desk.checkOut(
       id,
       {
-        payment: body.payment
-          ? { ...body.payment, idempotencyKey: key ?? createPrefixedId("idem") }
-          : null,
+        payment: body.payment ? { ...body.payment, idempotencyKey } : null,
+        refund: body.refund ? { idempotencyKey: `${idempotencyKey}-refund` } : null,
       },
       user.userId,
     );

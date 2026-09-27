@@ -112,7 +112,7 @@ describe.skipIf(!hasTestDb)("HotelOS foundation", () => {
         [DEMO_ORG.slug],
       );
       expect(orgs).toEqual([{ name: "Hotel Nayel" }]);
-    });
+    }, 60_000); // plays two weeks of history through the real workflows
   });
 
   describe("tenant isolation through hotelDb()", () => {

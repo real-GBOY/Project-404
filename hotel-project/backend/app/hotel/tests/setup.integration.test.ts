@@ -417,6 +417,6 @@ describe.skipIf(!hasTestDb)("HotelOS property setup (Slice 1)", () => {
       const board = desk.json() as { arrivals: unknown[]; inHouse: unknown[] };
       expect(board.arrivals.length).toBeGreaterThanOrEqual(4);
       expect(board.inHouse.length).toBeGreaterThan(0);
-    });
+    }, 60_000); // plays two weeks of history through the real workflows
   });
 });

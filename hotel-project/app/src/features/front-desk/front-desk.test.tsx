@@ -66,8 +66,11 @@ const deskRoute = (url: URL) =>
 const folio = (balance: number) => ({
   reservationId: "rsv_d",
   invoiceId: null,
+  invoices: [],
+  credit: Math.max(-balance, 0),
   charges: [],
   payments: [],
+  refunds: [],
   totals: {
     charges: 8000,
     tax: 1120,
@@ -144,6 +147,7 @@ describe("Front desk", () => {
       "/invoices/inv_1",
     );
     expect(posted).toHaveLength(1);
+    // A receptionist can't refund, so check-out doesn't ask the server to.
     expect(posted[0]!.body).toEqual({ payment: { method: "cash", amount: 5120 } });
     expect(posted[0]!.key).toMatch(/^pay_/);
   });

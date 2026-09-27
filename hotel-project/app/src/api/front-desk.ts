@@ -30,6 +30,8 @@ function useInvalidateDesk() {
   return () => {
     for (const key of [
       ["front-desk"],
+      ["finance"],
+      ["folio-summaries"],
       ["reservations"],
       ["folio"],
       ["calendar"],
@@ -59,16 +61,25 @@ export function useCheckOut() {
     mutationFn: ({
       id,
       payment,
+      refund,
       idempotencyKey,
     }: {
       id: string;
       payment: { method: PaymentMethod; amount: number } | null;
+      /** Return any overpayment (e.g. unused nights on an early departure) as part of check-out. */
+      refund: boolean;
       idempotencyKey: string;
     }) =>
-      http<{ reservation: Reservation; invoiceId: string; housekeepingTaskId: string }>(
-        ENDPOINTS.frontDesk.checkOut(id),
-        { method: "POST", body: { payment }, headers: { "Idempotency-Key": idempotencyKey } },
-      ),
+      http<{
+        reservation: Reservation;
+        invoiceId: string;
+        housekeepingTaskId: string;
+        refunded: boolean;
+      }>(ENDPOINTS.frontDesk.checkOut(id), {
+        method: "POST",
+        body: { payment, ...(refund && { refund: true }) },
+        headers: { "Idempotency-Key": idempotencyKey },
+      }),
     onSuccess: invalidate,
   });
 }

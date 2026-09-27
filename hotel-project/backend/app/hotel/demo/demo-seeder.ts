@@ -13,6 +13,7 @@ import { GuestsService } from "@hotel/hotel/guests/application/guests-service.js
 import { PricingService } from "@hotel/hotel/pricing/application/pricing-service.js";
 import { ReservationsService } from "@hotel/hotel/reservations/application/reservations-service.js";
 import { addDays } from "@hotel/hotel/shared/dates.js";
+import { BillingService } from "@hotel/hotel/billing/application/billing-service.js";
 import { DemoHistory } from "./demo-history.js";
 import { MaintenanceService } from "@hotel/hotel/maintenance/application/maintenance-service.js";
 import { AppError } from "@core/kernel/errors.js";
@@ -53,6 +54,7 @@ export class DemoSeeder {
     private readonly reservations: ReservationsService,
     private readonly history: DemoHistory,
     private readonly maintenance: MaintenanceService,
+    private readonly billing: BillingService,
   ) {}
 
   async seed(clock: Clock): Promise<void> {
@@ -155,7 +157,9 @@ export class DemoSeeder {
 
       // Upcoming business relative to the hotel's today, booked through the real engine.
       const today = await readInTenant(() => this.settings.today());
-      for (const r of DEMO_RESERVATIONS) {
+      const accountantId = userIds.get("accountant")!;
+      let confirmedSeen = 0;
+      for (const [i, r] of DEMO_RESERVATIONS.entries()) {
         const arrival = addDays(today, r.arriveIn);
         const created = await this.reservations.create(
           {
@@ -173,7 +177,35 @@ export class DemoSeeder {
           },
           ownerId,
         );
+        // Deposits: taken through the real payment flow (the provider decides success).
+        const deposit =
+          r.deposit ??
+          (r.confirm && !r.cancel && ++confirmedSeen % 3 === 0
+            ? Math.round(created.total * 0.3)
+            : 0);
+        if (deposit > 0) {
+          await this.billing.collectPayment(
+            created.id,
+            {
+              method: i % 2 === 0 ? "card" : "bank_transfer",
+              amount: deposit,
+              idempotencyKey: `demo-deposit-${created.id}`,
+            },
+            accountantId,
+          );
+        }
         if (r.cancel) await this.reservations.cancel(created.id, r.cancel, ownerId);
+        if (r.cancel && r.refundDeposit && deposit > 0) {
+          await this.billing.refund(
+            created.id,
+            {
+              amount: deposit,
+              reason: "Deposit returned after cancellation",
+              idempotencyKey: `demo-refund-${created.id}`,
+            },
+            accountantId,
+          );
+        }
       }
 
       // The recent past, played through the real front-desk and housekeeping workflows.

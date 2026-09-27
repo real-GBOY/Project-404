@@ -1,14 +1,17 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { METHOD_LABEL, useFolio } from "@/api/billing";
+import { METHOD_LABEL, useFolio, useReissueInvoice } from "@/api/billing";
 import type { Reservation } from "@/api/reservations";
 import { useAuth } from "@/features/auth/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { LoadingState } from "@/components/ui/states";
-import { formatEgp, formatIsoDate, formatRelative } from "@/lib/format";
+import { formatEgp, formatIsoDate } from "@/lib/format";
+import { useToast } from "@/components/ui/toast";
+import { errorMessage } from "@/lib/errors";
 import { CollectPaymentDialog, PostChargeDialog } from "./folio-dialogs";
+import { RefundDialog } from "./refund-dialogs";
 
 /**
  * The design's "Payment Summary" (Total / Paid / Remaining + Collect Payment), backed by the
@@ -18,7 +21,9 @@ import { CollectPaymentDialog, PostChargeDialog } from "./folio-dialogs";
 export function FolioCard({ reservation }: { reservation: Reservation }) {
   const auth = useAuth();
   const folio = useFolio(reservation.id, auth.can("read:folio"));
-  const [dialog, setDialog] = useState<"pay" | "charge" | null>(null);
+  const [dialog, setDialog] = useState<"pay" | "charge" | "refund" | null>(null);
+  const reissue = useReissueInvoice(reservation.id);
+  const toast = useToast();
 
   if (!auth.can("read:folio")) return null;
   if (!folio.data)
@@ -27,7 +32,8 @@ export function FolioCard({ reservation }: { reservation: Reservation }) {
         <LoadingState />
       </Card>
     );
-  const { totals, charges, payments, invoiceId } = folio.data;
+  const { totals, charges, payments, refunds, invoiceId, invoices, credit } = folio.data;
+  const voided = invoices.filter((i) => i.status === "void");
   const open = ["pending", "confirmed", "checked_in"].includes(reservation.status);
   const activeCharges = charges.filter((c) => !c.voidedAt);
 
@@ -44,6 +50,9 @@ export function FolioCard({ reservation }: { reservation: Reservation }) {
           strong
         />
         <Line label="Paid" value={formatEgp(totals.paid)} tone="text-success" />
+        {totals.refunded > 0 ? (
+          <Line label="of which refunded" value={formatEgp(totals.refunded)} tone="text-muted" />
+        ) : null}
         <div className="mb-3.5 border-b border-border-subtle pb-3.5">
           <Line
             label="Remaining"
@@ -58,6 +67,29 @@ export function FolioCard({ reservation }: { reservation: Reservation }) {
         {open && auth.can("create:payment") && totals.balance > 0 ? (
           <Button className="w-full" size="sm" onClick={() => setDialog("pay")}>
             Collect Payment
+          </Button>
+        ) : null}
+        {credit > 0 && auth.can("create:refund") ? (
+          <Button className="w-full" size="sm" onClick={() => setDialog("refund")}>
+            Refund {formatEgp(credit)}
+          </Button>
+        ) : null}
+        {reservation.status === "checked_out" &&
+        !invoiceId &&
+        totals.balance === 0 &&
+        auth.can("issue:invoice") ? (
+          <Button
+            className="mt-2 w-full"
+            size="sm"
+            disabled={reissue.isPending}
+            onClick={() =>
+              reissue.mutate(undefined, {
+                onSuccess: () => toast("New invoice issued"),
+                onError: (e) => toast(errorMessage(e)),
+              })
+            }
+          >
+            Issue invoice
           </Button>
         ) : null}
         {reservation.status === "checked_in" && auth.can("post:charge") ? (
@@ -77,6 +109,19 @@ export function FolioCard({ reservation }: { reservation: Reservation }) {
           >
             View invoice →
           </Link>
+        ) : null}
+        {voided.length > 0 && auth.can("read:invoice") ? (
+          <div className="mt-2 text-center text-label text-faint">
+            Voided:{" "}
+            {voided.map((i, n) => (
+              <span key={i.id}>
+                {n > 0 ? ", " : ""}
+                <Link to={`/invoices/${i.id}`} className="font-semibold hover:text-primary">
+                  {i.number}
+                </Link>
+              </span>
+            ))}
+          </div>
         ) : null}
 
         {activeCharges.length > 0 ? (
@@ -116,12 +161,31 @@ export function FolioCard({ reservation }: { reservation: Reservation }) {
                   <span>
                     <span className="font-semibold">{METHOD_LABEL[p.method]}</span>
                     <span className="ml-1.5 text-label text-faint">
-                      {p.receivedByName ?? "—"} · {formatRelative(p.createdAt)}
+                      {p.receivedByName ?? "—"} · {formatIsoDate(p.businessDate)}
                     </span>
                   </span>
                   <span className="flex items-center gap-2">
                     <span className="font-semibold">{formatEgp(p.amount)}</span>
                     {p.status !== "completed" ? <StatusBadge status={p.status} /> : null}
+                  </span>
+                </li>
+              ))}
+              {refunds.map((f) => (
+                <li
+                  key={f.id}
+                  className="flex items-center justify-between gap-3 py-1.5 text-small"
+                >
+                  <span>
+                    <span className="font-semibold">Refund · {METHOD_LABEL[f.method]}</span>
+                    <span className="ml-1.5 text-label text-faint">
+                      {f.refundedByName ?? "—"} · {formatIsoDate(f.businessDate)}
+                    </span>
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="font-semibold text-warning-strong">
+                      −{formatEgp(f.amount)}
+                    </span>
+                    {f.status !== "completed" ? <StatusBadge status={f.status} /> : null}
                   </span>
                 </li>
               ))}
@@ -133,6 +197,13 @@ export function FolioCard({ reservation }: { reservation: Reservation }) {
         <CollectPaymentDialog
           reservationId={reservation.id}
           balance={totals.balance}
+          onClose={() => setDialog(null)}
+        />
+      ) : null}
+      {dialog === "refund" ? (
+        <RefundDialog
+          reservationId={reservation.id}
+          folio={folio.data}
           onClose={() => setDialog(null)}
         />
       ) : null}

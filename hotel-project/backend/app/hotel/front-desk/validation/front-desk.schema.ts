@@ -16,6 +16,8 @@ export const checkOutSchema = z
       })
       .strict()
       .nullish(),
+    /** Return any overpayment to the guest as part of the check-out. */
+    refund: z.boolean().optional(),
   })
   .strict();
 

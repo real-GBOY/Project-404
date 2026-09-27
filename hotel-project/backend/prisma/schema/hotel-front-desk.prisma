@@ -38,6 +38,7 @@ model hotel_payments {
   provider_reference String?
   failure_reason     String?
   idempotency_key    String
+  business_date      DateTime  @db.Date
   received_by        String?
   created_at         DateTime  @default(now()) @db.Timestamptz(6)
   completed_at       DateTime? @db.Timestamptz(6)
@@ -45,6 +46,7 @@ model hotel_payments {
   @@unique([organization_id, id], map: "hotel_payments_org_id_uq")
   @@unique([organization_id, idempotency_key], map: "hotel_payments_idempotency_uq")
   @@index([organization_id, reservation_id], map: "hotel_payments_reservation_idx")
+  @@index([organization_id, business_date], map: "hotel_payments_business_date_idx")
   @@map("hotel_payments")
 }
 
@@ -64,9 +66,11 @@ model hotel_invoices {
   issued_at       DateTime  @default(now()) @db.Timestamptz(6)
   voided_at       DateTime? @db.Timestamptz(6)
   void_reason     String?
+  voided_by       String?
 
   @@unique([organization_id, id], map: "hotel_invoices_org_id_uq")
   @@unique([organization_id, number], map: "hotel_invoices_number_uq")
+  @@index([organization_id, issued_at], map: "hotel_invoices_issued_idx")
   @@map("hotel_invoices")
 }
 

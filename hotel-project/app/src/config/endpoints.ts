@@ -72,6 +72,16 @@ export const ENDPOINTS = {
     payments: (id: string) => `/hotel/reservations/${id}/payments`,
     voidCharge: (chargeId: string) => `/hotel/charges/${chargeId}/void`,
     invoice: (id: string) => `/hotel/invoices/${id}`,
+    refunds: (id: string) => `/hotel/reservations/${id}/refunds`,
+    reissue: (id: string) => `/hotel/reservations/${id}/invoice`,
+    voidInvoice: (invoiceId: string) => `/hotel/invoices/${invoiceId}/void`,
+    invoices: "/hotel/invoices",
+    folios: "/hotel/folios",
+  },
+  finance: {
+    ledger: "/hotel/payments",
+    summary: "/hotel/finance/summary",
+    balances: "/hotel/finance/balances",
   },
   housekeeping: {
     tasks: "/hotel/housekeeping/tasks",
