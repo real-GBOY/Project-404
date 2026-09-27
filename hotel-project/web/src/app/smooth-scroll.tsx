@@ -34,13 +34,41 @@ function AnchorLinks() {
 }
 
 /**
+ * Arriving on a URL with a hash (e.g. "/#rooms" from the 404 page): the browser tries to jump
+ * before React has rendered the section, so jump once it exists.
+ */
+function InitialHash() {
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (!hash || hash === "#") return;
+    const id = decodeURIComponent(hash.slice(1));
+    const jump = () => document.getElementById(id)?.scrollIntoView({ block: "start" });
+    // The page is rendered by now; jump again once web fonts settle, since they change text heights.
+    jump();
+    let cancelled = false;
+    void document.fonts?.ready.then(() => !cancelled && jump());
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return null;
+}
+
+/**
  * Eased, inertial page scrolling (Lenis) for the wheel, trackpad and in-page links.
  * Skipped entirely for users who ask the OS for reduced motion — they get native scrolling.
  */
 export function SmoothScroll({ children }: { children: ReactNode }) {
-  if (prefersReducedMotion) return <>{children}</>;
+  if (prefersReducedMotion)
+    return (
+      <>
+        <InitialHash />
+        {children}
+      </>
+    );
   return (
     <ReactLenis root options={{ lerp: 0.09, autoRaf: true }}>
+      <InitialHash />
       <AnchorLinks />
       {children}
     </ReactLenis>

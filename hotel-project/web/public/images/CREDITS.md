@@ -5,7 +5,7 @@ No attribution is required and commercial use is allowed; sources are listed for
 
 | File | Original title | License | Source |
 |---|---|---|---|
-| `hero.jpg` | Free bedroom image | CC0 | [rawpixel](https://www.rawpixel.com/image/5927636/free-bedroom-image-public-domain-home-cc0-photo) |
+| `hero.jpg` | Grand hotel hall with crystal chandeliers | CC0 | [rawpixel](https://www.rawpixel.com/image/5947377/free-public-domain-cc0-photo) |
 | `about-pool.jpg` | Maldives coconut tree resort pool | CC0 | [rawpixel](https://www.rawpixel.com/image/6021570/photo-image-public-domain-tree-nature) |
 | `about-room.jpg` | Bedroom decor interior | CC0 | [rawpixel](https://www.rawpixel.com/image/6022959/photo-image-public-domain-wood-house) |
 | `about-breakfast.jpg` | Silver tea set on a bed | CC0 | [rawpixel](https://www.rawpixel.com/image/5971849/free-public-domain-cc0-photo) |

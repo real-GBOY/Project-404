@@ -63,9 +63,9 @@ export const about = {
     "thoughtful amenities and a warm, attentive team are all here to make your stay effortless.",
   cta: { label: "Read About Us", href: "#about-us" },
   images: {
-    wide: { src: "/images/about-pool.jpg", alt: "Palm-fringed resort pool under a clear sky" },
-    main: { src: "/images/about-room.jpg", alt: "Bright, modern guest room with a wide bed and a work corner" },
-    small: { src: "/images/about-breakfast.jpg", alt: "Silver tea service on a tray, set on a quilted bed" },
+    wide: { src: "/images/about-pool.jpg", width: 1024, height: 685, alt: "Palm-fringed resort pool under a clear sky" },
+    main: { src: "/images/about-room.jpg", width: 1024, height: 666, alt: "Bright, modern guest room with a wide bed and a work corner" },
+    small: { src: "/images/about-breakfast.jpg", width: 1024, height: 683, alt: "Silver tea service on a tray, set on a quilted bed" },
   },
 };
 

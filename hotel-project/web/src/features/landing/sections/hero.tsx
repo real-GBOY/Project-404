@@ -153,7 +153,10 @@ export function Hero() {
       <Reveal className="px-side">
         <div
           className="flex min-h-[85vh] rounded-2xl bg-cover sm:rounded-4xl bg-center bg-no-repeat py-12 lg:py-0"
-          style={{ backgroundImage: `url(${hero.image})` }}
+          // Cream fade from the left keeps the dark headline readable over a detailed photo.
+          style={{
+            backgroundImage: `linear-gradient(90deg, rgb(249 246 243 / 0.85) 0%, rgb(249 246 243 / 0.55) 40%, rgb(249 246 243 / 0) 70%), url(${hero.image})`,
+          }}
         >
           <div className="m-auto flex w-full flex-wrap items-center px-4 pt-6 sm:px-8 sm:pt-12 lg:px-10 lg:pt-0 xl:px-0">
             <div className="w-full lg:w-1/2 xl:ms-[8.333%] xl:w-1/2">

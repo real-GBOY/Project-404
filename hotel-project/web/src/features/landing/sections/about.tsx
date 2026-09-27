@@ -17,11 +17,11 @@ export function About() {
                 {about.cta.label}
               </ArrowLink>
             </div>
-            <img src={wide.src} alt={wide.alt} loading="lazy" className="mt-6 h-auto max-w-full rounded-2xl" />
+            <img src={wide.src} alt={wide.alt} width={wide.width} height={wide.height} loading="lazy" className="mt-6 h-auto max-w-full rounded-2xl" />
           </div>
           <div className="mt-6 md:mt-0">
-            <img src={main.src} alt={main.alt} loading="lazy" className="h-auto max-w-full rounded-2xl" />
-            <img src={small.src} alt={small.alt} loading="lazy" className="mt-6 h-auto w-full max-w-[519px] rounded-2xl" />
+            <img src={main.src} alt={main.alt} width={main.width} height={main.height} loading="lazy" className="h-auto max-w-full rounded-2xl" />
+            <img src={small.src} alt={small.alt} width={small.width} height={small.height} loading="lazy" className="mt-6 h-auto w-full max-w-[519px] rounded-2xl" />
           </div>
         </div>
       </Reveal>
