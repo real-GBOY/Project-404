@@ -51,6 +51,13 @@ const SOURCES: ReservationSource[] = [
   "walk_in",
 ];
 const METHODS: PaymentMethod[] = ["card", "card", "cash", "online", "bank_transfer"];
+const CANCEL_REASONS = [
+  "Flight cancelled.",
+  "Change of travel plans.",
+  "Found a closer hotel to the venue.",
+  "Family emergency.",
+  "Booked twice by mistake.",
+];
 
 /**
  * Plays the hotel's recent past through the REAL workflows, one business day at a time
@@ -68,6 +75,44 @@ export class DemoHistory {
     private readonly billing: BillingService,
     private readonly housekeeping: HousekeepingService,
   ) {}
+
+  /**
+   * A booking for `day` that never becomes a stay: cancelled (with a reason, some time before) or
+   * marked no-show on the day. Both go through the reservation state machine.
+   */
+  private async lostBooking(
+    ctx: HistoryContext,
+    day: IsoDate,
+    outcome: "cancel" | "no_show",
+    pick: <T>(xs: T[]) => T,
+    rand: () => number,
+  ): Promise<void> {
+    const clerk = pick(ctx.receptionistIds);
+    try {
+      const r = await runAsOf(addDays(day, -(1 + Math.floor(rand() * 10))), () =>
+        this.reservations.create(
+          {
+            guestId: pick(ctx.guestIds),
+            roomTypeId: pick(ctx.roomTypeIds),
+            arrival: day,
+            departure: addDays(day, 1 + Math.floor(rand() * 3)),
+            adults: 2,
+            children: 0,
+            source: pick(SOURCES),
+            confirm: true,
+          },
+          clerk,
+        ),
+      );
+      if (outcome === "cancel") {
+        await this.reservations.cancel(r.id, pick(CANCEL_REASONS), clerk);
+      } else {
+        await this.reservations.noShow(r.id, clerk);
+      }
+    } catch (err) {
+      if (!(err instanceof AppError)) throw err;
+    }
+  }
 
   async play(ctx: HistoryContext): Promise<{ stays: number }> {
     const rand = prng(20261001);
@@ -104,8 +149,14 @@ export class DemoHistory {
           open.splice(open.indexOf(stay), 1);
         }
 
-        // 2. Afternoon: today's arrivals book (or walk in) and are checked in.
-        const arrivals = 3 + Math.floor(rand() * 4);
+        // 2. Bookings that don't happen: some guests cancel ahead of the day, a few never show.
+        if (rand() < 0.35) await this.lostBooking(ctx, day, "cancel", pick, rand);
+        if (rand() < 0.12) await this.lostBooking(ctx, day, "no_show", pick, rand);
+
+        // 3. Afternoon: today's arrivals book (or walk in) and are checked in. Thursday and Friday
+        //    nights (the Egyptian weekend) are busier.
+        const weekday = new Date(`${day}T00:00:00Z`).getUTCDay();
+        const arrivals = 7 + Math.floor(rand() * 5) + (weekday === 4 || weekday === 5 ? 4 : 0);
         for (let i = 0; i < arrivals; i++) {
           const nights = 1 + Math.floor(rand() * 4);
           const clerk = pick(ctx.receptionistIds);

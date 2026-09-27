@@ -12,6 +12,8 @@ const schema = z.object({
     .enum(["true", "false"])
     .default("false")
     .transform((v) => v === "true"),
+  /** How many days of past business the demo plays through the real workflows. */
+  demoHistoryDays: z.coerce.number().int().min(1).max(365).default(120),
 });
 
 export type HotelConfig = z.infer<typeof schema>;
@@ -19,6 +21,7 @@ export type HotelConfig = z.infer<typeof schema>;
 export function readHotelConfig(env: NodeJS.ProcessEnv = process.env): HotelConfig {
   const parsed = schema.safeParse({
     seedDemo: env.HOTEL_SEED_DEMO,
+    demoHistoryDays: env.HOTEL_DEMO_HISTORY_DAYS,
   });
   if (!parsed.success) {
     const issues = parsed.error.issues

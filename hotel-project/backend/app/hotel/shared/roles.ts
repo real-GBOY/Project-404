@@ -97,6 +97,7 @@ export const HOTEL_ROLES: RoleSeed[] = [
       "void:invoice",
       "issue:invoice",
       "read:dashboard",
+      "read:analytics",
     ),
   },
   {

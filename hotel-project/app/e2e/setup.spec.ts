@@ -1,17 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
+import { signIn } from "./helpers";
 
 /** Demo staff seeded by hotel-project/backend/app/hotel/demo/demo-data.ts. */
-const PASSWORD = "demo-password-2026";
 const MANAGER = "mona.farid@hotelnayel.com";
 const HOUSEKEEPING = "hassan.ali@hotelnayel.com";
-
-async function signIn(page: Page, email: string) {
-  await page.goto("/login");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page.getByRole("heading", { level: 1 })).toContainText(",");
-}
 
 async function openNav(page: Page, isMobile: boolean, label: string) {
   if (isMobile) await page.getByRole("button", { name: "Open navigation" }).click();

@@ -14,12 +14,12 @@ import { PricingService } from "@hotel/hotel/pricing/application/pricing-service
 import { ReservationsService } from "@hotel/hotel/reservations/application/reservations-service.js";
 import { addDays } from "@hotel/hotel/shared/dates.js";
 import { BillingService } from "@hotel/hotel/billing/application/billing-service.js";
+import { readHotelConfig } from "@hotel/config.js";
 import { DemoHistory } from "./demo-history.js";
 import { MaintenanceService } from "@hotel/hotel/maintenance/application/maintenance-service.js";
 import { AppError } from "@core/kernel/errors.js";
 import {
   DEMO_TICKETS,
-  DEMO_HISTORY_DAYS,
   DEMO_DISCOUNTS,
   DEMO_GUESTS,
   DEMO_RATE_RULES,
@@ -57,7 +57,7 @@ export class DemoSeeder {
     private readonly billing: BillingService,
   ) {}
 
-  async seed(clock: Clock): Promise<void> {
+  async seed(clock: Clock, historyDays = readHotelConfig().demoHistoryDays): Promise<void> {
     const already = await runAsSystem(() =>
       currentExecutor()
         .selectFrom("organizations")
@@ -216,7 +216,7 @@ export class DemoSeeder {
         guestIds: [...guestIds.values()],
         roomTypeIds: [...typeIds.values()],
         today,
-        days: DEMO_HISTORY_DAYS,
+        days: historyDays,
       });
 
       // Maintenance, through the real ticket workflow (a room-impacting ticket claims a block).

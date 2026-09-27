@@ -16,48 +16,6 @@ export class DashboardRepository {
     return requireOrganizationId();
   }
 
-  /** Per night in [from, to): rooms on the books, rooms out of order, and posted revenue. */
-  async dailySeries(from: IsoDate, to: IsoDate) {
-    const org = this.org();
-    const rows = await sql<{
-      day: string;
-      occupied: number;
-      blocked: number;
-      revenue: string;
-    }>`
-      WITH days AS (
-        SELECT d::date AS day FROM generate_series(${from}::date, (${to}::date - 1), interval '1 day') d
-      )
-      SELECT days.day::text AS day,
-             (SELECT count(*)::int FROM hotel_room_allocations a
-                JOIN hotel_reservations r ON r.organization_id = a.organization_id AND r.id = a.reservation_id
-               WHERE a.organization_id = ${org} AND a.kind = 'reservation' AND a.active
-                 AND r.status NOT IN ('cancelled', 'no_show') AND a.stay @> days.day) AS occupied,
-             (SELECT count(*)::int FROM hotel_room_allocations a
-               WHERE a.organization_id = ${org} AND a.kind = 'block' AND a.active AND a.stay @> days.day) AS blocked,
-             COALESCE((SELECT sum(c.amount) FROM hotel_folio_charges c
-               WHERE c.organization_id = ${org} AND c.voided_at IS NULL AND c.service_date = days.day), 0)::text AS revenue
-        FROM days
-       ORDER BY days.day
-    `.execute(hotelDb());
-    return rows.rows.map((r) => ({
-      day: r.day,
-      occupied: r.occupied,
-      blocked: r.blocked,
-      revenue: moneyNumber(r.revenue),
-    }));
-  }
-
-  async roomCount(): Promise<number> {
-    const row = await hotelDb()
-      .selectFrom("hotel_rooms")
-      .select((eb) => eb.fn.countAll<string>().as("n"))
-      .where("organization_id", "=", this.org())
-      .where("archived_at", "is", null)
-      .executeTakeFirstOrThrow();
-    return Number(row.n);
-  }
-
   /** Arrivals/departures for a day: how many in total and how many still to process. */
   async movements(day: IsoDate) {
     const org = this.org();

@@ -39,6 +39,10 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    label: "Insights",
+    items: [{ label: "Analytics", to: "/analytics", permission: "read:analytics" }],
+  },
+  {
     label: "Administration",
     items: [
       { label: "Staff & Permissions", to: "/staff", permission: "read:staff" },

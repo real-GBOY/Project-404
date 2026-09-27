@@ -44,6 +44,8 @@ export default defineConfig({
         AURIC_DATABASE_URL: DATABASE_URL,
         AURIC_JWT_SECRET: "e2e-only-secret",
         HOTEL_SEED_DEMO: "true",
+        // Enough history for the 30-night analytics without a two-minute boot.
+        HOTEL_DEMO_HISTORY_DAYS: "45",
       },
     },
     {

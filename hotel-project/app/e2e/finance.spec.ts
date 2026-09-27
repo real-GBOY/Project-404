@@ -1,34 +1,10 @@
-import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { expect, test, type APIRequestContext } from "@playwright/test";
+import { signIn, hotelDate, DEMO_PASSWORD } from "./helpers";
 
-const PASSWORD = "demo-password-2026";
+const PASSWORD = DEMO_PASSWORD;
 const MANAGER = "mona.farid@hotelnayel.com";
 const ACCOUNTANT = "dina.samir@hotelnayel.com";
 const RECEPTIONIST = "rania.kamal@hotelnayel.com";
-
-async function signIn(page: Page, email: string) {
-  await page.goto("/login");
-  await page.evaluate(() => {
-    localStorage.clear();
-    sessionStorage.clear();
-  });
-  await page.goto("/login");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page.getByRole("heading", { level: 1 })).toContainText(",");
-}
-
-function hotelDate(offsetDays: number): string {
-  const today = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Africa/Cairo",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-  const d = new Date(`${today}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + offsetDays);
-  return d.toISOString().slice(0, 10);
-}
 
 /**
  * A cancelled booking with a 1,500 EGP deposit on it — made through the real API as the manager,

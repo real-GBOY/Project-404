@@ -93,4 +93,5 @@ export const ENDPOINTS = {
     action: (id: string, action: string) => `/hotel/maintenance/tickets/${id}/${action}`,
   },
   dashboard: "/hotel/dashboard",
+  analytics: "/hotel/analytics",
 } as const;

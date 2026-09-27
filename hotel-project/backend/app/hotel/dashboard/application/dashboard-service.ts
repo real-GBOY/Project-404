@@ -5,6 +5,8 @@ import { formatEgp, fromPiastres, toPiastres } from "@hotel/hotel/shared/money.j
 import { SettingsService } from "@hotel/hotel/settings/application/settings-service.js";
 import { RoomsService } from "@hotel/hotel/rooms/application/rooms-service.js";
 import { BillingService } from "@hotel/hotel/billing/application/billing-service.js";
+import { AnalyticsRepository } from "@hotel/hotel/analytics/infrastructure/analytics-repository.js";
+import { nightOccupancyPct } from "@hotel/hotel/analytics/domain/kpis.js";
 import type { RoomDisplayStatus } from "@hotel/hotel/rooms/domain/room-status.js";
 import { DashboardRepository } from "../infrastructure/dashboard-repository.js";
 
@@ -26,6 +28,7 @@ export class DashboardService {
     private readonly rooms: RoomsService,
     private readonly settings: SettingsService,
     private readonly billing: BillingService,
+    private readonly analytics: AnalyticsRepository,
   ) {}
 
   overview() {
@@ -33,8 +36,8 @@ export class DashboardService {
       const today = await this.settings.today();
       const from = addDays(today, -(TREND_DAYS - 1));
       const [series, roomCount, movements, outstanding, recent, alerts, board] = await Promise.all([
-        this.repo.dailySeries(from, addDays(today, 1)),
-        this.repo.roomCount(),
+        this.analytics.nights(from, addDays(today, 1)),
+        this.analytics.roomCount(),
         this.repo.movements(today),
         this.billing.balances(),
         this.repo.recentReservations(6),
@@ -42,14 +45,10 @@ export class DashboardService {
         this.rooms.list(),
       ]);
 
-      const occupancyPct = (occupied: number, blocked: number) => {
-        const sellable = roomCount - blocked;
-        return sellable > 0 ? Math.round((occupied / sellable) * 1000) / 10 : 0;
-      };
       const trend = series.map((d) => ({
         date: d.day,
-        occupancyPct: occupancyPct(d.occupied, d.blocked),
-        revenue: d.revenue,
+        occupancyPct: nightOccupancyPct(d, roomCount),
+        revenue: fromPiastres(toPiastres(d.roomRevenue) + toPiastres(d.extrasRevenue)),
       }));
       const todayPoint = trend[trend.length - 1]!;
       const yesterday = trend[trend.length - 2];
@@ -107,10 +106,7 @@ export class DashboardService {
               : null,
           arrivals: { total: movements.arrivals, pending: movements.arrivals_pending },
           departures: { total: movements.departures, pending: movements.departures_pending },
-          availableRooms: Math.max(
-            roomCount - availableTonight.occupied - availableTonight.blocked,
-            0,
-          ),
+          availableRooms: Math.max(roomCount - availableTonight.sold - availableTonight.blocked, 0),
           totalRooms: roomCount,
           outstanding: fromPiastres(
             outstanding

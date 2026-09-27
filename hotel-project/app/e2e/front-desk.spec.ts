@@ -1,16 +1,8 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import { signIn } from "./helpers";
 
-const PASSWORD = "demo-password-2026";
 const RECEPTIONIST = "rania.kamal@hotelnayel.com";
 const MANAGER = "mona.farid@hotelnayel.com";
-
-async function signIn(page: Page, email: string) {
-  await page.goto("/login");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page.getByRole("heading", { level: 1 })).toContainText(",");
-}
 
 test.describe("front desk (Slice 3)", () => {
   test("a receptionist checks an arriving guest in", async ({ page, isMobile }) => {
