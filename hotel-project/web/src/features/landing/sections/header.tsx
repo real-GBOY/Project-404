@@ -108,7 +108,7 @@ export function SocialLinks({ className = "" }: { className?: string }) {
     <ul className={`flex flex-wrap gap-4 sm:gap-6 ${className}`}>
       {socials.map((s) => (
         <li key={s.name}>
-          <a href={s.href} aria-label={s.label} className="block text-accent hover:text-primary">
+          <a href={s.href || undefined} aria-label={s.label} className="block text-accent hover:text-primary">
             <Icon name={s.name} size={16} />
           </a>
         </li>

@@ -14,22 +14,23 @@ export const brand = {
 };
 
 export const contact = {
-  // Demo contact details: 555-01xx numbers are reserved for fiction.
-  phone: "+1 (555) 014-2290",
-  phoneAlt: "+1 (555) 014-2291",
+  // Demo contact details (Cairo landline format) — replace with the hotel's real ones before launch.
+  phone: "+20 2 2795 4410",
+  phoneAlt: "+20 2 2795 4411",
   email: "stay@hotelnayel.com",
   addressLines: ["Nayel Hotel & Resort", "12 Corniche El Nil", "Garden City, Cairo", "Egypt"],
   topBarAddress: "12 Corniche El Nil, Cairo, Egypt",
 };
 
+// `href: ""` renders the icon without a link (no dead "#" jump) until the real profile URL is known.
 export type Social = { name: "instagram" | "facebook" | "tiktok" | "x" | "youtube"; label: string; href: string };
 
 export const socials: Social[] = [
-  { name: "instagram", label: "Instagram", href: "#" },
-  { name: "facebook", label: "Facebook", href: "#" },
-  { name: "tiktok", label: "TikTok", href: "#" },
-  { name: "x", label: "X", href: "#" },
-  { name: "youtube", label: "YouTube", href: "#" },
+  { name: "instagram", label: "Instagram", href: "" },
+  { name: "facebook", label: "Facebook", href: "" },
+  { name: "tiktok", label: "TikTok", href: "" },
+  { name: "x", label: "X", href: "" },
+  { name: "youtube", label: "YouTube", href: "" },
 ];
 
 export const navLinks = [
@@ -262,8 +263,8 @@ export const footer = {
     },
   ],
   legal: [
-    { label: "Privacy Policy", href: "#" },
-    { label: "Terms & Conditions", href: "#" },
+    { label: "Privacy Policy", href: "" },
+    { label: "Terms & Conditions", href: "" },
   ],
   copyright: `© ${new Date().getFullYear()} Hotel Nayel. All rights reserved.`,
   poweredBy: "AURIC",
