@@ -36,6 +36,21 @@ function setup(handler: (url: string, init: RequestInit) => Response | Promise<R
 const auth = (init: RequestInit) => (init.headers as Record<string, string>).Authorization;
 
 describe("createHttpClient", () => {
+  it("sends extra headers but never lets them replace auth or content-type", async () => {
+    const { client, tokens, calls } = setup(() => json(201, { ok: true }));
+    tokens.set("access-1", "refresh-1");
+    await client("/pay", {
+      method: "POST",
+      body: { amount: 1 },
+      headers: { "Idempotency-Key": "k-123", Authorization: "Bearer evil", "Content-Type": "text/plain" },
+    });
+    const h = calls[0]!.init.headers as Record<string, string>;
+    expect(h["Idempotency-Key"]).toBe("k-123");
+    expect(h.Authorization).toBe("Bearer access-1");
+    expect(h["content-type"]).toBe("application/json");
+    expect(h["Content-Type"]).toBeUndefined();
+  });
+
   it("attaches the bearer token and serialises query + json body", async () => {
     const { client, tokens, calls } = setup(() => json(200, { ok: true }));
     tokens.set("acc", "ref");

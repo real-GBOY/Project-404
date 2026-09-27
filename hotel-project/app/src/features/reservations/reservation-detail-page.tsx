@@ -17,7 +17,15 @@ import { useToast } from "@/components/ui/toast";
 import { errorMessage } from "@/lib/errors";
 import { formatEgp, formatIsoDate, formatRelative, formatStay, hotelToday } from "@/lib/format";
 import { statusLabel } from "@/lib/status";
-import { CancelDialog, ChangeDatesDialog, ChangeRoomDialog } from "./reservation-dialogs";
+import {
+  CancelDialog,
+  ChangeDatesDialog,
+  ChangeRoomDialog,
+  ExtendStayDialog,
+} from "./reservation-dialogs";
+import { CheckInDialog } from "@/features/front-desk/check-in-dialog";
+import { CheckOutDialog } from "@/features/front-desk/check-out-dialog";
+import { FolioCard } from "@/features/billing/folio-card";
 
 /**
  * Reservation detail (design: "Reservation detail"). Actions are offered only when the server's
@@ -36,7 +44,9 @@ function Detail({ r }: { r: ReservationDetail }) {
   const auth = useAuth();
   const action = useReservationAction(r.id);
   const toast = useToast();
-  const [dialog, setDialog] = useState<"cancel" | "room" | "dates" | null>(null);
+  const [dialog, setDialog] = useState<
+    "cancel" | "room" | "dates" | "check_in" | "check_out" | "extend" | null
+  >(null);
   const [error, setError] = useState<string | null>(null);
   const canUpdate = auth.can("update:reservation");
   const modifiable = canUpdate && (r.status === "pending" || r.status === "confirmed");
@@ -64,6 +74,23 @@ function Detail({ r }: { r: ReservationDetail }) {
         subtitle={`${formatStay(r.arrival, r.departure)} · ${r.nights} ${r.nights === 1 ? "night" : "nights"}`}
         actions={
           <>
+            {auth.can("check_in:reservation") &&
+            r.commands.includes("check_in") &&
+            r.arrival <= hotelToday() ? (
+              <Button size="sm" onClick={() => setDialog("check_in")}>
+                Check In
+              </Button>
+            ) : null}
+            {auth.can("check_out:reservation") && r.commands.includes("check_out") ? (
+              <Button size="sm" onClick={() => setDialog("check_out")}>
+                Check Out
+              </Button>
+            ) : null}
+            {canUpdate && r.status === "checked_in" ? (
+              <Button variant="secondary" size="sm" onClick={() => setDialog("extend")}>
+                Extend stay
+              </Button>
+            ) : null}
             {canUpdate && r.commands.includes("confirm") ? (
               <Button
                 size="sm"
@@ -173,36 +200,50 @@ function Detail({ r }: { r: ReservationDetail }) {
           </Card>
         </div>
 
-        <Card className="self-start">
-          <CardTitle>Price</CardTitle>
-          <ul className="m-0 mb-2 list-none p-0">
-            {r.nightlyRates.map((n) => (
-              <li key={n.date} className="flex justify-between py-1 text-small">
-                <span className="text-muted">
-                  {formatIsoDate(n.date)}
-                  {n.rule ? <span className="ml-1.5 text-label text-faint">· {n.rule}</span> : null}
-                </span>
-                <span className="font-semibold">{formatEgp(n.rate)}</span>
-              </li>
-            ))}
-          </ul>
-          <div className="flex justify-between border-t border-border-subtle pt-2.5 text-small">
-            <span className="text-muted">Room total</span>
-            <span className="font-bold">{formatEgp(r.roomTotal)}</span>
-          </div>
-          {r.discountAmount > 0 ? (
-            <div className="mt-2 flex justify-between text-small">
-              <span className="text-muted">Discount ({r.discountCode})</span>
-              <span className="font-bold text-success">−{formatEgp(r.discountAmount)}</span>
+        <div className="flex flex-col gap-4 self-start">
+          <FolioCard reservation={r} />
+          <Card>
+            <CardTitle>Price</CardTitle>
+            <ul className="m-0 mb-2 list-none p-0">
+              {r.nightlyRates.map((n) => (
+                <li key={n.date} className="flex justify-between py-1 text-small">
+                  <span className="text-muted">
+                    {formatIsoDate(n.date)}
+                    {n.rule ? (
+                      <span className="ml-1.5 text-label text-faint">· {n.rule}</span>
+                    ) : null}
+                  </span>
+                  <span className="font-semibold">{formatEgp(n.rate)}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="flex justify-between border-t border-border-subtle pt-2.5 text-small">
+              <span className="text-muted">Room total</span>
+              <span className="font-bold">{formatEgp(r.roomTotal)}</span>
             </div>
-          ) : null}
-          <div className="mt-2 flex justify-between border-t border-border-subtle pt-2.5 text-body">
-            <span className="font-semibold">Total (before VAT)</span>
-            <span className="font-extrabold">{formatEgp(r.total)}</span>
-          </div>
-        </Card>
+            {r.discountAmount > 0 ? (
+              <div className="mt-2 flex justify-between text-small">
+                <span className="text-muted">Discount ({r.discountCode})</span>
+                <span className="font-bold text-success">−{formatEgp(r.discountAmount)}</span>
+              </div>
+            ) : null}
+            <div className="mt-2 flex justify-between border-t border-border-subtle pt-2.5 text-body">
+              <span className="font-semibold">Total (before VAT)</span>
+              <span className="font-extrabold">{formatEgp(r.total)}</span>
+            </div>
+          </Card>
+        </div>
       </div>
 
+      {dialog === "check_in" ? (
+        <CheckInDialog reservation={r} onClose={() => setDialog(null)} />
+      ) : null}
+      {dialog === "check_out" ? (
+        <CheckOutDialog reservation={r} onClose={() => setDialog(null)} />
+      ) : null}
+      {dialog === "extend" ? (
+        <ExtendStayDialog reservation={r} onClose={() => setDialog(null)} />
+      ) : null}
       {dialog === "cancel" ? (
         <CancelDialog reservation={r} onClose={() => setDialog(null)} />
       ) : null}

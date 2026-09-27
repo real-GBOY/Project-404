@@ -13,7 +13,9 @@ import { GuestsService } from "@hotel/hotel/guests/application/guests-service.js
 import { PricingService } from "@hotel/hotel/pricing/application/pricing-service.js";
 import { ReservationsService } from "@hotel/hotel/reservations/application/reservations-service.js";
 import { addDays } from "@hotel/hotel/shared/dates.js";
+import { DemoHistory } from "./demo-history.js";
 import {
+  DEMO_HISTORY_DAYS,
   DEMO_DISCOUNTS,
   DEMO_GUESTS,
   DEMO_RATE_RULES,
@@ -46,6 +48,7 @@ export class DemoSeeder {
     private readonly guests: GuestsService,
     private readonly pricing: PricingService,
     private readonly reservations: ReservationsService,
+    private readonly history: DemoHistory,
   ) {}
 
   async seed(clock: Clock): Promise<void> {
@@ -168,6 +171,17 @@ export class DemoSeeder {
         );
         if (r.cancel) await this.reservations.cancel(created.id, r.cancel, ownerId);
       }
+
+      // The recent past, played through the real front-desk and housekeeping workflows.
+      await this.history.play({
+        ownerId,
+        receptionistIds: ["reception1", "reception2"].map((k) => userIds.get(k)!),
+        housekeeperIds: ["housekeeping1", "housekeeping2"].map((k) => userIds.get(k)!),
+        guestIds: [...guestIds.values()],
+        roomTypeIds: [...typeIds.values()],
+        today,
+        days: DEMO_HISTORY_DAYS,
+      });
     });
 
     log.info(

@@ -43,17 +43,17 @@ test.describe("reservation engine (Slice 2)", () => {
     await expect(page.getByRole("button", { name: "Cancel booking" })).toHaveCount(0);
   });
 
-  test("today's seeded arrivals show on the calendar and as Reserved on the room board", async ({
+  test("today's arrivals show on the calendar, and the board derives who is in house", async ({
     page,
   }) => {
     await signIn(page, MANAGER);
     await page.goto("/calendar");
     await expect(page.getByRole("link", { name: /Ahmed Mohamed · BK-/ })).toBeVisible();
 
+    // The demo history leaves guests in house tonight; the board derives Occupied from them.
     await page.goto("/rooms");
-    await page.getByRole("tab", { name: /Reserved/ }).click();
-    await expect(page.getByText("305", { exact: true })).toBeVisible();
-    await expect(page.getByText("Ahmed Mohamed")).toBeVisible();
+    await page.getByRole("tab", { name: /Occupied/ }).click();
+    await expect(page.getByRole("button", { name: /occupied/ }).first()).toBeVisible();
   });
 
   test("a manager cancels a booking with a reason and the timeline records it", async ({

@@ -364,6 +364,43 @@ export class ReservationsRepository {
     `.execute(hotelDb());
   }
 
+  /** Early check-out: the stay's claim now ends on `newEnd` (the unused nights are released). */
+  async shrinkStay(reservationId: string, newEnd: IsoDate): Promise<void> {
+    await sql`
+      UPDATE hotel_room_allocations
+         SET stay = daterange(lower(stay), ${newEnd}::date, '[)')
+       WHERE organization_id = ${this.org()}
+         AND reservation_id = ${reservationId}
+         AND active
+    `.execute(hotelDb());
+  }
+
+  /**
+   * Front-desk lists for the business date: arrivals still to check in (due today, or overdue
+   * and not yet marked no-show), guests due out today or earlier, and everyone in house.
+   */
+  async frontDesk(today: IsoDate): Promise<{
+    arrivals: ReservationRecord[];
+    departures: ReservationRecord[];
+    inHouse: ReservationRecord[];
+  }> {
+    const [arrivals, inHouse] = await Promise.all([
+      this.base()
+        .where("r.status", "in", ["confirmed", "pending"])
+        .where(sql<boolean>`r.arrival <= ${today}::date AND r.departure > ${today}::date`)
+        .orderBy("r.arrival")
+        .orderBy("g.full_name")
+        .execute(),
+      this.base().where("r.status", "=", "checked_in").orderBy("rm.number").execute(),
+    ]);
+    const inHouseRecords = inHouse.map((x) => this.toRecord(x));
+    return {
+      arrivals: arrivals.map((x) => this.toRecord(x)),
+      departures: inHouseRecords.filter((x) => x.departure <= today),
+      inHouse: inHouseRecords,
+    };
+  }
+
   /**
    * Rooms of a type that are sellable for the whole stay: not archived, not out of service, and
    * with no active allocation overlapping. Only a starting point for allocation — the exclusion

@@ -405,8 +405,18 @@ describe.skipIf(!hasTestDb)("HotelOS property setup (Slice 1)", () => {
         headers: auth,
       });
       const booked = resRes.json() as { total: number; items: Array<{ status: string }> };
-      expect(booked.total).toBe(DEMO_RESERVATIONS.length);
-      expect(booked.items.filter((r) => r.status === "cancelled")).toHaveLength(1);
+      // Upcoming bookings plus the recent past played through the real workflows.
+      expect(booked.total).toBeGreaterThan(DEMO_RESERVATIONS.length + 20);
+      expect(booked.items.some((r) => r.status === "checked_out")).toBe(true);
+
+      const desk = await http.inject({
+        method: "GET",
+        url: "/api/hotel/front-desk/today",
+        headers: auth,
+      });
+      const board = desk.json() as { arrivals: unknown[]; inHouse: unknown[] };
+      expect(board.arrivals.length).toBeGreaterThanOrEqual(4);
+      expect(board.inHouse.length).toBeGreaterThan(0);
     });
   });
 });

@@ -117,6 +117,27 @@ export class RoomsRepository {
       .execute();
   }
 
+  /** Only the housekeeping and front-desk workflows call this — never a form. */
+  async setHousekeepingStatus(id: string, status: HousekeepingStatus): Promise<void> {
+    await hotelDb()
+      .updateTable("hotel_rooms")
+      .set({ housekeeping_status: status })
+      .where("organization_id", "=", requireOrganizationId())
+      .where("id", "=", id)
+      .execute();
+  }
+
+  /** Row-lock a room for the rest of the transaction (serialises check-ins into one room). */
+  async lock(id: string): Promise<void> {
+    await hotelDb()
+      .selectFrom("hotel_rooms")
+      .select("id")
+      .where("organization_id", "=", requireOrganizationId())
+      .where("id", "=", id)
+      .forUpdate()
+      .execute();
+  }
+
   async archive(id: string, at: Date): Promise<void> {
     await hotelDb()
       .updateTable("hotel_rooms")

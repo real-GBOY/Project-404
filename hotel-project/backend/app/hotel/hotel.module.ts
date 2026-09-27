@@ -6,6 +6,9 @@ import { RoomsModule } from "@hotel/hotel/rooms/rooms.module.js";
 import { GuestsModule } from "@hotel/hotel/guests/guests.module.js";
 import { PricingModule } from "@hotel/hotel/pricing/pricing.module.js";
 import { ReservationsModule } from "@hotel/hotel/reservations/reservations.module.js";
+import { BillingModule } from "@hotel/hotel/billing/billing.module.js";
+import { HousekeepingModule } from "@hotel/hotel/housekeeping/housekeeping.module.js";
+import { FrontDeskModule } from "@hotel/hotel/front-desk/front-desk.module.js";
 
 /**
  * The HotelOS product domain (mirrors `atlas/backend/app/realestate/realestate.module.ts`).
@@ -22,6 +25,9 @@ import { ReservationsModule } from "@hotel/hotel/reservations/reservations.modul
     GuestsModule,
     PricingModule,
     ReservationsModule,
+    BillingModule,
+    HousekeepingModule,
+    FrontDeskModule,
   ],
 })
 export class HotelModule {}

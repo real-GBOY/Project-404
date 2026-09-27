@@ -23,6 +23,26 @@ export type hotel_discounts = {
   created_at: Generated<Timestamp>;
   updated_at: Generated<Timestamp>;
 };
+export type hotel_folio_charges = {
+  id: string;
+  organization_id: string;
+  reservation_id: string;
+  /**
+   * @kyselyType('room' | 'breakfast' | 'extra_bed' | 'minibar' | 'laundry' | 'transfer' | 'service')
+   */
+  kind: "room" | "breakfast" | "extra_bed" | "minibar" | "laundry" | "transfer" | "service";
+  description: string;
+  service_date: Timestamp;
+  quantity: number;
+  unit_price: string;
+  amount: string;
+  tax_amount: string;
+  invoice_id: string | null;
+  voided_at: Timestamp | null;
+  void_reason: string | null;
+  created_by: string | null;
+  created_at: Generated<Timestamp>;
+};
 export type hotel_guest_notes = {
   id: string;
   organization_id: string;
@@ -51,6 +71,88 @@ export type hotel_guests = {
   created_by: string | null;
   created_at: Generated<Timestamp>;
   updated_at: Generated<Timestamp>;
+};
+export type hotel_housekeeping_tasks = {
+  id: string;
+  organization_id: string;
+  room_id: string;
+  reservation_id: string | null;
+  /**
+   * @kyselyType('checkout_clean' | 'stayover' | 'deep_clean')
+   */
+  kind: "checkout_clean" | "stayover" | "deep_clean";
+  /**
+   * @kyselyType('pending' | 'assigned' | 'in_progress' | 'completed' | 'inspected')
+   */
+  status: Generated<"pending" | "assigned" | "in_progress" | "completed" | "inspected">;
+  /**
+   * @kyselyType('low' | 'normal' | 'high')
+   */
+  priority: Generated<"low" | "normal" | "high">;
+  assignee_id: string | null;
+  notes: string | null;
+  due_date: Timestamp;
+  started_at: Timestamp | null;
+  completed_at: Timestamp | null;
+  inspected_at: Timestamp | null;
+  inspected_by: string | null;
+  created_by: string | null;
+  created_at: Generated<Timestamp>;
+  updated_at: Generated<Timestamp>;
+};
+export type hotel_invoice_items = {
+  id: string;
+  organization_id: string;
+  invoice_id: string;
+  charge_id: string;
+  description: string;
+  service_date: Timestamp;
+  quantity: number;
+  unit_price: string;
+  amount: string;
+  tax_amount: string;
+  position: number;
+};
+export type hotel_invoices = {
+  id: string;
+  organization_id: string;
+  number: string;
+  reservation_id: string;
+  /**
+   * @kyselyType('issued' | 'void')
+   */
+  status: Generated<"issued" | "void">;
+  subtotal: string;
+  tax: string;
+  total: string;
+  tax_rate: string;
+  bill_to_name: string;
+  issued_by: string | null;
+  issued_at: Generated<Timestamp>;
+  voided_at: Timestamp | null;
+  void_reason: string | null;
+};
+export type hotel_payments = {
+  id: string;
+  organization_id: string;
+  reservation_id: string;
+  invoice_id: string | null;
+  /**
+   * @kyselyType('cash' | 'card' | 'bank_transfer' | 'online')
+   */
+  method: "cash" | "card" | "bank_transfer" | "online";
+  amount: string;
+  /**
+   * @kyselyType('pending' | 'completed' | 'failed')
+   */
+  status: "pending" | "completed" | "failed";
+  provider: string;
+  provider_reference: string | null;
+  failure_reason: string | null;
+  idempotency_key: string;
+  received_by: string | null;
+  created_at: Generated<Timestamp>;
+  completed_at: Timestamp | null;
 };
 export type hotel_rate_rules = {
   id: string;
@@ -205,8 +307,13 @@ export type hotel_settings = {
 export type HotelTables = {
   hotel_counters: hotel_counters;
   hotel_discounts: hotel_discounts;
+  hotel_folio_charges: hotel_folio_charges;
   hotel_guest_notes: hotel_guest_notes;
   hotel_guests: hotel_guests;
+  hotel_housekeeping_tasks: hotel_housekeeping_tasks;
+  hotel_invoice_items: hotel_invoice_items;
+  hotel_invoices: hotel_invoices;
+  hotel_payments: hotel_payments;
   hotel_rate_rules: hotel_rate_rules;
   hotel_reservation_status_history: hotel_reservation_status_history;
   hotel_reservations: hotel_reservations;

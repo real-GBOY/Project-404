@@ -15,7 +15,12 @@ export type HotelIdPrefix =
   | "dsc" // discount code
   | "rsv" // reservation
   | "ral" // room allocation
-  | "rsh"; // reservation status history
+  | "rsh" // reservation status history
+  | "fch" // folio charge
+  | "pay" // payment
+  | "inv" // invoice
+  | "ivi" // invoice item
+  | "hkt"; // housekeeping task
 
 export const hotelId = (prefix: HotelIdPrefix): string => createPrefixedId(prefix);
 

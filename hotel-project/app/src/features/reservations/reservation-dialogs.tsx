@@ -5,7 +5,8 @@ import { Dialog } from "@/components/ui/dialog";
 import { FormError, InputField, SelectField, TextAreaField } from "@/components/ui/fields";
 import { useToast } from "@/components/ui/toast";
 import { errorMessage } from "@/lib/errors";
-import { formatEgp, formatStay } from "@/lib/format";
+import { addIsoDays, formatEgp, formatIsoDate, formatStay } from "@/lib/format";
+import { useExtendStay } from "@/api/front-desk";
 
 export function CancelDialog({
   reservation,
@@ -197,6 +198,65 @@ export function ChangeDatesDialog({
             onChange={(e) => setDeparture(e.target.value)}
           />
         </div>
+        <FormError message={error} />
+      </form>
+    </Dialog>
+  );
+}
+
+/** Extend an in-house stay: the server claims the extra nights on the same room and prices them. */
+export function ExtendStayDialog({
+  reservation,
+  onClose,
+}: {
+  reservation: Reservation;
+  onClose: () => void;
+}) {
+  const extend = useExtendStay();
+  const toast = useToast();
+  const [departure, setDeparture] = useState(addIsoDays(reservation.departure, 1));
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    try {
+      const updated = await extend.mutateAsync({ id: reservation.id, departure });
+      toast(
+        `Stay extended to ${formatIsoDate(updated.departure)} · new total ${formatEgp(updated.total)}`,
+      );
+      onClose();
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  }
+
+  return (
+    <Dialog
+      open
+      title="Extend stay"
+      description={`Currently leaving ${formatIsoDate(reservation.departure, true)}. The extra nights are priced and added to the folio.`}
+      onClose={onClose}
+      footer={
+        <>
+          <Button variant="secondary" size="sm" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button size="sm" type="submit" form="extend-form" disabled={extend.isPending}>
+            Extend
+          </Button>
+        </>
+      }
+    >
+      <form id="extend-form" onSubmit={submit} className="flex flex-col gap-4">
+        <InputField
+          label="New check-out"
+          type="date"
+          min={addIsoDays(reservation.departure, 1)}
+          required
+          value={departure}
+          onChange={(e) => setDeparture(e.target.value)}
+        />
         <FormError message={error} />
       </form>
     </Dialog>

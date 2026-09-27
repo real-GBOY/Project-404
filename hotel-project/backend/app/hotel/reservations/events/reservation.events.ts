@@ -29,3 +29,10 @@ export const reservationNoShow = (p: ReservationEventPayload) =>
 export const reservationChanged = (
   p: ReservationEventPayload & { change: "room" | "dates"; roomId: string },
 ) => defineEvent("reservation.changed", 1, p);
+
+export const reservationCheckedIn = (p: ReservationEventPayload & { roomId: string | null }) =>
+  defineEvent("reservation.checked_in", 1, p);
+
+export const reservationCheckedOut = (
+  p: ReservationEventPayload & { roomId: string | null; invoiceId: string | null },
+) => defineEvent("reservation.checked_out", 1, p);

@@ -30,6 +30,8 @@ import {
 import {
   reservationCancelled,
   reservationChanged,
+  reservationCheckedIn,
+  reservationCheckedOut,
   reservationConfirmed,
   reservationCreated,
   reservationNoShow,
@@ -330,6 +332,7 @@ export class ReservationsService {
     command: ReservationCommand,
     actorId: string,
     reason: string | null = null,
+    extra: { invoiceId?: string | null } = {},
   ): Promise<ReservationRecord> {
     const next: ReservationStatus = transition(r.status, command);
     const at = this.clock.now();
@@ -351,6 +354,14 @@ export class ReservationsService {
     if (next === "cancelled")
       await this.events.publish(reservationCancelled({ ...payload, reason }));
     if (next === "no_show") await this.events.publish(reservationNoShow(payload));
+    if (next === "checked_in") {
+      await this.events.publish(reservationCheckedIn({ ...payload, roomId: r.roomId }));
+    }
+    if (next === "checked_out") {
+      await this.events.publish(
+        reservationCheckedOut({ ...payload, roomId: r.roomId, invoiceId: extra.invoiceId ?? null }),
+      );
+    }
     return (await this.repo.findById(r.id))!;
   }
 

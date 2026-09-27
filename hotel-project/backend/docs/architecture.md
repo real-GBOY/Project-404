@@ -4,7 +4,7 @@ HotelOS is the operations platform behind **Hotel Nayel**, the third AURIC produ
 (law firms) and Atlas (real estate). This file records the decisions that shape it and, more
 importantly, *why* — so a future change can tell a deliberate constraint from an accident.
 
-Status: **Slices 0–2 complete** (foundation; property setup; the reservation engine — pricing, availability, allocation, lifecycle, calendar). Sections marked *(planned)* describe the locked design
+Status: **Slices 0–3 complete** (foundation; property setup; the reservation engine; the front desk — check-in/out workflows, folio, payments, invoices, housekeeping backend). Sections marked *(planned)* describe the locked design
 for later slices; they become as-built as each slice lands.
 
 ## 1. Topology
@@ -96,7 +96,7 @@ inserted directly in SQL is rejected; 20 simultaneous bookings of one room → e
 orphaned reservations; staggered overlapping ranges racing for one room → zero overlaps. Each test
 ends with a self-join over the ledger asserting no two active claims overlap.
 
-## 4. Domain rules locked for later slices *(planned)*
+## 4. Domain rules *(state machine, room model, ledger, provider and workflows are as built — Slices 2–3)*
 
 - **Reservation state machine** — `PENDING → CONFIRMED → CHECKED_IN → CHECKED_OUT`, plus
   `PENDING|CONFIRMED → CANCELLED` and `CONFIRMED → NO_SHOW`. A pure domain function validates every
@@ -153,6 +153,17 @@ Frontend permission checks (`useAuth().can`, `visibleNav`) are UX only; the back
 | 2 | No-show only on/after the arrival date; cancel needs its own permission (`cancel:reservation`, not held by receptionists) | Matches the design's role matrix |
 | 2 | Core fix: JWT `signAccessToken` now issues `iat`/`exp` from the injected `Clock` (verify already used it) | Core's own rule — no wall-clock time in Core logic. Under any non-real clock fresh tokens were judged expired; Core/Mizan suites (341 tests) pass with the fix |
 | 2 | Tests pin `HOTEL_SEED_DEMO=false` | A developer's local `.env` must never change test behaviour |
+| 3 | Housekeeping *backend* (task state machine, room effects) built in Slice 3, its screens in Slice 4 | Check-out must make the room dirty and open a task; check-in requires a clean room — the front desk can't work without it |
+| 3 | Room nights are posted to the folio **at check-in**, one line per night, splitting the booking discount so the lines sum exactly to the booked total; early check-out voids the unused nights and shrinks the allocation | The folio shows real charges while the guest is in house; nothing is invented at check-out |
+| 3 | VAT stored **per charge line** at the rate in force when posted | A later rate change never rewrites a past folio or invoice |
+| 3 | Before check-in the folio shows the *expected* total (booked total + VAT at today's rate); deposits count against it | The design's Payment Summary is meaningful from the moment of booking |
+| 3 | Payments: pending row (tx) → provider call with **no transaction open** → resolve (tx). `Idempotency-Key` unique per hotel; the balance check counts in-flight pending payments under a reservation row lock | A network call never holds locks; a retry never double-charges; two simultaneous payments can't overpay (tested) |
+| 3 | `PaymentProvider` interface, `SimulatedPaymentProvider` bound in `billing.module.ts` | Paymob is one binding change; the domain never learns which gateway it uses |
+| 3 | Check-out requires a **zero** balance: outstanding → `checkout.balance_due`, overpaid → `checkout.refund_due` (refunds land in Slice 5) | An invoice is only issued for a settled folio |
+| 3 | Invoices freeze their items at issue (`hotel_invoice_items`), at most one issued invoice per reservation (partial unique index) | Invoices are traceable and immutable; payments link to the invoice |
+| 3 | `runAsOf(date, fn)` pins the business date via AsyncLocalStorage; no HTTP route reaches it | The demo plays 14 days of real history through the real workflows; tests walk stays across days |
+| 3 | Extend-stay for in-house guests re-claims the same room through the exclusion constraint, then prices and posts the extra nights | Overstays are never silent: check-out after the booked departure is refused until the stay is extended |
+| 3 | `@auric/web` client accepts per-request headers (cannot override Authorization/Content-Type) | Needed for `Idempotency-Key`; generic and backwards-compatible |
 
 ## 7. Quality gate
 

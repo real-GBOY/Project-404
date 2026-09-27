@@ -59,4 +59,18 @@ export const ENDPOINTS = {
     changeRoom: (id: string) => `/hotel/reservations/${id}/change-room`,
     changeDates: (id: string) => `/hotel/reservations/${id}/change-dates`,
   },
+
+  frontDesk: {
+    today: "/hotel/front-desk/today",
+    checkIn: (id: string) => `/hotel/reservations/${id}/check-in`,
+    checkOut: (id: string) => `/hotel/reservations/${id}/check-out`,
+    extend: (id: string) => `/hotel/reservations/${id}/extend`,
+  },
+  billing: {
+    folio: (id: string) => `/hotel/reservations/${id}/folio`,
+    charges: (id: string) => `/hotel/reservations/${id}/charges`,
+    payments: (id: string) => `/hotel/reservations/${id}/payments`,
+    voidCharge: (chargeId: string) => `/hotel/charges/${chargeId}/void`,
+    invoice: (id: string) => `/hotel/invoices/${id}`,
+  },
 } as const;

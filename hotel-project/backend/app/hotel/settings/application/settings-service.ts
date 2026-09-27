@@ -4,6 +4,7 @@ import { readInTenant } from "@core/kernel/db/db.js";
 import { AUDIT_LOGGER, CLOCK, UNIT_OF_WORK } from "@core/kernel/tokens.js";
 import type { Clock } from "@core/kernel/clock.js";
 import { hotelDate, type IsoDate } from "@hotel/hotel/shared/dates.js";
+import { pinnedBusinessDate } from "@hotel/hotel/shared/business-date.js";
 import type { IAuditLogger } from "@core/contracts/index.js";
 import {
   SettingsRepository,
@@ -39,6 +40,8 @@ export class SettingsService {
 
   /** The hotel's current calendar date in its own time zone (inside a tenant transaction). */
   async today(): Promise<IsoDate> {
+    const pinned = pinnedBusinessDate();
+    if (pinned) return pinned;
     const { timeZone } = await this.current();
     return hotelDate(this.clock.now(), timeZone);
   }

@@ -11,6 +11,8 @@ import { ReservationDetailPage } from "@/features/reservations/reservation-detai
 import { NewReservationPage } from "@/features/reservations/new-reservation-page";
 import { CalendarPage } from "@/features/calendar/calendar-page";
 import { RatesPage } from "@/features/rates/rates-page";
+import { FrontDeskPage } from "@/features/front-desk/front-desk-page";
+import { InvoicePage } from "@/features/billing/invoice-page";
 import { AppShell } from "./layouts/app-shell";
 import { ProtectedRoute } from "./protected-route";
 import { NotFoundPage } from "./not-found-page";
@@ -26,6 +28,8 @@ export function AppRouter() {
           <Route path="reservations/new" element={<NewReservationPage />} />
           <Route path="reservations/:reservationId" element={<ReservationDetailPage />} />
           <Route path="calendar" element={<CalendarPage />} />
+          <Route path="front-desk" element={<FrontDeskPage />} />
+          <Route path="invoices/:invoiceId" element={<InvoicePage />} />
           <Route path="rooms" element={<RoomsPage />} />
           <Route path="guests" element={<GuestsPage />} />
           <Route path="guests/:guestId" element={<GuestProfilePage />} />

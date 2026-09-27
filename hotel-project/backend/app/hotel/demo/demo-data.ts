@@ -11,6 +11,9 @@ export const DEMO_ORG = {
 
 export const DEMO_PASSWORD = "demo-password-2026";
 
+/** How many past days the demo plays through the real workflows (see demo-history.ts). */
+export const DEMO_HISTORY_DAYS = 14;
+
 export const DEMO_SETTINGS = {
   hotelName: "Hotel Nayel",
   checkInTime: "14:00",
