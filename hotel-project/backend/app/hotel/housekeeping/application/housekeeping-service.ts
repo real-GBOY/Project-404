@@ -203,6 +203,16 @@ export class HousekeepingService {
         defineEvent("housekeeping.task_completed", 1, { taskId: task.id, roomId: task.roomId }),
       );
     }
+    if (command === "assign") {
+      await this.events.publish(
+        defineEvent("housekeeping.task_assigned", 1, {
+          taskId: task.id,
+          roomId: task.roomId,
+          assigneeId: extra.assigneeId!,
+          actorId,
+        }),
+      );
+    }
     const after = (await this.repo.findById(task.id))!;
     const names = await this.directory.userNames([after.assigneeId]);
     return this.view(after, names);

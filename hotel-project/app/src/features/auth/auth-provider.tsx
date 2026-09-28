@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { ENDPOINTS, http, setSessionExpiredHandler, tokenStore } from "@/config";
 import { hasPermission } from "@/lib/permissions";
 import type { LoginResponse, MeResponse } from "./auth-types";
@@ -19,6 +20,7 @@ const SIGNED_OUT: AuthState = {
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>(INITIAL);
+  const queryClient = useQueryClient();
 
   const loadMe = useCallback(async () => {
     try {
@@ -41,9 +43,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [loadMe]);
 
   useEffect(() => {
-    setSessionExpiredHandler(() => setState(SIGNED_OUT));
+    setSessionExpiredHandler(() => {
+      queryClient.clear();
+      setState(SIGNED_OUT);
+    });
     return () => setSessionExpiredHandler(null);
-  }, []);
+  }, [queryClient]);
 
   const login = useCallback(
     async (email: string, password: string) => {
@@ -52,15 +57,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: { email, password },
         anonymous: true,
       });
+      // A new person at a shared desk must never see the previous user's cached data.
+      queryClient.clear();
       tokenStore.set(res.tokens.accessToken, res.tokens.refreshToken);
       await loadMe();
     },
-    [loadMe],
+    [loadMe, queryClient],
   );
 
   const logout = useCallback(() => {
     const refreshToken = tokenStore.getRefresh();
     tokenStore.clear();
+    queryClient.clear();
     setState(SIGNED_OUT);
     if (refreshToken) {
       http(ENDPOINTS.auth.logout, {
@@ -71,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         /* best-effort — the client-side session is already cleared */
       });
     }
-  }, []);
+  }, [queryClient]);
 
   const value = useMemo<AuthContextValue>(
     () => ({

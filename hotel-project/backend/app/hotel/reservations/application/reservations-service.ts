@@ -154,6 +154,7 @@ export class ReservationsService {
         total: quote.total,
         notes: input.notes ?? null,
         createdBy: actorId,
+        createdAt: this.clock.now(),
       });
 
       await this.allocate(id, type.id, input.arrival, input.departure, input.roomId ?? null);
@@ -327,7 +328,8 @@ export class ReservationsService {
   async applyTransition(
     r: ReservationRecord,
     command: ReservationCommand,
-    actorId: string,
+    /** null = the system (a scheduled job), recorded as such in history and audit. */
+    actorId: string | null,
     reason: string | null = null,
     extra: { invoiceId?: string | null } = {},
   ): Promise<ReservationRecord> {
@@ -340,6 +342,7 @@ export class ReservationsService {
     await this.repo.addHistory(r.id, r.status, next, actorId, reason);
     await this.audit.record({
       actorId,
+      actorType: actorId ? "user" : "system",
       action: `hotel.reservation.${command === "no_show" ? "no_show" : PAST[command]}`,
       resourceType: "hotel_reservation",
       resourceId: r.id,

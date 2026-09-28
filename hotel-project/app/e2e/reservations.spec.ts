@@ -40,7 +40,8 @@ test.describe("reservation engine (Slice 2)", () => {
   }) => {
     await signIn(page, MANAGER);
     await page.goto("/calendar");
-    await expect(page.getByRole("link", { name: /Ahmed Mohamed · BK-/ })).toBeVisible();
+    // A regular guest: the demo history may show several of his stays in the window.
+    await expect(page.getByRole("link", { name: /Ahmed Mohamed · BK-/ }).first()).toBeVisible();
 
     // The demo history leaves guests in house tonight; the board derives Occupied from them.
     await page.goto("/rooms");

@@ -94,4 +94,20 @@ export const ENDPOINTS = {
   },
   dashboard: "/hotel/dashboard",
   analytics: "/hotel/analytics",
+  search: "/hotel/search",
+  activity: "/hotel/activity",
+  notifications: {
+    list: "/notifications",
+    read: (id: string) => `/notifications/${id}/read`,
+    readAll: "/notifications/read-all",
+  },
+  documents: {
+    list: (guestId: string) => `/hotel/guests/${guestId}/documents`,
+    remove: (guestId: string, id: string) => `/hotel/guests/${guestId}/documents/${id}`,
+  },
+  files: {
+    uploads: "/files/uploads",
+    confirm: (id: string) => `/files/${id}/confirm`,
+    content: (id: string) => `/files/${id}`,
+  },
 } as const;

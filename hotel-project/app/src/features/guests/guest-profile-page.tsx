@@ -8,6 +8,7 @@ import { useAuth } from "@/features/auth/use-auth";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
+import { GuestDocuments } from "./guest-documents";
 import { FormError } from "@/components/ui/fields";
 import { PageHeader } from "@/components/ui/page-header";
 import { ErrorState, LoadingState } from "@/components/ui/states";
@@ -94,6 +95,7 @@ export function GuestProfilePage() {
           <NotesTimeline guestId={g.id} notes={g.notes} canAdd={canUpdate} />
         </Card>
       </div>
+      <GuestDocuments guestId={g.id} />
 
       {editing ? <GuestDialog guest={g} onClose={() => setEditing(false)} /> : null}
     </>

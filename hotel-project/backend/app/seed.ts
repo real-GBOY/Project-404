@@ -10,6 +10,8 @@ import { RbacRepository } from "@core/rbac/infrastructure/rbac-repository.js";
 import { HOTEL_PERMISSIONS } from "@hotel/hotel/permissions.js";
 import { HOTEL_ROLES } from "@hotel/hotel/shared/roles.js";
 import { DemoSeeder } from "@hotel/hotel/demo/demo-seeder.js";
+import { TemplateRepository } from "@core/notifications/infrastructure/template-repository.js";
+import { HOTEL_TEMPLATES } from "@hotel/hotel/notifications/templates.js";
 import { readHotelConfig } from "./config.js";
 
 const log = moduleLogger("hotel-app-seed");
@@ -26,6 +28,7 @@ export class AppSeedService {
     private readonly coreSeed: SeedService,
     private readonly rbac: RbacRepository,
     private readonly demo: DemoSeeder,
+    private readonly templates: TemplateRepository,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
@@ -43,6 +46,7 @@ export class AppSeedService {
       { permissions: HOTEL_PERMISSIONS.length, roles: HOTEL_ROLES.map((r) => r.key) },
       "hotel RBAC seeded",
     );
+    await runAsSystem(() => this.uow.transaction(() => this.templates.upsertMany(HOTEL_TEMPLATES)));
 
     if (readHotelConfig().seedDemo) {
       await this.demo.seed(this.clock);

@@ -6,6 +6,8 @@ import { useMyRole } from "@/api/staff";
 import { Brand } from "@/components/ui/brand";
 import { cn } from "@/lib/cn";
 import { initials } from "@/lib/format";
+import { CommandPalette } from "@/features/search/command-palette";
+import { NotificationBell } from "@/features/notifications/notification-bell";
 import { NAV_GROUPS, visibleNav } from "../nav";
 
 /**
@@ -18,10 +20,21 @@ export function AppShell() {
   const auth = useAuth();
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const groups = visibleNav(NAV_GROUPS, auth.can);
   const role = useMyRole(auth.status === "authenticated");
 
   useEffect(() => setDrawerOpen(false), [location.pathname]);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPaletteOpen((o) => !o);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
 
   return (
     <div className="flex h-full w-full overflow-hidden bg-canvas text-ink">
@@ -105,7 +118,20 @@ export function AppShell() {
               <span className="h-0.5 rounded bg-ink-nav" />
             </span>
           </button>
+          <button
+            type="button"
+            onClick={() => setPaletteOpen(true)}
+            aria-label="Search guests, bookings, rooms"
+            className="flex max-w-[420px] min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-button border border-border bg-canvas px-3.5 py-[9px] text-body text-faint hover:border-rule"
+          >
+            <span className="truncate sm:hidden">Search</span>
+            <span className="hidden truncate sm:inline">Search guests, bookings, rooms…</span>
+            <span className="ml-auto hidden rounded-[5px] bg-neutral-soft px-1.5 py-0.5 font-mono text-micro sm:inline">
+              ⌘K
+            </span>
+          </button>
           <div className="flex-1" />
+          <NotificationBell />
           <div className="flex items-center gap-[9px] rounded-button px-2 py-1">
             <div
               aria-hidden="true"
@@ -132,6 +158,7 @@ export function AppShell() {
         <main className="flex-1 overflow-y-auto px-4 pt-7 pb-15 sm:px-8">
           <Outlet />
         </main>
+        {paletteOpen ? <CommandPalette onClose={() => setPaletteOpen(false)} /> : null}
       </div>
     </div>
   );

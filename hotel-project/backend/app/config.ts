@@ -14,6 +14,8 @@ const schema = z.object({
     .transform((v) => v === "true"),
   /** How many days of past business the demo plays through the real workflows. */
   demoHistoryDays: z.coerce.number().int().min(1).max(365).default(120),
+  /** How often the scheduled jobs (auto no-show, hold expiry) run. Default 15 minutes. */
+  jobsIntervalMs: z.coerce.number().int().min(10_000).default(900_000),
 });
 
 export type HotelConfig = z.infer<typeof schema>;
@@ -22,6 +24,7 @@ export function readHotelConfig(env: NodeJS.ProcessEnv = process.env): HotelConf
   const parsed = schema.safeParse({
     seedDemo: env.HOTEL_SEED_DEMO,
     demoHistoryDays: env.HOTEL_DEMO_HISTORY_DAYS,
+    jobsIntervalMs: env.HOTEL_JOBS_INTERVAL_MS,
   });
   if (!parsed.success) {
     const issues = parsed.error.issues

@@ -1,0 +1,16 @@
+model hotel_guest_documents {
+  id              String   @id
+  organization_id String
+  guest_id        String
+  file_id         String
+  /// @kyselyType('id_document' | 'other')
+  kind            String
+  label           String?
+  uploaded_by     String?
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "hotel_guest_documents_org_id_uq")
+  @@unique([organization_id, file_id], map: "hotel_guest_documents_file_uq")
+  @@index([organization_id, guest_id], map: "hotel_guest_documents_guest_idx")
+  @@map("hotel_guest_documents")
+}

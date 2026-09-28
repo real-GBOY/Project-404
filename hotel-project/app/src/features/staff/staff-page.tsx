@@ -17,10 +17,14 @@ import { useToast } from "@/components/ui/toast";
 import { formatRelative } from "@/lib/format";
 import { AddStaffDialog } from "./add-staff-dialog";
 import { PermissionMatrix } from "./permission-matrix";
+import { AuditLog } from "./audit-log";
 
-type Tab = "directory" | "permissions";
+type Tab = "directory" | "permissions" | "audit";
 
-/** Staff & Permissions (design): the directory and the role → permission matrix. */
+/**
+ * Staff & Permissions (design): the directory, the role → permission matrix, and the audit log
+ * (for those with `read:audit_log`).
+ */
 export function StaffPage() {
   const auth = useAuth();
   const [tab, setTab] = useState<Tab>("directory");
@@ -41,10 +45,19 @@ export function StaffPage() {
           tabs={[
             { value: "directory", label: "Directory" },
             { value: "permissions", label: "Roles & Permissions" },
+            ...(auth.can("read:audit_log")
+              ? [{ value: "audit" as const, label: "Audit Log" }]
+              : []),
           ]}
         />
       </div>
-      {tab === "directory" ? <Directory canManage={canManage} /> : <PermissionsTab />}
+      {tab === "directory" ? (
+        <Directory canManage={canManage} />
+      ) : tab === "permissions" ? (
+        <PermissionsTab />
+      ) : (
+        <AuditLog />
+      )}
       {adding ? <AddStaffDialog onClose={() => setAdding(false)} /> : null}
     </>
   );

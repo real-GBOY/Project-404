@@ -20,6 +20,8 @@ import { OutboxWorker } from "@core/events/outbox/outbox-worker.js";
     { provide: EVENT_BUS, useExisting: EventBus },
     { provide: WORKER_AUTOSTART, useValue: true },
   ],
-  exports: [EVENT_BUS, EventRegistry, OutboxRepository, OutboxWorker],
+  // WORKER_AUTOSTART is exported so product background workers share the outbox worker's
+  // switch: on in the app, off in tests (which drive tick() by hand).
+  exports: [EVENT_BUS, EventRegistry, OutboxRepository, OutboxWorker, WORKER_AUTOSTART],
 })
 export class EventsModule {}

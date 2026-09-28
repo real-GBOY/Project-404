@@ -56,6 +56,7 @@ export interface NewReservation {
   total: number;
   notes: string | null;
   createdBy: string;
+  createdAt: Date;
 }
 
 export interface ReservationFilter {
@@ -134,6 +135,7 @@ export class ReservationsRepository {
         total: moneyString(r.total),
         notes: r.notes,
         created_by: r.createdBy,
+        created_at: r.createdAt,
       })
       .execute();
     return id;
@@ -196,6 +198,32 @@ export class ReservationsRepository {
     if (ids.length === 0) return [];
     const rows = await this.base().where("r.id", "in", ids).execute();
     return rows.map((r) => this.toRecord(r));
+  }
+
+  /** Confirmed bookings whose arrival night has passed with no check-in (no-show candidates). */
+  async overdueArrivals(today: IsoDate): Promise<string[]> {
+    const rows = await hotelDb()
+      .selectFrom("hotel_reservations")
+      .select("id")
+      .where("organization_id", "=", this.org())
+      .where("status", "=", "confirmed")
+      .where(sql<boolean>`arrival < ${today}::date`)
+      .orderBy("arrival")
+      .execute();
+    return rows.map((r) => r.id);
+  }
+
+  /** Unconfirmed holds not confirmed in time, or whose arrival night has already passed. */
+  async expiredHolds(createdBefore: Date, today: IsoDate): Promise<string[]> {
+    const rows = await hotelDb()
+      .selectFrom("hotel_reservations")
+      .select("id")
+      .where("organization_id", "=", this.org())
+      .where("status", "=", "pending")
+      .where(sql<boolean>`(created_at < ${createdBefore} OR arrival < ${today}::date)`)
+      .orderBy("created_at")
+      .execute();
+    return rows.map((r) => r.id);
   }
 
   /** Row-locks the reservation for the rest of the transaction (serialises state changes). */

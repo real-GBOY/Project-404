@@ -11,6 +11,7 @@ export type HotelIdPrefix =
   | "rom" // room
   | "gst" // guest
   | "gnt" // guest note
+  | "gdc" // guest document
   | "rtr" // rate rule
   | "dsc" // discount code
   | "rsv" // reservation

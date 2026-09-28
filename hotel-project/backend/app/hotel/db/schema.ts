@@ -43,6 +43,19 @@ export type hotel_folio_charges = {
   created_by: string | null;
   created_at: Generated<Timestamp>;
 };
+export type hotel_guest_documents = {
+  id: string;
+  organization_id: string;
+  guest_id: string;
+  file_id: string;
+  /**
+   * @kyselyType('id_document' | 'other')
+   */
+  kind: "id_document" | "other";
+  label: string | null;
+  uploaded_by: string | null;
+  created_at: Generated<Timestamp>;
+};
 export type hotel_guest_notes = {
   id: string;
   organization_id: string;
@@ -389,6 +402,7 @@ export type HotelTables = {
   hotel_counters: hotel_counters;
   hotel_discounts: hotel_discounts;
   hotel_folio_charges: hotel_folio_charges;
+  hotel_guest_documents: hotel_guest_documents;
   hotel_guest_notes: hotel_guest_notes;
   hotel_guests: hotel_guests;
   hotel_housekeeping_tasks: hotel_housekeeping_tasks;

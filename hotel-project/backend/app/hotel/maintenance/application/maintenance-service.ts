@@ -141,6 +141,7 @@ export class MaintenanceService {
       await this.events.publish(
         defineEvent("maintenance.ticket_reported", 1, {
           ticketId: id,
+          actorId,
           number: t.number,
           roomId: room.id,
           priority: t.priority,
@@ -304,7 +305,16 @@ export class MaintenanceService {
     });
     if (next === "resolved" || next === "verified") {
       await this.events.publish(
-        defineEvent(`maintenance.ticket_${next}`, 1, { ticketId: id, roomId: t.roomId }),
+        defineEvent(`maintenance.ticket_${next}`, 1, { ticketId: id, roomId: t.roomId, actorId }),
+      );
+    }
+    if (command === "assign") {
+      await this.events.publish(
+        defineEvent("maintenance.ticket_assigned", 1, {
+          ticketId: id,
+          assigneeId: extra.assigneeId!,
+          actorId,
+        }),
       );
     }
     const after = (await this.repo.findById(id))!;

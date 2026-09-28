@@ -183,6 +183,14 @@ Frontend permission checks (`useAuth().can`, `visibleNav`) are UX only; the back
 | 6 | Dashboard and Analytics share one nightly series (`AnalyticsRepository.nights`) | One definition of occupancy and revenue across the app |
 | 6 | Demo history length is config (`HOTEL_DEMO_HISTORY_DAYS`, default 120; 14 in tests, 45 in E2E) and includes weekend demand, cancellations and no-shows through the state machine | 90-night analytics have real data in the demo without slowing the test suites |
 | 6 | E2E user switches sign out through the app, starting from a protected page | Clearing storage raced with token refresh; the login page shows its form while auth loads |
+| 7 | Scheduled jobs (auto no-show after the arrival night, hold expiry after 48 h or once the arrival night passed) run through the reservation state machine as the **system actor** (`actorId: null` → history/audit "System"); one transaction per booking, re-checked under the row lock | Idempotent; two runners at once can't double-apply; no advisory lock needed |
+| 7 | The jobs runner follows Core's outbox-worker lifecycle (`WORKER_AUTOSTART`; tests call `tick()`); Core change: `EventsModule` exports `WORKER_AUTOSTART` | One switch for every background worker. Core/Mizan suites (606 tests) pass |
+| 7 | Reservation `created_at` comes from the injected `Clock` | Hold age is testable and consistent with the rest of the domain |
+| 7 | Staff notifications are **in-process** subscribers to domain events writing Core in-app notifications in the same transaction; recipients chosen by permission (checked live), never the actor; content is Core templates (`hotel.*`, English rows, locale-ready) | A notification exists exactly when its cause committed; adding a language is data |
+| 7 | ⌘K search: one endpoint, each group searched only if the caller's token grants that record's read permission | The palette can't reveal anything the screens wouldn't |
+| 7 | Audit Log = Core's trail read through a HotelOS adapter that resolves actors and subjects (booking codes, invoice/ticket numbers, guest names) into sentences with links; Core owns the data and `read:audit_log` | Presentation only; no second audit store |
+| 7 | Guest documents link a STORED Core file uploaded by the same staff member (presign → PUT → confirm, then attach); bytes and downloads stay in Core files | Nobody can attach another person's upload by id; storage driver (local/R2) is Core's concern |
+| 7 | Fix: the app now clears the query cache on sign-in, sign-out and session expiry | Found by E2E: the next person at a shared desk briefly saw the previous user's cached data |
 | 5 | Fix: free-room lists ignored maintenance blocks (`reservation_id IS DISTINCT FROM NULL` is false for block rows); the constraint still refused the booking, but availability offered blocked rooms | Found by an E2E run that left a block behind; regression test added |
 
 ## 7. Quality gate
