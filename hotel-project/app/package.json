@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "HotelOS staff application — Hotel Nayel's internal operations platform, powered by AURIC Core. Talks only to hotel-project/backend.",
+  "description": "HotelOS staff application — Hotel Transylvania's internal operations platform, powered by AURIC Core. Talks only to hotel-project/backend.",
   "engines": {
     "node": ">=22.12"
   },

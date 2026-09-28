@@ -1,5 +1,5 @@
 /**
- * Hotel-local formatting. Hotel Nayel operates on Cairo time; "today" at the front desk is the
+ * Hotel-local formatting. Hotel Transylvania operates on Cairo time; "today" at the front desk is the
  * hotel's date, not the browser's or UTC's. English-only for v1 — the locale lives here so it can
  * later follow AURIC localization.
  */

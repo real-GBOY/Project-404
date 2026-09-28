@@ -2,9 +2,9 @@ import { expect, test, type APIRequestContext } from "@playwright/test";
 import { signIn, hotelDate, DEMO_PASSWORD } from "./helpers";
 
 const PASSWORD = DEMO_PASSWORD;
-const MANAGER = "mona.farid@hotelnayel.com";
-const ACCOUNTANT = "dina.samir@hotelnayel.com";
-const RECEPTIONIST = "rania.kamal@hotelnayel.com";
+const MANAGER = "mona.farid@hoteltransylvania.com";
+const ACCOUNTANT = "dina.samir@hoteltransylvania.com";
+const RECEPTIONIST = "rania.kamal@hoteltransylvania.com";
 
 /**
  * A cancelled booking with a 1,500 EGP deposit on it — made through the real API as the manager,

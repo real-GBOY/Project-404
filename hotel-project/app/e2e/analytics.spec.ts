@@ -3,7 +3,7 @@ import { signIn } from "./helpers";
 
 test.describe("analytics (Slice 6)", () => {
   test("a manager reads performance over 7, 30 and 90 nights", async ({ page }) => {
-    await signIn(page, "mona.farid@hotelnayel.com");
+    await signIn(page, "mona.farid@hoteltransylvania.com");
     await page.goto("/analytics");
     // The demo played weeks of real stays: every KPI has a value from the ledgers.
     await expect(page.getByLabel("ADR")).toContainText(/\d EGP/);
@@ -21,7 +21,7 @@ test.describe("analytics (Slice 6)", () => {
   });
 
   test("the front desk doesn't see analytics", async ({ page }) => {
-    await signIn(page, "rania.kamal@hotelnayel.com");
+    await signIn(page, "rania.kamal@hoteltransylvania.com");
     await expect(page.getByRole("link", { name: "Analytics" })).toHaveCount(0);
   });
 });

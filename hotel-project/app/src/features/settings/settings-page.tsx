@@ -56,7 +56,7 @@ function SettingsForm({ initial }: { initial: HotelSettings }) {
 
   return (
     <>
-      <PageHeader title="Settings" subtitle="How Hotel Nayel operates day to day." />
+      <PageHeader title="Settings" subtitle="How Hotel Transylvania operates day to day." />
       <form onSubmit={submit} className="grid max-w-[880px] grid-cols-1 gap-4 lg:grid-cols-2">
         <fieldset disabled={!canEdit} className="contents">
           <Card>

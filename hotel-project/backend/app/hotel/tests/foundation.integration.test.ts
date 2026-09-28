@@ -103,7 +103,7 @@ describe.skipIf(!hasTestDb)("HotelOS foundation", () => {
       expect(admin[0]!.n).toBe("1");
     });
 
-    it("seeds the Hotel Nayel demo property exactly once", async () => {
+    it("seeds the Hotel Transylvania demo property exactly once", async () => {
       const seeder = get<DemoSeeder>(app, DemoSeeder);
       await seeder.seed(clock);
       await seeder.seed(clock);
@@ -111,7 +111,7 @@ describe.skipIf(!hasTestDb)("HotelOS foundation", () => {
         `SELECT name FROM organizations WHERE slug = $1`,
         [DEMO_ORG.slug],
       );
-      expect(orgs).toEqual([{ name: "Hotel Nayel" }]);
+      expect(orgs).toEqual([{ name: "Hotel Transylvania" }]);
     }, 60_000); // plays two weeks of history through the real workflows
   });
 

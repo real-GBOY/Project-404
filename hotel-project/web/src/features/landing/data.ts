@@ -8,8 +8,8 @@ import type { IconName } from "./components/icon";
  */
 
 export const brand = {
-  name: "Nayel",
-  fullName: "Hotel Nayel",
+  name: "Transylvania",
+  fullName: "Hotel Transylvania",
   tagline: "Where comfort meets tranquility.",
 };
 
@@ -17,8 +17,8 @@ export const contact = {
   // Demo contact details (Cairo landline format) — replace with the hotel's real ones before launch.
   phone: "+20 2 2795 4410",
   phoneAlt: "+20 2 2795 4411",
-  email: "stay@hotelnayel.com",
-  addressLines: ["Nayel Hotel & Resort", "12 Corniche El Nil", "Garden City, Cairo", "Egypt"],
+  email: "stay@hoteltransylvania.com",
+  addressLines: ["Hotel Transylvania", "12 Corniche El Nil", "Garden City, Cairo", "Egypt"],
   topBarAddress: "12 Corniche El Nil, Cairo, Egypt",
 };
 
@@ -43,7 +43,7 @@ export const navLinks = [
 ];
 
 export const hero = {
-  title: "Hotel Nayel Your Gateway To Serenity.",
+  title: "Hotel Transylvania Your Gateway To Serenity.",
   cta: { label: "Explore Rooms", href: "#rooms" },
   image: "/images/hero.jpg",
 };
@@ -56,9 +56,9 @@ export const booking = {
 };
 
 export const about = {
-  title: "Nayel: Your Gateway To Serenity",
+  title: "Transylvania: Your Gateway To Serenity",
   body:
-    "Welcome to Hotel Nayel, where comfort meets tranquility. Tucked into a quiet corner of lively " +
+    "Welcome to Hotel Transylvania, where comfort meets tranquility. Tucked into a quiet corner of lively " +
     "Cairo, right on the Nile, our hotel is a peaceful retreat for business and leisure travelers alike. Sunlit rooms, " +
     "thoughtful amenities and a warm, attentive team are all here to make your stay effortless.",
   cta: { label: "Read About Us", href: "#about-us" },
@@ -213,17 +213,17 @@ export type Post = { tag: string; title: string; date: string; image: string; wi
 export const blogSection = { title: "Our Blogs & Events", cta: { label: "More Blog", href: "#blog" } };
 
 export const posts: Post[] = [
-  { tag: "Hotels", title: "A Day In The Life Of A Hotel Nayel Guest", date: "12 Sep, 2026", image: "/images/post-guest.jpg" },
+  { tag: "Hotels", title: "A Day In The Life Of A Hotel Transylvania Guest", date: "12 Sep, 2026", image: "/images/post-guest.jpg" },
   { tag: "Activities", title: "Guide To Seasonal Activities In The City", date: "3 Sep, 2026", image: "/images/post-activities.jpg" },
-  { tag: "Rooms", title: "A Look Inside Hotel Nayel's Suites", date: "27 Aug, 2026", image: "/images/post-suites.jpg" },
+  { tag: "Rooms", title: "A Look Inside Hotel Transylvania's Suites", date: "27 Aug, 2026", image: "/images/post-suites.jpg" },
   {
     tag: "Activities",
-    title: "Why Hotel Nayel Is The Perfect Staycation Destination",
+    title: "Why Hotel Transylvania Is The Perfect Staycation Destination",
     date: "18 Aug, 2026",
     image: "/images/post-staycation.jpg",
     wide: true,
   },
-  { tag: "Rooms", title: "The Benefits Of Booking Directly With Hotel Nayel", date: "9 Aug, 2026", image: "/images/post-booking.jpg" },
+  { tag: "Rooms", title: "The Benefits Of Booking Directly With Hotel Transylvania", date: "9 Aug, 2026", image: "/images/post-booking.jpg" },
 ];
 
 export const footer = {
@@ -231,7 +231,7 @@ export const footer = {
     "A calm Nile-side retreat in the heart of Cairo, where sunlit rooms, slow mornings and warm, attentive service come together. " +
     "We look forward to welcoming you.",
   newsletter: {
-    eyebrow: "Letters from Nayel",
+    eyebrow: "Letters from Transylvania",
     title: "Seasonal Offers & Quiet News, Straight To Your Inbox.",
     body: "One thoughtful email a month — member rates, new experiences and the occasional recipe from our kitchen.",
     placeholder: "Your email address",
@@ -266,6 +266,6 @@ export const footer = {
     { label: "Privacy Policy", href: "" },
     { label: "Terms & Conditions", href: "" },
   ],
-  copyright: `© ${new Date().getFullYear()} Hotel Nayel. All rights reserved.`,
+  copyright: `© ${new Date().getFullYear()} Hotel Transylvania. All rights reserved.`,
   poweredBy: "AURIC",
 };

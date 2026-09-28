@@ -5,7 +5,11 @@ import { tokenStore } from "@/config";
 import { json, renderApp } from "@/test/render";
 import { AppRouter } from "./router";
 
-const OWNER = { id: "usr_1", email: "ahmed.nabil@hotelnayel.com", displayName: "Ahmed Nabil" };
+const OWNER = {
+  id: "usr_1",
+  email: "ahmed.nabil@hoteltransylvania.com",
+  displayName: "Ahmed Nabil",
+};
 
 /** A tiny stand-in for the HotelOS API: Core's login, /me and logout routes. */
 function fakeApi(opts: { password: string }) {

@@ -1,13 +1,13 @@
-# Hotel Nayel · HotelOS
+# Hotel Transylvania · HotelOS
 
-The third AURIC product: **HotelOS**, the operations platform behind **Hotel Nayel**, a four-star
+The third AURIC product: **HotelOS**, the operations platform behind **Hotel Transylvania**, a four-star
 Nile-side hotel in Cairo.
 
 | Package | What | Dev port |
 |---|---|---|
 | [`backend/`](backend) | HotelOS API — NestJS/Fastify on AURIC Core, own Postgres database | 3200 |
 | [`app/`](app) | HotelOS staff application (front desk, housekeeping, maintenance, finance…) | 4600 |
-| [`web/`](web) | Public Hotel Nayel website (live at https://hotel-nayel.vercel.app) | 4500 |
+| [`web/`](web) | Public Hotel Transylvania website (live at https://hotel-nayel.vercel.app) | 4500 |
 
 Architecture and the reasoning behind it: [`backend/docs/architecture.md`](backend/docs/architecture.md).
 
@@ -35,12 +35,12 @@ Demo sign-in (with `HOTEL_SEED_DEMO=true`), password `demo-password-2026` for ev
 
 | Role | Email |
 |---|---|
-| Owner | ahmed.nabil@hotelnayel.com |
-| Manager | mona.farid@hotelnayel.com |
-| Receptionist | youssef.adly@hotelnayel.com, rania.kamal@hotelnayel.com |
-| Accountant | dina.samir@hotelnayel.com |
-| Housekeeping | hassan.ali@hotelnayel.com, salma.mahmoud@hotelnayel.com |
-| Maintenance | omar.tarek@hotelnayel.com |
+| Owner | ahmed.nabil@hoteltransylvania.com |
+| Manager | mona.farid@hoteltransylvania.com |
+| Receptionist | youssef.adly@hoteltransylvania.com, rania.kamal@hoteltransylvania.com |
+| Accountant | dina.samir@hoteltransylvania.com |
+| Housekeeping | hassan.ali@hoteltransylvania.com, salma.mahmoud@hoteltransylvania.com |
+| Maintenance | omar.tarek@hoteltransylvania.com |
 
 ## Checks
 

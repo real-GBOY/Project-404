@@ -1,6 +1,6 @@
 # HotelOS — architecture and decisions
 
-HotelOS is the operations platform behind **Hotel Nayel**, the third AURIC product after Mizan
+HotelOS is the operations platform behind **Hotel Transylvania**, the third AURIC product after Mizan
 (law firms) and Atlas (real estate). This file records the decisions that shape it and, more
 importantly, *why* — so a future change can tell a deliberate constraint from an accident.
 
@@ -13,7 +13,7 @@ for later slices; they become as-built as each slice lands.
 hotel-project/
 ├── backend/   HotelOS API — NestJS on Fastify, AURIC Core by source (@core/*), hotel domain (@hotel/*)
 ├── app/       HotelOS staff application — React 19 + Vite + Tailwind 4, talks only to backend/
-└── web/       the public Hotel Nayel website (existing) — will consume the public booking API
+└── web/       the public Hotel Transylvania website (existing) — will consume the public booking API
 ```
 
 The backend follows `atlas/backend` exactly: a **separate deployment** with its own process, port
@@ -197,7 +197,7 @@ Frontend permission checks (`useAuth().can`, `visibleNav`) are UX only; the back
 | 8 | Rate limiting in HotelOS (Core has none): fixed-window counters in Postgres (`hotel_rate_limits`, system connection) per client address per hotel — read 120/min, search 60/min, book 5/10 min; 429 + `Retry-After`; old windows pruned by the jobs runner | Shared across API instances (an in-memory limiter isn't); nothing generic enough to justify a Core change yet |
 | 8 | Client address = socket, or the Nth `X-Forwarded-For` entry from the right when `HOTEL_TRUSTED_PROXY_HOPS=N` | Only entries our own proxies appended are trusted, so a visitor can't spoof their way past the limits |
 | 8 | `SettingsService.operating()` — settings without the hotel name — for everything that doesn't need the name (today(), billing, public API) | `current()` reads Core's organizations table, which RLS only shows to members; anonymous public calls must not depend on it |
-| 8 | The Nayel website's "Check Availability" opens a booking dialog on the live API (rooms → details → confirmation with the booking reference; pay at the hotel); marketing room prices are now EGP matching the HotelOS base rates | The public site and HotelOS tell the guest the same thing |
+| 8 | The Transylvania website's "Check Availability" opens a booking dialog on the live API (rooms → details → confirmation with the booking reference; pay at the hotel); marketing room prices are now EGP matching the HotelOS base rates | The public site and HotelOS tell the guest the same thing |
 | 5 | Fix: free-room lists ignored maintenance blocks (`reservation_id IS DISTINCT FROM NULL` is false for block rows); the constraint still refused the booking, but availability offered blocked rooms | Found by an E2E run that left a block behind; regression test added |
 
 ## 7. Quality gate

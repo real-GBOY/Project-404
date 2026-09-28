@@ -45,7 +45,7 @@ export function InvoicePage() {
         <header className="mb-7 flex items-start justify-between gap-4">
           <div>
             <div className="text-[18px] font-extrabold">
-              {settings.data?.hotelName ?? "Hotel Nayel"}
+              {settings.data?.hotelName ?? "Hotel Transylvania"}
             </div>
             <div className="text-label text-muted">{settings.data?.address ?? "Cairo, Egypt"}</div>
           </div>

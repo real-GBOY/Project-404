@@ -292,7 +292,7 @@ describe("Finance screens", () => {
         url.pathname.endsWith("/invoices/inv_1") ? json(200, invoice(status)) : undefined,
       (url: URL) =>
         url.pathname.endsWith("/hotel/settings")
-          ? json(200, { hotelName: "Hotel Nayel" })
+          ? json(200, { hotelName: "Hotel Transylvania" })
           : undefined,
     ];
 

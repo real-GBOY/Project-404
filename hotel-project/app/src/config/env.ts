@@ -5,7 +5,7 @@
 // (e.g. Vercel) — the same `VITE_API_BASE` convention as mizan/web and atlas/web.
 export const API_BASE_URL: string = import.meta.env.VITE_API_BASE ?? "/api";
 
-// The public Hotel Nayel website (hotel-project/web), linked from the sidebar.
+// The public Hotel Transylvania website (hotel-project/web), linked from the sidebar.
 export const PUBLIC_SITE_URL: string =
   import.meta.env.VITE_PUBLIC_SITE_URL ?? "https://hotel-nayel.vercel.app";
 

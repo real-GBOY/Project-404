@@ -1,6 +1,6 @@
-# Hotel Nayel — web
+# Hotel Transylvania — web
 
-Public landing page for Hotel Nayel. React 19 · Vite 8 · TypeScript · Tailwind CSS 4 · Motion · Lenis.
+Public landing page for Hotel Transylvania. React 19 · Vite 8 · TypeScript · Tailwind CSS 4 · Motion · Lenis.
 
 ```bash
 npm install
@@ -29,7 +29,7 @@ Optional environment variable:
 
 | Name       | When                          | Example                   |
 | ---------- | ----------------------------- | ------------------------- |
-| `SITE_URL` | once a custom domain is added | `https://hotelnayel.com`  |
+| `SITE_URL` | once a custom domain is added | `https://hoteltransylvania.com`  |
 
 `SITE_URL` sets the canonical URL, link-preview (Open Graph) URLs, `robots.txt` and `sitemap.xml`.
 Without it the build uses the project's Vercel production domain automatically.

@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 /** Seeded by the backend's demo seeder (hotel-project/backend/app/hotel/demo/demo-data.ts). */
-const OWNER = { email: "ahmed.nabil@hotelnayel.com", password: "demo-password-2026" };
+const OWNER = { email: "ahmed.nabil@hoteltransylvania.com", password: "demo-password-2026" };
 
 test.describe("staff sign-in", () => {
   test("a signed-out visitor is sent to sign-in", async ({ page }) => {

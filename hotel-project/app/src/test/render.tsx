@@ -31,7 +31,7 @@ export function stubApi(opts: { permissions: string[]; displayName?: string; rou
       return json(200, {
         user: {
           id: "usr_me",
-          email: "me@hotelnayel.com",
+          email: "me@hoteltransylvania.com",
           displayName: opts.displayName ?? "Mona Farid",
         },
         organizationId: "org_1",

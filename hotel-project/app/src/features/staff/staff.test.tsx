@@ -23,7 +23,7 @@ const MATRIX = {
 const OWNER_ROW = {
   userId: "usr_owner",
   name: "Ahmed Nabil",
-  email: "ahmed.nabil@hotelnayel.com",
+  email: "ahmed.nabil@hoteltransylvania.com",
   roleKey: "owner",
   roleName: "Owner",
   status: "active",
@@ -36,7 +36,7 @@ const STAFF = [
   {
     userId: "usr_me",
     name: "Mona Farid",
-    email: "mona.farid@hotelnayel.com",
+    email: "mona.farid@hoteltransylvania.com",
     roleKey: "manager",
     roleName: "Manager",
     status: "active",
@@ -46,7 +46,7 @@ const STAFF = [
   {
     userId: "usr_2",
     name: "Hassan Ali",
-    email: "hassan.ali@hotelnayel.com",
+    email: "hassan.ali@hoteltransylvania.com",
     roleKey: "housekeeping",
     roleName: "Housekeeping",
     status: "active",

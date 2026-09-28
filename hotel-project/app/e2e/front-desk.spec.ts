@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { signIn } from "./helpers";
 
-const RECEPTIONIST = "rania.kamal@hotelnayel.com";
-const MANAGER = "mona.farid@hotelnayel.com";
+const RECEPTIONIST = "rania.kamal@hoteltransylvania.com";
+const MANAGER = "mona.farid@hoteltransylvania.com";
 
 test.describe("front desk (Slice 3)", () => {
   test("a receptionist checks an arriving guest in", async ({ page, isMobile }) => {

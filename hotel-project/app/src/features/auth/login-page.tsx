@@ -53,7 +53,7 @@ export function LoginPage() {
           aria-label="Sign in"
         >
           <h1 className="m-0 mb-1 text-[20px] font-bold">Sign in</h1>
-          <p className="m-0 mb-6 text-body text-muted">Hotel Nayel staff workspace</p>
+          <p className="m-0 mb-6 text-body text-muted">Hotel Transylvania staff workspace</p>
           <div className="flex flex-col gap-4">
             <InputField
               label="Email"

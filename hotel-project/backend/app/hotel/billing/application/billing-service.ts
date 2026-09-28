@@ -360,7 +360,7 @@ export class BillingService {
         amount: input.amount,
         currency: "EGP",
         method: input.method,
-        description: `Hotel Nayel · ${staged.code}`,
+        description: `Hotel Transylvania · ${staged.code}`,
       });
 
       return await this.uow.transaction(async () => {

@@ -3,7 +3,7 @@
  * `/api` is proxied to the HotelOS backend in development and set per deployment in production.
  */
 const API = (import.meta.env.VITE_HOTEL_API as string | undefined) ?? "/api";
-const SLUG = (import.meta.env.VITE_HOTEL_SLUG as string | undefined) ?? "hotel-nayel";
+const SLUG = (import.meta.env.VITE_HOTEL_SLUG as string | undefined) ?? "hotel-transylvania";
 const BASE = `${API.replace(/\/$/, "")}/public/hotels/${SLUG}`;
 
 export interface Offer {

@@ -2,7 +2,7 @@
   "name": "@hotel/backend",
   "version": "0.1.0",
   "private": true,
-  "description": "HotelOS backend — Hotel Nayel's operations platform, powered by AURIC Core (a separate deployment/database from Mizan and Atlas: see app/app.module.ts).",
+  "description": "HotelOS backend — Hotel Transylvania's operations platform, powered by AURIC Core (a separate deployment/database from Mizan and Atlas: see app/app.module.ts).",
   "type": "module",
   "engines": {
     "node": "^22.12.0 || >=24.0.0"

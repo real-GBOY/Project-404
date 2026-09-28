@@ -64,9 +64,17 @@ export function Reveal({ children, className, delay = 0 }: { children: ReactNode
   );
 }
 
-/** Text wordmark (no image logo): the brand name in the heading serif, italic caps, letter-spaced. */
+/**
+ * Text wordmark (no image logo): the brand name in the heading serif, italic caps, letter-spaced.
+ * Sized in steps so a long name ("TRANSYLVANIA") never crowds the menu or pushes the phone menu
+ * button off screen.
+ */
 export function Wordmark({ name, className = "" }: { name: string; className?: string }) {
   return (
-    <span className={`font-heading text-[2.25rem] leading-none font-semibold tracking-[0.18em] text-ink uppercase italic ${className}`}>{name}</span>
+    <span
+      className={`font-heading text-[1.35rem] leading-none font-semibold tracking-[0.1em] whitespace-nowrap text-ink uppercase italic min-[400px]:text-[1.6rem] sm:text-[1.9rem] sm:tracking-[0.14em] lg:text-[1.55rem] lg:tracking-[0.12em] xl:text-[2rem] xl:tracking-[0.16em] ${className}`}
+    >
+      {name}
+    </span>
   );
 }

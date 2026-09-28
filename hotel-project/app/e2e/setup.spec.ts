@@ -2,8 +2,8 @@ import { expect, test, type Page } from "@playwright/test";
 import { signIn } from "./helpers";
 
 /** Demo staff seeded by hotel-project/backend/app/hotel/demo/demo-data.ts. */
-const MANAGER = "mona.farid@hotelnayel.com";
-const HOUSEKEEPING = "hassan.ali@hotelnayel.com";
+const MANAGER = "mona.farid@hoteltransylvania.com";
+const HOUSEKEEPING = "hassan.ali@hoteltransylvania.com";
 
 async function openNav(page: Page, isMobile: boolean, label: string) {
   if (isMobile) await page.getByRole("button", { name: "Open navigation" }).click();
@@ -14,7 +14,7 @@ async function openNav(page: Page, isMobile: boolean, label: string) {
 }
 
 test.describe("property setup (Slice 1)", () => {
-  test("a manager sees the whole room board and the Nayel room types", async ({
+  test("a manager sees the whole room board and the Transylvania room types", async ({
     page,
     isMobile,
   }) => {

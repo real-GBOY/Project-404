@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { signIn } from "./helpers";
 
-const MANAGER = "mona.farid@hotelnayel.com";
-const RECEPTIONIST = "youssef.adly@hotelnayel.com";
+const MANAGER = "mona.farid@hoteltransylvania.com";
+const RECEPTIONIST = "youssef.adly@hoteltransylvania.com";
 
 test.describe("reservation engine (Slice 2)", () => {
   test("a receptionist books and confirms a stay end to end, without a cancel option", async ({

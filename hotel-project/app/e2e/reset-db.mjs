@@ -1,5 +1,5 @@
 // Drops and recreates the HotelOS end-to-end database so every Playwright run starts from an
-// empty schema: the backend then migrates from zero and seeds the Hotel Nayel demo on boot.
+// empty schema: the backend then migrates from zero and seeds the Hotel Transylvania demo on boot.
 // Runs as the first half of the backend webServer command (playwright.config.ts), so it is
 // guaranteed to finish before the API starts. Only ever touches the database it is given.
 import pg from "pg";

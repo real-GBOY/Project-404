@@ -1,12 +1,12 @@
 /**
- * The Hotel Nayel demo property — a four-star Nile-side hotel in Garden City, Cairo (the public
+ * The Hotel Transylvania demo property — a four-star Nile-side hotel in Garden City, Cairo (the public
  * site is hotel-project/web; room types here are the five rooms that site shows). Names are
  * realistic Egyptian names; money is EGP. The dataset grows slice by slice with the domain, and
  * every row is created through a real domain service, never by raw inserts that skip invariants.
  */
 export const DEMO_ORG = {
-  name: "Hotel Nayel",
-  slug: "hotel-nayel",
+  name: "Hotel Transylvania",
+  slug: "hotel-transylvania",
 } as const;
 
 export const DEMO_PASSWORD = "demo-password-2026";
@@ -14,13 +14,13 @@ export const DEMO_PASSWORD = "demo-password-2026";
 /** How many past days the demo plays through the real workflows (see demo-history.ts). */
 
 export const DEMO_SETTINGS = {
-  hotelName: "Hotel Nayel",
+  hotelName: "Hotel Transylvania",
   checkInTime: "14:00",
   checkOutTime: "12:00",
   taxRate: 0.14,
   address: "12 Corniche El Nil, Garden City, Cairo, Egypt",
   phone: "+20 2 2795 4410",
-  email: "stay@hotelnayel.com",
+  email: "stay@hoteltransylvania.com",
 };
 
 export interface DemoStaffMember {
@@ -37,56 +37,56 @@ export const DEMO_STAFF: DemoStaffMember[] = [
   {
     key: "owner",
     name: "Ahmed Nabil",
-    email: "ahmed.nabil@hotelnayel.com",
+    email: "ahmed.nabil@hoteltransylvania.com",
     roleKey: "owner",
     membershipRole: "owner",
   },
   {
     key: "manager",
     name: "Mona Farid",
-    email: "mona.farid@hotelnayel.com",
+    email: "mona.farid@hoteltransylvania.com",
     roleKey: "manager",
     membershipRole: "member",
   },
   {
     key: "reception1",
     name: "Youssef Adly",
-    email: "youssef.adly@hotelnayel.com",
+    email: "youssef.adly@hoteltransylvania.com",
     roleKey: "receptionist",
     membershipRole: "member",
   },
   {
     key: "reception2",
     name: "Rania Kamal",
-    email: "rania.kamal@hotelnayel.com",
+    email: "rania.kamal@hoteltransylvania.com",
     roleKey: "receptionist",
     membershipRole: "member",
   },
   {
     key: "accountant",
     name: "Dina Samir",
-    email: "dina.samir@hotelnayel.com",
+    email: "dina.samir@hoteltransylvania.com",
     roleKey: "accountant",
     membershipRole: "member",
   },
   {
     key: "housekeeping1",
     name: "Hassan Ali",
-    email: "hassan.ali@hotelnayel.com",
+    email: "hassan.ali@hoteltransylvania.com",
     roleKey: "housekeeping",
     membershipRole: "member",
   },
   {
     key: "housekeeping2",
     name: "Salma Mahmoud",
-    email: "salma.mahmoud@hotelnayel.com",
+    email: "salma.mahmoud@hoteltransylvania.com",
     roleKey: "housekeeping",
     membershipRole: "member",
   },
   {
     key: "maintenance",
     name: "Omar Tarek",
-    email: "omar.tarek@hotelnayel.com",
+    email: "omar.tarek@hoteltransylvania.com",
     roleKey: "maintenance",
     membershipRole: "member",
   },
@@ -102,7 +102,7 @@ export interface DemoRoomType {
   amenities: string[];
 }
 
-/** The five rooms the public Nayel site shows, priced in EGP per night. */
+/** The five rooms the public Transylvania site shows, priced in EGP per night. */
 export const DEMO_ROOM_TYPES: DemoRoomType[] = [
   {
     code: "DBL",

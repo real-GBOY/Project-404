@@ -5,7 +5,7 @@ import { signIn } from "./helpers";
 const WEBSITE = `http://localhost:${WEB_PORT}`;
 
 test.describe("public booking (Slice 8)", () => {
-  test("a guest books on the Hotel Nayel website and the front desk sees it", async ({
+  test("a guest books on the Hotel Transylvania website and the front desk sees it", async ({
     page,
   }, info) => {
     const email = `guest.${info.project.name}.${Date.now()}@example.com`;
@@ -34,7 +34,7 @@ test.describe("public booking (Slice 8)", () => {
     await expect(dialog).toContainText(roomName);
 
     // ── The front desk, in HotelOS ──
-    await signIn(page, "rania.kamal@hotelnayel.com");
+    await signIn(page, "rania.kamal@hoteltransylvania.com");
     await page.getByRole("button", { name: /Notifications, \d+ unread/ }).click();
     await page
       .getByRole("dialog", { name: "Notifications" })
@@ -46,7 +46,7 @@ test.describe("public booking (Slice 8)", () => {
   });
 
   test("the booking API refuses a request without an Idempotency-Key", async ({ request }) => {
-    const res = await request.post(`${WEBSITE}/api/public/hotels/hotel-nayel/bookings`, {
+    const res = await request.post(`${WEBSITE}/api/public/hotels/hotel-transylvania/bookings`, {
       data: {
         roomTypeId: "x",
         arrival: "2030-01-01",

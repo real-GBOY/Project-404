@@ -7,7 +7,7 @@ import { z } from "zod";
  * approach as Core's: a bad value throws at boot, not at first use.
  */
 const schema = z.object({
-  /** Seed the Hotel Nayel demo property on boot. Never enable against real data. */
+  /** Seed the Hotel Transylvania demo property on boot. Never enable against real data. */
   seedDemo: z
     .enum(["true", "false"])
     .default("false")

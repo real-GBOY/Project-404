@@ -2,7 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 /**
  * End-to-end tests drive the real stack: the HotelOS backend (hotel-project/backend) on a
- * throwaway `hotel_e2e` database, migrated from zero and seeded with the Hotel Nayel demo on
+ * throwaway `hotel_e2e` database, migrated from zero and seeded with the Hotel Transylvania demo on
  * every run, plus the Vite dev server proxying `/api` to it. Nothing is mocked.
  *
  * Needs a local Postgres (override with HOTEL_E2E_DATABASE_URL) and, once per machine,
@@ -10,7 +10,7 @@ import { defineConfig, devices } from "@playwright/test";
  */
 const API_PORT = 3292;
 const APP_PORT = 4692;
-/** The public Hotel Nayel website (hotel-project/web), booking against the same backend. */
+/** The public Hotel Transylvania website (hotel-project/web), booking against the same backend. */
 export const WEB_PORT = 4592;
 const DATABASE_URL =
   process.env.HOTEL_E2E_DATABASE_URL ?? "postgres://postgres:postgres@localhost:5432/hotel_e2e";

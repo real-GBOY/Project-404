@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { signIn } from "./helpers";
 
-const MANAGER = "mona.farid@hotelnayel.com";
-const RECEPTIONIST = "rania.kamal@hotelnayel.com";
-const HOUSEKEEPER = "hassan.ali@hotelnayel.com";
+const MANAGER = "mona.farid@hoteltransylvania.com";
+const RECEPTIONIST = "rania.kamal@hoteltransylvania.com";
+const HOUSEKEEPER = "hassan.ali@hoteltransylvania.com";
 
 test.describe("workspace (Slice 7)", () => {
   test("⌘K finds a guest and opens their profile", async ({ page }) => {

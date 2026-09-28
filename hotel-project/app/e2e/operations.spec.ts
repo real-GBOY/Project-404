@@ -2,9 +2,9 @@ import { expect, test, type APIRequestContext } from "@playwright/test";
 import { signIn, hotelDate, DEMO_PASSWORD } from "./helpers";
 
 const PASSWORD = DEMO_PASSWORD;
-const MANAGER = "mona.farid@hotelnayel.com";
-const HOUSEKEEPER = "hassan.ali@hotelnayel.com";
-const TECHNICIAN = "omar.tarek@hotelnayel.com";
+const MANAGER = "mona.farid@hoteltransylvania.com";
+const HOUSEKEEPER = "hassan.ali@hoteltransylvania.com";
+const TECHNICIAN = "omar.tarek@hoteltransylvania.com";
 
 /** A room with nothing on it tonight or tomorrow — asked of the real availability API. */
 async function freeRoomNumber(request: APIRequestContext): Promise<string> {
