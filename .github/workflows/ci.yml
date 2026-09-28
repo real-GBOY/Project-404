@@ -1,6 +1,6 @@
 name: CI
 
-# Disabled from automatic triggers (no push/PR runs) — both products deploy by
+# Disabled from automatic triggers (no push/PR runs) — the products deploy by
 # hand now (scripts/deploy-local.sh for Mizan, scripts/deploy-atlas-local.sh
 # for Atlas; see docs/deployment.md and docs/atlas-deployment.md), and the
 # `deploy` job below has never had its VPS_SSH_KEY/VPS_HOST/VPS_USER secrets
@@ -88,6 +88,87 @@ jobs:
         run: npm test
       - name: build
         run: npm run build
+
+  hotelos-backend:
+    name: hotelos/backend
+    runs-on: ubuntu-latest
+
+    # PostgreSQL 12 on purpose: it is the production major version (the VPS runs 12.22), and
+    # the no-double-booking exclusion constraint depends on btree_gist behaving the same there.
+    services:
+      postgres:
+        image: postgres:12-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hotel_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+
+    env:
+      AURIC_TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/hotel_test
+      NODE_OPTIONS: --max-old-space-size=4096
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # Dependencies live at the repo root (see hotel-project/backend/package.json).
+      - run: npm ci
+      - name: typecheck · lint · format · test · build
+        working-directory: hotel-project/backend
+        run: npm run ci
+
+  hotelos-app:
+    name: hotelos/app (+ e2e)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:12-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+
+    env:
+      HOTEL_E2E_DATABASE_URL: postgres://postgres:postgres@localhost:5432/hotel_e2e
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            hotel-project/app/package-lock.json
+
+      - name: install (root — the backend runs from it in e2e)
+        run: npm ci
+      - name: install (app)
+        working-directory: hotel-project/app
+        run: npm ci
+      - name: typecheck · lint · format · test · build
+        working-directory: hotel-project/app
+        run: npm run ci
+      - name: e2e (real backend + database)
+        working-directory: hotel-project/app
+        run: npx playwright install --with-deps chromium && npm run e2e
 
   mobile:
     name: mizan/mobile

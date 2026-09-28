@@ -1,0 +1,96 @@
+import { Inject, Injectable } from "@nestjs/common";
+import type { UnitOfWork } from "@core/kernel/db/db.js";
+import { readInTenant } from "@core/kernel/db/db.js";
+import { AUDIT_LOGGER, CLOCK, UNIT_OF_WORK } from "@core/kernel/tokens.js";
+import type { Clock } from "@core/kernel/clock.js";
+import { hotelDate, type IsoDate } from "@hotel/hotel/shared/dates.js";
+import { pinnedBusinessDate } from "@hotel/hotel/shared/business-date.js";
+import type { IAuditLogger } from "@core/contracts/index.js";
+import {
+  SettingsRepository,
+  type HotelSettings,
+  type SettingsPatch,
+} from "../infrastructure/settings-repository.js";
+
+/** Egypt defaults for a hotel that has not saved settings yet. */
+export const DEFAULT_SETTINGS: Omit<HotelSettings, "hotelName"> = {
+  timeZone: "Africa/Cairo",
+  currency: "EGP",
+  checkInTime: "14:00",
+  checkOutTime: "12:00",
+  taxRate: 0.14,
+  address: null,
+  phone: null,
+  email: null,
+};
+
+/**
+ * The property's operating settings (one row per organization in v1). Reads fall back to Egypt
+ * defaults named after the organization, so every other module can rely on `current()` returning
+ * a complete value; the row is created on first save.
+ */
+@Injectable()
+export class SettingsService {
+  constructor(
+    private readonly repo: SettingsRepository,
+    @Inject(AUDIT_LOGGER) private readonly audit: IAuditLogger,
+    @Inject(CLOCK) private readonly clock: Clock,
+    @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
+  ) {}
+
+  /** The hotel's current calendar date in its own time zone (inside a tenant transaction). */
+  async today(): Promise<IsoDate> {
+    const pinned = pinnedBusinessDate();
+    if (pinned) return pinned;
+    const { timeZone } = await this.operating();
+    return hotelDate(this.clock.now(), timeZone);
+  }
+
+  get(): Promise<HotelSettings> {
+    return readInTenant(() => this.current());
+  }
+
+  /**
+   * Everything except the hotel's name (inside a tenant transaction). Unlike `current()` this
+   * never reads Core's organizations table — which only shows an organization to its members —
+   * so it works for anyone acting in the tenant, including the anonymous public website.
+   */
+  async operating(): Promise<Omit<HotelSettings, "hotelName">> {
+    const row = await this.repo.find();
+    if (!row) return DEFAULT_SETTINGS;
+    const { hotelName: _name, ...rest } = row;
+    return rest;
+  }
+
+  /** The saved hotel name, if settings were ever saved (null = use the organization's name). */
+  async savedName(): Promise<string | null> {
+    return (await this.repo.find())?.hotelName ?? null;
+  }
+
+  /** Inside an existing tenant transaction. */
+  async current(): Promise<HotelSettings> {
+    return (
+      (await this.repo.find()) ?? {
+        ...DEFAULT_SETTINGS,
+        hotelName: await this.repo.organizationName(),
+      }
+    );
+  }
+
+  update(patch: SettingsPatch, actorId: string): Promise<HotelSettings> {
+    return this.uow.transaction(async () => {
+      const before = await this.current();
+      const after: HotelSettings = { ...before, ...patch };
+      await this.repo.upsert(after);
+      await this.audit.record({
+        actorId,
+        action: "hotel.settings.updated",
+        resourceType: "hotel_settings",
+        resourceId: null,
+        before,
+        after,
+      });
+      return after;
+    });
+  }
+}

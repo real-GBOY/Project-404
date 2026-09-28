@@ -3,34 +3,34 @@ import type { IconName } from "./components/icon";
 /*
  * All landing-page content in one place. Layout and styling never hard-code copy — edit here.
  *
- * Section structure and images come from the Mellow template; the template's placeholder
- * content (lorem ipsum, "+666 333 9999", "Relaxingland", one description repeated on every
- * service card…) has been replaced with DEMO data. Swap in the real hotel's details before launch.
+ * Photos are CC0 (rawpixel, see public/images/CREDITS.md). Names, contact details and
+ * copy below are DEMO data — swap in the real hotel's details before launch.
  */
 
 export const brand = {
-  name: "Mellow",
-  fullName: "Hotel Mellow",
+  name: "Transylvania",
+  fullName: "Hotel Transylvania",
   tagline: "Where comfort meets tranquility.",
 };
 
 export const contact = {
-  // Demo contact details: 555-01xx numbers are reserved for fiction.
-  phone: "+1 (555) 014-2290",
-  phoneAlt: "+1 (555) 014-2291",
-  email: "stay@hotelmellow.com",
-  addressLines: ["Mellow Hotel & Resort", "48 Serenity Avenue", "Palm Harbor, FL 34683", "United States"],
-  topBarAddress: "48 Serenity Avenue, Palm Harbor",
+  // Demo contact details (Cairo landline format) — replace with the hotel's real ones before launch.
+  phone: "+20 2 2795 4410",
+  phoneAlt: "+20 2 2795 4411",
+  email: "stay@hoteltransylvania.com",
+  addressLines: ["Hotel Transylvania", "12 Corniche El Nil", "Garden City, Cairo", "Egypt"],
+  topBarAddress: "12 Corniche El Nil, Cairo, Egypt",
 };
 
-export type Social = { name: "facebook" | "twitter" | "linkedin" | "instagram" | "youtube"; label: string; href: string };
+// `href: ""` renders the icon without a link (no dead "#" jump) until the real profile URL is known.
+export type Social = { name: "instagram" | "facebook" | "tiktok" | "x" | "youtube"; label: string; href: string };
 
 export const socials: Social[] = [
-  { name: "facebook", label: "Facebook", href: "#" },
-  { name: "twitter", label: "X (Twitter)", href: "#" },
-  { name: "linkedin", label: "LinkedIn", href: "#" },
-  { name: "instagram", label: "Instagram", href: "#" },
-  { name: "youtube", label: "YouTube", href: "#" },
+  { name: "instagram", label: "Instagram", href: "" },
+  { name: "facebook", label: "Facebook", href: "" },
+  { name: "tiktok", label: "TikTok", href: "" },
+  { name: "x", label: "X", href: "" },
+  { name: "youtube", label: "YouTube", href: "" },
 ];
 
 export const navLinks = [
@@ -43,30 +43,29 @@ export const navLinks = [
 ];
 
 export const hero = {
-  title: "Hotel Mellow Your Gateway To Serenity.",
+  title: "Hotel Transylvania Your Gateway To Serenity.",
   cta: { label: "Explore Rooms", href: "#rooms" },
-  image: "/images/slider-image.jpg",
+  image: "/images/hero.jpg",
 };
 
 export const booking = {
   title: "Check Availability",
-  roomOptions: [1, 2, 3, 4],
   guestOptions: [1, 2, 3, 4, 5, 6],
   defaultGuests: 2,
   submitLabel: "Check Availability",
 };
 
 export const about = {
-  title: "Mellow: Your Gateway To Serenity",
+  title: "Transylvania: Your Gateway To Serenity",
   body:
-    "Welcome to Hotel Mellow, where comfort meets tranquility. Tucked into a quiet corner of a lively " +
-    "coastal city, our hotel is a peaceful retreat for business and leisure travelers alike. Sunlit rooms, " +
+    "Welcome to Hotel Transylvania, where comfort meets tranquility. Tucked into a quiet corner of lively " +
+    "Cairo, right on the Nile, our hotel is a peaceful retreat for business and leisure travelers alike. Sunlit rooms, " +
     "thoughtful amenities and a warm, attentive team are all here to make your stay effortless.",
   cta: { label: "Read About Us", href: "#about-us" },
   images: {
-    wide: { src: "/images/about-img1.jpg", alt: "Arched poolside terrace with white loungers" },
-    main: { src: "/images/about-img2.jpg", alt: "Bright guest room with a king bed and wooden accents" },
-    small: { src: "/images/about-img3.jpg", alt: "Guest relaxing with breakfast in bed" },
+    wide: { src: "/images/about-pool.jpg", width: 1024, height: 685, alt: "Palm-fringed resort pool under a clear sky" },
+    main: { src: "/images/about-room.jpg", width: 1024, height: 666, alt: "Bright, modern guest room with a wide bed and a work corner" },
+    small: { src: "/images/about-breakfast.jpg", width: 1024, height: 683, alt: "Silver tea service on a tray, set on a quilted bed" },
   },
 };
 
@@ -80,8 +79,9 @@ export const stats = [
 export type Room = {
   name: string;
   description: string;
-  image: string;
+  /** Base nightly rate in EGP ("from"); live prices come from HotelOS at booking. */
   price: number;
+  image: string;
   size: string;
   capacity: string;
   bed: string;
@@ -98,8 +98,8 @@ export const rooms: Room[] = [
   {
     name: "Grand Deluxe Room",
     description: "Floor-to-ceiling windows, a plush king bed and a marble rain shower for slow, easy mornings.",
-    image: "/images/room1.jpg",
-    price: 269,
+    image: "/images/room-deluxe.jpg",
+    price: 5400,
     size: "38 m²",
     capacity: "Max 2 guests",
     bed: "1 King bed",
@@ -108,8 +108,8 @@ export const rooms: Room[] = [
   {
     name: "Sweet Family Room",
     description: "Two connected sleeping areas and a cosy lounge corner — space for everyone to unwind.",
-    image: "/images/room3.jpg",
-    price: 360,
+    image: "/images/room-family.jpg",
+    price: 6900,
     size: "56 m²",
     capacity: "Max 4 guests",
     bed: "1 King + 2 Single beds",
@@ -118,8 +118,8 @@ export const rooms: Room[] = [
   {
     name: "Perfect Double Room",
     description: "A light-filled retreat with soft linens and a writing desk overlooking the garden.",
-    image: "/images/room2.jpg",
-    price: 219,
+    image: "/images/room-double.jpg",
+    price: 4200,
     size: "30 m²",
     capacity: "Max 2 guests",
     bed: "1 Queen bed",
@@ -128,8 +128,8 @@ export const rooms: Room[] = [
   {
     name: "Serenity Suite",
     description: "Our signature suite: a separate living room, soaking tub and private balcony.",
-    image: "/images/item2.jpg",
-    price: 450,
+    image: "/images/room-suite.jpg",
+    price: 9800,
     size: "72 m²",
     capacity: "Max 3 guests",
     bed: "1 King bed",
@@ -138,8 +138,8 @@ export const rooms: Room[] = [
   {
     name: "Poolside Twin Room",
     description: "Step straight from your terrace onto the pool deck — sun loungers included.",
-    image: "/images/about-img1.jpg",
-    price: 245,
+    image: "/images/room-poolside.jpg",
+    price: 4600,
     size: "34 m²",
     capacity: "Max 2 guests",
     bed: "2 Single beds",
@@ -153,9 +153,9 @@ export const gallery = {
     "Take a look around our well-appointed rooms, modern amenities and calm, stylish spaces. Admire the " +
     "sweeping views from the rooftop pool, where you can relax and unwind after a day of exploring the city.",
   images: [
-    { src: "/images/item3.jpg", alt: "Marble bathroom with a round mirror" },
-    { src: "/images/item2.jpg", alt: "Bedroom with white linens and a blue woven throw" },
-    { src: "/images/item1.jpg", alt: "White arched villas along the resort pool" },
+    { src: "/images/gallery-villa.jpg", alt: "Private pool villa opening onto the beach" },
+    { src: "/images/gallery-suite.jpg", alt: "Suite living area with floor-to-ceiling city views" },
+    { src: "/images/gallery-spa.jpg", alt: "Spa towels dressed with white frangipani flowers" },
   ],
 };
 
@@ -213,54 +213,59 @@ export type Post = { tag: string; title: string; date: string; image: string; wi
 export const blogSection = { title: "Our Blogs & Events", cta: { label: "More Blog", href: "#blog" } };
 
 export const posts: Post[] = [
-  { tag: "Hotels", title: "A Day In The Life Of A Hotel Mellow Guest", date: "12 Sep, 2026", image: "/images/post3.jpg" },
-  { tag: "Activities", title: "Guide To Seasonal Activities In The City", date: "3 Sep, 2026", image: "/images/post2.jpg" },
-  { tag: "Rooms", title: "A Look Inside Hotel Mellow's Suites", date: "27 Aug, 2026", image: "/images/post1.jpg" },
+  { tag: "Hotels", title: "A Day In The Life Of A Hotel Transylvania Guest", date: "12 Sep, 2026", image: "/images/post-guest.jpg" },
+  { tag: "Activities", title: "Guide To Seasonal Activities In The City", date: "3 Sep, 2026", image: "/images/post-activities.jpg" },
+  { tag: "Rooms", title: "A Look Inside Hotel Transylvania's Suites", date: "27 Aug, 2026", image: "/images/post-suites.jpg" },
   {
     tag: "Activities",
-    title: "Why Hotel Mellow Is The Perfect Staycation Destination",
+    title: "Why Hotel Transylvania Is The Perfect Staycation Destination",
     date: "18 Aug, 2026",
-    image: "/images/post5.jpg",
+    image: "/images/post-staycation.jpg",
     wide: true,
   },
-  { tag: "Rooms", title: "The Benefits Of Booking Directly With Hotel Mellow", date: "9 Aug, 2026", image: "/images/post4.jpg" },
+  { tag: "Rooms", title: "The Benefits Of Booking Directly With Hotel Transylvania", date: "9 Aug, 2026", image: "/images/post-booking.jpg" },
 ];
 
 export const footer = {
   about:
-    "Welcome to Hotel Mellow, where comfort meets tranquility. A peaceful coastal retreat for business and " +
-    "leisure travelers alike.",
+    "A calm Nile-side retreat in the heart of Cairo, where sunlit rooms, slow mornings and warm, attentive service come together. " +
+    "We look forward to welcoming you.",
   newsletter: {
-    title: "Join Our Newsletter",
-    body: "Sign up to our newsletter to receive the latest news and offers.",
-    submit: "Subscribe Now",
-    success: "Thank you — you're on the list!",
+    eyebrow: "Letters from Transylvania",
+    title: "Seasonal Offers & Quiet News, Straight To Your Inbox.",
+    body: "One thoughtful email a month — member rates, new experiences and the occasional recipe from our kitchen.",
+    placeholder: "Your email address",
+    submit: "Subscribe",
+    success: "Thank you — you're on the list. Watch your inbox for our next letter.",
   },
-  infoTitle: "Our Info",
+  infoTitle: "Visit Us",
+  hours: "Reception open 24/7 · Check-in 3 PM · Check-out 11 AM",
   columns: [
     {
-      title: "Quick Links",
+      title: "Explore",
       links: [
         { label: "Home", href: "#home" },
         { label: "About Us", href: "#about-us" },
-        { label: "Our Services", href: "#services" },
-        { label: "Privacy Policy", href: "#" },
-        { label: "Contact Us", href: "#contact" },
-        { label: "Support", href: "#" },
+        { label: "Rooms & Suites", href: "#rooms" },
+        { label: "Gallery", href: "#gallery" },
+        { label: "News & Events", href: "#blog" },
       ],
     },
     {
-      title: "Services",
+      title: "Experiences",
       links: [
-        { label: "Spa", href: "#services" },
-        { label: "Pool", href: "#services" },
-        { label: "Yoga", href: "#services" },
-        { label: "Gym", href: "#services" },
-        { label: "News", href: "#blog" },
-        { label: "Terms & Conditions", href: "#" },
+        { label: "Spa & Wellness", href: "#services" },
+        { label: "Rooftop Pool", href: "#services" },
+        { label: "Yoga & Meditation", href: "#services" },
+        { label: "Dining", href: "#services" },
+        { label: "Event Spaces", href: "#services" },
       ],
     },
   ],
-  copyright: `© ${new Date().getFullYear()} Hotel Mellow. All rights reserved.`,
-  credit: { label: "TemplatesJungle", href: "https://templatesjungle.com/" },
+  legal: [
+    { label: "Privacy Policy", href: "" },
+    { label: "Terms & Conditions", href: "" },
+  ],
+  copyright: `© ${new Date().getFullYear()} Hotel Transylvania. All rights reserved.`,
+  poweredBy: "AURIC",
 };

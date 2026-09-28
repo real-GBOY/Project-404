@@ -35,7 +35,15 @@ export function createJwtService(params: {
   return {
     signAccessToken(claims) {
       return jwt.sign(
-        { email: claims.email, org: claims.org, perms: claims.perms },
+        {
+          email: claims.email,
+          org: claims.org,
+          perms: claims.perms,
+          // Issue from the same clock `verifyAccessToken` checks against; jsonwebtoken would
+          // otherwise stamp iat/exp from the wall clock and a non-real clock would see a fresh
+          // token as expired (or not yet valid). `expiresIn` is relative to this iat.
+          iat: Math.floor(params.clock.now().getTime() / 1000),
+        },
         params.secret,
         {
           subject: claims.sub,

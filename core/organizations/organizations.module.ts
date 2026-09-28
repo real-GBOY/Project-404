@@ -22,6 +22,8 @@ import { OrganizationsController } from "@core/organizations/api/organizations.c
     OrganizationService,
     { provide: ORGANIZATION_PROVIDER, useExisting: OrganizationProvider },
   ],
-  exports: [ORGANIZATION_PROVIDER],
+  // OrganizationService is exported so a product can manage its own members (add/remove staff)
+  // through Core's membership use cases, with their audit and events.
+  exports: [ORGANIZATION_PROVIDER, OrganizationService],
 })
 export class OrganizationsModule {}

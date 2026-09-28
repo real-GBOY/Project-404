@@ -18,6 +18,7 @@ export default tseslint.config(
       "mizan/web/**",
       "web/**",
       "atlas/**", // separate product (own package.json + own eslint config)
+      "hotel-project/**", // separate product (own package.json + own eslint configs)
       "packages/create-auric/assets/**", // generated Core snapshot (see packages/create-auric/scripts/build.mjs)
       "packages/create-auric/dist/**",
       "**/*.js",

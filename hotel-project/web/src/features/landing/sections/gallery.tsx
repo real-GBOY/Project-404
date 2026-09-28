@@ -4,7 +4,7 @@ import { Reveal } from "../components/ui";
 import { Icon } from "../components/icon";
 import { gallery } from "../data";
 
-// Swiper `effect: "fade"` with prev/next buttons that dim at either end (no loop), as in the template.
+// Cross-fading slider with prev/next buttons that dim at either end (no loop).
 function Arrow({ dir, disabled, onClick, className }: { dir: "prev" | "next"; disabled: boolean; onClick: () => void; className: string }) {
   return (
     <button
@@ -30,7 +30,7 @@ export function Gallery() {
     <section id="gallery" aria-label={gallery.title}>
       <Reveal>
         <h3 className="display-3 px-4 text-center">{gallery.title}</h3>
-        <p className="mx-auto mb-12 px-4 text-center lg:w-1/3">{gallery.body}</p>
+        <p className="mx-auto mb-10 px-4 text-center md:mb-12 md:w-2/3 lg:w-1/2 xl:w-1/3">{gallery.body}</p>
         <div className="container-bs relative pb-16 md:pb-0">
           <div
             className="relative mx-auto aspect-[1555/916] w-10/12 overflow-hidden rounded-2xl"

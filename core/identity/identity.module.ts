@@ -60,6 +60,8 @@ import { AuthController, MeController } from "@core/identity/api/auth.controller
         }),
     },
   ],
-  exports: [USER_PROVIDER, JWT_SERVICE, UserDirectory],
+  // IdentityService is exported so a product can onboard accounts on someone's behalf (e.g. a
+  // hotel manager adding staff) through Core's own register use case — never a second path.
+  exports: [USER_PROVIDER, JWT_SERVICE, UserDirectory, IdentityService],
 })
 export class IdentityModule {}

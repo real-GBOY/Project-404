@@ -13,6 +13,11 @@ export interface RequestOptions {
   signal?: AbortSignal;
   /** skip the Authorization header (login, refresh). */
   anonymous?: boolean;
+  /**
+   * Extra request headers (e.g. `Idempotency-Key`). They cannot replace Authorization or
+   * Content-Type — those stay owned by the client.
+   */
+  headers?: Record<string, string>;
 }
 
 export interface HttpClientOptions {
@@ -105,7 +110,12 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
   }
 
   async function raw(path: string, opts: RequestOptions): Promise<Response> {
-    const headers: Record<string, string> = opts.anonymous ? {} : bearerHeaders();
+    const extra = Object.fromEntries(
+      Object.entries(opts.headers ?? {}).filter(
+        ([k]) => !/^(authorization|content-type)$/i.test(k),
+      ),
+    );
+    const headers: Record<string, string> = { ...extra, ...(opts.anonymous ? {} : bearerHeaders()) };
     let body: string | FormData | undefined;
     if (opts.form) {
       body = opts.form;

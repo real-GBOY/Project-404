@@ -3,7 +3,7 @@ import { motion } from "motion/react";
 import { Icon } from "./icon";
 
 /*
- * Template `.btn.btn-primary.btn-arrow`: on hover the label slides left and an arrow fades in
+ * Arrow button: on hover the label slides left and an arrow fades in
  * on its right. `variant="link"` is the underlined text-only version used on service cards.
  */
 const BTN_BASE =
@@ -49,7 +49,7 @@ export function ArrowButton({ className = "", children, ...rest }: ComponentProp
   );
 }
 
-/** Scroll-in reveal matching the template's AOS `fade-up` (1s, once). */
+/** Scroll-in reveal: fades and slides each section up once as it enters the viewport (1s). */
 export function Reveal({ children, className, delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
   return (
     <motion.div
@@ -61,5 +61,20 @@ export function Reveal({ children, className, delay = 0 }: { children: ReactNode
     >
       {children}
     </motion.div>
+  );
+}
+
+/**
+ * Text wordmark (no image logo): the brand name in the heading serif, italic caps, letter-spaced.
+ * Sized in steps so a long name ("TRANSYLVANIA") never crowds the menu or pushes the phone menu
+ * button off screen.
+ */
+export function Wordmark({ name, className = "" }: { name: string; className?: string }) {
+  return (
+    <span
+      className={`font-heading text-[1.35rem] leading-none font-semibold tracking-[0.1em] whitespace-nowrap text-ink uppercase italic min-[400px]:text-[1.6rem] sm:text-[1.9rem] sm:tracking-[0.14em] lg:text-[1.55rem] lg:tracking-[0.12em] xl:text-[2rem] xl:tracking-[0.16em] ${className}`}
+    >
+      {name}
+    </span>
   );
 }

@@ -1,0 +1,128 @@
+// app/hotel — reservation engine: counters, pricing, reservations, status history and the room
+// allocation ledger. Mirrors migration 20260928120000_hotel_reservations for Kysely type
+// generation only; the SQL (exclusion constraint, CHECKs, RLS) is the source of truth.
+
+model hotel_counters {
+  organization_id String
+  name            String
+  value           BigInt
+
+  @@id([organization_id, name])
+  @@map("hotel_counters")
+}
+
+model hotel_rate_rules {
+  id               String    @id
+  organization_id  String
+  name             String
+  /// @kyselyType('seasonal' | 'weekend' | 'promotion')
+  kind             String
+  room_type_id     String?
+  start_date       DateTime? @db.Date
+  end_date         DateTime? @db.Date
+  /// 0 = Sunday … 6 = Saturday (the NIGHT that starts on that weekday)
+  days_of_week     Int[]     @db.SmallInt
+  /// @kyselyType('percent' | 'fixed_rate')
+  adjustment_type  String
+  adjustment_value Decimal   @db.Decimal(12, 2)
+  min_nights       Int?
+  priority         Int       @default(0)
+  archived_at      DateTime? @db.Timestamptz(6)
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "hotel_rate_rules_org_id_uq")
+  @@index([organization_id, priority], map: "hotel_rate_rules_org_idx")
+  @@map("hotel_rate_rules")
+}
+
+model hotel_discounts {
+  id              String    @id
+  organization_id String
+  code            String
+  description     String?
+  percent_off     Decimal   @db.Decimal(5, 2)
+  valid_from      DateTime? @db.Date
+  valid_to        DateTime? @db.Date
+  archived_at     DateTime? @db.Timestamptz(6)
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, code], map: "hotel_discounts_code_uq")
+  @@map("hotel_discounts")
+}
+
+model hotel_reservations {
+  id                  String    @id
+  organization_id     String
+  code                String
+  guest_id            String
+  room_type_id        String
+  /// @kyselyType('pending' | 'confirmed' | 'checked_in' | 'checked_out' | 'cancelled' | 'no_show')
+  status              String
+  /// @kyselyType('direct' | 'phone' | 'walk_in' | 'website' | 'booking_com' | 'expedia')
+  source              String
+  arrival             DateTime  @db.Date
+  departure           DateTime  @db.Date
+  adults              Int
+  children            Int       @default(0)
+  /// @kyselyType(Json<Array<{ date: string; rate: number; rule: string | null }>>)
+  nightly_rates       Json
+  room_total          Decimal   @db.Decimal(12, 2)
+  discount_code       String?
+  discount_amount     Decimal   @default(0) @db.Decimal(12, 2)
+  total               Decimal   @db.Decimal(12, 2)
+  notes               String?
+  cancellation_reason String?
+  created_by          String?
+  confirmed_at        DateTime? @db.Timestamptz(6)
+  checked_in_at       DateTime? @db.Timestamptz(6)
+  checked_out_at      DateTime? @db.Timestamptz(6)
+  cancelled_at        DateTime? @db.Timestamptz(6)
+  created_at          DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "hotel_reservations_org_id_uq")
+  @@unique([organization_id, code], map: "hotel_reservations_code_uq")
+  @@index([organization_id, arrival], map: "hotel_reservations_arrival_idx")
+  @@index([organization_id, departure], map: "hotel_reservations_departure_idx")
+  @@index([organization_id, status], map: "hotel_reservations_status_idx")
+  @@index([organization_id, guest_id], map: "hotel_reservations_guest_idx")
+  @@map("hotel_reservations")
+}
+
+model hotel_reservation_status_history {
+  id              String   @id
+  /// orders transitions within one transaction (shared CURRENT_TIMESTAMP)
+  seq             BigInt   @default(autoincrement())
+  organization_id String
+  reservation_id  String
+  from_status     String?
+  to_status       String
+  actor_id        String?
+  reason          String?
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([organization_id, reservation_id, created_at], map: "hotel_reservation_status_history_idx")
+  @@map("hotel_reservation_status_history")
+}
+
+model hotel_room_allocations {
+  id              String                    @id
+  organization_id String
+  room_id         String
+  /// @kyselyType('reservation' | 'block')
+  kind            String
+  reservation_id  String?
+  /// the maintenance ticket that owns a block (kind = block)
+  ticket_id       String?
+  /// daterange [start, end) — read/written through SQL (lower()/upper()/daterange()).
+  stay            Unsupported("daterange")
+  active          Boolean                   @default(true)
+  reason          String?
+  created_at      DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime                  @default(now()) @db.Timestamptz(6)
+
+  @@index([organization_id, reservation_id], map: "hotel_room_allocations_reservation_idx")
+  @@map("hotel_room_allocations")
+}
