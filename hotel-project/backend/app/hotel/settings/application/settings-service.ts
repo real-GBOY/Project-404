@@ -42,12 +42,29 @@ export class SettingsService {
   async today(): Promise<IsoDate> {
     const pinned = pinnedBusinessDate();
     if (pinned) return pinned;
-    const { timeZone } = await this.current();
+    const { timeZone } = await this.operating();
     return hotelDate(this.clock.now(), timeZone);
   }
 
   get(): Promise<HotelSettings> {
     return readInTenant(() => this.current());
+  }
+
+  /**
+   * Everything except the hotel's name (inside a tenant transaction). Unlike `current()` this
+   * never reads Core's organizations table — which only shows an organization to its members —
+   * so it works for anyone acting in the tenant, including the anonymous public website.
+   */
+  async operating(): Promise<Omit<HotelSettings, "hotelName">> {
+    const row = await this.repo.find();
+    if (!row) return DEFAULT_SETTINGS;
+    const { hotelName: _name, ...rest } = row;
+    return rest;
+  }
+
+  /** The saved hotel name, if settings were ever saved (null = use the organization's name). */
+  async savedName(): Promise<string | null> {
+    return (await this.repo.find())?.hotelName ?? null;
   }
 
   /** Inside an existing tenant transaction. */

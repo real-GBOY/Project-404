@@ -32,9 +32,11 @@ function useElementWidth<T extends HTMLElement>() {
   return [ref, width] as const;
 }
 
+const egp = (n: number) => `${n.toLocaleString("en-US")} EGP`;
+
 function RoomCard({ room }: { room: Room }) {
   const rows: [string, string][] = [
-    ["Price:", `$${room.price} / night`],
+    ["Price:", `from ${egp(room.price)} / night`],
     ["Size:", room.size],
     ["Capacity:", room.capacity],
     ["Bed:", room.bed],
@@ -46,7 +48,7 @@ function RoomCard({ room }: { room: Room }) {
       <a
         href="#rooms"
         className="group relative block overflow-hidden rounded-2xl bg-black"
-        aria-label={`${room.name} — from $${room.price} per night`}
+        aria-label={`${room.name} — from ${egp(room.price)} per night`}
         draggable={false}
       >
         <img
@@ -77,7 +79,7 @@ function RoomCard({ room }: { room: Room }) {
           <a href="#rooms">{room.name}</a>
         </h4>
         <p className="mb-1">
-          <span className="fs-4 text-primary">${room.price}</span>/night
+          <span className="fs-4 text-primary">{egp(room.price)}</span>/night
         </p>
         {/* Always visible — touch screens never see the hover panel. */}
         <p className="mb-0 text-sm text-muted">

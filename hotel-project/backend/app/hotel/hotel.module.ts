@@ -16,6 +16,7 @@ import { JobsModule } from "@hotel/hotel/jobs/jobs.module.js";
 import { SearchModule } from "@hotel/hotel/search/search.module.js";
 import { ActivityModule } from "@hotel/hotel/activity/activity.module.js";
 import { HotelNotificationsModule } from "@hotel/hotel/notifications/notifications.module.js";
+import { PublicModule } from "@hotel/hotel/public/public.module.js";
 
 /**
  * The HotelOS product domain (mirrors `atlas/backend/app/realestate/realestate.module.ts`).
@@ -42,6 +43,7 @@ import { HotelNotificationsModule } from "@hotel/hotel/notifications/notificatio
     SearchModule,
     ActivityModule,
     HotelNotificationsModule,
+    PublicModule,
   ],
 })
 export class HotelModule {}

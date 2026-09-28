@@ -1,8 +1,9 @@
 import { useId, useRef, useState, type SubmitEvent } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { createPortal } from "react-dom";
 import { ArrowButton, ArrowLink, Reveal } from "../components/ui";
 import { Icon } from "../components/icon";
-import { booking, hero, rooms } from "../data";
+import { booking, hero } from "../data";
+import { BookingDialog, type StaySearch } from "../../booking/booking-dialog";
 
 const FIELD =
   "w-full rounded-lg border border-field bg-transparent px-4 py-2 sm:px-5 text-muted tracking-[0.05rem] sm:tracking-[0.1rem] transition-colors focus-within:border-body";
@@ -86,64 +87,36 @@ function BookingForm() {
   const today = toIso(new Date());
   const [checkIn, setCheckIn] = useState(addDays(today, 1));
   const [checkOut, setCheckOut] = useState(addDays(today, 3));
-  const [roomCount, setRoomCount] = useState(1);
   const [guests, setGuests] = useState(booking.defaultGuests);
-  const [result, setResult] = useState<string | null>(null);
+  const [search, setSearch] = useState<StaySearch | null>(null);
 
   const changeCheckIn = (v: string) => {
     setCheckIn(v);
     if (nightsBetween(v, checkOut) < 1) setCheckOut(addDays(v, 1));
-    setResult(null);
   };
 
+  // Live availability and booking come from HotelOS (features/booking).
   const submit = (e: SubmitEvent) => {
     e.preventDefault();
-    // Demo availability until the hotel backend exists: rooms that fit the party size.
-    const perRoom = Math.ceil(guests / roomCount);
-    const fits = rooms.filter((r) => Number(r.capacity.match(/\d+/)?.[0] ?? 0) >= perRoom);
-    const nights = nightsBetween(checkIn, checkOut);
-    const from = Math.min(...(fits.length ? fits : rooms).map((r) => r.price));
-    setResult(
-      fits.length
-        ? `${fits.length} room types available for ${nights} night${nights > 1 ? "s" : ""}, from $${from}/night.`
-        : "No single room fits that many guests — try adding another room.",
-    );
+    setSearch({ arrival: checkIn, departure: checkOut, adults: guests });
   };
 
   return (
+    <>
     <form onSubmit={submit} className="rounded-2xl bg-white p-6 sm:p-10 lg:ms-6 lg:p-8 xl:ms-12 xl:p-12" aria-label={booking.title}>
       <h3 className="display-5">{booking.title}</h3>
       <DateField label="Check-In" value={checkIn} min={today} onChange={changeCheckIn} />
-      <DateField
-        label="Check-Out"
-        value={checkOut}
-        min={addDays(checkIn, 1)}
-        onChange={(v) => {
-          setCheckOut(v);
-          setResult(null);
-        }}
-      />
-      <SelectField label="Rooms" value={roomCount} options={booking.roomOptions} unit={["Room", "Rooms"]} onChange={setRoomCount} />
+      <DateField label="Check-Out" value={checkOut} min={addDays(checkIn, 1)} onChange={setCheckOut} />
       <SelectField label="Guests" value={guests} options={booking.guestOptions} unit={["Adult", "Adults"]} onChange={setGuests} />
       <div className="grid">
         <ArrowButton type="submit" className="mt-4">
           {booking.submitLabel}
         </ArrowButton>
       </div>
-      <AnimatePresence>
-        {result && (
-          <motion.p
-            role="status"
-            className="mt-4 text-center text-sm text-primary"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-          >
-            {result}
-          </motion.p>
-        )}
-      </AnimatePresence>
     </form>
+    {/* Outside the search form (no nested forms), portalled above the page. */}
+    {search ? createPortal(<BookingDialog search={search} onClose={() => setSearch(null)} />, document.body) : null}
+    </>
   );
 }
 

@@ -3,7 +3,7 @@ import type { IconName } from "./components/icon";
 /*
  * All landing-page content in one place. Layout and styling never hard-code copy — edit here.
  *
- * Photos are CC0 (rawpixel, see public/images/CREDITS.md). Names, prices, contact details and
+ * Photos are CC0 (rawpixel, see public/images/CREDITS.md). Names, contact details and
  * copy below are DEMO data — swap in the real hotel's details before launch.
  */
 
@@ -50,7 +50,6 @@ export const hero = {
 
 export const booking = {
   title: "Check Availability",
-  roomOptions: [1, 2, 3, 4],
   guestOptions: [1, 2, 3, 4, 5, 6],
   defaultGuests: 2,
   submitLabel: "Check Availability",
@@ -80,8 +79,9 @@ export const stats = [
 export type Room = {
   name: string;
   description: string;
-  image: string;
+  /** Base nightly rate in EGP ("from"); live prices come from HotelOS at booking. */
   price: number;
+  image: string;
   size: string;
   capacity: string;
   bed: string;
@@ -99,7 +99,7 @@ export const rooms: Room[] = [
     name: "Grand Deluxe Room",
     description: "Floor-to-ceiling windows, a plush king bed and a marble rain shower for slow, easy mornings.",
     image: "/images/room-deluxe.jpg",
-    price: 269,
+    price: 5400,
     size: "38 m²",
     capacity: "Max 2 guests",
     bed: "1 King bed",
@@ -109,7 +109,7 @@ export const rooms: Room[] = [
     name: "Sweet Family Room",
     description: "Two connected sleeping areas and a cosy lounge corner — space for everyone to unwind.",
     image: "/images/room-family.jpg",
-    price: 360,
+    price: 6900,
     size: "56 m²",
     capacity: "Max 4 guests",
     bed: "1 King + 2 Single beds",
@@ -119,7 +119,7 @@ export const rooms: Room[] = [
     name: "Perfect Double Room",
     description: "A light-filled retreat with soft linens and a writing desk overlooking the garden.",
     image: "/images/room-double.jpg",
-    price: 219,
+    price: 4200,
     size: "30 m²",
     capacity: "Max 2 guests",
     bed: "1 Queen bed",
@@ -129,7 +129,7 @@ export const rooms: Room[] = [
     name: "Serenity Suite",
     description: "Our signature suite: a separate living room, soaking tub and private balcony.",
     image: "/images/room-suite.jpg",
-    price: 450,
+    price: 9800,
     size: "72 m²",
     capacity: "Max 3 guests",
     bed: "1 King bed",
@@ -139,7 +139,7 @@ export const rooms: Room[] = [
     name: "Poolside Twin Room",
     description: "Step straight from your terrace onto the pool deck — sun loungers included.",
     image: "/images/room-poolside.jpg",
-    price: 245,
+    price: 4600,
     size: "34 m²",
     capacity: "Max 2 guests",
     bed: "2 Single beds",

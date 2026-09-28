@@ -41,6 +41,13 @@ export const HOTEL_TEMPLATES: TemplateSeed[] = [
     body: "{{amount}} for {{guest}}. {{reason}}",
   },
   {
+    key: "hotel.website_booking",
+    locale: "en",
+    channel: "in_app",
+    subject: "New website booking #{{code}}",
+    body: "{{guest}} · {{arrival}} → {{departure}}.",
+  },
+  {
     key: "hotel.reservation_auto",
     locale: "en",
     channel: "in_app",

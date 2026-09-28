@@ -25,7 +25,12 @@ export default defineConfig({
     passWithNoTests: false,
     // Tests never inherit a developer's local .env choices (e.g. HOTEL_SEED_DEMO=true):
     // suites seed the demo explicitly when they need it.
-    env: { AURIC_TEST_DATABASE_URL: testDatabaseUrl, HOTEL_SEED_DEMO: "false", HOTEL_DEMO_HISTORY_DAYS: "14" },
+    env: {
+      AURIC_TEST_DATABASE_URL: testDatabaseUrl,
+      HOTEL_SEED_DEMO: "false",
+      HOTEL_DEMO_HISTORY_DAYS: "14",
+      HOTEL_TRUSTED_PROXY_HOPS: "1",
+    },
     // Integration suites share one throwaway database and reset its schema in
     // beforeAll — they must not run concurrently with each other.
     fileParallelism: false,

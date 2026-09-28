@@ -7,6 +7,7 @@ import {
 import { WORKER_AUTOSTART } from "@core/kernel/tokens.js";
 import { moduleLogger } from "@core/kernel/logging/logger.js";
 import { readHotelConfig } from "@hotel/config.js";
+import { RateLimiter } from "@hotel/hotel/public/infrastructure/rate-limiter.js";
 import { HotelJobs, type JobsReport } from "./hotel-jobs.js";
 
 const log = moduleLogger("hotel-jobs-runner");
@@ -24,6 +25,7 @@ export class JobsRunner implements OnApplicationBootstrap, OnApplicationShutdown
 
   constructor(
     private readonly jobs: HotelJobs,
+    private readonly rateLimiter: RateLimiter,
     @Inject(WORKER_AUTOSTART) private readonly autostart: boolean,
   ) {}
 
@@ -46,6 +48,7 @@ export class JobsRunner implements OnApplicationBootstrap, OnApplicationShutdown
     this.ticking = true;
     try {
       const report = await this.jobs.runAll();
+      await this.rateLimiter.prune();
       this.lastRun = { at: new Date(), report };
       return report;
     } catch (err) {

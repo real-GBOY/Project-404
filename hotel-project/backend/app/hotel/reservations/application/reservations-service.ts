@@ -112,7 +112,8 @@ export class ReservationsService {
 
   // ─── create ───────────────────────────────────────────────────────────────
 
-  create(input: CreateReservationInput, actorId: string): Promise<ReservationRecord> {
+  /** `actorId` null = booked by the guest on the public website. */
+  create(input: CreateReservationInput, actorId: string | null): Promise<ReservationRecord> {
     return this.uow.transaction(async () => {
       const today = await this.settings.today();
       this.validateStay(input.arrival, input.departure, today);
@@ -163,6 +164,7 @@ export class ReservationsService {
       let created = (await this.repo.findById(id))!;
       await this.audit.record({
         actorId,
+        actorType: actorId ? "user" : "system",
         action: "hotel.reservation.created",
         resourceType: "hotel_reservation",
         resourceId: id,
@@ -175,7 +177,11 @@ export class ReservationsService {
         },
       });
       await this.events.publish(
-        reservationCreated({ ...this.payload(created, actorId), status: created.status }),
+        reservationCreated({
+          ...this.payload(created, actorId),
+          status: created.status,
+          source: created.source,
+        }),
       );
 
       if (input.confirm) {

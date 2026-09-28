@@ -103,6 +103,8 @@ export async function loginAs(
 
 export interface SeededHotel {
   orgId: string;
+  /** The organization slug — how the public website names this hotel. */
+  slug: string;
   ownerId: string;
   ownerEmail: string;
 }
@@ -123,7 +125,7 @@ export async function seedHotel(app: TestingModule, name = "Test Hotel"): Promis
   });
   const org = await orgs.createOrganization({ name, createdBy: owner.id });
   await asSystem(() => rbac.assignRole(owner.id, "owner", owner.id, org.id));
-  return { orgId: org.id, ownerId: owner.id, ownerEmail };
+  return { orgId: org.id, slug: org.slug, ownerId: owner.id, ownerEmail };
 }
 
 /** Register another user, add them to the hotel, and grant `roleKey`. Returns id + email. */

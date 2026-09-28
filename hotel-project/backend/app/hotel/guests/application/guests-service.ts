@@ -53,13 +53,15 @@ export class GuestsService {
     });
   }
 
-  async create(input: GuestInput, actorId: string): Promise<GuestRecord> {
+  /** `actorId` null = the guest themself, via the public website. */
+  async create(input: GuestInput, actorId: string | null): Promise<GuestRecord> {
     try {
       return await this.uow.transaction(async () => {
         const id = await this.repo.create(input, actorId);
         const created = (await this.repo.findById(id))!;
         await this.audit.record({
           actorId,
+          actorType: actorId ? "user" : "system",
           action: "hotel.guest.created",
           resourceType: "hotel_guest",
           resourceId: id,

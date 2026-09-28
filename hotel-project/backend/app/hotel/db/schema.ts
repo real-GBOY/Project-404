@@ -220,6 +220,18 @@ export type hotel_payments = {
   created_at: Generated<Timestamp>;
   completed_at: Timestamp | null;
 };
+export type hotel_public_bookings = {
+  organization_id: string;
+  idempotency_key: string;
+  request_hash: string;
+  reservation_id: string;
+  created_at: Generated<Timestamp>;
+};
+export type hotel_rate_limits = {
+  bucket: string;
+  window_start: Timestamp;
+  hits: Generated<number>;
+};
 export type hotel_rate_rules = {
   id: string;
   organization_id: string;
@@ -411,6 +423,8 @@ export type HotelTables = {
   hotel_maintenance_events: hotel_maintenance_events;
   hotel_maintenance_tickets: hotel_maintenance_tickets;
   hotel_payments: hotel_payments;
+  hotel_public_bookings: hotel_public_bookings;
+  hotel_rate_limits: hotel_rate_limits;
   hotel_rate_rules: hotel_rate_rules;
   hotel_refunds: hotel_refunds;
   hotel_reservation_status_history: hotel_reservation_status_history;

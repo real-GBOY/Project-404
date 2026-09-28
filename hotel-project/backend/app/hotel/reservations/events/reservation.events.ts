@@ -14,8 +14,9 @@ export interface ReservationEventPayload extends Record<string, unknown> {
   actorId: string | null;
 }
 
-export const reservationCreated = (p: ReservationEventPayload & { status: string }) =>
-  defineEvent("reservation.created", 1, p);
+export const reservationCreated = (
+  p: ReservationEventPayload & { status: string; source: string },
+) => defineEvent("reservation.created", 1, p);
 
 export const reservationConfirmed = (p: ReservationEventPayload) =>
   defineEvent("reservation.confirmed", 1, p);

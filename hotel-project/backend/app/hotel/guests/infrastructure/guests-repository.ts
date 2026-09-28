@@ -89,7 +89,18 @@ export class GuestsRepository {
     return row ? this.toRecord(row) : null;
   }
 
-  async create(input: GuestInput, createdBy: string): Promise<string> {
+  /** Case-insensitive, like the unique index on guest emails. */
+  async findByEmail(email: string): Promise<GuestRecord | null> {
+    const row = await hotelDb()
+      .selectFrom("hotel_guests")
+      .select("id")
+      .where("organization_id", "=", this.org())
+      .where(sql<boolean>`lower(email) = lower(${email})`)
+      .executeTakeFirst();
+    return row ? this.findById(row.id) : null;
+  }
+
+  async create(input: GuestInput, createdBy: string | null): Promise<string> {
     const id = hotelId("gst");
     await hotelDb()
       .insertInto("hotel_guests")

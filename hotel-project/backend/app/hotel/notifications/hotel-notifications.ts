@@ -34,6 +34,7 @@ type Payload = Record<string, unknown>;
  *   maintenance.ticket_resolved  → maintenance supervisors (to verify)
  *   payment.failed / refund.failed → finance staff
  *   reservation.no_show / .cancelled by the SYSTEM (scheduled jobs) → the front desk
+ *   reservation.created on the public website → the front desk
  */
 @Injectable()
 export class HotelNotifications implements OnModuleInit {
@@ -59,6 +60,7 @@ export class HotelNotifications implements OnModuleInit {
     on("refund.failed", (p) => this.moneyFailed("Refund", p));
     on("reservation.no_show", (p) => this.systemTransition(p, "marked as a no-show"));
     on("reservation.cancelled", (p) => this.systemTransition(p, "released — hold expired"));
+    on("reservation.created", (p) => this.websiteBooking(p));
   }
 
   // ─── rules ────────────────────────────────────────────────────────────────
@@ -169,6 +171,23 @@ export class HotelNotifications implements OnModuleInit {
         what,
         guest: r.guestName,
         reason: r.cancellationReason ?? "by the overnight check",
+        href: `/reservations/${r.id}`,
+      },
+    });
+  }
+
+  private async websiteBooking(p: Payload) {
+    if (p.actorId || p.source !== "website") return;
+    const r = await this.reservations.findById(String(p.reservationId));
+    if (!r) return;
+    await this.send(await this.holders("check_in", "reservation"), {
+      templateKey: "hotel.website_booking",
+      type: "hotel.website_booking",
+      data: {
+        code: r.code,
+        guest: r.guestName,
+        arrival: r.arrival,
+        departure: r.departure,
         href: `/reservations/${r.id}`,
       },
     });

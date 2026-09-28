@@ -55,7 +55,7 @@ export interface NewReservation {
   discountAmount: number;
   total: number;
   notes: string | null;
-  createdBy: string;
+  createdBy: string | null;
   createdAt: Date;
 }
 

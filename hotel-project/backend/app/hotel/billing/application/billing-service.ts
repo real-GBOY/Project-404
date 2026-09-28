@@ -118,7 +118,7 @@ export class BillingService {
       this.repo.charges(r.id),
       this.repo.payments(r.id),
       this.repo.refunds(r.id),
-      this.settings.current(),
+      this.settings.operating(),
     ]);
     return folioTotals({
       charges: charges.map((c) => ({
@@ -176,7 +176,7 @@ export class BillingService {
           "Extras can only be posted while the guest is checked in.",
         );
       }
-      const settings = await this.settings.current();
+      const settings = await this.settings.operating();
       const amount = input.unitPrice * input.quantity;
       const id = await this.repo.insertCharge({
         reservationId,
@@ -228,7 +228,7 @@ export class BillingService {
 
   /** Check-in: post one room charge per booked night, carrying the booking's discount. */
   async postRoomCharges(r: ReservationRecord, actorId: string): Promise<void> {
-    const settings = await this.settings.current();
+    const settings = await this.settings.operating();
     const nights = splitRoomCharges(r.nightlyRates, r.roomTotal, r.total);
     for (const n of nights) {
       await this.repo.insertCharge({
@@ -259,7 +259,7 @@ export class BillingService {
   async issueInvoice(r: ReservationRecord, actorId: string): Promise<string> {
     const existing = await this.repo.issuedInvoiceFor(r.id);
     if (existing) return existing;
-    const settings = await this.settings.current();
+    const settings = await this.settings.operating();
     const charges = (await this.repo.charges(r.id)).filter((c) => !c.voidedAt);
     const subtotal = charges.reduce((s, c) => s + toPiastres(c.amount), 0) / 100;
     const tax = charges.reduce((s, c) => s + toPiastres(c.taxAmount), 0) / 100;
@@ -642,7 +642,7 @@ export class BillingService {
   ): Promise<Map<string, FolioTotals>> {
     const [aggregates, settings] = await Promise.all([
       this.repo.aggregates(rs.map((r) => r.id)),
-      this.settings.current(),
+      this.settings.operating(),
     ]);
     const out = new Map<string, FolioTotals>();
     for (const r of rs) {
