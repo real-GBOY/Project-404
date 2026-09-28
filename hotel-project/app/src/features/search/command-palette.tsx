@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSearch } from "@/api/workspace";
+import { SearchIcon } from "@/components/ui/search-icon";
 import { cn } from "@/lib/cn";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 
@@ -23,6 +24,9 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
   );
   useEffect(() => setActive(0), [q]);
   useEffect(() => input.current?.focus(), []);
+  useEffect(() => {
+    document.getElementById(`palette-option-${active}`)?.scrollIntoView({ block: "nearest" });
+  }, [active]);
 
   const open = (href: string) => {
     onClose();
@@ -44,7 +48,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
 
   let index = -1;
   return (
-    <div className="fixed inset-0 z-[100] flex justify-center px-4 pt-[12vh]">
+    <div className="fixed inset-0 z-[100] flex justify-center px-4 pt-4 sm:pt-[12vh]">
       <button
         type="button"
         aria-label="Close search"
@@ -56,22 +60,41 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
         role="dialog"
         aria-modal="true"
         aria-label="Search"
-        className="relative flex max-h-[440px] w-full max-w-[560px] flex-col overflow-hidden rounded-panel bg-surface shadow-popover"
+        className="relative flex max-h-[min(560px,calc(100dvh-2rem))] w-full max-w-[560px] flex-col self-start overflow-hidden rounded-panel bg-surface shadow-popover sm:max-h-[min(560px,76vh)]"
       >
-        <input
-          ref={input}
-          type="search"
-          role="combobox"
-          aria-expanded={flat.length > 0}
-          aria-controls="palette-results"
-          aria-label="Search guests, bookings, invoices, rooms"
-          placeholder="Search guests, bookings, invoices, rooms…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={onKey}
-          className="border-b border-border bg-surface px-5 py-4 text-[15px] outline-none placeholder:text-faint"
-        />
-        <div id="palette-results" role="listbox" className="overflow-y-auto p-2">
+        <div className="flex shrink-0 items-center gap-3 border-b border-border px-5">
+          <SearchIcon className="text-faint" />
+          <input
+            ref={input}
+            type="text"
+            role="combobox"
+            autoComplete="off"
+            spellCheck={false}
+            aria-expanded={flat.length > 0}
+            aria-controls="palette-results"
+            aria-activedescendant={flat[active] ? `palette-option-${active}` : undefined}
+            aria-label="Search guests, bookings, invoices, rooms"
+            placeholder="Search guests, bookings, invoices, rooms…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={onKey}
+            className="min-w-0 flex-1 bg-transparent py-4 text-[15px] outline-none placeholder:text-faint focus-visible:outline-none"
+          />
+          <button
+            type="button"
+            onClick={onClose}
+            className="shrink-0 cursor-pointer rounded-[5px] bg-neutral-soft px-2 py-1 text-label font-semibold text-muted hover:text-ink"
+          >
+            <span className="sm:hidden">Cancel</span>
+            <span className="hidden font-mono sm:inline">Esc</span>
+          </button>
+        </div>
+        <div
+          id="palette-results"
+          role="listbox"
+          aria-label="Results"
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2"
+        >
           {q.length < 2 ? (
             <p className="m-0 px-3 py-6 text-center text-small text-faint">
               Type at least two letters — a name, booking code, room or invoice number.
@@ -94,6 +117,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
                     <button
                       type="button"
                       key={item.id}
+                      id={`palette-option-${i}`}
                       role="option"
                       aria-selected={selected}
                       tabIndex={-1}
@@ -115,6 +139,13 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
             ))
           )}
         </div>
+        {flat.length > 0 ? (
+          <div className="hidden shrink-0 gap-4 border-t border-border-subtle px-5 py-2.5 text-micro text-faint sm:flex">
+            <span>↑ ↓ to move</span>
+            <span>↵ to open</span>
+            <span>Esc to close</span>
+          </div>
+        ) : null}
       </div>
     </div>
   );

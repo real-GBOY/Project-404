@@ -7,6 +7,7 @@ import { Brand } from "@/components/ui/brand";
 import { cn } from "@/lib/cn";
 import { initials } from "@/lib/format";
 import { CommandPalette } from "@/features/search/command-palette";
+import { SearchIcon } from "@/components/ui/search-icon";
 import { NotificationBell } from "@/features/notifications/notification-bell";
 import { NAV_GROUPS, visibleNav } from "../nav";
 
@@ -122,9 +123,9 @@ export function AppShell() {
             type="button"
             onClick={() => setPaletteOpen(true)}
             aria-label="Search guests, bookings, rooms"
-            className="flex max-w-[420px] min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-button border border-border bg-canvas px-3.5 py-[9px] text-body text-faint hover:border-rule"
+            className="flex size-9 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-button border border-border bg-canvas text-body text-faint hover:border-rule sm:size-auto sm:max-w-[420px] sm:min-w-0 sm:flex-1 sm:justify-start sm:px-3.5 sm:py-[9px]"
           >
-            <span className="truncate sm:hidden">Search</span>
+            <SearchIcon className="text-muted sm:text-faint" />
             <span className="hidden truncate sm:inline">Search guests, bookings, rooms…</span>
             <span className="ml-auto hidden rounded-[5px] bg-neutral-soft px-1.5 py-0.5 font-mono text-micro sm:inline">
               ⌘K
