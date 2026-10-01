@@ -45,6 +45,10 @@ export const navLinks = [
 export const hero = {
   title: "Hotel Transylvania Your Gateway To Serenity.",
   cta: { label: "Explore Rooms", href: "#rooms" },
+  demoCta: {
+    label: "Request Demo",
+    href: `mailto:${contact.email}?subject=${encodeURIComponent("Demo request")}&body=${encodeURIComponent("Hello, I'd like to request a demo. Name:\nPhone:\nPreferred date:")}`,
+  },
   image: "/images/hero.jpg",
 };
 

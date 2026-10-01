@@ -14,7 +14,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <AppErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
+        <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, "") || undefined}>
           <AuthProvider>
             <ToastProvider>{children}</ToastProvider>
           </AuthProvider>

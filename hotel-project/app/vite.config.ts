@@ -6,6 +6,8 @@ import tailwindcss from "@tailwindcss/vite";
 const apiTarget = process.env.HOTEL_API_PROXY_TARGET ?? "http://localhost:3200";
 
 export default defineConfig({
+  // "/app/" when served beside the public site on one Vercel project (scripts/build-vercel.mjs).
+  base: process.env.HOTEL_APP_BASE ?? "/",
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {

@@ -4,7 +4,7 @@ import { useLenis } from "lenis/react";
 import type Lenis from "lenis";
 import { Icon } from "../components/icon";
 import { Wordmark } from "../components/ui";
-import { brand, contact, navLinks, socials } from "../data";
+import { brand, contact, hero, navLinks, socials } from "../data";
 
 /** Tracks which nav section is on screen so the matching link is highlighted, like `.nav-link.active`. */
 function useActiveSection(ids: string[]) {
@@ -97,7 +97,12 @@ function TopBar() {
             <a href={`mailto:${contact.email}`}>{contact.email}</a>
           </li>
         </ul>
-        <SocialLinks className="hidden min-[400px]:flex" />
+        <div className="flex items-center gap-4">
+          <a href="/app/" className="text-sm hover:text-primary">
+            Staff login
+          </a>
+          <SocialLinks className="hidden min-[400px]:flex" />
+        </div>
       </div>
     </div>
   );
@@ -160,6 +165,10 @@ export function Header() {
 
           <SearchBox className="hidden w-44 lg:block xl:w-56" />
 
+          <a href={hero.demoCta.href} className="hidden rounded-btn bg-primary px-5 py-2 text-white transition-opacity hover:opacity-90 lg:block">
+            {hero.demoCta.label}
+          </a>
+
           <button
             type="button"
             className="cursor-pointer p-2 text-ink lg:hidden"
@@ -212,6 +221,9 @@ export function Header() {
                   </li>
                 ))}
               </ul>
+              <a href={hero.demoCta.href} className="mx-12 mt-6 rounded-btn bg-primary px-5 py-3 text-center text-white">
+                {hero.demoCta.label}
+              </a>
             </motion.div>
           </>
         )}

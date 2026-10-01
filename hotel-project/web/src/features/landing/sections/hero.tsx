@@ -134,9 +134,12 @@ export function Hero() {
           <div className="m-auto flex w-full flex-wrap items-center px-4 pt-6 sm:px-8 sm:pt-12 lg:px-10 lg:pt-0 xl:px-0">
             <div className="w-full lg:w-1/2 xl:ms-[8.333%] xl:w-1/2">
               <h2 className="display-1">{hero.title}</h2>
-              <ArrowLink href={hero.cta.href} className="mt-4">
-                {hero.cta.label}
-              </ArrowLink>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <ArrowLink href={hero.cta.href}>{hero.cta.label}</ArrowLink>
+                <ArrowLink href={hero.demoCta.href} className="border border-body !bg-transparent">
+                  {hero.demoCta.label}
+                </ArrowLink>
+              </div>
             </div>
             <div className="mt-10 w-full max-w-140 sm:mt-12 lg:mt-0 lg:w-1/2 lg:max-w-none xl:w-1/3">
               <BookingForm />

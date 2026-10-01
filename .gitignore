@@ -40,3 +40,4 @@ packages/create-auric/LICENSE
 packages/create-auric/*.tgz
 .tmp-dbg/
 packages/create-auric/docs/
+/hotel-project/site/
