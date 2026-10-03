@@ -1,6 +1,11 @@
 export type Muscle = "Chest" | "Back" | "Shoulders" | "Arms" | "Legs" | "Core";
 
+/** How an exercise is logged (design: FLUX-DATA-MODEL.md, Exercise.trackingType). */
+export type Tracking = "weight_reps" | "bodyweight_reps" | "assisted_reps" | "time" | "reps_only";
+
 export type Exercise = {
+  /** Defaults to weight × reps. For `time`, `lastReps` / `workKg` carry seconds / nothing. */
+  tracking?: Tracking;
   id: string;
   name: string;
   muscle: Muscle;
@@ -152,6 +157,46 @@ export const EXERCISES: Record<string, Exercise> = {
     workKg: 82.5,
     prKg: 110,
   },
+  pullup: {
+    id: "pullup",
+    name: "Pull-up",
+    tracking: "bodyweight_reps",
+    muscle: "Back",
+    lastKg: 5,
+    lastReps: 8,
+    workKg: 5,
+    prKg: 10,
+  },
+  asspull: {
+    id: "asspull",
+    name: "Assisted Pull-up",
+    tracking: "assisted_reps",
+    muscle: "Back",
+    lastKg: 30,
+    lastReps: 8,
+    workKg: 30,
+    prKg: 0,
+  },
+  pushup: {
+    id: "pushup",
+    name: "Push-up",
+    tracking: "reps_only",
+    muscle: "Chest",
+    lastKg: 0,
+    lastReps: 20,
+    workKg: 0,
+    prKg: 0,
+  },
+  plankhold: {
+    id: "plankhold",
+    name: "Plank",
+    tracking: "time",
+    muscle: "Core",
+    lastKg: 0,
+    lastReps: 60,
+    workKg: 0,
+    prKg: 0,
+  },
   plank: {
     id: "plank",
     name: "Weighted Crunch",
@@ -163,11 +208,10 @@ export const EXERCISES: Record<string, Exercise> = {
   },
 };
 
+export const trackingOf = (e: Exercise): Tracking => e.tracking ?? "weight_reps";
+
 export const exerciseByName = (name: string): Exercise | undefined =>
   Object.values(EXERCISES).find((e) => e.name.toLowerCase() === name.toLowerCase());
-
-/** Progressive overload: next target is last session + 2.5 kg at the same reps. */
-export const targetKg = (e: Exercise) => e.lastKg + 2.5;
 
 /** Exercises shown in the profile "My PRs" card, in the design's order. */
 export const PROFILE_PR_IDS = ["bench", "deadlift", "squat"] as const;

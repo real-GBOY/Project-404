@@ -5,21 +5,14 @@ import Animated, { FadeInLeft, FadeInRight } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors } from "@/theme/tokens";
 import { ProgressHeader } from "../components/ProgressHeader";
-import { EQUIPMENT, EXPERIENCE, GOALS, SPLITS, STEP_COUNT } from "../data";
+import { DEFAULT_PROFILE, EQUIPMENT, EXPERIENCE, GOALS, SPLITS, STEP_COUNT } from "../data";
 import { useSession } from "@/features/auth/session";
 import type { Body, Selection, Units } from "../types";
 import { StepBody, StepFrequency, StepReview, StepSelect } from "./Steps";
 
-const INITIAL_SELECTION: Selection = {
-  goal: "muscle",
-  exp: "int",
-  split: "ppl",
-  equip: "gym",
-  days: 4,
-  duration: "d3",
-};
-const INITIAL_BODY: Body = { age: "21", height: "178", weight: "75", gender: "Male" };
-const INITIAL_UNITS: Units = { h: "cm", w: "kg" };
+const INITIAL_SELECTION: Selection = DEFAULT_PROFILE.sel;
+const INITIAL_BODY: Body = DEFAULT_PROFILE.body;
+const INITIAL_UNITS: Units = DEFAULT_PROFILE.units;
 
 export function OnboardingScreen() {
   const { completeOnboarding } = useSession();

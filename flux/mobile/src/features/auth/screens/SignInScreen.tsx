@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.display,
     fontSize: 38,
     lineHeight: 42,
-    color: "#fff",
+    color: colors.white,
     letterSpacing: em(38, 0.03),
     textAlign: "center",
     marginBottom: 6,

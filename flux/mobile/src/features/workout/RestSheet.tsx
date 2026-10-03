@@ -54,7 +54,7 @@ export function RestSheet() {
               cy={SIZE / 2}
               r={r}
               fill="none"
-              stroke="rgba(255,255,255,0.12)"
+              stroke={colors.whiteA12}
               strokeWidth={STROKE}
             />
             <Circle
@@ -103,7 +103,7 @@ export function RestSheet() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "rgba(0,0,0,0.7)", justifyContent: "flex-end" },
+  root: { flex: 1, backgroundColor: colors.blackA70, justifyContent: "flex-end" },
   sheet: {
     backgroundColor: dark.sheet,
     borderTopLeftRadius: 24,
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     alignItems: "center",
   },
-  grab: { width: 40, height: 5, borderRadius: 99, backgroundColor: "rgba(255,255,255,0.2)" },
+  grab: { width: 40, height: 5, borderRadius: 99, backgroundColor: colors.whiteA20 },
   rest: {
     fontFamily: fonts.display,
     fontSize: 14,
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.display,
     fontSize: 44,
     lineHeight: 46,
-    color: "#fff",
+    color: colors.white,
     letterSpacing: 0.9,
   },
   remaining: { fontFamily: fonts.body, fontSize: 11, color: colors.sub, marginTop: 2 },
@@ -148,5 +148,5 @@ const styles = StyleSheet.create({
     letterSpacing: em(18, 0.08),
   },
   next: { marginTop: 14, fontFamily: fonts.body, fontSize: 11.5, color: colors.sub },
-  nextBold: { fontFamily: fonts.bodySemi, color: "#fff" },
+  nextBold: { fontFamily: fonts.bodySemi, color: colors.white },
 });

@@ -113,7 +113,7 @@ export function LineChart({ data, fmt }: { data: Point[]; fmt: (kg: number) => s
               cx={p.x}
               cy={p.y}
               r={3}
-              fill="#fff"
+              fill={colors.white}
               stroke={colors.lime}
               strokeWidth={2}
             />

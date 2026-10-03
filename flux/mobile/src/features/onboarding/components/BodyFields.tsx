@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
   },
   segText: { fontFamily: fonts.bodySemi, fontSize: 12, color: colors.sub },
   select: { fontFamily: fonts.bodySemi, fontSize: 15, color: colors.ink, marginTop: 3 },
-  backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", padding: 28 },
+  backdrop: { flex: 1, backgroundColor: colors.blackA40, justifyContent: "center", padding: 28 },
   sheet: { backgroundColor: colors.card, borderRadius: 18, paddingVertical: 6 },
   option: {
     flexDirection: "row",

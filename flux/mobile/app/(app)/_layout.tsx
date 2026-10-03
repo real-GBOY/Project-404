@@ -20,6 +20,12 @@ export default function AppLayout() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="workout" options={{ gestureEnabled: false }} />
         <Stack.Screen name="progress" />
+        <Stack.Screen name="builder" />
+        <Stack.Screen
+          name="picker"
+          options={{ presentation: "modal", animation: "slide_from_bottom" }}
+        />
+        <Stack.Screen name="summary" options={{ gestureEnabled: false }} />
         <Stack.Screen
           name="voice"
           options={{

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert } from "@/lib/alert";
 import { BackHandler, Pressable, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -13,7 +13,11 @@ import {
   SectionLabel,
 } from "@/components/ui";
 import { Screen } from "@/components/ui/Screen";
-import { targetKg } from "@/features/training/catalog";
+import { equipmentOf } from "@/features/builder/library";
+import { trackingOf } from "@/features/training/catalog";
+import { platesPerSide } from "@/features/training/engine";
+import { fmtResult, fmtTarget, shapeOf } from "@/features/training/format";
+import type { SetType } from "@/features/training/types";
 import { useRestRemaining, useTraining } from "@/features/training/store";
 import { useUnits } from "@/features/training/units";
 import { colors, em } from "@/theme/tokens";
@@ -26,8 +30,17 @@ const KG_STEP = 2.5;
 export function WorkoutScreen() {
   const router = useRouter();
   const units = useUnits();
-  const { workout, startWorkout, discardWorkout, finishWorkout, setDraft, logSet, nextExercise } =
-    useTraining();
+  const {
+    workout,
+    startWorkout,
+    discardWorkout,
+    finishWorkout,
+    setDraft,
+    logSet,
+    nextExercise,
+    targetOf,
+  } = useTraining();
+  const [setType, setSetType] = useState<SetType>("normal");
   const restState = useRestRemaining();
 
   // Deep link / reload with no running workout → start today's plan.
@@ -51,9 +64,10 @@ export function WorkoutScreen() {
       return;
     }
     leaving.current = true;
-    finishWorkout();
-    leave();
-  }, [totalSets, finishWorkout, leave]);
+    const saved = finishWorkout();
+    if (saved) router.replace("/summary");
+    else leave();
+  }, [totalSets, finishWorkout, leave, router]);
 
   const confirmExit = useCallback(() => {
     if (totalSets === 0) {
@@ -91,18 +105,29 @@ export function WorkoutScreen() {
   if (!workout) return null;
   const entry = workout.exercises[workout.index]!;
   const { ex, sets } = entry;
-  const isLast = workout.index === workout.exercises.length - 1;
-  const upNext = isLast ? null : workout.exercises[workout.index + 1]!.ex;
+  // Superset group containing the current exercise: slot labels 1A / 1B ...
+  let groupEnd = workout.index;
+  while (workout.links[groupEnd]) groupEnd++;
+  let groupStart = workout.index;
+  while (workout.links[groupStart - 1]) groupStart--;
+  const inGroup = groupEnd > groupStart;
+  const slot = String.fromCharCode(65 + workout.index - groupStart);
+  const upNextIdx = groupEnd + 1;
+  const isLast = upNextIdx >= workout.exercises.length;
+  const upNext = isLast ? null : workout.exercises[upNextIdx]!.ex;
   const { kg, reps } = workout.draft;
-  const target = targetKg(ex);
-  const delta = target - ex.lastKg;
+  const target = targetOf(ex);
+  const shape = shapeOf(ex);
+  const delta = target.kg - ex.lastKg;
+  const fmtU = { show: units.show, short: units.short };
 
   const onLog = () => {
-    if (kg <= 0 || reps <= 0) {
+    if ((shape.weighted && kg <= 0) || reps <= 0) {
       Alert.alert("Check your numbers", "Weight and reps must be greater than zero.");
       return;
     }
-    const res = logSet(kg, reps);
+    const res = logSet(kg, reps, setType);
+    setSetType("normal");
     if (res?.newPR) {
       router.push({
         pathname: "/pr",
@@ -132,8 +157,23 @@ export function WorkoutScreen() {
       </View>
 
       <View style={{ marginTop: 4 }}>
-        <Label size={11}>Current exercise</Label>
+        <View style={styles.exMeta}>
+          <Label size={11}>{inGroup ? `Superset · ${slot}` : "Current exercise"}</Label>
+          {inGroup ? <Text style={styles.noRest}>No rest between</Text> : null}
+        </View>
         <Text style={styles.exName}>{ex.name.toUpperCase()}</Text>
+        <View style={styles.exMeta}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push({ pathname: "/picker", params: { mode: "swap" } })}
+            hitSlop={8}
+          >
+            <Text style={styles.swap}>Swap exercise</Text>
+          </Pressable>
+          {entry.planned ? (
+            <Text style={styles.replaced}>Replaced {entry.planned.name}</Text>
+          ) : null}
+        </View>
       </View>
 
       {/* last time + target */}
@@ -141,50 +181,77 @@ export function WorkoutScreen() {
         <Card style={[styles.half, { backgroundColor: colors.lastTime }]}>
           <Label size={10}>Last time</Label>
           <View style={styles.big}>
-            <Num size={26}>{units.show(ex.lastKg)}</Num>
-            <Num size={14} color={colors.sub}>
-              {units.label}
-            </Num>
+            <Num size={24}>{fmtResult(ex, ex.lastKg, ex.lastReps, fmtU)}</Num>
           </View>
-          <Text style={styles.reps}>× {ex.lastReps} reps</Text>
         </Card>
         <Card style={[styles.half, { borderLeftWidth: 3, borderLeftColor: colors.lime }]}>
           <View style={styles.targetHead}>
             <Label size={10} color={colors.ink}>
               Target
             </Label>
-            <View style={styles.targetBadge}>
-              <Text style={styles.targetBadgeText}>
-                +{units.show(delta)} {units.label}
-              </Text>
-            </View>
+            {trackingOf(ex) === "weight_reps" && delta !== 0 ? (
+              <View style={styles.targetBadge}>
+                <Text style={styles.targetBadgeText}>
+                  {delta >= 0 ? "+" : ""}
+                  {units.show(delta)} {units.label}
+                </Text>
+              </View>
+            ) : null}
           </View>
           <View style={styles.big}>
-            <Num size={26}>{units.show(target)}</Num>
-            <Num size={14} color={colors.sub}>
-              {units.label}
-            </Num>
+            <Num size={24}>{fmtTarget(ex, target.kg, target.repLow, target.repHigh, fmtU)}</Num>
           </View>
-          <Text style={styles.reps}>× {ex.lastReps} reps</Text>
         </Card>
+      </View>
+      <View style={styles.reason}>
+        <View style={styles.reasonDot} />
+        <Text style={styles.reasonText}>{target.reason}</Text>
+        {target.daysSince >= 14 ? <Text style={styles.away}>AWAY {target.daysSince}d</Text> : null}
+      </View>
+
+      {/* set type */}
+      <View style={styles.types}>
+        {SET_TYPES.map((t) => {
+          const on = t.id === setType;
+          return (
+            <Pressable
+              key={t.id}
+              accessibilityRole="button"
+              accessibilityState={{ selected: on }}
+              onPress={() => setSetType(t.id)}
+              style={[styles.typeChip, on && { backgroundColor: t.bg ?? colors.ink }]}
+            >
+              <Text style={[styles.typeText, { color: on ? (t.fg ?? colors.lime) : colors.sub }]}>
+                {t.label}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
 
       {/* steppers */}
       <View style={styles.pair}>
+        {shape.load ? (
+          <Stepper
+            label={shape.loadLabel}
+            unit={units.label}
+            display={units.show(kg)}
+            onMinus={() => setDraft({ kg: Math.max(0, kg - KG_STEP), reps })}
+            onPlus={() => setDraft({ kg: kg + KG_STEP, reps })}
+          />
+        ) : null}
         <Stepper
-          label="Weight"
-          unit={units.label}
-          display={units.show(kg)}
-          onMinus={() => setDraft({ kg: Math.max(0, kg - KG_STEP), reps })}
-          onPlus={() => setDraft({ kg: kg + KG_STEP, reps })}
-        />
-        <Stepper
-          label="Reps"
+          label={shape.repsLabel}
+          unit={trackingOf(ex) === "time" ? "sec" : undefined}
           display={String(reps)}
-          onMinus={() => setDraft({ kg, reps: Math.max(1, reps - 1) })}
-          onPlus={() => setDraft({ kg, reps: reps + 1 })}
+          onMinus={() => setDraft({ kg, reps: Math.max(shape.repsStep, reps - shape.repsStep) })}
+          onPlus={() => setDraft({ kg, reps: reps + shape.repsStep })}
         />
       </View>
+
+      {shape.weighted && equipmentOf(ex) === "Barbell" ? (
+        <PlateRow kg={kg} unitShort={units.short} show={units.show} />
+      ) : null}
 
       {/* rest timer */}
       {restState ? (
@@ -194,14 +261,14 @@ export function WorkoutScreen() {
             total={restState.total}
             size={56}
             stroke={5}
-            track="rgba(255,255,255,0.12)"
+            track={colors.whiteA12}
           >
-            <Num size={20} color="#fff">
+            <Num size={20} color={colors.white}>
               {mmss(restState.remaining)}
             </Num>
           </Ring>
           <View style={{ flex: 1 }}>
-            <Label size={10} color="rgba(255,255,255,0.5)">
+            <Label size={10} color={colors.whiteA50}>
               Rest timer
             </Label>
             <Text style={styles.restText}>Next set in {restState.remaining}s</Text>
@@ -232,19 +299,42 @@ export function WorkoutScreen() {
         <View style={styles.sets}>
           {sets.map((s) => (
             <View key={s.n} style={styles.setRow}>
-              <View style={styles.setNum}>
-                <Text style={styles.setNumText}>{s.n}</Text>
+              <View
+                style={[
+                  styles.setNum,
+                  s.type && s.type !== "normal" && { backgroundColor: TYPE_BG[s.type] },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.setNumText,
+                    s.type && s.type !== "normal" && { color: TYPE_FG[s.type] },
+                  ]}
+                >
+                  {s.type && s.type !== "normal" ? TYPE_TAG[s.type] : s.n}
+                </Text>
               </View>
               <Text style={styles.setLabel}>Set {s.n}</Text>
               <View style={{ flex: 1 }} />
-              <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
-                <Num size={20}>{units.show(s.kg)}</Num>
-                <Text style={styles.setLabel}>
-                  {units.short} × {s.reps}
+              <Num size={18}>{fmtResult(ex, s.kg, s.reps, fmtU)}</Num>
+              {s.delta ? (
+                <Text
+                  style={[
+                    styles.delta,
+                    s.delta.kind === "pr" && { color: colors.ink, backgroundColor: colors.lime },
+                    s.delta.kind === "up" && {
+                      color: colors.limeDeep,
+                      backgroundColor: colors.limeTintStrong,
+                    },
+                    s.delta.kind === "down" && {
+                      color: colors.plateauTitle,
+                      backgroundColor: colors.plateauBg,
+                    },
+                  ]}
+                >
+                  {s.delta.label}
                 </Text>
-              </View>
-              <View style={styles.setDivider} />
-              <Text style={styles.setLabel}>RPE {s.rpe}</Text>
+              ) : null}
             </View>
           ))}
         </View>
@@ -263,6 +353,69 @@ export function WorkoutScreen() {
         <Icon name={upNext ? "arrowRight" : "check"} size={18} color={colors.sub} />
       </Pressable>
     </Screen>
+  );
+}
+
+const SET_TYPES: { id: SetType; label: string; bg?: string; fg?: string }[] = [
+  { id: "normal", label: "Normal" },
+  { id: "warmup", label: "Warm-up", bg: colors.segment, fg: colors.sub },
+  { id: "dropset", label: "Drop Set", bg: colors.dropBg, fg: colors.drop },
+  { id: "failure", label: "Failure", bg: colors.plateauBg, fg: colors.plateauTitle },
+];
+const TYPE_BG: Record<SetType, string> = {
+  normal: colors.limeTintStrong,
+  warmup: colors.segment,
+  dropset: colors.dropBg,
+  failure: colors.plateauBg,
+};
+const TYPE_FG: Record<SetType, string> = {
+  normal: colors.limeDeep,
+  warmup: colors.sub,
+  dropset: colors.drop,
+  failure: colors.plateauTitle,
+};
+const TYPE_TAG: Record<SetType, string> = { normal: "", warmup: "W", dropset: "D", failure: "F" };
+
+/** Plates to load on each side of a 20 kg bar for the weight in the stepper. */
+function PlateRow({
+  kg,
+  unitShort,
+  show,
+}: {
+  kg: number;
+  unitShort: string;
+  show: (kg: number) => string;
+}) {
+  const { plates, bar, remainder } = platesPerSide(kg);
+  if (plates.length === 0) {
+    return (
+      <Text style={styles.plateText}>
+        Bar only · {show(bar)} {unitShort}
+      </Text>
+    );
+  }
+  return (
+    <View style={styles.plates}>
+      <Text style={styles.plateText}>Per side:</Text>
+      {plates.map((p) => (
+        <Text key={p.plate} style={styles.plate}>
+          {show(p.plate)}
+          <Text style={styles.plateSub}>
+            {unitShort}×{p.count}
+          </Text>
+        </Text>
+      ))}
+      <Text style={styles.plateText}>
+        + {show(bar)}
+        {unitShort} bar
+      </Text>
+      {remainder > 0.01 ? (
+        <Text style={[styles.plateText, { color: colors.plateauTitle }]}>
+          ({show(remainder)}
+          {unitShort} not loadable)
+        </Text>
+      ) : null}
+    </View>
   );
 }
 
@@ -307,6 +460,67 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
   pair: { flexDirection: "row", gap: 12 },
+  exMeta: { flexDirection: "row", alignItems: "center", gap: 8 },
+  swap: { fontFamily: fonts.bodySemi, fontSize: 11.5, color: colors.limeDeep, marginTop: 4 },
+  replaced: { fontFamily: fonts.body, fontSize: 11, color: colors.sub, marginTop: 4 },
+  noRest: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 10,
+    color: colors.limeDim,
+    backgroundColor: colors.limeTintStrong,
+    borderRadius: 99,
+    paddingVertical: 2,
+    paddingHorizontal: 8,
+    overflow: "hidden",
+  },
+  reason: { flexDirection: "row", alignItems: "flex-start", gap: 8, paddingHorizontal: 2 },
+  reasonDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 99,
+    backgroundColor: colors.limeDim,
+    marginTop: 6,
+  },
+  reasonText: { flex: 1, fontFamily: fonts.body, fontSize: 12, color: colors.sub, lineHeight: 17 },
+  away: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 9,
+    color: colors.away,
+    backgroundColor: colors.awayBg,
+    borderRadius: 99,
+    paddingVertical: 2,
+    paddingHorizontal: 7,
+    overflow: "hidden",
+  },
+  types: { flexDirection: "row", gap: 6 },
+  typeChip: {
+    flex: 1,
+    height: 30,
+    borderRadius: 9,
+    backgroundColor: colors.segment,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  typeText: { fontFamily: fonts.bodyBold, fontSize: 10.5 },
+  plates: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 2,
+  },
+  plate: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 11,
+    color: colors.ink,
+    backgroundColor: colors.trackLight,
+    borderRadius: 7,
+    paddingVertical: 3,
+    paddingHorizontal: 7,
+    overflow: "hidden",
+  },
+  plateSub: { fontFamily: fonts.body, color: colors.sub },
+  plateText: { fontFamily: fonts.body, fontSize: 10.5, color: colors.sub },
   half: { flex: 1, padding: 14 },
   big: { flexDirection: "row", alignItems: "baseline", gap: 8, marginTop: 8 },
   reps: { fontFamily: fonts.body, fontSize: 11, color: colors.sub },
@@ -319,14 +533,14 @@ const styles = StyleSheet.create({
   },
   targetBadgeText: { fontFamily: fonts.bodyBold, fontSize: 10.5, color: colors.limeDeep },
   rest: { padding: 16, flexDirection: "row", alignItems: "center", gap: 16 },
-  restText: { fontFamily: fonts.body, fontSize: 13, color: "#fff", marginTop: 3 },
+  restText: { fontFamily: fonts.body, fontSize: 13, color: colors.white, marginTop: 3 },
   skip: {
-    backgroundColor: "rgba(255,255,255,0.1)",
+    backgroundColor: colors.whiteA10,
     borderRadius: 10,
     paddingVertical: 9,
     paddingHorizontal: 14,
   },
-  skipText: { fontFamily: fonts.bodySemi, fontSize: 12, color: "#fff" },
+  skipText: { fontFamily: fonts.bodySemi, fontSize: 12, color: colors.white },
   actions: { alignItems: "center", gap: 12, marginTop: 2 },
   mic: {
     width: 56,
@@ -351,7 +565,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingVertical: 12,
     paddingHorizontal: 16,
-    shadowColor: "#141414",
+    shadowColor: colors.shadowInk,
     shadowOpacity: 0.04,
     shadowRadius: 5,
     shadowOffset: { width: 0, height: 2 },
@@ -367,7 +581,16 @@ const styles = StyleSheet.create({
   },
   setNumText: { fontFamily: fonts.display, fontSize: 15, color: colors.limeDeep },
   setLabel: { fontFamily: fonts.body, fontSize: 12, color: colors.sub },
-  setDivider: { width: 1, height: 16, backgroundColor: colors.hair },
+  delta: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 10.5,
+    color: colors.sub,
+    backgroundColor: colors.segment,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: 99,
+    overflow: "hidden",
+  },
   next: {
     marginTop: 4,
     flexDirection: "row",

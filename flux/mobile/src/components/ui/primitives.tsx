@@ -103,7 +103,7 @@ export function Ring({
   total,
   size = 56,
   stroke = 5,
-  track = "rgba(255,255,255,0.14)",
+  track = colors.whiteA14,
   color = colors.lime,
   children,
 }: {
@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.card,
     borderRadius: 16,
-    shadowColor: "#141414",
+    shadowColor: colors.shadowInk,
     shadowOpacity: 0.05,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
   cardDark: {
     backgroundColor: colors.ink,
     borderRadius: 16,
-    shadowColor: "#000",
+    shadowColor: colors.black,
     shadowOpacity: 0.18,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 10 },

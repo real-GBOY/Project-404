@@ -30,7 +30,7 @@ export function BrandMark({ size = 30, stacked = false }: { size?: number; stack
           width: size + 14,
           height: size + 14,
           borderRadius: 14,
-          backgroundColor: "rgba(200,255,0,0.12)",
+          backgroundColor: colors.limeA12,
           alignItems: "center",
           justifyContent: "center",
         }}
@@ -41,7 +41,7 @@ export function BrandMark({ size = 30, stacked = false }: { size?: number; stack
         style={{
           fontFamily: fonts.display,
           fontSize: size * 1.25,
-          color: "#fff",
+          color: colors.white,
           letterSpacing: em(size * 1.25, 0.06),
         }}
       >
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 12,
   },
-  input: { flex: 1, color: "#fff", fontFamily: fonts.body, fontSize: 14, padding: 0 },
+  input: { flex: 1, color: colors.white, fontFamily: fonts.body, fontSize: 14, padding: 0 },
   socialRow: { flexDirection: "row", gap: 14, justifyContent: "center" },
   social: {
     width: 52,
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   toggleText: { fontFamily: fonts.bodySemi, fontSize: 13, color: dark.sub },
-  error: { fontFamily: fonts.bodyMedium, fontSize: 12.5, color: "#FF6B6B", marginTop: 12 },
+  error: { fontFamily: fonts.bodyMedium, fontSize: 12.5, color: colors.errorOnDark, marginTop: 12 },
   shell: { flex: 1, backgroundColor: dark.bg },
   shellContent: { flexGrow: 1, paddingHorizontal: 26, paddingBottom: 30 },
   switchLink: { flexDirection: "row", justifyContent: "center", paddingTop: 22 },

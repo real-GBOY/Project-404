@@ -53,7 +53,7 @@ function ConfettiPiece({ p, height }: { p: Piece; height: number }) {
           width: p.size,
           height: p.size,
           borderRadius: p.round ? 99 : 2,
-          backgroundColor: p.lime ? colors.lime : "#fff",
+          backgroundColor: p.lime ? colors.lime : colors.white,
         },
         style,
       ]}
@@ -168,7 +168,7 @@ export function PRScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#000", paddingHorizontal: 28, overflow: "hidden" },
+  root: { flex: 1, backgroundColor: colors.black, paddingHorizontal: 28, overflow: "hidden" },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
   eyebrow: {
     fontFamily: fonts.bodySemi,
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 28,
-    backgroundColor: "rgba(200,255,0,0.1)",
+    backgroundColor: colors.limeA10,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.display,
     fontSize: 36,
     lineHeight: 40,
-    color: "#fff",
+    color: colors.white,
     letterSpacing: em(36, 0.03),
     marginTop: 26,
     textAlign: "center",
@@ -207,14 +207,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "rgba(200,255,0,0.12)",
+    backgroundColor: colors.limeA12,
     borderRadius: 99,
     paddingVertical: 7,
     paddingHorizontal: 16,
   },
   deltaText: { fontFamily: fonts.bodyBold, fontSize: 13, color: colors.lime },
   actions: { alignItems: "center", gap: 14, marginTop: 20 },
-  cont: { fontFamily: fonts.bodyMedium, fontSize: 13.5, color: "rgba(255,255,255,0.6)" },
+  cont: { fontFamily: fonts.bodyMedium, fontSize: 13.5, color: colors.whiteA60 },
   brand: {
     flexDirection: "row",
     alignItems: "center",

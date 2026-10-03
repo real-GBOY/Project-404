@@ -42,7 +42,7 @@ export function SelectCard({ item, selected, onPress }: Props) {
 }
 
 export const cardShadow = {
-  shadowColor: "#000",
+  shadowColor: colors.black,
   shadowOpacity: 0.05,
   shadowRadius: 6,
   shadowOffset: { width: 0, height: 2 },

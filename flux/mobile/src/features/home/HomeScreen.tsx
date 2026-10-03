@@ -28,7 +28,7 @@ const titleCase = (s: string) => s.toLowerCase().replace(/\b\w/g, (m) => m.toUpp
 export function HomeScreen() {
   const router = useRouter();
   const { user } = useSession();
-  const { sessions, prs, todayPlan, workout, startWorkout } = useTraining();
+  const { sessions, prs, todayPlan, workout, startWorkout, routines, startRoutine } = useTraining();
   const units = useUnits();
   const now = new Date();
 
@@ -109,11 +109,15 @@ export function HomeScreen() {
                 {WEEKDAY_SHORT[i]}
               </Text>
               <View style={[styles.weekCircle, active && styles.weekCircleOn]}>
-                <Num size={18} color={active || trained ? colors.ink : colors.sub}>
+                <Num
+                  size={18}
+                  color={active || trained ? colors.ink : colors.sub}
+                  style={styles.weekNum}
+                >
                   {day.getDate()}
                 </Num>
-                {trained && !active ? <View style={styles.weekDot} /> : null}
               </View>
+              <View style={[styles.weekDot, !trained && styles.weekDotOff]} />
             </Pressable>
           );
         })}
@@ -124,14 +128,14 @@ export function HomeScreen() {
         <View style={styles.ring}>
           <Ring value={done} total={total} size={58} stroke={5}>
             <View style={{ flexDirection: "row", alignItems: "baseline" }}>
-              <Num size={24} color="#fff">
+              <Num size={24} color={colors.white}>
                 {done}
               </Num>
               <Text style={styles.ringTotal}>/{total}</Text>
             </View>
           </Ring>
         </View>
-        <Label color="rgba(255,255,255,0.45)" size={10}>
+        <Label color={colors.whiteA45} size={10}>
           Today's Session
         </Label>
         <Text style={styles.sessionName}>{todayPlan.name}</Text>
@@ -146,7 +150,7 @@ export function HomeScreen() {
               key={e.id}
               style={[
                 styles.segment,
-                { backgroundColor: i < done ? colors.lime : "rgba(255,255,255,0.14)" },
+                { backgroundColor: i < done ? colors.lime : colors.whiteA14 },
               ]}
             />
           ))}
@@ -174,6 +178,49 @@ export function HomeScreen() {
           </Card>
         ))}
       </View>
+
+      {/* saved workouts (built in the Workout Builder) */}
+      {routines.length > 0 ? (
+        <View>
+          <Label color={colors.ink} size={11} weight="semi">
+            Your workouts
+          </Label>
+          <View style={{ gap: 10, marginTop: 10 }}>
+            {routines.slice(0, 4).map((r) => (
+              <Card
+                key={r.id}
+                style={styles.routine}
+                onPress={() => {
+                  if (workout) {
+                    Alert.alert(
+                      "Workout in progress",
+                      "Finish or discard it before starting another.",
+                    );
+                    return;
+                  }
+                  if (
+                    startRoutine(
+                      r.name,
+                      r.items.map((i) => i.id),
+                      r.linked ?? {},
+                    )
+                  ) {
+                    router.push("/workout");
+                  }
+                }}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.routineName}>{r.name}</Text>
+                  <Text style={styles.routineMeta}>
+                    {r.items.length} exercises · {r.items.reduce((n, i) => n + i.sets, 0)} sets
+                  </Text>
+                </View>
+                <Icon name="play" size={16} color={colors.limeDeep} />
+              </Card>
+            ))}
+          </View>
+        </View>
+      ) : null}
 
       {/* last session */}
       {last ? (
@@ -262,19 +309,19 @@ const styles = StyleSheet.create({
     borderRadius: 99,
     backgroundColor: colors.lime,
     borderWidth: 1.5,
-    borderColor: "#fff",
+    borderColor: colors.white,
   },
   avatar: {
     width: 44,
     height: 44,
     borderRadius: 99,
-    backgroundColor: "#1a1a1a",
+    backgroundColor: colors.ink,
     alignItems: "center",
     justifyContent: "center",
   },
   avatarText: { fontFamily: fonts.display, fontSize: 20, color: colors.lime, letterSpacing: 0.8 },
   week: { flexDirection: "row", justifyContent: "space-between", gap: 6 },
-  weekDay: { flex: 1, alignItems: "center", gap: 8 },
+  weekDay: { flex: 1, alignItems: "center", gap: 6 },
   weekLetter: { fontFamily: fonts.bodyMedium, fontSize: 11 },
   weekCircle: {
     width: 38,
@@ -286,6 +333,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  // Bebas Neue caps sit ~0.05em above the line-box centre; nudge so digits centre optically
+  weekNum: { position: "relative", top: 1, textAlign: "center" },
   weekCircleOn: {
     backgroundColor: colors.lime,
     borderColor: colors.lime,
@@ -296,32 +345,31 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   weekDot: {
-    position: "absolute",
-    bottom: -1,
     width: 5,
     height: 5,
     borderRadius: 99,
-    backgroundColor: colors.lime,
+    backgroundColor: colors.limeDim,
   },
+  weekDotOff: { opacity: 0 },
   ring: { position: "absolute", top: 18, right: 18 },
   ringTotal: {
     fontFamily: fonts.body,
     fontSize: 11,
-    color: "rgba(255,255,255,0.5)",
+    color: colors.whiteA50,
     marginLeft: 1,
   },
   sessionName: {
     fontFamily: fonts.display,
     fontSize: 38,
     lineHeight: 40,
-    color: "#fff",
+    color: colors.white,
     letterSpacing: em(38, 0.02),
     marginTop: 8,
     marginBottom: 4,
   },
   metaRow: { flexDirection: "row", alignItems: "center", gap: 7 },
-  meta: { fontFamily: fonts.body, fontSize: 12.5, color: "rgba(255,255,255,0.55)" },
-  metaDot: { width: 3, height: 3, borderRadius: 99, backgroundColor: "rgba(255,255,255,0.35)" },
+  meta: { fontFamily: fonts.body, fontSize: 12.5, color: colors.whiteA55 },
+  metaDot: { width: 3, height: 3, borderRadius: 99, backgroundColor: colors.whiteA35 },
   segments: { marginTop: 16, flexDirection: "row", gap: 6 },
   segment: { flex: 1, height: 4, borderRadius: 99 },
   statRow: { flexDirection: "row", gap: 12 },
@@ -334,6 +382,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  routine: { flexDirection: "row", alignItems: "center", gap: 12, padding: 16 },
+  routineName: { fontFamily: fonts.bodySemi, fontSize: 14, color: colors.ink },
+  routineMeta: { fontFamily: fonts.body, fontSize: 11.5, color: colors.sub, marginTop: 2 },
   lastHead: {
     flexDirection: "row",
     alignItems: "center",

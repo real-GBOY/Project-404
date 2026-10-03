@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { loadJson, saveJson } from "@/lib/storage";
+import { DEFAULT_PROFILE } from "@/features/onboarding/data";
 import type { TrainingProfile } from "@/features/onboarding/types";
 
 export type WeightUnit = "KG" | "LBS";
@@ -96,7 +97,18 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     void loadJson<Persisted>(KEY, EMPTY).then((saved) => {
-      setState({ ...EMPTY, ...saved, settings: { ...DEFAULT_SETTINGS, ...saved.settings } });
+      const accounts = Object.fromEntries(
+        Object.entries(saved.accounts ?? {}).map(([k, a]) => [
+          k,
+          a.onboarded && !a.profile ? { ...a, profile: DEFAULT_PROFILE } : a,
+        ]),
+      );
+      setState({
+        ...EMPTY,
+        ...saved,
+        accounts,
+        settings: { ...DEFAULT_SETTINGS, ...saved.settings },
+      });
       setHydrated(true);
     });
   }, []);
@@ -160,13 +172,18 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         email: key,
         joinedAt: new Date().toISOString(),
         onboarded: true,
-        profile: null,
+        profile: DEFAULT_PROFILE,
       };
       commit({
         ...cur,
         seenIntro: true,
         currentEmail: key,
-        accounts: { ...cur.accounts, [key]: account.onboarded ? account : { ...account, onboarded: true } },
+        accounts: {
+          ...cur.accounts,
+          [key]: account.onboarded
+            ? { ...account, profile: account.profile ?? DEFAULT_PROFILE }
+            : { ...account, onboarded: true, profile: account.profile ?? DEFAULT_PROFILE },
+        },
       });
       return { ok: true };
     },

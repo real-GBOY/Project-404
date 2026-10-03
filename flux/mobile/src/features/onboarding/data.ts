@@ -1,4 +1,11 @@
-import type { Option } from "./types";
+import type { Option, TrainingProfile } from "./types";
+
+/** Defaults the onboarding wizard starts from; also used for guest sign-in. */
+export const DEFAULT_PROFILE: TrainingProfile = {
+  sel: { goal: "muscle", exp: "int", split: "ppl", equip: "gym", days: 4, duration: "d3" },
+  body: { age: "21", height: "178", weight: "75", gender: "Male" },
+  units: { h: "cm", w: "kg" },
+};
 
 export const GOALS: Option[] = [
   { id: "muscle", icon: "muscle", title: "BUILD MUSCLE", sub: "Add size and definition" },

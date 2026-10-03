@@ -55,7 +55,10 @@ export default function RootLayout() {
               animation: "fade",
             }}
           >
-            <Stack.Screen name="index" options={{ contentStyle: { backgroundColor: "#000" } }} />
+            <Stack.Screen
+              name="index"
+              options={{ contentStyle: { backgroundColor: colors.black } }}
+            />
             <Stack.Screen name="(auth)" />
             <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
             <Stack.Screen name="(app)" />

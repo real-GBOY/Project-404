@@ -191,13 +191,13 @@ function Leaderboard() {
             )}
           </View>
           <View style={styles.avatar}>
-            <Num size={17} color={r.you ? colors.lime : "#fff"}>
+            <Num size={17} color={r.you ? colors.lime : colors.white}>
               {r.name[0]}
             </Num>
           </View>
           <Text style={styles.rowName}>{r.name}</Text>
           <View style={{ flexDirection: "row", alignItems: "baseline", gap: 3 }}>
-            <Num size={24} color={r.you ? colors.lime : "#fff"}>
+            <Num size={24} color={r.you ? colors.lime : colors.white}>
               {r.vol}
             </Num>
             <Text style={styles.rowUnit}>t</Text>
@@ -219,13 +219,13 @@ const styles = StyleSheet.create({
   },
   footer: { paddingHorizontal: 26, paddingBottom: 30, gap: 24 },
   dots: { flexDirection: "row", gap: 7, justifyContent: "center" },
-  dot: { height: 7, borderRadius: 99, backgroundColor: "rgba(255,255,255,0.2)" },
+  dot: { height: 7, borderRadius: 99, backgroundColor: colors.whiteA20 },
   copy: { alignItems: "center", gap: 16, marginTop: 46, width: "100%" },
   title: {
     fontFamily: fonts.display,
     fontSize: 42,
     lineHeight: 47,
-    color: "#fff",
+    color: colors.white,
     letterSpacing: em(42, 0.02),
     textAlign: "center",
   },
@@ -250,13 +250,18 @@ const styles = StyleSheet.create({
     borderColor: dark.fieldBorder,
   },
   sampleDot: { width: 6, height: 6, borderRadius: 99, backgroundColor: colors.lime },
-  sampleText: { fontFamily: fonts.body, fontSize: 15, color: "#fff", writingDirection: "rtl" },
+  sampleText: {
+    fontFamily: fonts.body,
+    fontSize: 15,
+    color: colors.white,
+    writingDirection: "rtl",
+  },
   plateWrap: { width: 168, height: 168, alignItems: "center", justifyContent: "center" },
   plateHalo: {
     ...StyleSheet.absoluteFill,
     borderRadius: 99,
     borderWidth: 2,
-    borderColor: "rgba(200,255,0,0.18)",
+    borderColor: colors.limeA18,
   },
   plate: {
     width: 132,
@@ -276,7 +281,7 @@ const styles = StyleSheet.create({
     borderRadius: 99,
     backgroundColor: dark.bg,
     borderWidth: 3,
-    borderColor: "rgba(255,255,255,0.12)",
+    borderColor: colors.whiteA12,
   },
   plateEnd: {
     position: "absolute",
@@ -316,17 +321,17 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: dark.card,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
+    borderColor: colors.whiteA06,
   },
-  rowYou: { backgroundColor: "rgba(200,255,0,0.1)", borderColor: "rgba(200,255,0,0.3)" },
+  rowYou: { backgroundColor: colors.limeA10, borderColor: colors.limeA30 },
   avatar: {
     width: 38,
     height: 38,
     borderRadius: 99,
-    backgroundColor: "#1c1c1c",
+    backgroundColor: colors.darkAvatar,
     alignItems: "center",
     justifyContent: "center",
   },
-  rowName: { flex: 1, fontFamily: fonts.bodyMedium, fontSize: 14, color: "#fff" },
+  rowName: { flex: 1, fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.white },
   rowUnit: { fontFamily: fonts.body, fontSize: 11, color: dark.sub },
 });

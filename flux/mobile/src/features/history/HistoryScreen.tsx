@@ -113,7 +113,7 @@ export function HistoryScreen() {
                   style={[
                     styles.day,
                     trained && { backgroundColor: colors.lime },
-                    !trained && !isToday && { backgroundColor: "#F3F3F3" },
+                    !trained && !isToday && { backgroundColor: colors.soft },
                     isToday && { borderWidth: 2, borderColor: colors.lime },
                   ]}
                 >
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 9,
-    backgroundColor: "#F3F3F3",
+    backgroundColor: colors.soft,
     alignItems: "center",
     justifyContent: "center",
   },

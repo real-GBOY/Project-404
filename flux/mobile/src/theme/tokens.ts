@@ -33,7 +33,54 @@ export const colors = {
   chartGrid: "#EEEEEE",
   chartLabel: "#B5B5B5",
   tabIdle: "rgba(255,255,255,0.5)",
+
+  // ── neutrals & overlays (every literal colour in the app lives in this file) ──
+  white: "#FFFFFF",
+  black: "#000000",
+  shadowInk: "#141414",
+  darkAvatar: "#1C1C1C",
+  navRing: "#171719",
+  navGlass: "rgba(18,18,20,0.72)",
+  whiteA06: "rgba(255,255,255,0.06)",
+  whiteA10: "rgba(255,255,255,0.1)",
+  whiteA12: "rgba(255,255,255,0.12)",
+  whiteA14: "rgba(255,255,255,0.14)",
+  whiteA20: "rgba(255,255,255,0.2)",
+  whiteA35: "rgba(255,255,255,0.35)",
+  whiteA45: "rgba(255,255,255,0.45)",
+  whiteA50: "rgba(255,255,255,0.5)",
+  whiteA55: "rgba(255,255,255,0.55)",
+  whiteA60: "rgba(255,255,255,0.6)",
+  whiteA62: "rgba(255,255,255,0.62)",
+  blackA40: "rgba(0,0,0,0.4)",
+  blackA70: "rgba(0,0,0,0.7)",
+  limeA10: "rgba(200,255,0,0.1)",
+  limeA12: "rgba(200,255,0,0.12)",
+  limeA14: "rgba(200,255,0,0.14)",
+  limeA18: "rgba(200,255,0,0.18)",
+  limeA30: "rgba(200,255,0,0.3)",
+  dangerBg: "rgba(255,68,68,0.08)",
+  errorOnDark: "#FF6B6B",
+  soft: "#F3F3F3",
+  trackLight: "#EFEFEF",
+  divider: "#DDDDDD",
+  dot: "#CCCCCC",
+  handle: "#C8C8C8",
+  mutedIcon: "#999999",
+  idleIcon: "#8A8A8A",
+  // ── warnings / set types ──
+  warn: "#D9A528",
+  warnBg: "#FFF8E8",
+  warnTitle: "#8A6A1E",
+  warnBody: "#9A8255",
+  away: "#B07A22",
+  awayBg: "#FFF4E0",
+  drop: "#B5701E",
+  dropBg: "#FFF1E0",
 } as const;
+
+/** Lime at an arbitrary opacity (heatmap cells). */
+export const limeAlpha = (o: number) => `rgba(200,255,0,${o})`;
 
 /** Dark auth / intro surfaces. */
 export const dark = {

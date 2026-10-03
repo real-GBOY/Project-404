@@ -59,13 +59,13 @@ export function SplashScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#000", alignItems: "center", justifyContent: "center" },
+  root: { flex: 1, backgroundColor: colors.black, alignItems: "center", justifyContent: "center" },
   logoWrap: { alignItems: "center", gap: 22 },
   badge: {
     width: 76,
     height: 76,
     borderRadius: 22,
-    backgroundColor: "rgba(200,255,0,0.1)",
+    backgroundColor: colors.limeA10,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
     marginTop: 14,
     fontFamily: fonts.body,
     fontSize: 13.5,
-    color: "rgba(255,255,255,0.62)",
+    color: colors.whiteA62,
     letterSpacing: 0.54,
   },
   loader: {
@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 3,
     borderRadius: 99,
-    backgroundColor: "rgba(255,255,255,0.1)",
+    backgroundColor: colors.whiteA10,
     overflow: "hidden",
   },
   loaderFill: { width: 48, height: "100%", borderRadius: 99, backgroundColor: colors.lime },

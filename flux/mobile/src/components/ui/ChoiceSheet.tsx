@@ -48,7 +48,7 @@ export function ChoiceSheet<T extends string>({
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", padding: 28 },
+  backdrop: { flex: 1, backgroundColor: colors.blackA40, justifyContent: "center", padding: 28 },
   sheet: { backgroundColor: colors.card, borderRadius: 18, paddingVertical: 6 },
   title: {
     fontFamily: fonts.display,

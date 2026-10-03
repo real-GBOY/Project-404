@@ -4,7 +4,6 @@ import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon, type IconName } from "@/components/ui";
-import { useTraining } from "@/features/training/store";
 import { colors } from "@/theme/tokens";
 
 /** The slice of the tab-bar props we use (expo-router doesn't re-export the full type). */
@@ -24,12 +23,11 @@ const RIGHT: Item[] = [
   { route: "profile", icon: "profile", label: "Profile" },
 ];
 
-/** Glass pill tab bar with the raised lime "+" that starts (or resumes) a workout. */
+/** Glass pill tab bar with the raised lime "+" that opens the Workout Builder. */
 export function FloatingNav({ state, navigation }: NavProps) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const router = useRouter();
-  const { startWorkout } = useTraining();
   const active = state.routes[state.index]?.name;
 
   const renderItem = (it: Item) => {
@@ -68,11 +66,10 @@ export function FloatingNav({ state, navigation }: NavProps) {
           {LEFT.map(renderItem)}
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Start workout"
+            accessibilityLabel="Build a workout"
             onPress={() => {
               void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
-              startWorkout();
-              router.push("/workout");
+              router.push("/builder");
             }}
             style={({ pressed }) => [styles.fab, pressed && { transform: [{ scale: 0.95 }] }]}
           >
@@ -90,10 +87,10 @@ const styles = StyleSheet.create({
   pill: {
     height: 66,
     borderRadius: 40,
-    backgroundColor: "rgba(18,18,20,0.72)",
+    backgroundColor: colors.navGlass,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-    shadowColor: "#000",
+    borderColor: colors.whiteA12,
+    shadowColor: colors.black,
     shadowOpacity: 0.28,
     shadowRadius: 17,
     shadowOffset: { width: 0, height: 12 },
@@ -117,7 +114,7 @@ const styles = StyleSheet.create({
     marginTop: -26,
     backgroundColor: colors.lime,
     borderWidth: 5,
-    borderColor: "#171719",
+    borderColor: colors.navRing,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: colors.lime,

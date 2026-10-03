@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { Alert } from "@/lib/alert";
 import { useRouter } from "expo-router";
 import { LimeButton } from "@/components/ui";
-import { em } from "@/theme/tokens";
+import { em, colors } from "@/theme/tokens";
 import { fonts } from "@/theme/typography";
 import {
   AuthField,
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.display,
     fontSize: 34,
     lineHeight: 38,
-    color: "#fff",
+    color: colors.white,
     letterSpacing: em(34, 0.03),
     marginBottom: 18,
   },

@@ -16,7 +16,7 @@ const LANG_LABEL: Record<Language, string> = { EN: "English", AR: "عربي" };
 const LANG_BY_LABEL = { English: "EN", عربي: "AR" } as const;
 
 const soft = {
-  shadowColor: "#000",
+  shadowColor: colors.black,
   shadowOpacity: 0.06,
   shadowRadius: 6,
   shadowOffset: { width: 0, height: 2 },
@@ -154,7 +154,7 @@ export function ProfileScreen() {
             value={settings.notifications}
             onValueChange={(v) => updateSettings({ notifications: v })}
             trackColor={{ false: colors.switchOff, true: colors.lime }}
-            thumbColor="#fff"
+            thumbColor={colors.white}
             ios_backgroundColor={colors.switchOff}
           />
         </Row>
@@ -164,7 +164,7 @@ export function ProfileScreen() {
             value={false}
             onValueChange={() => comingSoon("Dark mode")}
             trackColor={{ false: colors.switchOff, true: colors.lime }}
-            thumbColor="#fff"
+            thumbColor={colors.white}
             ios_backgroundColor={colors.switchOff}
           />
         </Row>
@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     elevation: 6,
   },
-  avatarText: { fontFamily: fonts.display, fontSize: 38, color: "#fff", letterSpacing: 0.76 },
+  avatarText: { fontFamily: fonts.display, fontSize: 38, color: colors.white, letterSpacing: 0.76 },
   name: {
     fontFamily: fonts.display,
     fontSize: 24,
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: "#F3F3F3",
+    backgroundColor: colors.soft,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: "rgba(255,68,68,0.08)",
+    backgroundColor: colors.dangerBg,
     alignItems: "center",
     justifyContent: "center",
   },

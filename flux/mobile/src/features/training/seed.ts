@@ -36,9 +36,11 @@ export function seedSessions(splitId: string, now: Date): Session[] {
 export function seedPrs(now: Date): Record<string, PersonalRecord> {
   const offsets = [18, 26, 33, 40];
   const out: Record<string, PersonalRecord> = {};
-  Object.values(EXERCISES).forEach((e, i) => {
-    out[e.name] = { kg: e.prKg, date: addDays(now, -(10 + ((i * 11) % 150))).toISOString() };
-  });
+  Object.values(EXERCISES)
+    .filter((e) => e.prKg > 0)
+    .forEach((e, i) => {
+      out[e.name] = { kg: e.prKg, date: addDays(now, -(10 + ((i * 11) % 150))).toISOString() };
+    });
   STATS_PR_IDS.forEach((id, i) => {
     const e = EXERCISES[id]!;
     out[e.name] = { kg: e.prKg, date: addDays(now, -offsets[i]!).toISOString() };

@@ -166,7 +166,7 @@ export function VoiceSheet() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "rgba(0,0,0,0.7)", justifyContent: "flex-end" },
+  root: { flex: 1, backgroundColor: colors.blackA70, justifyContent: "flex-end" },
   sheet: {
     backgroundColor: dark.sheet,
     borderTopLeftRadius: 24,
@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 5,
     borderRadius: 99,
-    backgroundColor: "rgba(255,255,255,0.2)",
+    backgroundColor: colors.whiteA20,
     marginBottom: 16,
   },
   listening: {
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   transcript: { marginTop: 14, alignItems: "center" },
-  heard: { fontFamily: fonts.bodyMedium, fontSize: 16, color: "#fff", textAlign: "center" },
+  heard: { fontFamily: fonts.bodyMedium, fontSize: 16, color: colors.white, textAlign: "center" },
   arabic: {
     fontFamily: fonts.body,
     fontSize: 13,
@@ -215,9 +215,9 @@ const styles = StyleSheet.create({
   parsed: {
     width: "100%",
     marginTop: 16,
-    backgroundColor: "rgba(200,255,0,0.1)",
+    backgroundColor: colors.limeA10,
     borderWidth: 1,
-    borderColor: "rgba(200,255,0,0.3)",
+    borderColor: colors.limeA30,
     borderRadius: 14,
     paddingVertical: 12,
     paddingHorizontal: 14,
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: fonts.display,
     fontSize: 18,
-    color: "#fff",
+    color: colors.white,
     letterSpacing: em(18, 0.04),
   },
   buttons: { flexDirection: "row", gap: 12, width: "100%", marginTop: 14 },
@@ -246,14 +246,14 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
+    borderColor: colors.whiteA20,
     alignItems: "center",
     justifyContent: "center",
   },
   cancelText: {
     fontFamily: fonts.display,
     fontSize: 18,
-    color: "#fff",
+    color: colors.white,
     letterSpacing: em(18, 0.1),
   },
   confirm: {

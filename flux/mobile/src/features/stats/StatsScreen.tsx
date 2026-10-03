@@ -7,7 +7,7 @@ import { muscleSets, volumeInWindow, weekTonnes } from "@/features/training/metr
 import { useTraining } from "@/features/training/store";
 import { useUnits } from "@/features/training/units";
 import { formatShortDate, mondayIndex, WEEKDAY_SHORT } from "@/lib/dates";
-import { colors, em } from "@/theme/tokens";
+import { colors, em, limeAlpha } from "@/theme/tokens";
 import { fonts } from "@/theme/typography";
 
 const BAR_MAX = 72;
@@ -43,7 +43,7 @@ export function StatsScreen() {
 
       {/* hero volume */}
       <Card dark style={{ padding: 22, overflow: "hidden" }}>
-        <Label size={11} color="rgba(255,255,255,0.5)">
+        <Label size={11} color={colors.whiteA50}>
           Total volume lifted
         </Label>
         <View style={styles.hero}>
@@ -147,10 +147,7 @@ export function StatsScreen() {
             <Text style={styles.legendText}>Low</Text>
             <View style={{ flexDirection: "row", gap: 2 }}>
               {[0.25, 0.5, 0.75, 1].map((o) => (
-                <View
-                  key={o}
-                  style={[styles.legendBox, { backgroundColor: `rgba(200,255,0,${o})` }]}
-                />
+                <View key={o} style={[styles.legendBox, { backgroundColor: limeAlpha(o) }]} />
               ))}
             </View>
             <Text style={styles.legendText}>High</Text>
@@ -163,7 +160,7 @@ export function StatsScreen() {
                 key={m.muscle}
                 style={[
                   styles.muscle,
-                  { backgroundColor: `rgba(200,255,0,${0.16 + (m.sets / maxSets) * 0.84})` },
+                  { backgroundColor: limeAlpha(0.16 + (m.sets / maxSets) * 0.84) },
                 ]}
               >
                 <Num size={18}>{m.sets}</Num>
@@ -197,13 +194,13 @@ const styles = StyleSheet.create({
     fontFamily: fonts.display,
     fontSize: 64,
     lineHeight: 68,
-    color: "#fff",
+    color: colors.white,
     letterSpacing: 0.64,
     flexShrink: 1,
   },
   change: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 10 },
   changePct: { fontFamily: fonts.bodySemi, fontSize: 12.5, color: colors.lime },
-  changeText: { fontFamily: fonts.body, fontSize: 12.5, color: "rgba(255,255,255,0.5)" },
+  changeText: { fontFamily: fonts.body, fontSize: 12.5, color: colors.whiteA50 },
   cardHead: {
     flexDirection: "row",
     alignItems: "center",

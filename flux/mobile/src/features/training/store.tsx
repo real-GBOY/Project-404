@@ -9,12 +9,29 @@ import {
   type ReactNode,
 } from "react";
 import { loadJson, saveJson } from "@/lib/storage";
-import { targetKg, type Exercise } from "./catalog";
-import { nextPlan, type DayPlan } from "./plan";
+import { EXERCISES, trackingOf, type Exercise } from "./catalog";
+import { shapeOf } from "./format";
+import { targetFor, type Target } from "./engine";
+import { daysBetween } from "@/lib/dates";
+import { dayByName, nextPlan, type DayPlan } from "./plan";
 import { seedPrs, seedSessions } from "./seed";
-import type { ActiveWorkout, PersonalRecord, Session } from "./types";
+import { startOfWeek } from "@/lib/dates";
+import { streak as streakOf } from "./metrics";
+import type {
+  ActiveWorkout,
+  PersonalRecord,
+  Routine,
+  SetDelta,
+  SetType,
+  Session,
+  Summary,
+} from "./types";
 
-type Persisted = { userSessions: Session[]; prs: Record<string, PersonalRecord> | null };
+type Persisted = {
+  userSessions: Session[];
+  prs: Record<string, PersonalRecord> | null;
+  routines?: Routine[];
+};
 
 export type LogResult = { newPR: boolean; previousKg: number; exercise: Exercise };
 
@@ -27,11 +44,24 @@ type TrainingValue = {
   workout: ActiveWorkout | null;
   /** Starts today's plan unless a workout is already running. */
   startWorkout: () => void;
+  /** Starts a workout from an ordered list of catalog exercise ids (replaces any running one). */
+  /** Replaces the current exercise (history records what was actually performed). */
+  swapExercise: (ex: Exercise) => void;
+  /** Attaches the post-workout note to the session in the summary. */
+  saveNote: (note: string) => void;
+  startRoutine: (name: string, ids: string[], links?: Record<number, boolean>) => boolean;
+  /** Progression-engine target (with reason) for an exercise, given when it was last trained. */
+  targetOf: (ex: Exercise) => Target & { daysSince: number };
+  routines: Routine[];
+  saveRoutine: (routine: Routine) => void;
+  /** Reward-moment data for the workout that was just finished. */
+  summary: Summary | null;
+  clearSummary: () => void;
   discardWorkout: () => void;
   /** Saves the running workout to history. Returns null if no set was logged. */
   finishWorkout: () => Session | null;
   setDraft: (draft: { kg: number; reps: number }) => void;
-  logSet: (kg: number, reps: number) => LogResult | null;
+  logSet: (kg: number, reps: number, type?: SetType) => LogResult | null;
   /** Moves to the next exercise. Returns false when already on the last one. */
   nextExercise: () => boolean;
   rest: RestState | null;
@@ -43,7 +73,37 @@ type TrainingValue = {
 const TrainingContext = createContext<TrainingValue | null>(null);
 
 const REST_SECONDS = 90;
-const initialDraft = (ex: Exercise) => ({ kg: targetKg(ex), reps: ex.lastReps });
+
+type DeltaMode = "weight" | "reps" | "time";
+
+const deltaMode = (ex: Exercise): DeltaMode => {
+  const t = trackingOf(ex);
+  return t === "time" ? "time" : t === "weight_reps" || t === "bodyweight_reps" ? "weight" : "reps";
+};
+
+/** One badge per set, ranked PR > gain > matched > below. Reps/time lifts ignore the load. */
+function setDelta(
+  kg: number,
+  reps: number,
+  prev: { kg: number; reps: number },
+  pr: boolean,
+  fmt: (kg: number) => string,
+  mode: DeltaMode = "weight",
+): SetDelta {
+  if (pr) return { label: "New PR", kind: "pr" };
+  if (mode === "weight" && kg > prev.kg) {
+    return { label: `+${fmt(kg - prev.kg)} kg`, kind: "up" };
+  }
+  const sameLoad = mode !== "weight" || kg === prev.kg;
+  if (sameLoad && reps > prev.reps) {
+    const n = reps - prev.reps;
+    const unit = mode === "time" ? "sec" : `rep${n > 1 ? "s" : ""}`;
+    return { label: `+${n} ${unit}`, kind: "up" };
+  }
+  if (sameLoad && reps === prev.reps) return { label: "Matched", kind: "flat" };
+  return { label: "Below last time", kind: "down" };
+}
+const trimKg = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
 
 type Props = { email: string; splitId: string; durationId: string; children: ReactNode };
 
@@ -53,6 +113,7 @@ export function TrainingProvider({ email, splitId, durationId, children }: Props
   const [saved, setSaved] = useState<Persisted>({ userSessions: [], prs: null });
   const [workout, setWorkout] = useState<ActiveWorkout | null>(null);
   const [rest, setRest] = useState<RestState | null>(null);
+  const [summary, setSummary] = useState<Summary | null>(null);
   const workoutRef = useRef(workout);
   workoutRef.current = workout;
   const savedRef = useRef(saved);
@@ -92,6 +153,22 @@ export function TrainingProvider({ email, splitId, durationId, children }: Props
     [splitId, durationId, sessions],
   );
 
+  const targetOf = useCallback<TrainingValue["targetOf"]>(
+    (ex) => {
+      const last = sessions.find((s) => dayByName(s.day)?.ids.includes(ex.id));
+      const daysSince = last ? Math.max(0, daysBetween(new Date(), new Date(last.date))) : 0;
+      return { ...targetFor(ex, daysSince), daysSince };
+    },
+    [sessions],
+  );
+  const draftFor = useCallback(
+    (ex: Exercise) => {
+      const t = targetOf(ex);
+      return { kg: t.kg, reps: t.repLow };
+    },
+    [targetOf],
+  );
+
   const startWorkout = useCallback(() => {
     if (workoutRef.current) return;
     const first = todayPlan.exercises[0]!;
@@ -100,9 +177,37 @@ export function TrainingProvider({ email, splitId, durationId, children }: Props
       startedAt: Date.now(),
       exercises: todayPlan.exercises.map((ex) => ({ ex, sets: [] })),
       index: 0,
-      draft: initialDraft(first),
+      links: {},
+      draft: draftFor(first),
     });
-  }, [todayPlan]);
+  }, [todayPlan, draftFor]);
+
+  const startRoutine = useCallback<TrainingValue["startRoutine"]>(
+    (name, ids, links = {}) => {
+      const exercises = ids.map((id) => EXERCISES[id]).filter((e): e is Exercise => !!e);
+      if (exercises.length === 0) return false;
+      setRest(null);
+      setWorkout({
+        day: name.toUpperCase(),
+        startedAt: Date.now(),
+        exercises: exercises.map((ex) => ({ ex, sets: [] })),
+        index: 0,
+        links,
+        draft: draftFor(exercises[0]!),
+      });
+      return true;
+    },
+    [draftFor],
+  );
+
+  const saveRoutine = useCallback(
+    (routine: Routine) => {
+      const cur = savedRef.current;
+      const others = (cur.routines ?? []).filter((r) => r.id !== routine.id);
+      persist({ ...cur, routines: [routine, ...others] });
+    },
+    [persist],
+  );
 
   const discardWorkout = useCallback(() => {
     setWorkout(null);
@@ -114,50 +219,81 @@ export function TrainingProvider({ email, splitId, durationId, children }: Props
   }, []);
 
   const logSet = useCallback<TrainingValue["logSet"]>(
-    (kg, reps) => {
+    (kg, reps, type = "normal") => {
       const w = workoutRef.current;
       if (!w) return null;
       const entry = w.exercises[w.index]!;
       const previousKg = prs[entry.ex.name]?.kg ?? entry.ex.prKg;
-      const newPR = kg > previousKg;
-      const sets = [...entry.sets, { n: entry.sets.length + 1, kg, reps, rpe: 8 }];
-      setWorkout({
-        ...w,
-        exercises: w.exercises.map((e, i) => (i === w.index ? { ...e, sets } : e)),
-      });
+      // Warm-up, drop and failure sets never set a weight PR (not a clean working effort).
+      const newPR = type === "normal" && shapeOf(entry.ex).weighted && kg > previousKg;
+      const working = entry.sets.filter((s) => s.type !== "warmup");
+      const prev = working[working.length - 1] ?? {
+        kg: entry.ex.lastKg,
+        reps: entry.ex.lastReps,
+      };
+      const delta: SetDelta =
+        type === "warmup"
+          ? { label: "Warm-up", kind: "flat" }
+          : setDelta(kg, reps, prev, newPR, trimKg, deltaMode(entry.ex));
+      const sets = [...entry.sets, { n: entry.sets.length + 1, kg, reps, rpe: 8, type, delta }];
+      const exercises = w.exercises.map((e, i) => (i === w.index ? { ...e, sets } : e));
       if (newPR) {
         const nextPrs = { ...prs, [entry.ex.name]: { kg, date: new Date().toISOString() } };
         persist({ ...savedRef.current, prs: nextPrs });
       }
-      setRest({ endsAt: Date.now() + REST_SECONDS * 1000, total: REST_SECONDS });
+
+      // Supersets rotate through the group with no rest; rest starts after the last member.
+      let end = w.index;
+      while (w.links[end]) end++;
+      let start = w.index;
+      while (w.links[start - 1]) start--;
+      const startRest = () =>
+        setRest({ endsAt: Date.now() + REST_SECONDS * 1000, total: REST_SECONDS });
+      if (end > start) {
+        const nextIdx = w.index < end ? w.index + 1 : start;
+        setWorkout({ ...w, exercises, index: nextIdx, draft: draftFor(w.exercises[nextIdx]!.ex) });
+        if (w.index === end) startRest();
+      } else {
+        setWorkout({ ...w, exercises });
+        startRest();
+      }
       return { newPR, previousKg, exercise: entry.ex };
     },
-    [persist, prs],
+    [persist, prs, draftFor],
   );
 
   const nextExercise = useCallback(() => {
     const w = workoutRef.current;
-    if (!w || w.index >= w.exercises.length - 1) return false;
-    const index = w.index + 1;
-    setWorkout({ ...w, index, draft: initialDraft(w.exercises[index]!.ex) });
+    if (!w) return false;
+    // A superset group is left as a whole: jump past its last member.
+    let end = w.index;
+    while (w.links[end]) end++;
+    const index = end + 1;
+    if (index >= w.exercises.length) return false;
+    setWorkout({ ...w, index, draft: draftFor(w.exercises[index]!.ex) });
     setRest(null);
     return true;
-  }, []);
+  }, [draftFor]);
 
   const finishWorkout = useCallback<TrainingValue["finishWorkout"]>(() => {
     const w = workoutRef.current;
     setWorkout(null);
     setRest(null);
     if (!w) return null;
-    const logged = w.exercises.filter((e) => e.sets.length > 0);
+    // Warm-ups do not count towards volume, PRs or progress.
+    const logged = w.exercises
+      .map((e) => ({ ...e, sets: e.sets.filter((s) => s.type !== "warmup") }))
+      .filter((e) => e.sets.length > 0);
     if (logged.length === 0) return null;
     const volumeKg = logged.reduce(
-      (sum, e) => sum + e.sets.reduce((s, x) => s + x.kg * x.reps, 0),
+      (sum, e) =>
+        shapeOf(e.ex).weighted ? sum + e.sets.reduce((s, x) => s + x.kg * x.reps, 0) : sum,
       0,
     );
-    const best = logged
+    const tops = logged
       .map((e) => ({ ex: e.ex, set: e.sets.reduce((a, b) => (b.kg >= a.kg ? b : a)) }))
-      .sort((a, b) => b.set.kg - a.set.kg)[0]!;
+      .sort((a, b) => b.set.kg - a.set.kg);
+    const best = tops.find((t) => shapeOf(t.ex).weighted) ?? tops[0]!;
     const session: Session = {
       id: `s-${Date.now()}`,
       day: w.day,
@@ -172,8 +308,81 @@ export function TrainingProvider({ email, splitId, durationId, children }: Props
       },
     };
     persist({ ...savedRef.current, userSessions: [session, ...savedRef.current.userSessions] });
+
+    const now = new Date();
+    const weekStart = startOfWeek(now).getTime();
+    const all = [session, ...sessions];
+    const bestSet = (sets: { kg: number; reps: number }[]) =>
+      sets.reduce((a, b) => (b.kg > a.kg || (b.kg === a.kg && b.reps > a.reps) ? b : a));
+    setSummary({
+      day: w.day,
+      minutes: session.minutes,
+      exercises: logged.length,
+      sets: logged.reduce((n, e) => n + e.sets.length, 0),
+      volumeKg: session.volumeKg,
+      progress: logged.map((e) => {
+        const b = bestSet(e.sets);
+        return {
+          name: e.ex.name,
+          delta: setDelta(
+            b.kg,
+            b.reps,
+            { kg: e.ex.lastKg, reps: e.ex.lastReps },
+            false,
+            trimKg,
+            deltaMode(e.ex),
+          ),
+        };
+      }),
+      prs: logged.flatMap((e) => {
+        const hit = e.sets.filter((s) => s.delta?.kind === "pr");
+        if (hit.length === 0) return [];
+        const b = bestSet(hit);
+        return [
+          { name: e.ex.name, kg: b.kg, reps: b.reps, previousKg: prs[e.ex.name]?.kg ?? e.ex.prKg },
+        ];
+      }),
+      weekCount: all.filter((x) => new Date(x.date).getTime() >= weekStart).length,
+      streak: streakOf(all, now),
+      replaced: logged
+        .filter((e) => e.planned && e.planned.id !== e.ex.id)
+        .map((e) => ({ from: e.planned!.name, to: e.ex.name })),
+      sessionId: session.id,
+    });
     return session;
-  }, [persist]);
+  }, [persist, sessions, prs]);
+
+  const clearSummary = useCallback(() => setSummary(null), []);
+
+  const swapExercise = useCallback<TrainingValue["swapExercise"]>(
+    (ex) => {
+      const w = workoutRef.current;
+      if (!w) return;
+      const entry = w.exercises[w.index]!;
+      setWorkout({
+        ...w,
+        exercises: w.exercises.map((e, i) =>
+          i === w.index ? { ...e, ex, planned: e.planned ?? entry.ex } : e,
+        ),
+        draft: draftFor(ex),
+      });
+    },
+    [draftFor],
+  );
+
+  const saveNote = useCallback<TrainingValue["saveNote"]>(
+    (note) => {
+      const id = summary?.sessionId;
+      const text = note.trim();
+      if (!id || !text) return;
+      const cur = savedRef.current;
+      persist({
+        ...cur,
+        userSessions: cur.userSessions.map((s) => (s.id === id ? { ...s, note: text } : s)),
+      });
+    },
+    [persist, summary],
+  );
 
   const startRest = useCallback((seconds = REST_SECONDS) => {
     setRest({ endsAt: Date.now() + seconds * 1000, total: seconds });
@@ -190,6 +399,14 @@ export function TrainingProvider({ email, splitId, durationId, children }: Props
       todayPlan,
       workout,
       startWorkout,
+      startRoutine,
+      swapExercise,
+      saveNote,
+      targetOf,
+      routines: saved.routines ?? [],
+      saveRoutine,
+      summary,
+      clearSummary,
       discardWorkout,
       finishWorkout,
       setDraft,
@@ -206,6 +423,14 @@ export function TrainingProvider({ email, splitId, durationId, children }: Props
       todayPlan,
       workout,
       startWorkout,
+      startRoutine,
+      swapExercise,
+      saveNote,
+      targetOf,
+      saved.routines,
+      saveRoutine,
+      summary,
+      clearSummary,
       discardWorkout,
       finishWorkout,
       setDraft,
