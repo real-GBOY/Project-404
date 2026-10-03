@@ -8,9 +8,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { loadJson, saveJson } from "@/lib/storage";
-import { DEFAULT_PROFILE } from "@/features/onboarding/data";
-import type { TrainingProfile } from "@/features/onboarding/types";
+import { loadVersioned, saveVersioned } from "@/lib/versioned";
+import { DEFAULT_PROFILE, type TrainingProfile } from "./profile";
 
 export type WeightUnit = "KG" | "LBS";
 export type Language = "EN" | "AR";
@@ -44,6 +43,8 @@ type Persisted = {
 };
 
 const KEY = "flux.session.v1";
+/** Storage schema version; bump and add a migration in lib/versioned when Persisted changes. */
+const SESSION_VERSION = 1;
 const DEFAULT_SETTINGS: Settings = {
   units: "KG",
   language: "EN",
@@ -96,26 +97,28 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   stateRef.current = state;
 
   useEffect(() => {
-    void loadJson<Persisted>(KEY, EMPTY).then((saved) => {
-      const accounts = Object.fromEntries(
-        Object.entries(saved.accounts ?? {}).map(([k, a]) => [
-          k,
-          a.onboarded && !a.profile ? { ...a, profile: DEFAULT_PROFILE } : a,
-        ]),
-      );
-      setState({
-        ...EMPTY,
-        ...saved,
-        accounts,
-        settings: { ...DEFAULT_SETTINGS, ...saved.settings },
-      });
-      setHydrated(true);
-    });
+    void loadVersioned<Persisted>(KEY, { version: SESSION_VERSION, fallback: EMPTY }).then(
+      (saved) => {
+        const accounts = Object.fromEntries(
+          Object.entries(saved.accounts ?? {}).map(([k, a]) => [
+            k,
+            a.onboarded && !a.profile ? { ...a, profile: DEFAULT_PROFILE } : a,
+          ]),
+        );
+        setState({
+          ...EMPTY,
+          ...saved,
+          accounts,
+          settings: { ...DEFAULT_SETTINGS, ...saved.settings },
+        });
+        setHydrated(true);
+      },
+    );
   }, []);
 
   const commit = useCallback((next: Persisted) => {
     setState(next);
-    void saveJson(KEY, next);
+    void saveVersioned(KEY, SESSION_VERSION, next);
   }, []);
 
   const user = state.currentEmail ? (state.accounts[state.currentEmail] ?? null) : null;
@@ -162,7 +165,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   );
 
   const signIn: SessionValue["signIn"] = useCallback(
-    (email, password) => {
+    (email, _password) => {
       const cur = stateRef.current;
       // Validation intentionally disabled: any input (even empty) signs in and
       // goes straight to home, creating an onboarded guest account if needed.

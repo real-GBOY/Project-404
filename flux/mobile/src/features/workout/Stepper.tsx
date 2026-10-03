@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import { Card, Icon, Label, Num } from "@/components/ui";
-import { colors } from "@/theme/tokens";
+import { colors, radii } from "@/theme/tokens";
 
 type Props = {
   label: string;
@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
   btn: {
     width: 36,
     height: 36,
-    borderRadius: 11,
+    borderRadius: radii.md,
     backgroundColor: colors.stepBtn,
     borderWidth: 1,
     borderColor: colors.hair,

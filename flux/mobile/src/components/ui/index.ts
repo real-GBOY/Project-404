@@ -4,3 +4,7 @@ export { NextButton } from "./NextButton";
 export { LimeButton } from "./LimeButton";
 export { ChoiceSheet } from "./ChoiceSheet";
 export { Num, Label, Card, Ring, Bar, IconButton, SectionLabel } from "./primitives";
+export { Badge, DeltaBadge } from "./Badge";
+export type { BadgeTone } from "./Badge";
+export { Chip, TabPills } from "./Chips";
+export type { TabOption } from "./Chips";

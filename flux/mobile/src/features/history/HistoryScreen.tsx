@@ -12,7 +12,7 @@ import {
   monthGrid,
   WEEKDAY_SHORT,
 } from "@/lib/dates";
-import { colors, em } from "@/theme/tokens";
+import { colors, em, radii, space } from "@/theme/tokens";
 import { fonts } from "@/theme/typography";
 
 const ALL = "All workouts";
@@ -75,7 +75,7 @@ export function HistoryScreen() {
       ) : null}
 
       {/* calendar */}
-      <Card style={{ padding: 16 }}>
+      <Card style={{ padding: space.lg }}>
         <View style={styles.monthRow}>
           <Pressable
             accessibilityRole="button"
@@ -158,7 +158,7 @@ export function HistoryScreen() {
         <SectionLabel>Past sessions</SectionLabel>
         <View style={{ gap: 9, marginTop: 10 }}>
           {monthSessions.length === 0 ? (
-            <Card style={{ padding: 20 }}>
+            <Card style={{ padding: space.xl }}>
               <Text style={styles.empty}>No sessions this month.</Text>
             </Card>
           ) : (
@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
   monthBtn: {
     width: 30,
     height: 30,
-    borderRadius: 9,
+    borderRadius: radii.sm,
     backgroundColor: colors.soft,
     alignItems: "center",
     justifyContent: "center",
@@ -241,18 +241,24 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   cell: { width: `${100 / 7}%`, alignItems: "center", paddingVertical: 3 },
-  day: { width: 30, height: 30, borderRadius: 99, alignItems: "center", justifyContent: "center" },
-  statRow: { flexDirection: "row", gap: 12, marginTop: 10 },
-  stat: { flex: 1, paddingVertical: 14, paddingHorizontal: 12, gap: 6 },
+  day: {
+    width: 30,
+    height: 30,
+    borderRadius: radii.pill,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  statRow: { flexDirection: "row", gap: space.md, marginTop: 10 },
+  stat: { flex: 1, paddingVertical: 14, paddingHorizontal: space.md, gap: 6 },
   empty: { fontFamily: fonts.body, fontSize: 13, color: colors.sub, textAlign: "center" },
   session: {
     paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingHorizontal: space.lg,
     borderLeftWidth: 3,
     borderLeftColor: colors.lime,
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: space.md,
   },
   sessionName: { fontFamily: fonts.display, fontSize: 19, color: colors.ink, letterSpacing: 0.57 },
   sessionDate: { fontFamily: fonts.body, fontSize: 11, color: colors.sub, marginTop: 2 },

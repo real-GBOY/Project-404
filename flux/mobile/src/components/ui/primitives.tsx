@@ -9,7 +9,7 @@ import {
   type ViewStyle,
 } from "react-native";
 import Svg, { Circle } from "react-native-svg";
-import { colors, em } from "@/theme/tokens";
+import { colors, em, radii } from "@/theme/tokens";
 import { fonts } from "@/theme/typography";
 
 /** Hero number in Bebas Neue. */
@@ -89,7 +89,11 @@ export function Card({
   const base = [dark ? styles.cardDark : styles.card, style];
   if (onPress) {
     return (
-      <Pressable onPress={onPress} style={({ pressed }) => [base, pressed && styles.pressed]}>
+      <Pressable
+        accessibilityRole="button"
+        onPress={onPress}
+        style={({ pressed }) => [base, pressed && styles.pressed]}
+      >
         {children}
       </Pressable>
     );
@@ -159,12 +163,12 @@ export function Bar({
   height?: number;
 }) {
   return (
-    <View style={{ height, borderRadius: 99, backgroundColor: track, overflow: "hidden" }}>
+    <View style={{ height, borderRadius: radii.pill, backgroundColor: track, overflow: "hidden" }}>
       <View
         style={{
           width: `${Math.min(100, Math.max(0, pct * 100))}%`,
           height: "100%",
-          borderRadius: 99,
+          borderRadius: radii.pill,
           backgroundColor: color,
         }}
       />
@@ -224,7 +228,7 @@ export function SectionLabel({ children }: { children: ReactNode }) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.card,
-    borderRadius: 16,
+    borderRadius: radii.card,
     shadowColor: colors.shadowInk,
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -233,7 +237,7 @@ const styles = StyleSheet.create({
   },
   cardDark: {
     backgroundColor: colors.ink,
-    borderRadius: 16,
+    borderRadius: radii.card,
     shadowColor: colors.black,
     shadowOpacity: 0.18,
     shadowRadius: 12,

@@ -3,10 +3,15 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import Svg, { Circle } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, dark, em } from "@/theme/tokens";
+import { colors, dark, em, radii, space } from "@/theme/tokens";
 import { fonts } from "@/theme/typography";
-import { useRestRemaining, useTraining } from "@/features/training/store";
-import { useUnits } from "@/features/training/units";
+import {
+  useRestRemaining,
+  useTrainingActions,
+  useTrainingState,
+  useWorkoutDraft,
+} from "@/features/training/store";
+import { useUnits } from "@/features/auth/units";
 
 const SIZE = 140;
 const STROKE = 6;
@@ -17,7 +22,9 @@ export function RestSheet() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const units = useUnits();
-  const { workout, skipRest, addRest } = useTraining();
+  const { workout } = useTrainingState();
+  const { skipRest, addRest } = useTrainingActions();
+  const draft = useWorkoutDraft();
   const rest = useRestRemaining();
 
   const closed = useRef(false);
@@ -39,11 +46,15 @@ export function RestSheet() {
   const r = (SIZE - STROKE) / 2;
   const circ = 2 * Math.PI * r;
   const pct = rest.total ? rest.remaining / rest.total : 0;
-  const draft = workout?.draft;
 
   return (
     <View style={styles.root}>
-      <Pressable style={StyleSheet.absoluteFill} onPress={close} accessibilityLabel="Dismiss" />
+      <Pressable
+        accessibilityRole="button"
+        style={StyleSheet.absoluteFill}
+        onPress={close}
+        accessibilityLabel="Dismiss"
+      />
       <View style={[styles.sheet, { paddingBottom: 30 + insets.bottom }]}>
         <View style={styles.grab} />
         <Text style={styles.rest}>REST</Text>
@@ -89,7 +100,7 @@ export function RestSheet() {
             <Text style={styles.addText}>ADD 30s</Text>
           </Pressable>
         </View>
-        {draft ? (
+        {workout ? (
           <Text style={styles.next}>
             Next set target:{" "}
             <Text style={styles.nextBold}>
@@ -112,7 +123,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     alignItems: "center",
   },
-  grab: { width: 40, height: 5, borderRadius: 99, backgroundColor: colors.whiteA20 },
+  grab: { width: 40, height: 5, borderRadius: radii.pill, backgroundColor: colors.whiteA20 },
   rest: {
     fontFamily: fonts.display,
     fontSize: 14,
@@ -129,13 +140,19 @@ const styles = StyleSheet.create({
     letterSpacing: 0.9,
   },
   remaining: { fontFamily: fonts.body, fontSize: 11, color: colors.sub, marginTop: 2 },
-  buttons: { flexDirection: "row", gap: 12, width: "100%", marginTop: 18, alignItems: "center" },
+  buttons: {
+    flexDirection: "row",
+    gap: space.md,
+    width: "100%",
+    marginTop: 18,
+    alignItems: "center",
+  },
   skip: { flex: 1, height: 48, alignItems: "center", justifyContent: "center" },
   skipText: { fontFamily: fonts.bodySemi, fontSize: 14, color: colors.sub },
   add: {
     flex: 1,
     height: 48,
-    borderRadius: 14,
+    borderRadius: radii.lg,
     borderWidth: 1,
     borderColor: colors.lime,
     alignItems: "center",

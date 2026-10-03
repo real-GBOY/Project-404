@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { Redirect, useRouter } from "expo-router";
-import { Card, Icon, Label, LimeButton, Num, SectionLabel } from "@/components/ui";
+import { Card, DeltaBadge, Icon, Label, LimeButton, Num, SectionLabel } from "@/components/ui";
 import { Screen } from "@/components/ui/Screen";
 import { useTraining } from "@/features/training/store";
-import { useUnits } from "@/features/training/units";
-import { colors } from "@/theme/tokens";
+import { useUnits } from "@/features/auth/units";
+import { colors, radii, space } from "@/theme/tokens";
 import { fonts } from "@/theme/typography";
 
 export function SummaryScreen() {
@@ -52,7 +52,7 @@ export function SummaryScreen() {
       </View>
 
       {summary.replaced.length > 0 ? (
-        <View style={{ gap: 4 }}>
+        <View style={{ gap: space.xs }}>
           {summary.replaced.map((r) => (
             <Text key={r.from} style={styles.sub}>
               Replaced: {r.from} → {r.to}
@@ -63,23 +63,12 @@ export function SummaryScreen() {
 
       <View>
         <SectionLabel>Progress</SectionLabel>
-        <Card style={{ marginTop: 10, paddingHorizontal: 16 }}>
+        <Card style={{ marginTop: 10, paddingHorizontal: space.lg }}>
           {summary.progress.map((p, i) => (
             <View key={p.name}>
               <View style={styles.progRow}>
                 <Text style={styles.progName}>{p.name}</Text>
-                <Text
-                  style={[
-                    styles.badge,
-                    p.delta.kind === "up" || p.delta.kind === "pr"
-                      ? { color: colors.limeDeep, backgroundColor: colors.limeTintStrong }
-                      : p.delta.kind === "down"
-                        ? { color: colors.plateauTitle, backgroundColor: colors.plateauBg }
-                        : { color: colors.sub, backgroundColor: colors.segment },
-                  ]}
-                >
-                  {p.delta.label}
-                </Text>
+                <DeltaBadge delta={p.delta} size={12} />
               </View>
               {i < summary.progress.length - 1 ? <View style={styles.hair} /> : null}
             </View>
@@ -139,23 +128,15 @@ const styles = StyleSheet.create({
   },
   sub: { fontFamily: fonts.body, fontSize: 12.5, color: colors.sub, marginTop: 2 },
   stats: { flexDirection: "row", gap: 10 },
-  stat: { flex: 1, paddingVertical: 14, paddingHorizontal: 8, alignItems: "center", gap: 6 },
-  progRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12 },
+  stat: { flex: 1, paddingVertical: 14, paddingHorizontal: space.sm, alignItems: "center", gap: 6 },
+  progRow: { flexDirection: "row", alignItems: "center", gap: space.md, paddingVertical: space.md },
   progName: { flex: 1, fontFamily: fonts.bodyMedium, fontSize: 13.5, color: colors.ink },
-  badge: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 12,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 99,
-    overflow: "hidden",
-  },
   hair: { height: 1, backgroundColor: colors.hair },
-  pr: { padding: 16, flexDirection: "row", alignItems: "center", gap: 13 },
+  pr: { padding: space.lg, flexDirection: "row", alignItems: "center", gap: 13 },
   prIcon: {
     width: 38,
     height: 38,
-    borderRadius: 11,
+    borderRadius: radii.md,
     backgroundColor: colors.limeA14,
     alignItems: "center",
     justifyContent: "center",
@@ -168,7 +149,7 @@ const styles = StyleSheet.create({
     minHeight: 64,
     borderWidth: 1,
     borderColor: colors.hair,
-    borderRadius: 14,
+    borderRadius: radii.lg,
     padding: 14,
     backgroundColor: colors.card,
     fontFamily: fonts.body,

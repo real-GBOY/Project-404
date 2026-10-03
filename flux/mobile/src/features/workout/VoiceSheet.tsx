@@ -11,9 +11,9 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon } from "@/components/ui";
-import { useTraining } from "@/features/training/store";
-import { useUnits } from "@/features/training/units";
-import { colors, dark, em } from "@/theme/tokens";
+import { useTrainingActions, useTrainingState, useWorkoutDraft } from "@/features/training/store";
+import { useUnits } from "@/features/auth/units";
+import { colors, dark, em, radii, space } from "@/theme/tokens";
 import { fonts } from "@/theme/typography";
 
 const LISTEN_MS = 1800;
@@ -65,7 +65,9 @@ export function VoiceSheet() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const units = useUnits();
-  const { workout, logSet } = useTraining();
+  const { workout } = useTrainingState();
+  const { logSet } = useTrainingActions();
+  const draft = useWorkoutDraft();
   const [listening, setListening] = useState(true);
 
   useEffect(() => {
@@ -74,10 +76,9 @@ export function VoiceSheet() {
   }, []);
 
   const entry = workout?.exercises[workout.index];
-  const draft = workout?.draft;
 
   const heard = useMemo(() => {
-    if (!entry || !draft) return "";
+    if (!entry) return "";
     const lbs = units.label === "LBS";
     const amount = lbs ? Math.round(draft.kg * 2.20462) : draft.kg;
     return `${entry.ex.name} ${amount} ${lbs ? "pounds" : "kilos"} ${draft.reps} reps`;
@@ -104,11 +105,16 @@ export function VoiceSheet() {
     }
   };
 
-  const showArabic = entry?.ex.id === "bench" && draft?.kg === 80;
+  const showArabic = entry?.ex.id === "bench" && draft.kg === 80;
 
   return (
     <View style={styles.root}>
-      <Pressable style={StyleSheet.absoluteFill} onPress={close} accessibilityLabel="Dismiss" />
+      <Pressable
+        accessibilityRole="button"
+        style={StyleSheet.absoluteFill}
+        onPress={close}
+        accessibilityLabel="Dismiss"
+      />
       <View style={[styles.sheet, { paddingBottom: 30 + insets.bottom }]}>
         <View style={styles.grab} />
         <Pulse>
@@ -178,7 +184,7 @@ const styles = StyleSheet.create({
   grab: {
     width: 40,
     height: 5,
-    borderRadius: 99,
+    borderRadius: radii.pill,
     backgroundColor: colors.whiteA20,
     marginBottom: 16,
   },
@@ -188,12 +194,12 @@ const styles = StyleSheet.create({
     color: colors.lime,
     letterSpacing: em(18, 0.14),
   },
-  micRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 18, height: 80 },
-  wave: { width: 5, borderRadius: 99, backgroundColor: colors.lime },
+  micRow: { flexDirection: "row", alignItems: "center", gap: space.sm, marginTop: 18, height: 80 },
+  wave: { width: 5, borderRadius: radii.pill, backgroundColor: colors.lime },
   mic: {
     width: 80,
     height: 80,
-    borderRadius: 99,
+    borderRadius: radii.pill,
     backgroundColor: colors.lime,
     alignItems: "center",
     justifyContent: "center",
@@ -218,8 +224,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.limeA10,
     borderWidth: 1,
     borderColor: colors.limeA30,
-    borderRadius: 14,
-    paddingVertical: 12,
+    borderRadius: radii.lg,
+    paddingVertical: space.md,
     paddingHorizontal: 14,
     flexDirection: "row",
     alignItems: "center",
@@ -228,7 +234,7 @@ const styles = StyleSheet.create({
   tick: {
     width: 26,
     height: 26,
-    borderRadius: 99,
+    borderRadius: radii.pill,
     backgroundColor: colors.lime,
     alignItems: "center",
     justifyContent: "center",
@@ -240,11 +246,11 @@ const styles = StyleSheet.create({
     color: colors.white,
     letterSpacing: em(18, 0.04),
   },
-  buttons: { flexDirection: "row", gap: 12, width: "100%", marginTop: 14 },
+  buttons: { flexDirection: "row", gap: space.md, width: "100%", marginTop: 14 },
   cancel: {
     flex: 1,
     height: 50,
-    borderRadius: 14,
+    borderRadius: radii.lg,
     borderWidth: 1,
     borderColor: colors.whiteA20,
     alignItems: "center",
@@ -259,7 +265,7 @@ const styles = StyleSheet.create({
   confirm: {
     flex: 1,
     height: 50,
-    borderRadius: 14,
+    borderRadius: radii.lg,
     backgroundColor: colors.lime,
     alignItems: "center",
     justifyContent: "center",

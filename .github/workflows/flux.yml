@@ -1,0 +1,25 @@
+name: Flux mobile
+
+# Manual only, like ci.yml (automatic CI is deliberately off for this repo).
+# Add `push` / `pull_request` triggers with `paths: ["flux/**"]` to turn it on.
+on:
+  workflow_dispatch: {}
+
+jobs:
+  check:
+    name: typecheck · lint · test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: flux/mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: flux/mobile/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test

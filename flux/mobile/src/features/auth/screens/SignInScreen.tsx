@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Alert } from "@/lib/alert";
 import { useRouter } from "expo-router";
 import { LimeButton } from "@/components/ui";
-import { colors, dark, em } from "@/theme/tokens";
+import { colors, dark, em, space } from "@/theme/tokens";
 import { fonts } from "@/theme/typography";
 import {
   AuthField,
@@ -36,7 +36,7 @@ export function SignInScreen() {
       </View>
       <Text style={styles.title}>WELCOME BACK</Text>
       <Text style={styles.sub}>Pick up right where you left off.</Text>
-      <View style={{ gap: 12 }}>
+      <View style={{ gap: space.md }}>
         <AuthField
           icon="mail"
           placeholder="Email address"

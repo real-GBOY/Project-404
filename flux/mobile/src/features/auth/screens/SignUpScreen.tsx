@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { Alert } from "@/lib/alert";
 import { useRouter } from "expo-router";
 import { LimeButton } from "@/components/ui";
-import { em, colors } from "@/theme/tokens";
+import { em, colors, space } from "@/theme/tokens";
 import { fonts } from "@/theme/typography";
 import {
   AuthField,
@@ -54,7 +54,7 @@ export function SignUpScreen() {
         <BrandMark size={22} />
       </View>
       <Text style={styles.title}>CREATE ACCOUNT</Text>
-      <View style={{ gap: 12 }}>
+      <View style={{ gap: space.md }}>
         <AuthField
           icon="user"
           placeholder="Full name"
@@ -118,5 +118,5 @@ const styles = StyleSheet.create({
     letterSpacing: em(34, 0.03),
     marginBottom: 18,
   },
-  toggles: { flexDirection: "row", gap: 12, marginTop: 16 },
+  toggles: { flexDirection: "row", gap: space.md, marginTop: 16 },
 });

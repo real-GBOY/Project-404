@@ -63,6 +63,4 @@ export type ActiveWorkout = {
   index: number;
   /** `links[i]` → exercise i is superset-paired with i + 1 (no rest between). */
   links: Record<number, boolean>;
-  /** current stepper values for the exercise being logged */
-  draft: { kg: number; reps: number };
 };

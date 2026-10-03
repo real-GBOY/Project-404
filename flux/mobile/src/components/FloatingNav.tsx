@@ -4,7 +4,7 @@ import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon, type IconName } from "@/components/ui";
-import { colors } from "@/theme/tokens";
+import { colors, radii, space } from "@/theme/tokens";
 
 /** The slice of the tab-bar props we use (expo-router doesn't re-export the full type). */
 type NavProps = {
@@ -103,14 +103,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-around",
-    paddingHorizontal: 16,
+    paddingHorizontal: space.lg,
   },
   item: { width: 48, alignItems: "center", gap: 6 },
-  dot: { width: 4, height: 4, borderRadius: 99, backgroundColor: "transparent" },
+  dot: { width: 4, height: 4, borderRadius: radii.pill, backgroundColor: "transparent" },
   fab: {
     width: 54,
     height: 54,
-    borderRadius: 99,
+    borderRadius: radii.pill,
     marginTop: -26,
     backgroundColor: colors.lime,
     borderWidth: 5,

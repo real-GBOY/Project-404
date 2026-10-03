@@ -10,26 +10,10 @@ export type Category = "upper" | "lower";
 /** Load increment per category, in kg. */
 export const INCREMENT: Record<Category, number> = { upper: 2.5, lower: 5 };
 
-const REP_RANGES: Record<string, [number, number]> = {
-  bench: [6, 8],
-  ohp: [6, 8],
-  deadlift: [3, 5],
-  squat: [5, 8],
-  row: [6, 8],
-  rdl: [6, 8],
-  facepull: [12, 15],
-  calf: [12, 15],
-  fly: [10, 12],
-  plank: [12, 15],
-  pullup: [6, 10],
-  asspull: [8, 12],
-  pushup: [18, 22],
-};
-
-export const repRange = (ex: Exercise): { low: number; high: number } => {
-  const [low, high] = REP_RANGES[ex.id] ?? [8, 12];
-  return { low, high };
-};
+export const repRange = (ex: Exercise): { low: number; high: number } => ({
+  low: ex.repLow,
+  high: ex.repHigh,
+});
 
 export const categoryOf = (ex: Exercise): Category => (ex.muscle === "Legs" ? "lower" : "upper");
 

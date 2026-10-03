@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Icon, type IconName } from "@/components/ui";
-import { colors, dark, em } from "@/theme/tokens";
+import { colors, dark, em, radii, space } from "@/theme/tokens";
 import { fonts } from "@/theme/typography";
 
 export function BrandMark({ size = 30, stacked = false }: { size?: number; stacked?: boolean }) {
@@ -29,7 +29,7 @@ export function BrandMark({ size = 30, stacked = false }: { size?: number; stack
         style={{
           width: size + 14,
           height: size + 14,
-          borderRadius: 14,
+          borderRadius: radii.lg,
           backgroundColor: colors.limeA12,
           alignItems: "center",
           justifyContent: "center",
@@ -218,21 +218,21 @@ export function SwitchLink({
 const styles = StyleSheet.create({
   field: {
     height: 54,
-    borderRadius: 14,
+    borderRadius: radii.lg,
     backgroundColor: dark.field,
     borderWidth: 1,
     borderColor: dark.fieldBorder,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    gap: 12,
+    paddingHorizontal: space.lg,
+    gap: space.md,
   },
   input: { flex: 1, color: colors.white, fontFamily: fonts.body, fontSize: 14, padding: 0 },
   socialRow: { flexDirection: "row", gap: 14, justifyContent: "center" },
   social: {
     width: 52,
     height: 52,
-    borderRadius: 16,
+    borderRadius: radii.card,
     backgroundColor: dark.field,
     borderWidth: 1,
     borderColor: dark.line,
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   toggle: {
     flexDirection: "row",
     backgroundColor: dark.field,
-    borderRadius: 12,
+    borderRadius: radii.chip,
     padding: 3,
     borderWidth: 1,
     borderColor: dark.fieldBorder,
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
   toggleBtn: {
     flex: 1,
     height: 38,
-    borderRadius: 9,
+    borderRadius: radii.sm,
     alignItems: "center",
     justifyContent: "center",
   },

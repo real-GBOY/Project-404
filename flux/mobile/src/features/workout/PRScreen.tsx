@@ -14,8 +14,8 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon, LimeButton, Num } from "@/components/ui";
-import { useUnits } from "@/features/training/units";
-import { colors, em } from "@/theme/tokens";
+import { useUnits } from "@/features/auth/units";
+import { colors, em, radii, space } from "@/theme/tokens";
 import { fonts } from "@/theme/typography";
 
 type Piece = {
@@ -168,7 +168,12 @@ export function PRScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.black, paddingHorizontal: 28, overflow: "hidden" },
+  root: {
+    flex: 1,
+    backgroundColor: colors.black,
+    paddingHorizontal: space.xxl,
+    overflow: "hidden",
+  },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
   eyebrow: {
     fontFamily: fonts.bodySemi,
@@ -193,7 +198,7 @@ const styles = StyleSheet.create({
     marginTop: 26,
     textAlign: "center",
   },
-  big: { flexDirection: "row", alignItems: "baseline", gap: 8, marginTop: 6 },
+  big: { flexDirection: "row", alignItems: "baseline", gap: space.sm, marginTop: 6 },
   bigNum: {
     fontFamily: fonts.display,
     fontSize: 78,
@@ -208,9 +213,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     backgroundColor: colors.limeA12,
-    borderRadius: 99,
+    borderRadius: radii.pill,
     paddingVertical: 7,
-    paddingHorizontal: 16,
+    paddingHorizontal: space.lg,
   },
   deltaText: { fontFamily: fonts.bodyBold, fontSize: 13, color: colors.lime },
   actions: { alignItems: "center", gap: 14, marginTop: 20 },

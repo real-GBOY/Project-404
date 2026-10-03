@@ -1,22 +1,14 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { useRouter } from "expo-router";
-import Animated, {
-  Easing,
-  FadeInLeft,
-  FadeInRight,
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withRepeat,
-  withTiming,
-} from "react-native-reanimated";
+import Animated, { FadeInLeft, FadeInRight } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Icon, LimeButton, Num } from "@/components/ui";
-import { colors, dark, em } from "@/theme/tokens";
+import { LimeButton } from "@/components/ui";
+import { colors, dark, em, radii, space } from "@/theme/tokens";
 import { fonts } from "@/theme/typography";
 import { useSession } from "../session";
+import { Leaderboard, Plate, Voice } from "./IntroIllustrations";
 
 const SLIDES = ["plate", "voice", "compete"] as const;
 
@@ -129,85 +121,6 @@ function Copy({
   );
 }
 
-function Plate() {
-  return (
-    <View style={styles.plateWrap}>
-      <View style={styles.plateHalo} />
-      <View style={styles.plate}>
-        <View style={styles.plateHub} />
-      </View>
-      <View style={[styles.plateEnd, { left: -14 }]} />
-      <View style={[styles.plateEnd, { right: -14 }]} />
-    </View>
-  );
-}
-
-function Ripple({ delay }: { delay: number }) {
-  const t = useSharedValue(0);
-  useEffect(() => {
-    t.value = withDelay(
-      delay,
-      withRepeat(withTiming(1, { duration: 2400, easing: Easing.out(Easing.ease) }), -1),
-    );
-  }, [t, delay]);
-  const style = useAnimatedStyle(() => ({
-    opacity: 0.55 * (1 - t.value),
-    transform: [{ scale: 0.7 + 1.4 * t.value }],
-  }));
-  return <Animated.View style={[styles.ripple, style]} />;
-}
-
-function Voice() {
-  return (
-    <View style={styles.voiceWrap}>
-      {[0, 800, 1600].map((d) => (
-        <Ripple key={d} delay={d} />
-      ))}
-      <View style={styles.mic}>
-        <Icon name="mic" size={38} color={colors.ink} />
-      </View>
-    </View>
-  );
-}
-
-const BOARD = [
-  { rank: 1, name: "Karim", vol: "32.4", you: false },
-  { rank: 2, name: "You", vol: "28.9", you: true },
-  { rank: 3, name: "Layla", vol: "24.1", you: false },
-];
-
-function Leaderboard() {
-  return (
-    <View style={{ gap: 10, marginTop: 36 }}>
-      {BOARD.map((r) => (
-        <View key={r.rank} style={[styles.row, r.you && styles.rowYou]}>
-          <View style={{ width: 30, alignItems: "center" }}>
-            {r.rank === 1 ? (
-              <Icon name="trophy" size={22} color={colors.lime} />
-            ) : (
-              <Num size={22} color={dark.sub}>
-                {r.rank}
-              </Num>
-            )}
-          </View>
-          <View style={styles.avatar}>
-            <Num size={17} color={r.you ? colors.lime : colors.white}>
-              {r.name[0]}
-            </Num>
-          </View>
-          <Text style={styles.rowName}>{r.name}</Text>
-          <View style={{ flexDirection: "row", alignItems: "baseline", gap: 3 }}>
-            <Num size={24} color={r.you ? colors.lime : colors.white}>
-              {r.vol}
-            </Num>
-            <Text style={styles.rowUnit}>t</Text>
-          </View>
-        </View>
-      ))}
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: dark.bg },
   slide: {
@@ -219,8 +132,8 @@ const styles = StyleSheet.create({
   },
   footer: { paddingHorizontal: 26, paddingBottom: 30, gap: 24 },
   dots: { flexDirection: "row", gap: 7, justifyContent: "center" },
-  dot: { height: 7, borderRadius: 99, backgroundColor: colors.whiteA20 },
-  copy: { alignItems: "center", gap: 16, marginTop: 46, width: "100%" },
+  dot: { height: 7, borderRadius: radii.pill, backgroundColor: colors.whiteA20 },
+  copy: { alignItems: "center", gap: space.lg, marginTop: 46, width: "100%" },
   title: {
     fontFamily: fonts.display,
     fontSize: 42,
@@ -242,96 +155,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    paddingVertical: 12,
+    paddingVertical: space.md,
     paddingHorizontal: 18,
-    borderRadius: 14,
+    borderRadius: radii.lg,
     backgroundColor: dark.field,
     borderWidth: 1,
     borderColor: dark.fieldBorder,
   },
-  sampleDot: { width: 6, height: 6, borderRadius: 99, backgroundColor: colors.lime },
+  sampleDot: { width: 6, height: 6, borderRadius: radii.pill, backgroundColor: colors.lime },
   sampleText: {
     fontFamily: fonts.body,
     fontSize: 15,
     color: colors.white,
     writingDirection: "rtl",
   },
-  plateWrap: { width: 168, height: 168, alignItems: "center", justifyContent: "center" },
-  plateHalo: {
-    ...StyleSheet.absoluteFill,
-    borderRadius: 99,
-    borderWidth: 2,
-    borderColor: colors.limeA18,
-  },
-  plate: {
-    width: 132,
-    height: 132,
-    borderRadius: 99,
-    borderWidth: 14,
-    borderColor: colors.lime,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: colors.lime,
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-  },
-  plateHub: {
-    width: 44,
-    height: 44,
-    borderRadius: 99,
-    backgroundColor: dark.bg,
-    borderWidth: 3,
-    borderColor: colors.whiteA12,
-  },
-  plateEnd: {
-    position: "absolute",
-    top: 69,
-    width: 28,
-    height: 30,
-    borderRadius: 6,
-    backgroundColor: colors.lime,
-  },
-  voiceWrap: { width: 168, height: 168, alignItems: "center", justifyContent: "center" },
-  ripple: {
-    position: "absolute",
-    width: 96,
-    height: 96,
-    borderRadius: 99,
-    borderWidth: 2,
-    borderColor: colors.lime,
-  },
-  mic: {
-    width: 96,
-    height: 96,
-    borderRadius: 99,
-    backgroundColor: colors.lime,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: colors.lime,
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
-    elevation: 8,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 16,
-    backgroundColor: dark.card,
-    borderWidth: 1,
-    borderColor: colors.whiteA06,
-  },
-  rowYou: { backgroundColor: colors.limeA10, borderColor: colors.limeA30 },
-  avatar: {
-    width: 38,
-    height: 38,
-    borderRadius: 99,
-    backgroundColor: colors.darkAvatar,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  rowName: { flex: 1, fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.white },
-  rowUnit: { fontFamily: fonts.body, fontSize: 11, color: dark.sub },
 });

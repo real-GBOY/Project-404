@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import { Icon } from "@/components/ui";
-import { colors } from "@/theme/tokens";
+import { colors, radii, space } from "@/theme/tokens";
 import { fonts } from "@/theme/typography";
 import type { Option } from "../types";
 
@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
     borderColor: colors.hair,
     borderLeftWidth: 3,
     borderLeftColor: "transparent",
-    borderRadius: 16,
+    borderRadius: radii.card,
     paddingVertical: 15,
     paddingRight: 15,
     paddingLeft: 14,
@@ -73,14 +73,14 @@ const styles = StyleSheet.create({
   icon: {
     width: 42,
     height: 42,
-    borderRadius: 12,
+    borderRadius: radii.chip,
     backgroundColor: colors.chip,
     alignItems: "center",
     justifyContent: "center",
   },
   iconOn: { backgroundColor: colors.lime },
   text: { flex: 1, minWidth: 0 },
-  titleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  titleRow: { flexDirection: "row", alignItems: "center", gap: space.sm },
   title: {
     fontFamily: fonts.display,
     fontSize: 18,
@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
   },
   badge: {
     backgroundColor: colors.lime,
-    borderRadius: 99,
+    borderRadius: radii.pill,
     paddingHorizontal: 7,
     paddingVertical: 2,
   },
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
   radio: {
     width: 24,
     height: 24,
-    borderRadius: 99,
+    borderRadius: radii.pill,
     borderWidth: 2,
     borderColor: colors.radio,
     alignItems: "center",

@@ -10,7 +10,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { Icon } from "@/components/ui";
-import { colors, em } from "@/theme/tokens";
+import { colors, em, radii } from "@/theme/tokens";
 import { fonts } from "@/theme/typography";
 import { useSession } from "../session";
 
@@ -88,9 +88,9 @@ const styles = StyleSheet.create({
     bottom: 70,
     width: 120,
     height: 3,
-    borderRadius: 99,
+    borderRadius: radii.pill,
     backgroundColor: colors.whiteA10,
     overflow: "hidden",
   },
-  loaderFill: { width: 48, height: "100%", borderRadius: 99, backgroundColor: colors.lime },
+  loaderFill: { width: 48, height: "100%", borderRadius: radii.pill, backgroundColor: colors.lime },
 });

@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ReactNode } from "react";
-import { colors } from "@/theme/tokens";
+import { colors, radii, space } from "@/theme/tokens";
 import { fonts } from "@/theme/typography";
 import { Icon } from "./Icon";
 
@@ -31,10 +31,10 @@ export function NextButton({ label = "NEXT", onPress, footer }: Props) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { paddingHorizontal: 20, paddingTop: 14 },
+  wrap: { paddingHorizontal: space.xl, paddingTop: 14 },
   btn: {
     height: 56,
-    borderRadius: 16,
+    borderRadius: radii.card,
     backgroundColor: colors.lime,
     flexDirection: "row",
     alignItems: "center",

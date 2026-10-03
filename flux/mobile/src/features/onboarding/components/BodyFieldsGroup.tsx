@@ -1,6 +1,7 @@
 import { StyleSheet, View } from "react-native";
 import type { Body, Units } from "../types";
 import { GenderField, NumField } from "./BodyFields";
+import { space } from "@/theme/tokens";
 
 type Props = { body: Body; setBody: (b: Body) => void; units: Units; setUnits: (u: Units) => void };
 
@@ -38,4 +39,4 @@ export function BodyFieldsGroup({ body, setBody, units, setUnits }: Props) {
   );
 }
 
-const styles = StyleSheet.create({ col: { paddingHorizontal: 20, gap: 12 } });
+const styles = StyleSheet.create({ col: { paddingHorizontal: space.xl, gap: space.md } });

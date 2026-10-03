@@ -5,9 +5,9 @@ import { Screen } from "@/components/ui/Screen";
 import { EXERCISES, STATS_PR_IDS } from "@/features/training/catalog";
 import { muscleSets, volumeInWindow, weekTonnes } from "@/features/training/metrics";
 import { useTraining } from "@/features/training/store";
-import { useUnits } from "@/features/training/units";
+import { useUnits } from "@/features/auth/units";
 import { formatShortDate, mondayIndex, WEEKDAY_SHORT } from "@/lib/dates";
-import { colors, em, limeAlpha } from "@/theme/tokens";
+import { colors, em, limeAlpha, radii, space } from "@/theme/tokens";
 import { fonts } from "@/theme/typography";
 
 const BAR_MAX = 72;
@@ -67,7 +67,7 @@ export function StatsScreen() {
       </Card>
 
       {/* weekly bars */}
-      <Card style={{ paddingTop: 16, paddingHorizontal: 16, paddingBottom: 14 }}>
+      <Card style={{ paddingTop: 16, paddingHorizontal: space.lg, paddingBottom: 14 }}>
         <View style={styles.cardHead}>
           <Label size={11} color={colors.ink} weight="semi">
             This week
@@ -106,7 +106,7 @@ export function StatsScreen() {
       {/* PRs */}
       <View>
         <SectionLabel>Personal records</SectionLabel>
-        <View style={{ gap: 8, marginTop: 10 }}>
+        <View style={{ gap: space.sm, marginTop: 10 }}>
           {STATS_PR_IDS.map((id) => {
             const ex = EXERCISES[id]!;
             const pr = prs[ex.name];
@@ -153,7 +153,7 @@ export function StatsScreen() {
             <Text style={styles.legendText}>High</Text>
           </View>
         </View>
-        <Card style={{ padding: 12 }}>
+        <Card style={{ padding: space.md }}>
           <View style={styles.muscles}>
             {muscles.map((m) => (
               <View
@@ -212,11 +212,11 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     justifyContent: "space-between",
     height: 120,
-    gap: 8,
+    gap: space.sm,
   },
   barCol: { flex: 1, alignItems: "center", justifyContent: "flex-end", gap: 7 },
   barValue: { fontFamily: fonts.display, fontSize: 13 },
-  bar: { width: "100%", maxWidth: 26, borderRadius: 7 },
+  bar: { width: "100%", maxWidth: 26, borderRadius: radii.xs },
   barNow: {
     shadowColor: colors.lime,
     shadowOpacity: 0.4,
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
   barDay: { fontFamily: fonts.bodyMedium, fontSize: 10.5 },
   pr: {
     paddingVertical: 13,
-    paddingHorizontal: 16,
+    paddingHorizontal: space.lg,
     flexDirection: "row",
     alignItems: "center",
     gap: 13,
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
   trophy: {
     width: 34,
     height: 34,
-    borderRadius: 11,
+    borderRadius: radii.md,
     backgroundColor: colors.limeTintStrong,
     alignItems: "center",
     justifyContent: "center",
@@ -245,12 +245,12 @@ const styles = StyleSheet.create({
   legend: { flexDirection: "row", alignItems: "center", gap: 6 },
   legendText: { fontFamily: fonts.body, fontSize: 10, color: colors.sub },
   legendBox: { width: 10, height: 10, borderRadius: 3 },
-  muscles: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  muscles: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
   muscle: {
     width: "31.5%",
     flexGrow: 1,
     height: 64,
-    borderRadius: 12,
+    borderRadius: radii.chip,
     padding: 11,
     justifyContent: "space-between",
   },

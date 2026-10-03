@@ -93,7 +93,13 @@ export const dark = {
   sheet: "#111111",
 } as const;
 
-export const radii = { card: 16, chip: 12, pill: 99 } as const;
+export const radii = { xs: 7, sm: 9, md: 11, chip: 12, lg: 14, card: 16, pill: 99 } as const;
+
+/** Spacing scale (px). Screens use a 20 gutter and 12 / 14 / 18 vertical rhythm. */
+export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 28 } as const;
+
+/** Control heights shared by buttons, fields and tab bars. */
+export const sizes = { control: 54, button: 56, iconButton: 42, chip: 30, tab: 36 } as const;
 
 /** Letter-spacing in px from the design's `em` values. */
 export const em = (size: number, value: number) => size * value;

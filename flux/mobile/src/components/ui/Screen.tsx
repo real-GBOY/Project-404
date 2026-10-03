@@ -1,7 +1,7 @@
 import type { ReactNode, Ref } from "react";
 import { ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors } from "@/theme/tokens";
+import { colors, space } from "@/theme/tokens";
 
 type Props = {
   children: ReactNode;
@@ -30,7 +30,7 @@ export function Screen({
           {
             paddingTop: insets.top + 6,
             paddingBottom: tabBarClearance ? 130 + insets.bottom : 30 + insets.bottom,
-            paddingHorizontal: 20,
+            paddingHorizontal: space.xl,
             gap,
           },
           contentStyle,

@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import { Icon, NextButton, type IconName } from "@/components/ui";
-import { colors } from "@/theme/tokens";
+import { colors, radii, space } from "@/theme/tokens";
 import { fonts } from "@/theme/typography";
 import { BodyFieldsGroup } from "../components/BodyFieldsGroup";
 import { SelectCard, cardShadow } from "../components/SelectCard";
@@ -180,12 +180,12 @@ export function StepReview({ sel, body, units, onFinish }: ReviewProps) {
 }
 
 const styles = StyleSheet.create({
-  list: { paddingHorizontal: 20, gap: 11 },
-  daysRow: { flexDirection: "row", gap: 10, paddingHorizontal: 20 },
+  list: { paddingHorizontal: space.xl, gap: 11 },
+  daysRow: { flexDirection: "row", gap: 10, paddingHorizontal: space.xl },
   day: {
     flex: 1,
     height: 64,
-    borderRadius: 14,
+    borderRadius: radii.lg,
     backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.outline,
@@ -208,27 +208,27 @@ const styles = StyleSheet.create({
     fontSize: 26,
     color: colors.ink,
     letterSpacing: 0.52,
-    paddingHorizontal: 20,
+    paddingHorizontal: space.xl,
     paddingTop: 24,
     paddingBottom: 16,
   },
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: 11, paddingHorizontal: 20 },
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: 11, paddingHorizontal: space.xl },
   dur: {
     width: "48%",
     flexGrow: 1,
     backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.hair,
-    borderRadius: 16,
+    borderRadius: radii.card,
     padding: 15,
-    gap: 12,
+    gap: space.md,
     ...cardShadow,
   },
   durOn: { backgroundColor: colors.limeTint, borderColor: colors.limeBorder },
   durIcon: {
     width: 38,
     height: 38,
-    borderRadius: 11,
+    borderRadius: radii.md,
     backgroundColor: colors.chip,
     alignItems: "center",
     justifyContent: "center",
@@ -236,21 +236,26 @@ const styles = StyleSheet.create({
   durText: { fontFamily: fonts.display, fontSize: 19, color: colors.ink, letterSpacing: 0.57 },
   skip: { alignSelf: "center", marginTop: 14 },
   skipText: { fontFamily: fonts.bodySemi, fontSize: 12, color: colors.limeDim },
-  reviewWrap: { paddingHorizontal: 20 },
+  reviewWrap: { paddingHorizontal: space.xl },
   reviewCard: {
     backgroundColor: colors.card,
-    borderRadius: 16,
+    borderRadius: radii.card,
     borderLeftWidth: 3,
     borderLeftColor: colors.lime,
-    paddingVertical: 4,
-    paddingHorizontal: 16,
+    paddingVertical: space.xs,
+    paddingHorizontal: space.lg,
     ...cardShadow,
   },
-  reviewRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12 },
+  reviewRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.md,
+    paddingVertical: space.md,
+  },
   reviewIcon: {
     width: 30,
     height: 30,
-    borderRadius: 9,
+    borderRadius: radii.sm,
     backgroundColor: colors.limeTintStrong,
     alignItems: "center",
     justifyContent: "center",

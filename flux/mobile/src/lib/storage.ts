@@ -1,19 +1,15 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-/** Tiny JSON wrapper — storage can fail (private mode, quota), so it never throws. */
+/**
+ * Plain JSON read, used only to import data written before storage was versioned.
+ * New code should use lib/versioned. Never throws; failures are logged in development.
+ */
 export async function loadJson<T>(key: string, fallback: T): Promise<T> {
   try {
     const raw = await AsyncStorage.getItem(key);
     return raw ? (JSON.parse(raw) as T) : fallback;
-  } catch {
+  } catch (e) {
+    if (__DEV__) console.warn(`[storage] read "${key}" failed`, e);
     return fallback;
-  }
-}
-
-export async function saveJson(key: string, value: unknown): Promise<void> {
-  try {
-    await AsyncStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    // best effort
   }
 }

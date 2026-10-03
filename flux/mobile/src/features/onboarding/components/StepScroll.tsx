@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { colors } from "@/theme/tokens";
+import { colors, space } from "@/theme/tokens";
 import { fonts } from "@/theme/typography";
 
 export function StepHead({ title, sub }: { title: string; sub?: string }) {
@@ -29,7 +29,7 @@ export function StepScroll({ children }: { children: ReactNode }) {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingBottom: 10 },
-  head: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 16 },
+  head: { paddingHorizontal: space.xl, paddingTop: 14, paddingBottom: 16 },
   title: {
     fontFamily: fonts.display,
     fontSize: 30,

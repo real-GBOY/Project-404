@@ -12,8 +12,12 @@ import {
   SpaceGrotesk_600SemiBold,
   SpaceGrotesk_700Bold,
 } from "@expo-google-fonts/space-grotesk";
+import { ErrorScreen } from "@/components/ErrorScreen";
 import { SessionProvider } from "@/features/auth/session";
 import { colors } from "@/theme/tokens";
+
+/** Route-level error boundary used by expo-router for every screen below this layout. */
+export const ErrorBoundary = ErrorScreen;
 
 void SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
@@ -22,8 +26,10 @@ void SplashScreen.preventAutoHideAsync().catch(() => undefined);
  *   /                 animated splash → routes by session state
  *   (auth)/           intro → sign-up | sign-in            (signed out only)
  *   onboarding        7-step training profile              (signed in, profile unfinished)
- *   (app)/(tabs)/     home · history · stats · profile     (floating tab bar, "+" starts a workout)
- *   (app)/workout     active workout → voice · rest sheets, pr celebration, progress
+ *   (app)/(tabs)/     home · history · stats · profile     (floating tab bar, "+" opens the builder)
+ *   (app)/builder     build a workout → picker (also used to swap an exercise mid-workout)
+ *   (app)/workout     active workout → voice · rest sheets, pr celebration, then summary
+ *   (app)/progress    per-exercise progress (from home, history, stats, profile)
  */
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({

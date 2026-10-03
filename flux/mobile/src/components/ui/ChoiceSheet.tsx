@@ -1,5 +1,5 @@
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
-import { colors } from "@/theme/tokens";
+import { colors, space } from "@/theme/tokens";
 import { fonts } from "@/theme/typography";
 import { Icon } from "./Icon";
 
@@ -23,7 +23,12 @@ export function ChoiceSheet<T extends string>({
 }: Props<T>) {
   return (
     <Modal transparent animationType="fade" visible={visible} onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Close"
+        style={styles.backdrop}
+        onPress={onClose}
+      >
         <View style={styles.sheet}>
           {title ? <Text style={styles.title}>{title}</Text> : null}
           {options.map((o) => (
@@ -48,14 +53,19 @@ export function ChoiceSheet<T extends string>({
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: colors.blackA40, justifyContent: "center", padding: 28 },
+  backdrop: {
+    flex: 1,
+    backgroundColor: colors.blackA40,
+    justifyContent: "center",
+    padding: space.xxl,
+  },
   sheet: { backgroundColor: colors.card, borderRadius: 18, paddingVertical: 6 },
   title: {
     fontFamily: fonts.display,
     fontSize: 22,
     color: colors.ink,
     letterSpacing: 0.9,
-    paddingHorizontal: 20,
+    paddingHorizontal: space.xl,
     paddingTop: 14,
     paddingBottom: 4,
   },
@@ -63,8 +73,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 16,
-    paddingHorizontal: 20,
+    paddingVertical: space.lg,
+    paddingHorizontal: space.xl,
   },
   optionText: { fontFamily: fonts.bodyMedium, fontSize: 15, color: colors.ink },
   optionOn: { fontFamily: fonts.bodyBold },

@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, type StyleProp, type ViewStyle } from "react-native";
 import * as Haptics from "expo-haptics";
-import { colors, em } from "@/theme/tokens";
+import { colors, em, radii, space } from "@/theme/tokens";
 import { fonts } from "@/theme/typography";
 import { Icon, type IconName } from "./Icon";
 
@@ -71,11 +71,11 @@ export function LimeButton({
 const styles = StyleSheet.create({
   base: {
     width: "100%",
-    borderRadius: 16,
+    borderRadius: radii.card,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 12,
+    gap: space.md,
   },
   lime: {
     backgroundColor: colors.lime,

@@ -3,11 +3,17 @@ export type Muscle = "Chest" | "Back" | "Shoulders" | "Arms" | "Legs" | "Core";
 /** How an exercise is logged (design: FLUX-DATA-MODEL.md, Exercise.trackingType). */
 export type Tracking = "weight_reps" | "bodyweight_reps" | "assisted_reps" | "time" | "reps_only";
 
+export type Equipment = "Barbell" | "Dumbbell" | "Cable" | "Machine" | "Bodyweight";
+
 export type Exercise = {
   /** Defaults to weight × reps. For `time`, `lastReps` / `workKg` carry seconds / nothing. */
   tracking?: Tracking;
   id: string;
   name: string;
+  equipment: Equipment;
+  /** Target rep range used by the progression engine. */
+  repLow: number;
+  repHigh: number;
   muscle: Muscle;
   /** kg the lifter used last session. */
   lastKg: number;
@@ -23,6 +29,9 @@ export type Exercise = {
 export const EXERCISES: Record<string, Exercise> = {
   bench: {
     id: "bench",
+    equipment: "Barbell",
+    repLow: 6,
+    repHigh: 8,
     name: "Bench Press",
     muscle: "Chest",
     lastKg: 77.5,
@@ -33,6 +42,9 @@ export const EXERCISES: Record<string, Exercise> = {
   },
   incdb: {
     id: "incdb",
+    equipment: "Dumbbell",
+    repLow: 8,
+    repHigh: 12,
     name: "Incline Dumbbell Press",
     muscle: "Chest",
     lastKg: 30,
@@ -42,6 +54,9 @@ export const EXERCISES: Record<string, Exercise> = {
   },
   fly: {
     id: "fly",
+    equipment: "Cable",
+    repLow: 10,
+    repHigh: 12,
     name: "Cable Fly",
     muscle: "Chest",
     lastKg: 20,
@@ -51,6 +66,9 @@ export const EXERCISES: Record<string, Exercise> = {
   },
   ohp: {
     id: "ohp",
+    equipment: "Barbell",
+    repLow: 6,
+    repHigh: 8,
     name: "Overhead Press",
     muscle: "Shoulders",
     lastKg: 47.5,
@@ -60,6 +78,9 @@ export const EXERCISES: Record<string, Exercise> = {
   },
   tripush: {
     id: "tripush",
+    equipment: "Cable",
+    repLow: 8,
+    repHigh: 12,
     name: "Triceps Pushdown",
     muscle: "Arms",
     lastKg: 30,
@@ -69,6 +90,9 @@ export const EXERCISES: Record<string, Exercise> = {
   },
   deadlift: {
     id: "deadlift",
+    equipment: "Barbell",
+    repLow: 3,
+    repHigh: 5,
     name: "Deadlift",
     muscle: "Back",
     lastKg: 140,
@@ -78,6 +102,9 @@ export const EXERCISES: Record<string, Exercise> = {
   },
   row: {
     id: "row",
+    equipment: "Barbell",
+    repLow: 6,
+    repHigh: 8,
     name: "Barbell Row",
     muscle: "Back",
     lastKg: 70,
@@ -87,6 +114,9 @@ export const EXERCISES: Record<string, Exercise> = {
   },
   latpd: {
     id: "latpd",
+    equipment: "Cable",
+    repLow: 8,
+    repHigh: 12,
     name: "Lat Pulldown",
     muscle: "Back",
     lastKg: 60,
@@ -96,6 +126,9 @@ export const EXERCISES: Record<string, Exercise> = {
   },
   facepull: {
     id: "facepull",
+    equipment: "Cable",
+    repLow: 12,
+    repHigh: 15,
     name: "Face Pull",
     muscle: "Shoulders",
     lastKg: 25,
@@ -105,6 +138,9 @@ export const EXERCISES: Record<string, Exercise> = {
   },
   curl: {
     id: "curl",
+    equipment: "Dumbbell",
+    repLow: 8,
+    repHigh: 12,
     name: "Biceps Curl",
     muscle: "Arms",
     lastKg: 25,
@@ -114,6 +150,9 @@ export const EXERCISES: Record<string, Exercise> = {
   },
   squat: {
     id: "squat",
+    equipment: "Barbell",
+    repLow: 5,
+    repHigh: 8,
     name: "Squat",
     muscle: "Legs",
     lastKg: 120,
@@ -123,6 +162,9 @@ export const EXERCISES: Record<string, Exercise> = {
   },
   rdl: {
     id: "rdl",
+    equipment: "Barbell",
+    repLow: 6,
+    repHigh: 8,
     name: "Romanian Deadlift",
     muscle: "Legs",
     lastKg: 100,
@@ -132,6 +174,9 @@ export const EXERCISES: Record<string, Exercise> = {
   },
   legpress: {
     id: "legpress",
+    equipment: "Machine",
+    repLow: 8,
+    repHigh: 12,
     name: "Leg Press",
     muscle: "Legs",
     lastKg: 200,
@@ -141,6 +186,9 @@ export const EXERCISES: Record<string, Exercise> = {
   },
   legcurl: {
     id: "legcurl",
+    equipment: "Machine",
+    repLow: 8,
+    repHigh: 12,
     name: "Leg Curl",
     muscle: "Legs",
     lastKg: 45,
@@ -150,6 +198,9 @@ export const EXERCISES: Record<string, Exercise> = {
   },
   calf: {
     id: "calf",
+    equipment: "Machine",
+    repLow: 12,
+    repHigh: 15,
     name: "Calf Raise",
     muscle: "Legs",
     lastKg: 80,
@@ -159,6 +210,9 @@ export const EXERCISES: Record<string, Exercise> = {
   },
   pullup: {
     id: "pullup",
+    equipment: "Bodyweight",
+    repLow: 6,
+    repHigh: 10,
     name: "Pull-up",
     tracking: "bodyweight_reps",
     muscle: "Back",
@@ -169,6 +223,9 @@ export const EXERCISES: Record<string, Exercise> = {
   },
   asspull: {
     id: "asspull",
+    equipment: "Machine",
+    repLow: 8,
+    repHigh: 12,
     name: "Assisted Pull-up",
     tracking: "assisted_reps",
     muscle: "Back",
@@ -179,6 +236,9 @@ export const EXERCISES: Record<string, Exercise> = {
   },
   pushup: {
     id: "pushup",
+    equipment: "Bodyweight",
+    repLow: 18,
+    repHigh: 22,
     name: "Push-up",
     tracking: "reps_only",
     muscle: "Chest",
@@ -189,6 +249,9 @@ export const EXERCISES: Record<string, Exercise> = {
   },
   plankhold: {
     id: "plankhold",
+    equipment: "Bodyweight",
+    repLow: 8,
+    repHigh: 12,
     name: "Plank",
     tracking: "time",
     muscle: "Core",
@@ -199,6 +262,9 @@ export const EXERCISES: Record<string, Exercise> = {
   },
   plank: {
     id: "plank",
+    equipment: "Bodyweight",
+    repLow: 12,
+    repHigh: 15,
     name: "Weighted Crunch",
     muscle: "Core",
     lastKg: 20,
@@ -217,3 +283,19 @@ export const exerciseByName = (name: string): Exercise | undefined =>
 export const PROFILE_PR_IDS = ["bench", "deadlift", "squat"] as const;
 /** Exercises shown in the Stats "Personal records" card, in the design's order. */
 export const STATS_PR_IDS = ["deadlift", "squat", "bench", "ohp"] as const;
+
+/** Muscle filter chips shown by the exercise picker. */
+export const MUSCLE_FILTERS: ("All" | Muscle)[] = [
+  "All",
+  "Chest",
+  "Back",
+  "Shoulders",
+  "Arms",
+  "Legs",
+  "Core",
+];
+
+/** Starred by default — the lifts most people anchor a program around. */
+export const FAVORITE_IDS = ["bench", "ohp", "deadlift", "squat", "latpd", "curl"];
+
+export const ALL_EXERCISES: Exercise[] = Object.values(EXERCISES);

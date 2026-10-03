@@ -7,7 +7,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { Icon } from "@/components/ui";
-import { colors } from "@/theme/tokens";
+import { colors, radii } from "@/theme/tokens";
 import { fonts } from "@/theme/typography";
 import { STEP_COUNT } from "../data";
 
@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
   back: {
     width: 38,
     height: 38,
-    borderRadius: 12,
+    borderRadius: radii.chip,
     backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.hair,
@@ -70,11 +70,11 @@ const styles = StyleSheet.create({
   track: {
     flex: 1,
     height: 4,
-    borderRadius: 99,
+    borderRadius: radii.pill,
     backgroundColor: colors.track,
     overflow: "hidden",
   },
-  fill: { height: "100%", borderRadius: 99, backgroundColor: colors.lime },
+  fill: { height: "100%", borderRadius: radii.pill, backgroundColor: colors.lime },
   count: {
     width: 62,
     textAlign: "right",
