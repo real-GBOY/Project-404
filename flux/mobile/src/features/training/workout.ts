@@ -3,7 +3,15 @@ import type { Exercise } from "./catalog";
 import { trackingOf } from "./catalog";
 import { shapeOf } from "./format";
 import { streak as streakOf } from "./metrics";
-import type { ActiveWorkout, PersonalRecord, SetDelta, SetType, Session, Summary } from "./types";
+import type {
+  ActiveWorkout,
+  Last,
+  PersonalRecord,
+  SetDelta,
+  SetType,
+  Session,
+  Summary,
+} from "./types";
 
 /**
  * Pure workout logic — no React, no storage. The provider in store.tsx wires these into state,
@@ -58,11 +66,12 @@ export function createWorkout(
   exercises: Exercise[],
   links: Record<number, boolean> = {},
   startedAt = Date.now(),
+  lastOf?: (ex: Exercise) => Last,
 ): ActiveWorkout {
   return {
     day: name,
     startedAt,
-    exercises: exercises.map((ex) => ({ ex, sets: [] })),
+    exercises: exercises.map((ex) => ({ ex, sets: [], last: lastOf?.(ex) })),
     index: 0,
     links,
   };
@@ -88,7 +97,8 @@ export function applyLogSet(
   // Warm-up, drop and failure sets never set a weight PR (not a clean working effort).
   const newPR = type === "normal" && shapeOf(entry.ex).weighted && kg > previousKg;
   const working = entry.sets.filter((s) => s.type !== "warmup");
-  const prev = working[working.length - 1] ?? { kg: entry.ex.lastKg, reps: entry.ex.lastReps };
+  const prev = working[working.length - 1] ??
+    entry.last ?? { kg: entry.ex.lastKg, reps: entry.ex.lastReps };
   const delta: SetDelta =
     type === "warmup"
       ? { label: "Warm-up", kind: "flat" }
@@ -120,11 +130,11 @@ export function nextExerciseIndex(w: ActiveWorkout): number | null {
 export const moveTo = (w: ActiveWorkout, index: number): ActiveWorkout => ({ ...w, index });
 
 /** Replaces the current exercise; `planned` keeps the original so history stays honest. */
-export function swapCurrent(w: ActiveWorkout, ex: Exercise): ActiveWorkout {
+export function swapCurrent(w: ActiveWorkout, ex: Exercise, last?: Last): ActiveWorkout {
   return {
     ...w,
     exercises: w.exercises.map((e, i) =>
-      i === w.index ? { ...e, ex, planned: e.planned ?? e.ex } : e,
+      i === w.index ? { ...e, ex, last, planned: e.planned ?? e.ex } : e,
     ),
   };
 }
@@ -156,7 +166,7 @@ export function finalizeWorkout(
     0,
   );
   const tops = logged
-    .map((e) => ({ ex: e.ex, set: e.sets.reduce((a, b) => (b.kg >= a.kg ? b : a)) }))
+    .map((e) => ({ ex: e.ex, last: e.last, set: e.sets.reduce((a, b) => (b.kg >= a.kg ? b : a)) }))
     .sort((a, b) => b.set.kg - a.set.kg);
   const best = tops.find((t) => shapeOf(t.ex).weighted) ?? tops[0]!;
 
@@ -171,8 +181,15 @@ export function finalizeWorkout(
       name: best.ex.name,
       kg: best.set.kg,
       reps: best.set.reps,
-      deltaKg: best.set.kg - best.ex.lastKg,
+      deltaKg: best.set.kg - (best.last?.kg ?? best.ex.lastKg),
     },
+    exercises: w.exercises
+      .filter((e) => e.sets.length > 0)
+      .map((e) => ({
+        id: e.ex.id,
+        sets: e.sets,
+        ...(e.planned ? { plannedId: e.planned.id } : {}),
+      })),
   };
 
   const all = [session, ...ctx.sessions];
@@ -190,7 +207,7 @@ export function finalizeWorkout(
         delta: setDelta(
           b.kg,
           b.reps,
-          { kg: e.ex.lastKg, reps: e.ex.lastReps },
+          e.last ?? { kg: e.ex.lastKg, reps: e.ex.lastReps },
           false,
           trimKg,
           deltaMode(e.ex),

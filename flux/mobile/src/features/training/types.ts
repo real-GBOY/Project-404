@@ -11,9 +11,17 @@ export type Session = {
   volumeKg: number;
   minutes: number;
   top: TopLift;
+  /** Every exercise and set of the session. Absent on sessions saved before this was recorded. */
+  exercises?: SessionExercise[];
   /** Optional post-workout note. */
   note?: string;
 };
+
+/** Weight and reps of a performance (the "last time" of an exercise). */
+export type Last = { kg: number; reps: number };
+
+/** One exercise as performed in a stored session. */
+export type SessionExercise = { id: string; sets: LoggedSet[]; plannedId?: string };
 
 export type PersonalRecord = { kg: number; date: string };
 
@@ -59,7 +67,7 @@ export type ActiveWorkout = {
   day: string;
   startedAt: number;
   /** `planned` is set when the exercise was swapped mid-workout (history keeps what was done). */
-  exercises: { ex: Exercise; sets: LoggedSet[]; planned?: Exercise }[];
+  exercises: { ex: Exercise; sets: LoggedSet[]; planned?: Exercise; last?: Last }[];
   index: number;
   /** `links[i]` → exercise i is superset-paired with i + 1 (no rest between). */
   links: Record<number, boolean>;

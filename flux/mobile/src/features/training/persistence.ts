@@ -18,7 +18,12 @@ type SerializedWorkout = {
   startedAt: number;
   index: number;
   links: Record<number, boolean>;
-  exercises: { id: string; sets: ActiveWorkout["exercises"][number]["sets"]; plannedId?: string }[];
+  exercises: {
+    id: string;
+    sets: ActiveWorkout["exercises"][number]["sets"];
+    plannedId?: string;
+    last?: { kg: number; reps: number };
+  }[];
 };
 
 export type ActiveSnapshot = { workout: SerializedWorkout; draft: Draft };
@@ -34,6 +39,7 @@ export const serializeWorkout = (w: ActiveWorkout, draft: Draft): ActiveSnapshot
       id: e.ex.id,
       sets: e.sets,
       ...(e.planned ? { plannedId: e.planned.id } : {}),
+      ...(e.last ? { last: e.last } : {}),
     })),
   },
 });
@@ -51,6 +57,7 @@ export function deserializeWorkout(
       ex,
       sets: e.sets ?? [],
       planned: e.plannedId ? EXERCISES[e.plannedId] : undefined,
+      last: e.last,
     });
   }
   const { day, startedAt, links } = snap.workout;

@@ -11,7 +11,7 @@ import Svg, {
 } from "react-native-svg";
 import { colors } from "@/theme/tokens";
 import { fonts } from "@/theme/typography";
-import type { Point } from "./series";
+import type { Point } from "@/features/training/history";
 
 type P = { x: number; y: number };
 

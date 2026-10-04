@@ -9,6 +9,7 @@ import { colors, radii, space } from "@/theme/tokens";
 import { fonts } from "@/theme/typography";
 import { analyzeProgress } from "./analysis";
 import {
+  EmptyChart,
   NextTargetCard,
   PlateauBanner,
   StartedVsCurrent,
@@ -21,17 +22,15 @@ import { LineChart } from "./LineChart";
 export function ProgressScreen() {
   const router = useRouter();
   const units = useUnits();
-  const { prs, targetOf } = useTraining();
+  const { prs, sessions, targetOf } = useTraining();
   const { exercise: name } = useLocalSearchParams<{ exercise?: string }>();
   const ex = (name ? exerciseByName(name) : undefined) ?? EXERCISES.bench!;
 
-  const p = analyzeProgress(ex, prs);
+  const p = analyzeProgress(ex, prs, sessions);
   const target = targetOf(ex);
   const fmt: ValueFmt = p.repsMetric
     ? { show: (n) => String(n), unit: p.repsUnit }
     : { show: units.show, unit: units.label };
-  const lastReps = p.data[p.data.length - 1]!.reps;
-  const bestReps = Math.max(1, Math.round(ex.lastReps / 2));
 
   return (
     <Screen gap={16}>
@@ -55,22 +54,26 @@ export function ProgressScreen() {
         <Text style={styles.name}>{ex.name.toUpperCase()}</Text>
       </View>
 
-      <SummaryGrid p={p} fmt={fmt} lastReps={lastReps} bestReps={bestReps} />
+      {p.hasHistory ? <SummaryGrid p={p} fmt={fmt} /> : <EmptyChart name={ex.name} />}
 
-      <Card style={{ paddingTop: space.lg, paddingHorizontal: 14, paddingBottom: space.sm }}>
-        <View style={styles.chartHead}>
-          <Label size={10}>Working weight</Label>
-          <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.xs }}>
-            <Num size={26}>{fmt.show(p.current)}</Num>
-            <Num size={13} color={colors.sub}>
-              {fmt.unit}
-            </Num>
-          </View>
-        </View>
-        <LineChart data={p.data} fmt={fmt.show} />
-      </Card>
+      {p.hasHistory ? (
+        <>
+          <Card style={{ paddingTop: space.lg, paddingHorizontal: 14, paddingBottom: space.sm }}>
+            <View style={styles.chartHead}>
+              <Label size={10}>Working weight</Label>
+              <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.xs }}>
+                <Num size={26}>{fmt.show(p.current)}</Num>
+                <Num size={13} color={colors.sub}>
+                  {fmt.unit}
+                </Num>
+              </View>
+            </View>
+            <LineChart data={p.data} fmt={fmt.show} />
+          </Card>
 
-      <StartedVsCurrent p={p} fmt={fmt} />
+          <StartedVsCurrent p={p} fmt={fmt} />
+        </>
+      ) : null}
       <NextTargetCard target={target} fmt={fmt} repsMetric={p.repsMetric} />
       {p.plateau ? <PlateauBanner /> : null}
     </Screen>

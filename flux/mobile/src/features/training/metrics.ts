@@ -60,11 +60,23 @@ export function weekTonnes(sessions: Session[], now: Date): number[] {
 
 const MUSCLES: Muscle[] = ["Chest", "Back", "Shoulders", "Arms", "Legs", "Core"];
 
-/** Sets per muscle over the last 7 days (each planned exercise counts as 4 working sets). */
+/**
+ * Working sets per muscle over the last 7 days. Sessions that recorded their exercises are
+ * counted exactly; older ones fall back to their plan (each planned exercise = 4 sets).
+ */
 export function muscleSets(sessions: Session[], now: Date): { muscle: Muscle; sets: number }[] {
   const counts = new Map<Muscle, number>(MUSCLES.map((m) => [m, 0]));
   for (const s of sessions) {
     if (daysBetween(now, dateOf(s)) > 6 || daysBetween(now, dateOf(s)) < 0) continue;
+    if (s.exercises) {
+      for (const e of s.exercises) {
+        const ex = EXERCISES[e.id];
+        if (!ex) continue;
+        const n = e.sets.filter((x) => x.type !== "warmup").length;
+        counts.set(ex.muscle, (counts.get(ex.muscle) ?? 0) + n);
+      }
+      continue;
+    }
     for (const id of dayByName(s.day)?.ids ?? []) {
       const muscle = EXERCISES[id]!.muscle;
       counts.set(muscle, (counts.get(muscle) ?? 0) + 4);

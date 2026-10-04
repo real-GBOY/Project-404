@@ -8,21 +8,23 @@ import { fonts } from "@/theme/typography";
 
 type Props = {
   ex: Exercise;
+  /** The real last performance (from history). */
+  last: { kg: number; reps: number };
   target: Target & { daysSince: number };
   fmt: { show: (kg: number) => string; short: string };
   unitLabel: string;
 };
 
 /** "Last time" and "Target" cards plus the one-line reason from the progression engine. */
-export function TargetCards({ ex, target, fmt, unitLabel }: Props) {
-  const delta = target.kg - ex.lastKg;
+export function TargetCards({ ex, last, target, fmt, unitLabel }: Props) {
+  const delta = target.kg - last.kg;
   return (
     <>
       <View style={styles.pair}>
         <Card style={[styles.half, { backgroundColor: colors.lastTime }]}>
           <Label size={10}>Last time</Label>
           <View style={styles.big}>
-            <Num size={24}>{fmtResult(ex, ex.lastKg, ex.lastReps, fmt)}</Num>
+            <Num size={24}>{fmtResult(ex, last.kg, last.reps, fmt)}</Num>
           </View>
         </Card>
         <Card style={[styles.half, { borderLeftWidth: 3, borderLeftColor: colors.lime }]}>

@@ -12,17 +12,7 @@ const trendColor = (t: Progress["trend"]) =>
   t === "Improving" ? colors.limeDeep : t === "Declining" ? colors.plateauTitle : colors.sub;
 
 /** Current / Best / Recent sessions / Trend in plain language. */
-export function SummaryGrid({
-  p,
-  fmt,
-  lastReps,
-  bestReps,
-}: {
-  p: Progress;
-  fmt: ValueFmt;
-  lastReps: number;
-  bestReps: number;
-}) {
+export function SummaryGrid({ p, fmt }: { p: Progress; fmt: ValueFmt }) {
   const color = trendColor(p.trend);
   return (
     <View style={styles.grid}>
@@ -31,7 +21,7 @@ export function SummaryGrid({
         <View style={styles.cellVal}>
           <Num size={24}>{fmt.show(p.current)}</Num>
           <Num size={13} color={colors.sub}>
-            {p.repsMetric ? "" : `${fmt.unit} × ${lastReps}`}
+            {p.repsMetric ? "" : `${fmt.unit} × ${p.currentReps}`}
           </Num>
         </View>
       </Card>
@@ -42,7 +32,7 @@ export function SummaryGrid({
             {fmt.show(p.best)}
           </Num>
           <Num size={13} color={colors.sub}>
-            {p.repsMetric ? "" : `${fmt.unit} × ${bestReps}`}
+            {p.repsMetric ? "" : `${fmt.unit} × ${p.bestReps}`}
           </Num>
         </View>
       </Card>
@@ -141,6 +131,18 @@ export function NextTargetCard({
   );
 }
 
+/** Shown until an exercise has at least two logged sessions. */
+export function EmptyChart({ name }: { name: string }) {
+  return (
+    <Card style={styles.empty}>
+      <Text style={styles.emptyTitle}>Your progress starts here</Text>
+      <Text style={styles.emptyBody}>
+        Log {name} in two workouts and its chart, trend and plateau check appear.
+      </Text>
+    </Card>
+  );
+}
+
 /** Calm amber banner, shown only when the engine detects a plateau. */
 export function PlateauBanner() {
   return (
@@ -196,6 +198,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.lime,
     alignItems: "center",
     justifyContent: "center",
+  },
+  empty: { padding: space.xl, gap: 6, alignItems: "center" },
+  emptyTitle: { fontFamily: fonts.display, fontSize: 22, color: colors.ink, letterSpacing: 0.44 },
+  emptyBody: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    lineHeight: 19,
+    color: colors.sub,
+    textAlign: "center",
   },
   plateau: {
     backgroundColor: colors.warnBg,

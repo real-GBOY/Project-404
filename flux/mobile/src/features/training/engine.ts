@@ -64,50 +64,59 @@ export function computeTarget(input: {
   };
 }
 
-/** Target for an exercise given how long ago it was last trained. */
-export const targetFor = (ex: Exercise, daysSinceLast = 0): Target => {
+export type TargetContext = {
+  /** Last real performance; defaults to the catalog baseline. */
+  last?: { kg: number; reps: number };
+  /** Heaviest weight lifted for at least the bottom of the range. */
+  bestKg?: number;
+  daysSince?: number;
+};
+
+/** Target for an exercise from its history (see history.ts), by how it is tracked. */
+export const targetFor = (ex: Exercise, ctx: TargetContext = {}): Target => {
   const { low, high } = repRange(ex);
+  const last = ctx.last ?? { kg: ex.lastKg, reps: ex.lastReps };
   switch (trackingOf(ex)) {
     case "time":
       return {
         kg: 0,
-        repLow: ex.lastReps + 5,
-        repHigh: ex.lastReps + 5,
+        repLow: last.reps + 5,
+        repHigh: last.reps + 5,
         reason: "Add 5 seconds to your last hold.",
       };
     case "reps_only":
-      return ex.lastReps >= high
+      return last.reps >= high
         ? { kg: 0, repLow: high, repHigh: high + 4, reason: "Hit the top — raising the rep range." }
         : {
             kg: 0,
-            repLow: ex.lastReps,
+            repLow: last.reps,
             repHigh: high,
             reason: "Add a rep before raising the range.",
           };
     case "assisted_reps":
-      return ex.lastReps >= high
+      return last.reps >= high
         ? {
-            kg: Math.max(0, ex.lastKg - 2.5),
+            kg: Math.max(0, last.kg - 2.5),
             repLow: low,
             repHigh: high,
             reason: "You hit the top of your range — less assistance today.",
           }
         : {
-            kg: ex.lastKg,
-            repLow: Math.max(low, ex.lastReps + 1),
+            kg: last.kg,
+            repLow: Math.max(low, last.reps + 1),
             repHigh: high,
             reason: "Within range — add a rep before reducing assistance.",
           };
     default:
   }
   return computeTarget({
-    lastKg: ex.lastKg,
-    lastReps: ex.lastReps,
+    lastKg: last.kg,
+    lastReps: last.reps,
     repLow: low,
     repHigh: high,
     category: categoryOf(ex),
-    daysSinceLast,
-    bestSuccessfulKg: ex.workKg,
+    daysSinceLast: ctx.daysSince ?? 0,
+    bestSuccessfulKg: ctx.bestKg ?? ex.workKg,
   });
 };
 

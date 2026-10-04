@@ -35,7 +35,7 @@ export const EXERCISES: Record<string, Exercise> = {
     name: "Bench Press",
     muscle: "Chest",
     lastKg: 77.5,
-    lastReps: 8,
+    lastReps: 7,
     workKg: 80,
     prKg: 105,
     plateau: true,

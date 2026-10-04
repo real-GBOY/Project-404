@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { EXERCISES } from "./catalog";
 import { fmtResult, fmtTarget, shapeOf } from "./format";
-import { isPlateau, repRange, trendOf } from "./engine";
-import { chartsReps, seriesFor } from "../progress/series";
 
 const fmt = { show: (kg: number) => String(kg), short: "kg" };
 
@@ -27,33 +25,5 @@ describe("shapeOf", () => {
     expect(shapeOf(EXERCISES.bench!).weighted).toBe(true);
     expect(shapeOf(EXERCISES.pullup!).weighted).toBe(false);
     expect(shapeOf(EXERCISES.plankhold!)).toMatchObject({ load: false, repsStep: 5 });
-  });
-});
-
-describe("progress series (demo history)", () => {
-  it("has 8 points ending at the current working weight", () => {
-    const s = seriesFor(EXERCISES.squat!);
-    expect(s).toHaveLength(8);
-    expect(s[7]!.v).toBe(EXERCISES.squat!.workKg);
-  });
-
-  it("charts reps / seconds for hold and reps-only lifts", () => {
-    expect(chartsReps(EXERCISES.plankhold!)).toBe(true);
-    expect(seriesFor(EXERCISES.plankhold!)[7]!.v).toBe(EXERCISES.plankhold!.lastReps);
-    expect(chartsReps(EXERCISES.bench!)).toBe(false);
-  });
-
-  it("makes only the plateau exercise (bench) trigger the plateau banner", () => {
-    const flag = (id: string) => {
-      const ex = EXERCISES[id]!;
-      const s = seriesFor(ex);
-      return isPlateau(
-        s.map((p) => ({ kg: p.v, reps: p.reps })),
-        repRange(ex).high,
-      );
-    };
-    expect(flag("bench")).toBe(true);
-    expect(flag("squat")).toBe(false);
-    expect(trendOf(seriesFor(EXERCISES.squat!).map((p) => p.v))).toBe("Improving");
   });
 });

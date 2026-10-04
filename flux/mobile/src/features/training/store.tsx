@@ -7,9 +7,9 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { daysBetween } from "@/lib/dates";
 import { EXERCISES, type Exercise } from "./catalog";
 import { targetFor, type Target } from "./engine";
+import { bestSuccessfulKg, daysSinceLast, lastOf as lastFromHistory } from "./history";
 import {
   deserializeWorkout,
   loadTraining,
@@ -20,7 +20,7 @@ import {
   serializeWorkout,
   type Draft,
 } from "./persistence";
-import { dayByName, nextPlan, type DayPlan } from "./plan";
+import { nextPlan, type DayPlan } from "./plan";
 import { seedPrs, seedSessions } from "./seed";
 import type { ActiveWorkout, PersonalRecord, Routine, SetType, Session, Summary } from "./types";
 import {
@@ -66,8 +66,10 @@ export type TrainingActions = {
   nextExercise: () => boolean;
   /** Replaces the current exercise; history records what was actually performed. */
   swapExercise: (ex: Exercise) => void;
-  /** Progression-engine target (with reason) for an exercise, given when it was last trained. */
+  /** Progression-engine target (with reason), from the exercise's real history. */
   targetOf: (ex: Exercise) => Target & { daysSince: number };
+  /** Last real performance of an exercise (catalog baseline if never done). */
+  lastOf: (ex: Exercise) => { kg: number; reps: number };
   startRest: (seconds?: number) => void;
   addRest: (seconds: number) => void;
   skipRest: () => void;
@@ -146,10 +148,16 @@ export function TrainingProvider({ email, splitId, durationId, children }: Props
   live.current = { sessions, prs, todayPlan, workout, summary };
 
   const actions = useMemo<TrainingActions>(() => {
+    const lastOf: TrainingActions["lastOf"] = (ex) => lastFromHistory(live.current.sessions, ex);
     const targetOf: TrainingActions["targetOf"] = (ex) => {
-      const last = live.current.sessions.find((s) => dayByName(s.day)?.ids.includes(ex.id));
-      const daysSince = last ? Math.max(0, daysBetween(new Date(), new Date(last.date))) : 0;
-      return { ...targetFor(ex, daysSince), daysSince };
+      const { sessions } = live.current;
+      const daysSince = daysSinceLast(sessions, ex.id, new Date());
+      const target = targetFor(ex, {
+        last: lastOf(ex),
+        bestKg: bestSuccessfulKg(sessions, ex),
+        daysSince,
+      });
+      return { ...target, daysSince };
     };
     const draftFor = (ex: Exercise): Draft => {
       const t = targetOf(ex);
@@ -157,12 +165,13 @@ export function TrainingProvider({ email, splitId, durationId, children }: Props
     };
     const begin = (name: string, exercises: Exercise[], links: Record<number, boolean> = {}) => {
       setRest(null);
-      setWorkout(createWorkout(name, exercises, links));
+      setWorkout(createWorkout(name, exercises, links, Date.now(), lastOf));
       setDraftState(draftFor(exercises[0]!));
     };
 
     return {
       targetOf,
+      lastOf,
       startWorkout: () => {
         if (live.current.workout) return;
         const plan = live.current.todayPlan;
@@ -235,7 +244,7 @@ export function TrainingProvider({ email, splitId, durationId, children }: Props
       swapExercise: (ex) => {
         const w = live.current.workout;
         if (!w) return;
-        setWorkout(swapCurrent(w, ex));
+        setWorkout(swapCurrent(w, ex, lastOf(ex)));
         setDraftState(draftFor(ex));
       },
       startRest: (seconds = REST_SECONDS) =>

@@ -10,7 +10,7 @@ import {
   MUSCLE_FILTERS,
   type Exercise,
 } from "@/features/training/catalog";
-import { repRange, targetFor } from "@/features/training/engine";
+import { repRange } from "@/features/training/engine";
 import { fmtResult } from "@/features/training/format";
 import { dayByName } from "@/features/training/plan";
 import { useTraining } from "@/features/training/store";
@@ -29,11 +29,13 @@ type Fmt = { show: (kg: number) => string; short: string };
 
 const ExerciseRow = memo(function ExerciseRow({
   ex,
+  last,
   on,
   fmt,
   onToggle,
 }: {
   ex: Exercise;
+  last: { kg: number; reps: number };
   on: boolean;
   fmt: Fmt;
   onToggle: (id: string) => void;
@@ -56,7 +58,7 @@ const ExerciseRow = memo(function ExerciseRow({
             {ex.muscle} · {ex.equipment}
           </Text>
           <View style={styles.sep} />
-          <Text style={styles.last}>{fmtResult(ex, ex.lastKg, ex.lastReps, fmt)}</Text>
+          <Text style={styles.last}>{fmtResult(ex, last.kg, last.reps, fmt)}</Text>
         </View>
       </View>
       <View style={[styles.tick, on && { backgroundColor: colors.lime }]}>
@@ -71,7 +73,7 @@ export function ExercisePickerScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const units = useUnits();
-  const { sessions, todayPlan, workout, swapExercise } = useTraining();
+  const { sessions, todayPlan, workout, swapExercise, targetOf, lastOf } = useTraining();
   const builder = useBuilder();
   const { mode } = useLocalSearchParams<{ mode?: string }>();
   const swapping = mode === "swap";
@@ -125,7 +127,7 @@ export function ExercisePickerScreen() {
         ...added.map((id) => {
           const ex = ALL_EXERCISES.find((e) => e.id === id)!;
           const { low, high } = repRange(ex);
-          return newItem(id, targetFor(ex).kg, `${low}-${high}`);
+          return newItem(id, targetOf(ex).kg, `${low}-${high}`);
         }),
       ],
     }));
@@ -187,7 +189,13 @@ export function ExercisePickerScreen() {
           <Text style={styles.empty}>No exercises match. Try a different filter.</Text>
         }
         renderItem={({ item }) => (
-          <ExerciseRow ex={item} on={added.includes(item.id)} fmt={fmt} onToggle={toggle} />
+          <ExerciseRow
+            ex={item}
+            last={lastOf(item)}
+            on={added.includes(item.id)}
+            fmt={fmt}
+            onToggle={toggle}
+          />
         )}
       />
 

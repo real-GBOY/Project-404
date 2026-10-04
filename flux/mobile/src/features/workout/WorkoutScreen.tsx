@@ -100,7 +100,13 @@ export function WorkoutScreen() {
         </View>
       </View>
 
-      <TargetCards ex={ex} target={target} fmt={fmt} unitLabel={units.label} />
+      <TargetCards
+        ex={ex}
+        last={entry.last ?? { kg: ex.lastKg, reps: ex.lastReps }}
+        target={target}
+        fmt={fmt}
+        unitLabel={units.label}
+      />
 
       <TabPills
         options={SET_TYPE_OPTIONS}
