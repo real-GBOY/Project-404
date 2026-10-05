@@ -71,6 +71,9 @@ export interface UiState {
   viewerReq: boolean;
   viewerErr: boolean;
   /** Language of the report being read (independent of the interface language). */
+  /** Observation / action list filters. */
+  ofilter: string;
+  afilter: string;
   rlang: "ar" | "en";
   rtab: string;
   fb: { ver?: string; sec?: number };
@@ -124,6 +127,8 @@ const initial = (): UiState => ({
   viewerUrl: null,
   viewerReq: false,
   viewerErr: false,
+  ofilter: "all",
+  afilter: "all",
   rlang: "en",
   rtab: "pending_review",
   fb: {},

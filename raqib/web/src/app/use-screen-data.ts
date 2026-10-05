@@ -24,6 +24,9 @@ function needs(route: Route, me: Me) {
     settings: p.settings.includes("V") && n === "settings",
     forms: p.forms.includes("V") && ["forms", "form"].includes(n),
     inspection: ["inspect", "review"].includes(n) && !!route.id,
+    observations: p.observations.includes("V") && ["observations", "review"].includes(n),
+    actions: p.actions.includes("V") && ["actions"].includes(n),
+    action: p.actions.includes("V") && n === "action" && !!route.id,
     reports: p.reports.includes("V") && ["reports", "report", "visit", "review"].includes(n),
   };
   // the shell labels a person's scope with project names whenever the template allows reading projects
@@ -45,6 +48,10 @@ export function useScreenData(route: Route, me: Me, ui: UiState): { data: Data; 
     { key: "visits", enabled: want.visits, fn: () => api.visits.list() },
     { key: "forms", enabled: want.forms, fn: () => api.forms.list().then(async (items) => ({ items, capabilities: { add: me.permissions.forms.includes("A"), edit: me.permissions.forms.includes("E"), publish: me.permissions.forms.includes("P") } })) },
     { key: "inspection", enabled: want.inspection, fn: () => api.inspection.get(route.id!), extra: [route.id ?? ""] },
+    { key: "observations", enabled: want.observations, fn: () => api.observations.list() },
+    { key: "actions", enabled: want.actions, fn: () => api.actions.list() },
+    { key: "action", enabled: want.action, fn: () => api.actions.get(route.id!), extra: [route.id ?? ""] },
+    { key: "responsibles", enabled: !!ui.modal && ui.modal.kind === "ca", fn: () => api.actions.responsible(String(ui.modal?.pid ?? "")), extra: [String(ui.modal?.pid ?? "")] },
     { key: "reports", enabled: want.reports, fn: () => api.reports.list() },
     { key: "notifications", enabled: true, fn: () => api.notifications.list().then((r) => ({ items: r.notifications, unread: r.unreadCount })), refetch: 30_000 },
     { key: "inspectors", enabled: !!inspProject, fn: () => api.visits.eligibleInspectors(inspProject, inspDate), extra: [inspProject, inspDate] },
@@ -58,7 +65,7 @@ export function useScreenData(route: Route, me: Me, ui: UiState): { data: Data; 
     const r = results[idx]!;
     if (r.data !== undefined) (data as Record<string, unknown>)[d.key] = r.data;
   });
-  const pending = defs.some((d, idx) => d.enabled && d.key !== "inspectors" && d.key !== "notifications" && results[idx]!.isPending);
+  const pending = defs.some((d, idx) => d.enabled && d.key !== "inspectors" && d.key !== "notifications" && d.key !== "responsibles" && results[idx]!.isPending);
   const failed = results.find((r) => r.error);
   const err = (failed?.error as Error | undefined) ?? null;
 

@@ -2,6 +2,7 @@ import type { Inspection, InspectionItem, Visit } from "@/api/types";
 import { badge, scoreColor } from "../common";
 import type { Ctx } from "../context";
 import { openEvidence } from "../viewer";
+import { openAssign } from "./actions";
 import { ROLE_LABEL } from "./users";
 import { timeline, visitRow } from "./visits";
 
@@ -37,13 +38,16 @@ export function reviewDetail(c: Ctx, insp: Inspection, v: Visit) {
       if (it.answer === "c") { num += it.weight; den += it.weight; } else if (it.answer === "n") den += it.weight;
       const ans = it.answer === "c" ? badge(i.S("ans_c"), "ok") : it.answer === "n" ? badge(i.S("ans_n"), "bad") : it.answer === "x" ? badge(i.S("ans_x"), "neu") : badge(i.S("ans_none"), "warn");
       const ev = evidenceChips(c, insp, it);
+      const obs = (c.data.observations ?? []).find((o) => o.visit?.id === v.id && o.itemKey === it.key);
       return {
         num: it.num, text: i.L(it.text), w: i.S("weight", { w: it.weight }),
         pts: it.answer === "c" ? `${it.weight}/${it.weight}` : it.answer === "n" ? `0/${it.weight}` : "—", ans,
         note: it.note, hasNote: !!it.note, ev, hasEv: ev.length > 0, bg: it.answer === "n" ? "#FDF8F7" : "#fff",
         canFlag: canDecide, flag: !!ui.rflags[flagKey(v.id, it.id)],
         onFlag: () => set((s) => ({ rflags: { ...s.rflags, [flagKey(v.id, it.id)]: !s.rflags[flagKey(v.id, it.id)] } })),
-        canCA: false, mkCA: () => undefined, hasCA: false, caRef: "", caSt: "", goCA: () => undefined,
+        canCA: !!obs && !obs.action && me.permissions.actions.includes("A"), mkCA: () => obs && openAssign(c, obs),
+        hasCA: !!obs?.action, caRef: obs?.action?.ref ?? "", caSt: obs?.action ? i.S(({ assigned: "cs_assigned", in_progress: "cs_in_progress", quality_review: "cs_under_review", returned: "cs_returned", closed: "cs_closed", overdue: "overdue" } as Record<string, string>)[obs.action.status]!) : "",
+        goCA: () => obs?.action && c.go("action", obs.action.id),
       };
     });
     const pct = den ? Math.round((num / den) * 100) : null;

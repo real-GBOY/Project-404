@@ -113,6 +113,29 @@ export function useActions(): Actions {
         await api.evidence.remove(evidenceId);
         put(visitId, await api.inspection.get(visitId));
       },
+      async assignAction(observationId, input) {
+        const a = await api.actions.create(observationId, input);
+        await Promise.all([qc.invalidateQueries({ queryKey: ["observations"] }), qc.invalidateQueries({ queryKey: ["actions"] })]);
+        return a;
+      },
+      async actionStep(id, step, body) {
+        qc.setQueryData(["action", id], await api.actions.step(id, step, body ?? {}));
+        await Promise.all([qc.invalidateQueries({ queryKey: ["observations"] }), qc.invalidateQueries({ queryKey: ["actions"] })]);
+      },
+      async commentAction(id, text) {
+        qc.setQueryData(["action", id], await api.actions.comment(id, text));
+      },
+      async uploadActionEvidence(file, actionId, onProgress) {
+        const p = await api.evidence.presign({ name: file.name, type: file.type, size: file.size });
+        await putWithProgress(file, p.upload, onProgress);
+        await api.evidence.confirm(p.fileId);
+        await api.evidence.attach({ fileId: p.fileId, actionId });
+        qc.setQueryData(["action", actionId], await api.actions.get(actionId));
+      },
+      async removeActionEvidence(actionId, evidenceId) {
+        await api.evidence.remove(evidenceId);
+        qc.setQueryData(["action", actionId], await api.actions.get(actionId));
+      },
       reportPdf: (id, lang) => api.reports.pdf(id, lang),
       evidenceBlob: (id) => api.evidence.blob(id),
       async decideReview(visitId, action, body) {
