@@ -112,19 +112,22 @@ export function projectDetail(c: Ctx, p: Project) {
 export function guardsList(c: Ctx) {
   const { i, data } = c;
   const projects = new Map((data.projects ?? []).map((p) => [p.id, p]));
-  const rows = (data.guards ?? []).map((g: Guard) => ({
-    go: () => undefined,
+  const rows = (data.guards ?? []).map((g: Guard) => {
+    const sm = data.guardSummary?.[g.id];
+    return {
+    go: () => c.go("guard", g.id),
     name: i.L(g.name),
     emp: g.employeeNo,
     nid: g.nationalId,
     post: i.L(g.post),
     proj: projects.get(g.projectId) ? i.L(projects.get(g.projectId)!.name) : "—",
-    avg: "—",
-    avgC: "#8B9097",
-    avgW: "0%",
-    evals: "0",
+    avg: sm?.average == null ? "—" : (sm.average / 20).toFixed(1),
+    avgC: scoreColor(sm?.average ?? null),
+    avgW: `${sm?.average ?? 0}%`,
+    evals: String(sm?.evaluations ?? 0),
     flag: "",
     hasFlag: false,
-  }));
+  };
+  });
   return { gd: { rows, count: i.S("nGuards", { n: rows.length }), training: [] } };
 }

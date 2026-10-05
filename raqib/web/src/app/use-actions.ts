@@ -136,6 +136,17 @@ export function useActions(): Actions {
         await api.evidence.remove(evidenceId);
         qc.setQueryData(["action", actionId], await api.actions.get(actionId));
       },
+      async requestTraining(input) {
+        const t = await api.training.create(input);
+        await qc.invalidateQueries({ queryKey: ["training"] });
+        await qc.invalidateQueries({ queryKey: ["guardHistory"] });
+        return t;
+      },
+      async trainingStep(id, step, body) {
+        qc.setQueryData(["trainingOne", id], await api.training.step(id, step, body ?? {}));
+        await qc.invalidateQueries({ queryKey: ["training"] });
+        await qc.invalidateQueries({ queryKey: ["guardHistory"] });
+      },
       reportPdf: (id, lang) => api.reports.pdf(id, lang),
       evidenceBlob: (id) => api.evidence.blob(id),
       async decideReview(visitId, action, body) {

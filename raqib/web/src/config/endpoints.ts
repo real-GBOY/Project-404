@@ -59,6 +59,13 @@ export const ENDPOINTS = {
     step: (id: string, step: "start" | "submit" | "return" | "close") => `/raqib/actions/${id}/${step}`,
     comments: (id: string) => `/raqib/actions/${id}/comments`,
   },
+  training: {
+    list: "/raqib/training",
+    byId: (id: string) => `/raqib/training/${id}`,
+    step: (id: string, step: string) => `/raqib/training/${id}/${step}`,
+  },
+  guardHistory: (id: string) => `/raqib/guards/${id}/history`,
+  guardSummary: "/raqib/guards-summary",
   reports: { list: "/raqib/reports", pdf: (id: string, lang: string) => `/raqib/reports/${id}/pdf?lang=${lang}` },
   evidence: { attach: "/raqib/evidence", byId: (id: string) => `/raqib/evidence/${id}`, content: (id: string) => `/raqib/evidence/${id}/content` },
   files: { presign: "/files/uploads", confirm: (id: string) => `/files/${id}/confirm` },

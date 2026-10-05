@@ -1,4 +1,4 @@
-import type { Answer, CorrectiveAction, FormSection, Inspection, CreateVisitInput, OrgSettings, RescheduleVisitInput, RoleKey, TemplateChange } from "@/api/types";
+import type { Answer, CorrectiveAction, TrainingRequest, FormSection, Inspection, CreateVisitInput, OrgSettings, RescheduleVisitInput, RoleKey, TemplateChange } from "@/api/types";
 
 /**
  * The application layer's commands: each is one user intention that the backend validates and
@@ -31,6 +31,8 @@ export interface Actions {
   commentAction(id: string, text: string): Promise<void>;
   uploadActionEvidence(file: File, actionId: string, onProgress: (pct: number) => void): Promise<void>;
   removeActionEvidence(actionId: string, evidenceId: string): Promise<void>;
+  requestTraining(input: { guardId: string; reason: "low_score" | "repeat_issue" | "incident" | "refresher" | "new_assignment"; course: string; related: string; priority: "low" | "medium" | "high"; notes: string }): Promise<TrainingRequest>;
+  trainingStep(id: string, step: "approve" | "return" | "reject" | "resubmit" | "schedule" | "complete", body?: Record<string, unknown>): Promise<void>;
   reportPdf(id: string, lang: "ar" | "en"): Promise<Blob>;
   evidenceBlob(id: string): Promise<Blob>;
   decideReview(visitId: string, action: "forward" | "return" | "reject" | "approve", body: { reason?: string; comment?: string; itemIds?: string[] }): Promise<void>;

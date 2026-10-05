@@ -74,6 +74,7 @@ export interface UiState {
   /** Observation / action list filters. */
   ofilter: string;
   afilter: string;
+  tfilter: string;
   rlang: "ar" | "en";
   rtab: string;
   fb: { ver?: string; sec?: number };
@@ -129,6 +130,7 @@ const initial = (): UiState => ({
   viewerErr: false,
   ofilter: "all",
   afilter: "all",
+  tfilter: "all",
   rlang: "en",
   rtab: "pending_review",
   fb: {},

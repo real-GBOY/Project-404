@@ -2,9 +2,12 @@ import type { RoleKey, TemplateChange } from "@/api/types";
 import { ApiError } from "@/config";
 import type { Ctx } from "./context";
 import { ROLE_LABEL } from "./screens/users";
+import { TRAINING_OPTIONS } from "./screens/training";
+
+const { REASONS: TRAINING_REASONS, PROVIDERS: TRAINING_PROVIDERS, RESULTS: TRAINING_RESULTS } = TRAINING_OPTIONS;
 
 /** Dialogs that need a stated reason (the approved design records who changed what, and why). */
-const NEED_REASON = new Set(["caReturn", "return", "reject", "publish", "deactivateForm", "create", "resched", "cancel", "roleChange", "userScope", "userDisable", "userEnable", "permSave", "scopeSave", "settingsSave"]);
+const NEED_REASON = new Set(["trReturn", "trReject", "caReturn", "return", "reject", "publish", "deactivateForm", "create", "resched", "cancel", "roleChange", "userScope", "userDisable", "userEnable", "permSave", "scopeSave", "settingsSave"]);
 
 const ROLES: RoleKey[] = ["qm", "qe", "pm", "ins", "gs", "guard", "gm"];
 
@@ -45,7 +48,7 @@ export function modalVM(c: Ctx) {
     title: i.S(`m_${K}_t`, { r: ref }),
     sub: i.S(`m_${K}_s`),
     okLabel: i.S(`m_${K}_ok`),
-    okBg: ["userDisable", "cancel", "deactivateForm", "reject"].includes(K) ? "#A3262A" : ["return", "caReturn"].includes(K) ? "#8A5A00" : "#0F5C4A",
+    okBg: ["userDisable", "cancel", "deactivateForm", "reject", "trReject"].includes(K) ? "#A3262A" : ["return", "caReturn", "trReturn"].includes(K) ? "#8A5A00" : "#0F5C4A",
     reason: fld("reason"),
     comment: fld("comment"),
     role: fld("role"),
@@ -73,6 +76,21 @@ export function modalVM(c: Ctx) {
     isSubmit: K === "submit",
     isReturn: K === "return",
     isCA: K === "ca",
+    isTr: K === "tr",
+    isTrSched: K === "trSchedule",
+    isTrDone: K === "trComplete",
+    g: fld("g"),
+    gOpts: [{ v: "", l: i.S("choose") }].concat((c.data.guards ?? []).map((x) => ({ v: x.id, l: `${i.L(x.name)} · ${x.employeeNo}` }))),
+    reason2: fld("reason2"),
+    reasonOpts: TRAINING_REASONS.map((k) => ({ v: k, l: i.S(`trr_${k}`) })),
+    course: fld("course"),
+    related: fld("related"),
+    notes: fld("notes"),
+    priOpts2: (["low", "medium", "high"] as const).map((k) => ({ label: i.S(`pri_${k}`), set: () => set((s) => ({ mf: { ...s.mf, pri: k } })), bg: (f.pri ?? "medium") === k ? "#191C1F" : "#fff", fg: (f.pri ?? "medium") === k ? "#fff" : "#191C1F" })),
+    provider: fld("provider"),
+    provOpts: TRAINING_PROVIDERS.map((k) => ({ v: k, l: i.S(`prov_${k}`) })),
+    resOpts: TRAINING_RESULTS.map((k) => ({ label: i.S(`res_${k}`), set: () => set((s) => ({ mf: { ...s.mf, res: k } })), bg: (f.res ?? "passed") === k ? "#191C1F" : "#fff", fg: (f.res ?? "passed") === k ? "#fff" : "#191C1F" })),
+    note2: fld("note"),
     source: String(m.source ?? ""),
     resp: fld("resp"),
     respOpts: [{ v: "", l: i.S("choose") }].concat((c.data.responsibles ?? []).map((x) => ({ v: x.id, l: i.L(x.name) }))),
@@ -125,6 +143,9 @@ export async function submitModal(c: Ctx): Promise<void> {
   if (m.kind === "create") for (const k of ["p", "s", "date", "time"]) if (!String(f[k] ?? "").trim()) missing.push(k);
   if (m.kind === "resched") for (const k of ["date", "time"]) if (!String(f[k] ?? "").trim()) missing.push(k);
   if (m.kind === "ca") for (const k of ["title", "resp", "due"]) if (!String(f[k] ?? "").trim()) missing.push(k);
+  if (m.kind === "tr") for (const k of ["g", "course"]) if (!String(f[k] ?? "").trim()) missing.push(k);
+  if (m.kind === "trSchedule") for (const k of ["date", "provider"]) if (!String(f[k] ?? "").trim()) missing.push(k);
+  if (m.kind === "trComplete" && !String(f.date ?? "").trim()) missing.push("date");
   if (m.kind === "newSection" && !String(f.title ?? "").trim()) missing.push("title");
   if (m.kind === "roleChange" && !String(f.role ?? "").trim()) missing.push("role");
   if (missing.length) {
@@ -186,6 +207,27 @@ export async function submitModal(c: Ctx): Promise<void> {
       case "caClose":
         await actions.actionStep(m.aid as string, "close", { comment: String(f.comment ?? "").trim() || undefined });
         c.toast(i.S("toastCaClosed", { r: String(m.ref ?? "") }));
+        break;
+      case "tr": {
+        const t = await actions.requestTraining({ guardId: f.g as string, reason: ((f.reason2 as never) || "low_score"), course: String(f.course).trim(), related: String(f.related ?? "").trim(), priority: ((f.pri as never) || "medium"), notes: String(f.notes ?? "").trim() });
+        c.toast(i.S("toastTrCreated", { r: t.ref }), { label: i.S("open"), fn: () => c.go("trainingD", t.id) });
+        break;
+      }
+      case "trReturn":
+        await actions.trainingStep(m.tid as string, "return", { reason });
+        c.toast(i.S("toastTrReturned", { r: String(m.ref ?? "") }));
+        break;
+      case "trReject":
+        await actions.trainingStep(m.tid as string, "reject", { reason });
+        c.toast(i.S("toastTrRejected", { r: String(m.ref ?? "") }));
+        break;
+      case "trSchedule":
+        await actions.trainingStep(m.tid as string, "schedule", { date: f.date, provider: f.provider });
+        c.toast(i.S("toastTrScheduled", { r: String(m.ref ?? "") }));
+        break;
+      case "trComplete":
+        await actions.trainingStep(m.tid as string, "complete", { date: f.date, result: f.res || "passed", note: String(f.note ?? "").trim() || undefined });
+        c.toast(i.S("toastTrCompleted", { r: String(m.ref ?? "") }));
         break;
       case "submit":
         await actions.submitInspection(m.vid as string);
