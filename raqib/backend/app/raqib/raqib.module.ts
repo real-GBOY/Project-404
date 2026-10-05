@@ -17,6 +17,7 @@ import { TrainingModule } from "@raqib/raqib/training/training.module.js";
 import { AnalyticsModule } from "@raqib/raqib/analytics/analytics.module.js";
 import { SearchModule } from "@raqib/raqib/search/search.module.js";
 import { ConfidentialModule } from "@raqib/raqib/confidential/confidential.module.js";
+import { AuditViewModule } from "@raqib/raqib/audit/audit-view.module.js";
 import { ReportsModule } from "@raqib/raqib/reports/reports.module.js";
 import { ReviewModule } from "@raqib/raqib/review/review.module.js";
 import { SettingsModule } from "@raqib/raqib/settings/settings.module.js";
@@ -27,6 +28,6 @@ import { SettingsModule } from "@raqib/raqib/settings/settings.module.js";
  * services; Raqib behaviour never moves into Core. Architecture: `raqib/docs/architecture.md`.
  */
 @Module({
-  imports: [SettingsModule, SettingsApiModule, AccessModule, PeopleModule, ProjectsModule, PermissionsModule, SharedModule, VisitsModule, RaqibNotificationsModule, JobsModule, FormsModule, InspectionsModule, EvidenceModule, ReviewModule, ReportsModule, ObservationsModule, ActionsModule, TrainingModule, AnalyticsModule, SearchModule, ConfidentialModule],
+  imports: [SettingsModule, SettingsApiModule, AccessModule, PeopleModule, ProjectsModule, PermissionsModule, SharedModule, VisitsModule, RaqibNotificationsModule, JobsModule, FormsModule, InspectionsModule, EvidenceModule, ReviewModule, ReportsModule, ObservationsModule, ActionsModule, TrainingModule, AnalyticsModule, SearchModule, ConfidentialModule, AuditViewModule],
 })
 export class RaqibModule {}

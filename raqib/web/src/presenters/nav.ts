@@ -36,7 +36,7 @@ export const NAV_GROUPS: Record<string, L10n> = {
 
 /** Display order per role. */
 export const ROLE_NAV: Record<RoleKey, string[]> = {
-  qm: ["overview", "projects", "visits", "reviews", "observations", "actions", "training", "analytics", "guards", "training", "reports", "analytics", "forms", "users", "permissions", "audit", "settings", "confidential"],
+  qm: ["overview", "projects", "visits", "reviews", "observations", "actions", "training", "analytics", "audit", "guards", "training", "reports", "analytics", "forms", "users", "permissions", "audit", "settings", "confidential"],
   qe: ["overview", "projects", "visits", "reviews", "observations", "actions", "guards", "training", "reports", "analytics", "forms"],
   pm: ["overview", "projects", "observations", "actions", "training", "reports", "analytics"],
   ins: ["overview", "visits", "inspections"],

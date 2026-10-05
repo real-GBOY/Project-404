@@ -1,5 +1,5 @@
 import { type MiddlewareConsumer, Module, type NestModule } from "@nestjs/common";
-import { APP_FILTER } from "@nestjs/core";
+import { APP_FILTER, APP_GUARD } from "@nestjs/core";
 import {
   KernelModule,
   EventsModule,
@@ -17,6 +17,8 @@ import { RequestContextMiddleware } from "@core/http/request-context.middleware.
 import { HealthController } from "@core/observability/health.controller.js";
 import { RaqibModule } from "@raqib/raqib/raqib.module.js";
 import { DemoModule } from "@raqib/raqib/demo/demo.module.js";
+import { RateLimitGuard } from "@raqib/raqib/security/rate-limit.js";
+import { SecurityHeadersMiddleware } from "@raqib/raqib/security/security-headers.middleware.js";
 import { AppSeedService } from "./seed.js";
 
 /**
@@ -48,10 +50,11 @@ import { AppSeedService } from "./seed.js";
     AppSeedService,
     RequestContextMiddleware,
     { provide: APP_FILTER, useClass: AppExceptionFilter },
+    { provide: APP_GUARD, useClass: RateLimitGuard },
   ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
-    consumer.apply(RequestContextMiddleware).forRoutes("{*path}");
+    consumer.apply(RequestContextMiddleware, SecurityHeadersMiddleware).forRoutes("{*path}");
   }
 }

@@ -75,6 +75,7 @@ export interface UiState {
   ofilter: string;
   afilter: string;
   tfilter: string;
+  afilters: { q: string; ent: string; who: string; from: string; to: string };
   /** Confidential area form / gate state and the selected report. */
   cf: Record<string, unknown>;
   cfSel: string;
@@ -141,6 +142,7 @@ const initial = (): UiState => ({
   ofilter: "all",
   afilter: "all",
   tfilter: "all",
+  afilters: { q: "", ent: "", who: "", from: "", to: "" },
   cf: {},
   cfSel: "",
   anPeriod: "month",

@@ -190,6 +190,9 @@ export function useActions(): Actions {
         qc.setQueryData(["confGrants"], (await api.conf.revoke(id, reason)).items);
         await qc.invalidateQueries({ queryKey: ["confLog"] });
       },
+      async exportAudit(q) {
+        saveBlob(await api.audit.exportCsv(q), "raqib-audit.csv");
+      },
       reportPdf: (id, lang) => api.reports.pdf(id, lang),
       evidenceBlob: (id) => api.evidence.blob(id),
       async decideReview(visitId, action, body) {

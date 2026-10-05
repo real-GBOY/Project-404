@@ -42,6 +42,7 @@ export interface Actions {
   confReveal(id: string, reason: string): Promise<void>;
   confIssueGrant(input: { userId: string; level: "view" | "respond"; scope: "all" | "standard"; reason: string; expiresAt: string }): Promise<void>;
   confRevoke(id: string, reason: string): Promise<void>;
+  exportAudit(q: { q: string; entity: string; actor: string; from: string; to: string }): Promise<void>;
   reportPdf(id: string, lang: "ar" | "en"): Promise<Blob>;
   evidenceBlob(id: string): Promise<Blob>;
   decideReview(visitId: string, action: "forward" | "return" | "reject" | "approve", body: { reason?: string; comment?: string; itemIds?: string[] }): Promise<void>;
