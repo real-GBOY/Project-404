@@ -14,17 +14,24 @@ export type TrainingStep = "approve" | "return" | "reject" | "resubmit" | "sched
 
 export function nextTraining(from: TrainingStatus, step: TrainingStep): TrainingStatus | null {
   switch (step) {
-    case "approve": return from === "pending_pm" ? "approved" : null;
-    case "return": return from === "pending_pm" ? "returned" : null;
-    case "reject": return from === "pending_pm" ? "rejected" : null;
-    case "resubmit": return from === "returned" ? "pending_pm" : null;
-    case "schedule": return from === "approved" ? "scheduled" : null;
-    case "complete": return from === "scheduled" ? "completed" : null;
+    case "approve":
+      return from === "pending_pm" ? "approved" : null;
+    case "return":
+      return from === "pending_pm" ? "returned" : null;
+    case "reject":
+      return from === "pending_pm" ? "rejected" : null;
+    case "resubmit":
+      return from === "returned" ? "pending_pm" : null;
+    case "schedule":
+      return from === "approved" ? "scheduled" : null;
+    case "complete":
+      return from === "scheduled" ? "completed" : null;
   }
 }
 
 /** The permission letter (module `training`) each step needs. */
-export const letterForTraining = (step: TrainingStep): "P" | "E" | "R" => (step === "approve" || step === "return" || step === "reject" ? "P" : step === "resubmit" ? "E" : "R");
+export const letterForTraining = (step: TrainingStep): "P" | "E" | "R" =>
+  step === "approve" || step === "return" || step === "reject" ? "P" : step === "resubmit" ? "E" : "R";
 
 /** Waiting for the manager longer than this many days is flagged as escalated (derived, never stored). */
 export const ESCALATE_AFTER_DAYS = 3;

@@ -11,7 +11,10 @@ const schema = z
     name: z.string().trim().min(3).max(120),
     email: z.string().trim().email().max(200),
     phone: z.string().trim().min(7).max(20),
-    nationalId: z.string().trim().regex(/^[0-9]{10}$/),
+    nationalId: z
+      .string()
+      .trim()
+      .regex(/^[0-9]{10}$/),
     employeeNo: z.string().trim().max(40).default(""),
     department: z.string().trim().max(120).default(""),
     role: z.enum(["qe", "pm", "ins", "gs", "guard"]),

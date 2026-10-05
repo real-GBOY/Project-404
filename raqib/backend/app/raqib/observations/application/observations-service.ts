@@ -13,6 +13,7 @@ import { VisitsRepository } from "@raqib/raqib/visits/infrastructure/visits-repo
 import type { VisitView } from "@raqib/raqib/visits/application/visits-service.js";
 import { effectiveActionStatus, type ActionStatus } from "@raqib/raqib/actions/domain/action-state.js";
 import { ObservationsRepository, type ObservationRecord, type Severity } from "../infrastructure/observations-repository.js";
+import type { Page } from "@raqib/raqib/shared/paging.js";
 
 export interface ObservationView {
   id: string;
@@ -53,9 +54,9 @@ export class ObservationsService {
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
 
-  async list(who: Access): Promise<ObservationView[]> {
+  async list(who: Access, page?: Page): Promise<ObservationView[]> {
     requireCan(who, "observations", "V");
-    return readInTenant(async () => this.views(await this.repo.list(who.allProjects ? undefined : [...who.projectIds]), who));
+    return readInTenant(async () => this.views(await this.repo.list(who.allProjects ? undefined : [...who.projectIds], page), who));
   }
 
   async get(id: string, who: Access): Promise<ObservationView> {
@@ -77,10 +78,24 @@ export class ObservationsService {
       if (!site || site.projectId !== input.projectId) throw ValidationError("raqib.site_not_in_project", "This site does not belong to the project.");
       const ref = await this.counters.next("OBS", Number(who.today.slice(0, 4)));
       const id = await this.repo.insert({
-        ref, kind: "observation", projectId: input.projectId, siteId: input.siteId, title: { ar: input.text, en: input.text }, note: input.note,
-        severity: input.severity, repeatCount: 0, reportedBy: who.userId, reportedByName: { ar: who.nameAr, en: who.nameEn },
+        ref,
+        kind: "observation",
+        projectId: input.projectId,
+        siteId: input.siteId,
+        title: { ar: input.text, en: input.text },
+        note: input.note,
+        severity: input.severity,
+        repeatCount: 0,
+        reportedBy: who.userId,
+        reportedByName: { ar: who.nameAr, en: who.nameEn },
       });
-      await this.audit.record({ actorId: who.userId, action: "raqib.observation.created", resourceType: "raqib_observation", resourceId: id, after: { ref, severity: input.severity, projectId: input.projectId } });
+      await this.audit.record({
+        actorId: who.userId,
+        action: "raqib.observation.created",
+        resourceType: "raqib_observation",
+        resourceId: id,
+        after: { ref, severity: input.severity, projectId: input.projectId },
+      });
       return id;
     });
     // the reporter may be allowed to add observations without being allowed to browse them: answer from the new row directly
@@ -100,13 +115,32 @@ export class ObservationsService {
       const repeatCount = await this.repo.priorCount(visit.site.id, item.key);
       const ref = await this.counters.next("OBS", Number(visit.date.slice(0, 4)));
       await this.repo.insert({
-        ref, kind: "violation", projectId: visit.project.id, siteId: visit.site.id, visitId: visit.id, inspectionId: inspection.id, itemId: item.id,
-        itemKey: item.key, itemNum: item.num, title: item.text, note: item.note, severity: item.severity ?? "medium", repeatCount,
-        reportedBy: visit.inspector?.id ?? who.userId, reportedByName: visit.inspector?.name ?? { ar: who.nameAr, en: who.nameEn },
+        ref,
+        kind: "violation",
+        projectId: visit.project.id,
+        siteId: visit.site.id,
+        visitId: visit.id,
+        inspectionId: inspection.id,
+        itemId: item.id,
+        itemKey: item.key,
+        itemNum: item.num,
+        title: item.text,
+        note: item.note,
+        severity: item.severity ?? "medium",
+        repeatCount,
+        reportedBy: visit.inspector?.id ?? who.userId,
+        reportedByName: visit.inspector?.name ?? { ar: who.nameAr, en: who.nameEn },
       });
       n++;
     }
-    if (n) await this.audit.record({ actorId: who.userId, action: "raqib.observations.recorded", resourceType: "raqib_inspection", resourceId: inspection.id, metadata: { violations: n } });
+    if (n)
+      await this.audit.record({
+        actorId: who.userId,
+        action: "raqib.observations.recorded",
+        resourceType: "raqib_inspection",
+        resourceId: inspection.id,
+        metadata: { violations: n },
+      });
     return n;
   }
 
@@ -129,13 +163,29 @@ export class ObservationsService {
       const p = projects.get(r.projectId);
       const a = actions.get(r.id);
       out.push({
-        id: r.id, ref: r.ref, kind: r.kind, title: r.title, note: r.note, severity: r.severity, repeatCount: r.repeatCount,
+        id: r.id,
+        ref: r.ref,
+        kind: r.kind,
+        title: r.title,
+        note: r.note,
+        severity: r.severity,
+        repeatCount: r.repeatCount,
         project: { id: r.projectId, code: p?.code ?? "", name: p?.name ?? { ar: "—", en: "—" } },
         site: sites.get(r.siteId)?.name ?? { ar: "—", en: "—" },
         visit: r.visitId ? { id: r.visitId, ref: visitRefs.get(r.visitId) ?? "" } : null,
-        itemNum: r.itemNum, itemKey: r.itemKey, reportedBy: r.reportedByName, createdAt: r.createdAt.toISOString(),
+        itemNum: r.itemNum,
+        itemKey: r.itemKey,
+        reportedBy: r.reportedByName,
+        createdAt: r.createdAt.toISOString(),
         action: a
-          ? { id: a.id, ref: a.ref, status: effectiveActionStatus(a.status as ActionStatus, a.dueDate, who.today), dueDate: a.dueDate, priority: a.priority, responsible: await nameOf(a.responsibleId) }
+          ? {
+              id: a.id,
+              ref: a.ref,
+              status: effectiveActionStatus(a.status as ActionStatus, a.dueDate, who.today),
+              dueDate: a.dueDate,
+              priority: a.priority,
+              responsible: await nameOf(a.responsibleId),
+            }
           : null,
       });
     }

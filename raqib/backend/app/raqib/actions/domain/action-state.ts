@@ -14,10 +14,14 @@ export type ActionStep = "start" | "submit" | "return" | "close";
 
 export function nextAction(from: ActionStatus, step: ActionStep): ActionStatus | null {
   switch (step) {
-    case "start": return from === "assigned" || from === "returned" ? "in_progress" : null;
-    case "submit": return from === "in_progress" ? "quality_review" : null;
-    case "return": return from === "quality_review" ? "returned" : null;
-    case "close": return from === "quality_review" ? "closed" : null;
+    case "start":
+      return from === "assigned" || from === "returned" ? "in_progress" : null;
+    case "submit":
+      return from === "in_progress" ? "quality_review" : null;
+    case "return":
+      return from === "quality_review" ? "returned" : null;
+    case "close":
+      return from === "quality_review" ? "closed" : null;
   }
 }
 

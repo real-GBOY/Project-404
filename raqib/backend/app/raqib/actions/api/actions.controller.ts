@@ -6,6 +6,7 @@ import { ZodBody } from "@core/http/zod.pipe.js";
 import { Allow, AccessGuard, Caller } from "@raqib/raqib/access/access.guard.js";
 import type { Access } from "@raqib/raqib/access/access.js";
 import { ActionsService } from "../application/actions-service.js";
+import { parsePage, toPage } from "@raqib/raqib/shared/paging.js";
 
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const createSchema = z
@@ -29,8 +30,9 @@ export class ActionsController {
 
   @Get("actions")
   @Allow("actions", "V")
-  async list(@Caller() who: Access) {
-    return { items: await this.service.list(who) };
+  async list(@Query() q: { limit?: string; cursor?: string }, @Caller() who: Access) {
+    const page = parsePage(q);
+    return toPage(await this.service.list(who, page), page);
   }
 
   @Get("actions/responsible")

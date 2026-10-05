@@ -11,6 +11,7 @@ import type { L10n } from "@raqib/raqib/shared/l10n.js";
 import { isEscalated, letterForTraining, nextTraining, type TrainingStep } from "../domain/training-state.js";
 import { trainingApproved, trainingCompleted, trainingDecided, trainingRequested, trainingScheduled } from "../events.js";
 import { TrainingRepository, type Priority, type TrainingReason, type TrainingRecord, type TrainingResult } from "../infrastructure/training-repository.js";
+import type { Page } from "@raqib/raqib/shared/paging.js";
 
 export interface TrainingLogEntry {
   id: string;
@@ -80,9 +81,9 @@ export class TrainingService {
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
 
-  async list(who: Access, guardId?: string): Promise<TrainingView[]> {
+  async list(who: Access, guardId?: string, page?: Page): Promise<TrainingView[]> {
     requireCan(who, "training", "V");
-    return readInTenant(async () => this.views(await this.repo.list(who.allProjects ? undefined : [...who.projectIds], guardId), who, false));
+    return readInTenant(async () => this.views(await this.repo.list(who.allProjects ? undefined : [...who.projectIds], guardId, page), who, false));
   }
 
   async get(id: string, who: Access): Promise<TrainingView> {
@@ -99,9 +100,32 @@ export class TrainingService {
       requireProject(who, g.projectId);
       if (g.status !== "active") throw ValidationError("raqib.guard_inactive", "This guard is not active.");
       const ref = await this.counters.next("TR", Number(who.today.slice(0, 4)));
-      const id = await this.repo.insert({ ref, guardId: g.id, projectId: g.projectId, reason: input.reason, course, related: input.related.trim(), priority: input.priority, notes: input.notes.trim(), requestedBy: who.userId });
-      await this.repo.appendEvent({ requestId: id, kind: "requested", fromStatus: null, toStatus: "pending_pm", text: input.notes.trim() || null, ...actorOf(who) });
-      await this.audit.record({ actorId: who.userId, action: "raqib.training.requested", resourceType: "raqib_training", resourceId: id, after: { ref, guardId: g.id, course } });
+      const id = await this.repo.insert({
+        ref,
+        guardId: g.id,
+        projectId: g.projectId,
+        reason: input.reason,
+        course,
+        related: input.related.trim(),
+        priority: input.priority,
+        notes: input.notes.trim(),
+        requestedBy: who.userId,
+      });
+      await this.repo.appendEvent({
+        requestId: id,
+        kind: "requested",
+        fromStatus: null,
+        toStatus: "pending_pm",
+        text: input.notes.trim() || null,
+        ...actorOf(who),
+      });
+      await this.audit.record({
+        actorId: who.userId,
+        action: "raqib.training.requested",
+        resourceType: "raqib_training",
+        resourceId: id,
+        after: { ref, guardId: g.id, course },
+      });
       await this.events.publish(trainingRequested({ requestId: id, actorId: who.userId }));
       return id;
     });
@@ -119,7 +143,8 @@ export class TrainingService {
       if (!to) throw Conflict("raqib.invalid_transition", "This is not possible in the request's current state.");
       requireCan(who, "training", letterForTraining(step));
       if (step === "resubmit" && t.requestedBy !== who.userId) throw Forbidden("raqib.not_requester", "Only the person who asked can resubmit.");
-      if ((step === "approve" || step === "return" || step === "reject") && t.requestedBy === who.userId) throw Forbidden("raqib.self_review", "You cannot decide your own request.");
+      if ((step === "approve" || step === "return" || step === "reject") && t.requestedBy === who.userId)
+        throw Forbidden("raqib.self_review", "You cannot decide your own request.");
       const patch: Parameters<TrainingRepository["update"]>[1] = { status: to };
       if (step === "resubmit") {
         patch.round = t.round + 1;
@@ -139,9 +164,25 @@ export class TrainingService {
         patch.resultNote = text || null;
       }
       await this.repo.update(t.id, patch);
-      const kind = ({ approve: "approved", return: "returned", reject: "rejected", resubmit: "resubmitted", schedule: "scheduled", complete: "completed" } as const)[step];
-      await this.repo.appendEvent({ requestId: t.id, kind, fromStatus: t.status, toStatus: to, text: step === "resubmit" ? (input.notes?.trim() || null) : text || null, ...actorOf(who) });
-      await this.audit.record({ actorId: who.userId, action: `raqib.training.${kind}`, resourceType: "raqib_training", resourceId: t.id, before: { status: t.status }, after: { status: to } });
+      const kind = (
+        { approve: "approved", return: "returned", reject: "rejected", resubmit: "resubmitted", schedule: "scheduled", complete: "completed" } as const
+      )[step];
+      await this.repo.appendEvent({
+        requestId: t.id,
+        kind,
+        fromStatus: t.status,
+        toStatus: to,
+        text: step === "resubmit" ? input.notes?.trim() || null : text || null,
+        ...actorOf(who),
+      });
+      await this.audit.record({
+        actorId: who.userId,
+        action: `raqib.training.${kind}`,
+        resourceType: "raqib_training",
+        resourceId: t.id,
+        before: { status: t.status },
+        after: { status: to },
+      });
       const base = { requestId: t.id, actorId: who.userId };
       if (step === "resubmit") await this.events.publish(trainingRequested(base));
       if (step === "approve") await this.events.publish(trainingApproved(base));
@@ -176,16 +217,34 @@ export class TrainingService {
       const g = guards.get(r.guardId);
       const p = projects.get(r.projectId);
       const view: TrainingView = {
-        id: r.id, ref: r.ref, guard: { id: r.guardId, employeeNo: g?.employeeNo ?? "", name: g?.name ?? { ar: "—", en: "—" } },
+        id: r.id,
+        ref: r.ref,
+        guard: { id: r.guardId, employeeNo: g?.employeeNo ?? "", name: g?.name ?? { ar: "—", en: "—" } },
         project: { id: r.projectId, code: p?.code ?? "", name: p?.name ?? { ar: "—", en: "—" } },
-        reason: r.reason, course: r.course, related: r.related, priority: r.priority, notes: r.notes, status: r.status, round: r.round,
+        reason: r.reason,
+        course: r.course,
+        related: r.related,
+        priority: r.priority,
+        notes: r.notes,
+        status: r.status,
+        round: r.round,
         escalated: isEscalated(r.status, r.updatedAt.toISOString(), who.today),
-        requestedBy: r.requestedBy ? await nameOf(r.requestedBy) : null, requestedById: r.requestedBy,
-        scheduledDate: r.scheduledDate, provider: r.provider, completedDate: r.completedDate, result: r.result, resultNote: r.resultNote, createdAt: r.createdAt.toISOString(),
+        requestedBy: r.requestedBy ? await nameOf(r.requestedBy) : null,
+        requestedById: r.requestedBy,
+        scheduledDate: r.scheduledDate,
+        provider: r.provider,
+        completedDate: r.completedDate,
+        result: r.result,
+        resultNote: r.resultNote,
+        createdAt: r.createdAt.toISOString(),
       };
       if (detail) {
         view.log = (await this.repo.events(r.id)).map((e) => ({
-          id: e.id, kind: e.kind, to: e.toStatus, text: e.text, at: e.at.toISOString(),
+          id: e.id,
+          kind: e.kind,
+          to: e.toStatus,
+          text: e.text,
+          at: e.at.toISOString(),
           actor: { id: e.actorId, name: { ar: e.actorNameAr, en: e.actorNameEn }, role: e.actorRole, title: { ar: e.actorTitleAr, en: e.actorTitleEn } },
         }));
       }

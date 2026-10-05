@@ -18,6 +18,7 @@ import { ALL_PROJECT_ROLES } from "@raqib/raqib/shared/modules.js";
 import { coreRoleKey } from "@raqib/raqib/shared/roles.js";
 import type { L10n } from "@raqib/raqib/shared/l10n.js";
 import { OnboardingRepository, type AccountRequestRecord, type RequestedRole } from "../infrastructure/onboarding-repository.js";
+import type { Page } from "@raqib/raqib/shared/paging.js";
 
 export const DECLARATION_VERSION = "2026-1";
 export const REQUESTABLE_ROLES: RequestedRole[] = ["qe", "pm", "ins", "gs", "guard"];
@@ -79,11 +80,25 @@ const maskNid = (n: string): string => (n.length > 4 ? `${"•".repeat(n.length 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const view = (r: AccountRequestRecord, full: boolean): AccountRequestView => ({
-  id: r.id, ref: r.ref, name: r.name, email: r.email, phone: r.phone, nationalId: full ? r.nationalId : maskNid(r.nationalId), employeeNo: r.employeeNo, department: r.department,
-  requestedRole: r.requestedRole, requestedProjects: r.requestedProjects, justification: r.justification,
+  id: r.id,
+  ref: r.ref,
+  name: r.name,
+  email: r.email,
+  phone: r.phone,
+  nationalId: full ? r.nationalId : maskNid(r.nationalId),
+  employeeNo: r.employeeNo,
+  department: r.department,
+  requestedRole: r.requestedRole,
+  requestedProjects: r.requestedProjects,
+  justification: r.justification,
   declaration: { version: r.declarationVersion, signedName: r.signedName, signedAt: r.signedAt.toISOString() },
-  status: r.status, decidedBy: r.decidedBy, decidedAt: r.decidedAt?.toISOString() ?? null, decisionReason: r.decisionReason, assignedRole: r.assignedRole,
-  assignedProjectIds: r.assignedProjectIds, createdAt: r.createdAt.toISOString(),
+  status: r.status,
+  decidedBy: r.decidedBy,
+  decidedAt: r.decidedAt?.toISOString() ?? null,
+  decisionReason: r.decisionReason,
+  assignedRole: r.assignedRole,
+  assignedProjectIds: r.assignedProjectIds,
+  createdAt: r.createdAt.toISOString(),
 });
 
 /**
@@ -120,7 +135,7 @@ export class OnboardingService {
       const projects = await this.uow.transaction(() => this.projects.list());
       return {
         organization: { name: o.name },
-        projects: projects.filter((p) => p.status !== "archived" as string).map((p) => ({ id: p.id, name: p.name })),
+        projects: projects.filter((p) => p.status !== ("archived" as string)).map((p) => ({ id: p.id, name: p.name })),
         roles: REQUESTABLE_ROLES,
         declarationVersion: DECLARATION_VERSION,
       };
@@ -130,11 +145,18 @@ export class OnboardingService {
   async submitPublic(slug: string, input: PublicRequestInput): Promise<{ ref: string }> {
     const name = input.name.trim();
     const email = input.email.trim();
-    if (name.length < 3 || !EMAIL.test(email) || !/^[0-9+\s-]{7,20}$/.test(input.phone.trim()) || !/^[0-9]{10}$/.test(input.nationalId.trim()) || input.justification.trim().length < 10) {
+    if (
+      name.length < 3 ||
+      !EMAIL.test(email) ||
+      !/^[0-9+\s-]{7,20}$/.test(input.phone.trim()) ||
+      !/^[0-9]{10}$/.test(input.nationalId.trim()) ||
+      input.justification.trim().length < 10
+    ) {
       throw ValidationError("raqib.invalid_request", "Check the highlighted fields.");
     }
     if (!REQUESTABLE_ROLES.includes(input.role)) throw ValidationError("raqib.invalid_role", "Choose a role.");
-    if (!input.agree || input.signature.trim().toLowerCase() !== name.toLowerCase()) throw ValidationError("raqib.declaration_required", "Agree to the declaration and sign with your full name.");
+    if (!input.agree || input.signature.trim().toLowerCase() !== name.toLowerCase())
+      throw ValidationError("raqib.declaration_required", "Agree to the declaration and sign with your full name.");
     const o = await this.orgBySlug(slug);
     return withContext({ organizationId: o.id }, () =>
       this.uow.transaction(async () => {
@@ -142,14 +164,32 @@ export class OnboardingService {
         const ref = await this.counters.next("ACR", now.getUTCFullYear());
         try {
           await this.repo.insert({
-            ref, name, email, phone: input.phone.trim(), nationalId: input.nationalId.trim(), employeeNo: input.employeeNo.trim(), department: input.department.trim(),
-            requestedRole: input.role, requestedProjects: input.projects.trim(), justification: input.justification.trim(), declarationVersion: DECLARATION_VERSION, signedName: input.signature.trim(), signedAt: now,
+            ref,
+            name,
+            email,
+            phone: input.phone.trim(),
+            nationalId: input.nationalId.trim(),
+            employeeNo: input.employeeNo.trim(),
+            department: input.department.trim(),
+            requestedRole: input.role,
+            requestedProjects: input.projects.trim(),
+            justification: input.justification.trim(),
+            declarationVersion: DECLARATION_VERSION,
+            signedName: input.signature.trim(),
+            signedAt: now,
           });
         } catch (e) {
           if ((e as { code?: string }).code === "23505") throw Conflict("raqib.request_pending", "A request for this email is already waiting for review.");
           throw e;
         }
-        await this.audit.record({ actorId: null, actorType: "system", action: "raqib.account_request.submitted", resourceType: "raqib_account_request", resourceId: ref, metadata: { role: input.role } });
+        await this.audit.record({
+          actorId: null,
+          actorType: "system",
+          action: "raqib.account_request.submitted",
+          resourceType: "raqib_account_request",
+          resourceId: ref,
+          metadata: { role: input.role },
+        });
         return { ref };
       }),
     );
@@ -157,9 +197,9 @@ export class OnboardingService {
 
   // ── reviewers ────────────────────────────────────────────────────────
 
-  async list(who: Access): Promise<AccountRequestView[]> {
+  async list(who: Access, page?: Page): Promise<AccountRequestView[]> {
     requireCan(who, "users", "V");
-    return this.uow.transaction(async () => (await this.repo.list()).map((r) => view(r, false)));
+    return this.uow.transaction(async () => (await this.repo.list(page)).map((r) => view(r, false)));
   }
 
   async get(id: string, who: Access): Promise<AccountRequestView> {
@@ -174,7 +214,8 @@ export class OnboardingService {
   async approve(id: string, input: { role: RequestedRole; projectIds: string[]; comment?: string }, who: Access): Promise<AccountRequestView> {
     requireCan(who, "users", "A");
     if (!APPROVABLE.has(input.role)) throw ValidationError("raqib.invalid_role", "This role cannot be assigned from a request.");
-    if (!ALL_PROJECT_ROLES.includes(input.role as never) && input.projectIds.length === 0) throw ValidationError("raqib.projects_required", "Assign at least one project.");
+    if (!ALL_PROJECT_ROLES.includes(input.role as never) && input.projectIds.length === 0)
+      throw ValidationError("raqib.projects_required", "Assign at least one project.");
     const req = await this.uow.transaction(async () => {
       const r = await this.repo.find(id);
       if (!r) throw NotFound("raqib.request_not_found", "Request not found.");
@@ -195,9 +236,21 @@ export class OnboardingService {
         }
         await ex
           .insertInto("users")
-          .values({ id: userId, email: req.email, email_normalized: req.email.toLowerCase(), password_hash: password, display_name: req.name, status: "active", email_verified_at: this.clock.now(), locale: "ar" })
+          .values({
+            id: userId,
+            email: req.email,
+            email_normalized: req.email.toLowerCase(),
+            password_hash: password,
+            display_name: req.name,
+            status: "active",
+            email_verified_at: this.clock.now(),
+            locale: "ar",
+          })
           .execute();
-        await ex.insertInto("organization_members").values({ id: newId("mem"), organization_id: orgId, user_id: userId, membership_role: "member" }).execute();
+        await ex
+          .insertInto("organization_members")
+          .values({ id: newId("mem"), organization_id: orgId, user_id: userId, membership_role: "member" })
+          .execute();
       }),
     );
     try {
@@ -205,12 +258,33 @@ export class OnboardingService {
       // 2) the Raqib profile, project scope, the decision and its audit entry — one tenant transaction
       await this.uow.transaction(async () => {
         const t = ROLE_TITLES[input.role];
-        await this.people.insert({ userId, roleKey: input.role, nameAr: req.name, nameEn: req.name, titleAr: t.ar, titleEn: t.en, employeeNo: req.employeeNo || null, phone: req.phone, status: "active" });
+        await this.people.insert({
+          userId,
+          roleKey: input.role,
+          nameAr: req.name,
+          nameEn: req.name,
+          titleAr: t.ar,
+          titleEn: t.en,
+          employeeNo: req.employeeNo || null,
+          phone: req.phone,
+          status: "active",
+        });
         for (const p of input.projectIds) await this.people.assign(userId, p, who.today, who.userId, `Account request ${req.ref}`);
-        await this.repo.decide(req.id, { status: "approved", by: { id: who.userId, name: { ar: who.nameAr, en: who.nameEn } }, reason: input.comment?.trim() || null, role: input.role, projectIds: input.projectIds, userId });
+        await this.repo.decide(req.id, {
+          status: "approved",
+          by: { id: who.userId, name: { ar: who.nameAr, en: who.nameEn } },
+          reason: input.comment?.trim() || null,
+          role: input.role,
+          projectIds: input.projectIds,
+          userId,
+        });
         await this.audit.record({
-          actorId: who.userId, action: "raqib.account_request.approved", resourceType: "raqib_account_request", resourceId: req.ref,
-          after: { role: input.role, projectIds: input.projectIds, userId }, metadata: { reason: input.comment?.trim() || null },
+          actorId: who.userId,
+          action: "raqib.account_request.approved",
+          resourceType: "raqib_account_request",
+          resourceId: req.ref,
+          after: { role: input.role, projectIds: input.projectIds, userId },
+          metadata: { reason: input.comment?.trim() || null },
         });
       });
     } catch (e) {
@@ -236,7 +310,13 @@ export class OnboardingService {
       if (!r) throw NotFound("raqib.request_not_found", "Request not found.");
       if (r.status !== "pending") throw Conflict("raqib.request_decided", "This request has already been decided.");
       await this.repo.decide(id, { status: "rejected", by: { id: who.userId, name: { ar: who.nameAr, en: who.nameEn } }, reason: reason.trim() });
-      await this.audit.record({ actorId: who.userId, action: "raqib.account_request.rejected", resourceType: "raqib_account_request", resourceId: r.ref, metadata: { reason: reason.trim() } });
+      await this.audit.record({
+        actorId: who.userId,
+        action: "raqib.account_request.rejected",
+        resourceType: "raqib_account_request",
+        resourceId: r.ref,
+        metadata: { reason: reason.trim() },
+      });
     });
     return this.get(id, who);
   }
@@ -248,7 +328,8 @@ export class OnboardingService {
     if (!r) throw NotFound("raqib.request_not_found", "Request not found.");
     if (r.status !== "approved") throw Conflict("raqib.request_not_approved", "Only an approved request has a setup link.");
     await this.identity.requestPasswordReset(r.email);
-    await this.uow.transaction(() => this.audit.record({ actorId: who.userId, action: "raqib.account_request.link_resent", resourceType: "raqib_account_request", resourceId: r.ref }));
+    await this.uow.transaction(() =>
+      this.audit.record({ actorId: who.userId, action: "raqib.account_request.link_resent", resourceType: "raqib_account_request", resourceId: r.ref }),
+    );
   }
-
 }

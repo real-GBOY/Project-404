@@ -7,6 +7,7 @@ import { Allow, AccessGuard, Caller } from "@raqib/raqib/access/access.guard.js"
 import type { Access } from "@raqib/raqib/access/access.js";
 import { GuardHistoryService } from "../application/guard-history-service.js";
 import { TrainingService } from "../application/training-service.js";
+import { parsePage, toPage } from "@raqib/raqib/shared/paging.js";
 
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const createSchema = z
@@ -37,8 +38,9 @@ export class TrainingController {
 
   @Get("training")
   @Allow("training", "V")
-  async list(@Query("guardId") guardId: string | undefined, @Caller() who: Access) {
-    return { items: await this.service.list(who, guardId) };
+  async list(@Query("guardId") guardId: string | undefined, @Query() q: { limit?: string; cursor?: string }, @Caller() who: Access) {
+    const page = parsePage(q);
+    return toPage(await this.service.list(who, guardId, page), page);
   }
 
   @Get("training/:id")

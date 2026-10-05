@@ -21,10 +21,18 @@ export const createVisitSchema = z
   })
   .strict();
 
-export const rescheduleVisitSchema = z.object({ date: isoDate, time, inspectorId: id.nullish().transform((v) => (v === undefined ? undefined : v)), reason }).strict();
+export const rescheduleVisitSchema = z
+  .object({ date: isoDate, time, inspectorId: id.nullish().transform((v) => (v === undefined ? undefined : v)), reason })
+  .strict();
 export const cancelVisitSchema = z.object({ reason }).strict();
 export const listVisitsQuery = z
-  .object({ projectId: id.optional(), from: isoDate.optional(), to: isoDate.optional() })
+  .object({
+    projectId: id.optional(),
+    from: isoDate.optional(),
+    to: isoDate.optional(),
+    limit: z.string().max(4).optional(),
+    cursor: z.string().max(60).optional(),
+  })
   .strict();
 
 export type CreateVisitBody = z.infer<typeof createVisitSchema>;

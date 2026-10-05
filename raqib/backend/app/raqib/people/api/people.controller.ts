@@ -1,18 +1,12 @@
-import { Body, Controller, Get, HttpCode, Param, Post, Put, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Param, Post, Put, UseGuards, Query } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
 import { ZodBody } from "@core/http/zod.pipe.js";
-import { Allow, AccessGuard, Caller } from "@raqib/raqib/access/access.guard.js";
+import { Allow, AccessGuard, Caller, SetupRoute } from "@raqib/raqib/access/access.guard.js";
 import type { Access } from "@raqib/raqib/access/access.js";
 import { PeopleService } from "../application/people-service.js";
-import {
-  changeRoleSchema,
-  setScopeSchema,
-  setStatusSchema,
-  type ChangeRoleBody,
-  type SetScopeBody,
-  type SetStatusBody,
-} from "../validation/people.schema.js";
+import { changeRoleSchema, setScopeSchema, setStatusSchema, type ChangeRoleBody, type SetScopeBody, type SetStatusBody } from "../validation/people.schema.js";
+import { parsePage, toPage } from "@raqib/raqib/shared/paging.js";
 
 @ApiTags("raqib · people")
 @ApiBearerAuth("access-token")
@@ -24,14 +18,16 @@ export class PeopleController {
   /** The signed-in person: identity, role, project scope and effective permission template. */
   @Get("me")
   @Allow()
+  @SetupRoute()
   me(@Caller() who: Access) {
     return this.service.me(who);
   }
 
   @Get("users")
   @Allow("users", "V")
-  async list(@Caller() who: Access) {
-    return { items: await this.service.list(who) };
+  async list(@Query() q: { limit?: string; cursor?: string }, @Caller() who: Access) {
+    const page = parsePage(q);
+    return toPage(await this.service.list(who, page), page);
   }
 
   @Get("users/:id")

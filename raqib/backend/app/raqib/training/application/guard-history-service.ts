@@ -36,7 +36,11 @@ export class GuardHistoryService {
         .flatMap((r) => r.snapshot.guards.filter((x) => x.employeeNo === g.employeeNo).map((x) => ({ date: r.snapshot.date, pct: x.pct })))
         .sort((a, b) => b.date.localeCompare(a.date));
       const scored = evals.filter((e) => e.pct != null);
-      out[g.id] = { average: scored.length ? Math.round(scored.reduce((s, e) => s + e.pct!, 0) / scored.length) : null, evaluations: evals.length, lastPct: scored[0]?.pct ?? null };
+      out[g.id] = {
+        average: scored.length ? Math.round(scored.reduce((s, e) => s + e.pct!, 0) / scored.length) : null,
+        evaluations: evals.length,
+        lastPct: scored[0]?.pct ?? null,
+      };
     }
     return out;
   }
@@ -50,7 +54,16 @@ export class GuardHistoryService {
     const evaluations = reports.flatMap((r) =>
       r.snapshot.guards
         .filter((x) => x.employeeNo === g.employeeNo)
-        .map((x) => ({ reportId: r.id, reportRef: r.ref, visitId: r.visitId, visitRef: r.snapshot.visitRef, date: r.snapshot.date, pct: x.pct, note: x.note, site: r.snapshot.site })),
+        .map((x) => ({
+          reportId: r.id,
+          reportRef: r.ref,
+          visitId: r.visitId,
+          visitRef: r.snapshot.visitRef,
+          date: r.snapshot.date,
+          pct: x.pct,
+          note: x.note,
+          site: r.snapshot.site,
+        })),
     );
     const scored = evaluations.filter((e) => e.pct != null);
     const training = can(who, "training", "V") ? await this.training.list(who, g.id) : [];

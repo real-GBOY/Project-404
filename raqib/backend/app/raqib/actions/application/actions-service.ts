@@ -14,6 +14,7 @@ import { VisitsRepository } from "@raqib/raqib/visits/infrastructure/visits-repo
 import { effectiveActionStatus, letterForStep, nextAction, type ActionStep, type DisplayActionStatus } from "../domain/action-state.js";
 import { actionAssigned, actionClosed, actionReturned, actionSubmitted } from "../events.js";
 import { ActionsRepository, type ActionRecord, type Priority } from "../infrastructure/actions-repository.js";
+import type { Page } from "@raqib/raqib/shared/paging.js";
 
 export interface ActionLogEntry {
   id: string;
@@ -75,10 +76,10 @@ export class ActionsService {
 
   // ── reads ───────────────────────────────────────────────────────────────
 
-  async list(who: Access): Promise<ActionView[]> {
+  async list(who: Access, page?: Page): Promise<ActionView[]> {
     requireCan(who, "actions", "V");
     return readInTenant(async () => {
-      const rows = await this.repo.list(who.allProjects ? undefined : [...who.projectIds]);
+      const rows = await this.repo.list(who.allProjects ? undefined : [...who.projectIds], page);
       return this.views(rows, who, false);
     });
   }
@@ -118,11 +119,24 @@ export class ActionsService {
       if (!eligible.includes(input.responsibleId)) throw ValidationError("raqib.invalid_responsible", "This person cannot be given actions on this project.");
       const ref = await this.counters.next("CA", Number(who.today.slice(0, 4)));
       const actionId = await this.repo.insert({
-        ref, observationId: o.id, projectId: o.projectId, title: o.title, description: input.description, priority: input.priority,
-        responsibleId: input.responsibleId, dueDate: input.dueDate, createdBy: who.userId,
+        ref,
+        observationId: o.id,
+        projectId: o.projectId,
+        title: o.title,
+        description: input.description,
+        priority: input.priority,
+        responsibleId: input.responsibleId,
+        dueDate: input.dueDate,
+        createdBy: who.userId,
       });
       await this.repo.appendEvent({ actionId, kind: "created", fromStatus: null, toStatus: "assigned", text: input.description || null, ...actorOf(who) });
-      await this.audit.record({ actorId: who.userId, action: "raqib.action.created", resourceType: "raqib_action", resourceId: actionId, after: { ref, observationId: o.id, responsibleId: input.responsibleId, dueDate: input.dueDate } });
+      await this.audit.record({
+        actorId: who.userId,
+        action: "raqib.action.created",
+        resourceType: "raqib_action",
+        resourceId: actionId,
+        after: { ref, observationId: o.id, responsibleId: input.responsibleId, dueDate: input.dueDate },
+      });
       await this.events.publish(actionAssigned({ actionId, actorId: who.userId }));
       return actionId;
     });
@@ -139,7 +153,8 @@ export class ActionsService {
       const to = nextAction(a.status, step);
       if (!to) throw Conflict("raqib.invalid_transition", "This is not possible in the action's current state.");
       requireCan(who, "actions", letterForStep(step));
-      if ((step === "start" || step === "submit") && a.responsibleId !== who.userId) throw Forbidden("raqib.not_responsible", "Only the person responsible can do this.");
+      if ((step === "start" || step === "submit") && a.responsibleId !== who.userId)
+        throw Forbidden("raqib.not_responsible", "Only the person responsible can do this.");
       if ((step === "return" || step === "close") && a.responsibleId === who.userId) throw Forbidden("raqib.self_review", "You cannot review your own action.");
       const now = new Date();
       if (step === "submit") {
@@ -156,7 +171,15 @@ export class ActionsService {
       });
       const kind = ({ start: "started", submit: "submitted", return: "returned", close: "closed" } as const)[step];
       await this.repo.appendEvent({ actionId: a.id, kind, fromStatus: a.status, toStatus: to, text: text || null, ...actorOf(who) });
-      await this.audit.record({ actorId: who.userId, action: `raqib.action.${kind}`, resourceType: "raqib_action", resourceId: a.id, before: { status: a.status }, after: { status: to }, metadata: { reason: text || null } });
+      await this.audit.record({
+        actorId: who.userId,
+        action: `raqib.action.${kind}`,
+        resourceType: "raqib_action",
+        resourceId: a.id,
+        before: { status: a.status },
+        after: { status: to },
+        metadata: { reason: text || null },
+      });
       const base = { actionId: a.id, actorId: who.userId };
       if (step === "submit") await this.events.publish(actionSubmitted(base));
       if (step === "return") await this.events.publish(actionReturned({ ...base, reason: text }));
@@ -207,26 +230,52 @@ export class ActionsService {
       const p = projects.get(r.projectId);
       const visit = o?.visitId ? await this.visits.find(o.visitId) : null;
       const view: ActionView = {
-        id: r.id, ref: r.ref, title: r.title, description: r.description, priority: r.priority,
-        status: effectiveActionStatus(r.status, r.dueDate, who.today), storedStatus: r.status, dueDate: r.dueDate, round: r.round,
+        id: r.id,
+        ref: r.ref,
+        title: r.title,
+        description: r.description,
+        priority: r.priority,
+        status: effectiveActionStatus(r.status, r.dueDate, who.today),
+        storedStatus: r.status,
+        dueDate: r.dueDate,
+        round: r.round,
         project: { id: r.projectId, code: p?.code ?? "", name: p?.name ?? { ar: "—", en: "—" } },
         responsible: { id: r.responsibleId, name: await nameOf(r.responsibleId) },
         observation: {
-          id: r.observationId, ref: o?.ref ?? "", kind: o?.kind ?? "violation", severity: o?.severity ?? "medium", repeatCount: o?.repeatCount ?? 0,
-          itemNum: o?.itemNum ?? null, site: (o && sites.get(o.siteId)?.name) || { ar: "—", en: "—" },
+          id: r.observationId,
+          ref: o?.ref ?? "",
+          kind: o?.kind ?? "violation",
+          severity: o?.severity ?? "medium",
+          repeatCount: o?.repeatCount ?? 0,
+          itemNum: o?.itemNum ?? null,
+          site: (o && sites.get(o.siteId)?.name) || { ar: "—", en: "—" },
         },
         visit: visit ? { id: visit.id, ref: visit.ref } : null,
-        createdAt: r.createdAt.toISOString(), closedAt: r.closedAt?.toISOString() ?? null,
+        createdAt: r.createdAt.toISOString(),
+        closedAt: r.closedAt?.toISOString() ?? null,
       };
       if (detail) {
         view.log = (await this.repo.events(r.id)).map((e) => ({
-          id: e.id, kind: e.kind, from: e.fromStatus, to: e.toStatus, text: e.text, at: e.at.toISOString(),
+          id: e.id,
+          kind: e.kind,
+          from: e.fromStatus,
+          to: e.toStatus,
+          text: e.text,
+          at: e.at.toISOString(),
           actor: { id: e.actorId, name: { ar: e.actorNameAr, en: e.actorNameEn }, role: e.actorRole, title: { ar: e.actorTitleAr, en: e.actorTitleEn } },
         }));
         const ev = await this.evidence.forRef("corrective_action", r.id);
         view.evidence = [];
         for (const e of ev) {
-          view.evidence.push({ id: e.id, name: e.name, kind: e.kind, mime: e.mime, sizeBytes: e.sizeBytes, at: e.uploadedAt.toISOString(), by: e.uploadedBy ? (await nameOf(e.uploadedBy)).en : null });
+          view.evidence.push({
+            id: e.id,
+            name: e.name,
+            kind: e.kind,
+            mime: e.mime,
+            sizeBytes: e.sizeBytes,
+            at: e.uploadedAt.toISOString(),
+            by: e.uploadedBy ? (await nameOf(e.uploadedBy)).en : null,
+          });
         }
       }
       out.push(view);

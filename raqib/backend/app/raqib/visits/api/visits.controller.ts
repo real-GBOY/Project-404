@@ -15,6 +15,7 @@ import {
   type ListVisitsQuery,
   type RescheduleVisitBody,
 } from "../validation/visits.schema.js";
+import { parsePage, toPage } from "@raqib/raqib/shared/paging.js";
 
 @ApiTags("raqib · visits")
 @ApiBearerAuth("access-token")
@@ -26,7 +27,9 @@ export class VisitsController {
   @Get()
   @Allow("visits", "V")
   async list(@Query(ZodQuery(listVisitsQuery)) q: ListVisitsQuery, @Caller() who: Access) {
-    return { items: await this.service.list(who, q) };
+    const { limit, cursor, ...filter } = q;
+    const page = parsePage({ limit, cursor });
+    return toPage(await this.service.list(who, filter, page), page);
   }
 
   /** Inspectors a visit in this project can be assigned to (people who schedule need this, not the full user list). */

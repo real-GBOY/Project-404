@@ -6,7 +6,15 @@ import { zonedInstant } from "@raqib/raqib/shared/dates.js";
  * rejected). The table of legal moves lives here so a transition is validated in exactly one place.
  */
 export const VISIT_STATUSES = [
-  "scheduled", "assigned", "in_progress", "pending_review", "pending_approval", "returned", "approved", "rejected", "cancelled",
+  "scheduled",
+  "assigned",
+  "in_progress",
+  "pending_review",
+  "pending_approval",
+  "returned",
+  "approved",
+  "rejected",
+  "cancelled",
 ] as const;
 export type VisitStatus = (typeof VISIT_STATUSES)[number];
 /** `overdue` is derived, never stored. */
@@ -26,10 +34,14 @@ export type ReviewAction = "forward" | "return" | "reject" | "approve";
  */
 export function reviewNext(from: VisitStatus, action: ReviewAction): VisitStatus | null {
   switch (action) {
-    case "forward": return from === "pending_review" ? "pending_approval" : null;
-    case "approve": return from === "pending_approval" ? "approved" : null;
-    case "return": return from === "pending_review" || from === "pending_approval" ? "returned" : null;
-    case "reject": return from === "pending_review" || from === "pending_approval" ? "rejected" : null;
+    case "forward":
+      return from === "pending_review" ? "pending_approval" : null;
+    case "approve":
+      return from === "pending_approval" ? "approved" : null;
+    case "return":
+      return from === "pending_review" || from === "pending_approval" ? "returned" : null;
+    case "reject":
+      return from === "pending_review" || from === "pending_approval" ? "rejected" : null;
   }
 }
 
@@ -68,12 +80,7 @@ export function next(from: VisitStatus | null, action: VisitAction, hasInspector
  * What the app shows: a visit that has not started within `overdueHours` of its scheduled time is overdue.
  * Only visits still waiting to start can be overdue.
  */
-export function effectiveStatus(
-  v: { status: VisitStatus; date: string; time: string },
-  now: Date,
-  overdueHours: number,
-  timeZone: string,
-): DisplayStatus {
+export function effectiveStatus(v: { status: VisitStatus; date: string; time: string }, now: Date, overdueHours: number, timeZone: string): DisplayStatus {
   if (v.status !== "scheduled" && v.status !== "assigned") return v.status;
   const due = zonedInstant(v.date, v.time, timeZone).getTime() + overdueHours * 3_600_000;
   return now.getTime() > due ? "overdue" : v.status;

@@ -14,6 +14,7 @@ import { initials } from "@raqib/raqib/shared/l10n.js";
 import { coreRoleKey } from "@raqib/raqib/shared/roles.js";
 import type { PersonView } from "../domain/person.js";
 import { PeopleRepository, type ProfileRecord } from "../infrastructure/people-repository.js";
+import type { Page } from "@raqib/raqib/shared/paging.js";
 
 /** Default job titles per role, used when a role is changed (the person keeps their own name). */
 const ROLE_TITLES: Record<RoleKey, { ar: string; en: string }> = {
@@ -68,13 +69,19 @@ export class PeopleService {
     });
   }
 
-  async list(who: Access): Promise<PersonView[]> {
+  async list(who: Access, page?: Page): Promise<PersonView[]> {
     requireCan(who, "users", "V");
     return readInTenant(async () => {
-      const [profiles, assignments] = await Promise.all([this.repo.list(), this.repo.activeAssignments(who.today)]);
+      const [profiles, assignments] = await Promise.all([this.repo.list(page), this.repo.activeAssignments(who.today)]);
       return Promise.all(
         profiles.map((p) =>
-          this.view(p, this.scopeOf(p.roleKey, assignments.filter((a) => a.userId === p.userId).map((a) => a.projectId))),
+          this.view(
+            p,
+            this.scopeOf(
+              p.roleKey,
+              assignments.filter((a) => a.userId === p.userId).map((a) => a.projectId),
+            ),
+          ),
         ),
       );
     });

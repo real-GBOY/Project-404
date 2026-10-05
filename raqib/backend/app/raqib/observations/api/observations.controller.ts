@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Param, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Param, Post, UseGuards, Query } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { z } from "zod";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
@@ -6,6 +6,7 @@ import { ZodBody } from "@core/http/zod.pipe.js";
 import { Allow, AccessGuard, Caller } from "@raqib/raqib/access/access.guard.js";
 import type { Access } from "@raqib/raqib/access/access.js";
 import { ObservationsService } from "../application/observations-service.js";
+import { parsePage, toPage } from "@raqib/raqib/shared/paging.js";
 
 const createSchema = z
   .object({
@@ -26,8 +27,9 @@ export class ObservationsController {
 
   @Get()
   @Allow("observations", "V")
-  async list(@Caller() who: Access) {
-    return { items: await this.service.list(who) };
+  async list(@Query() q: { limit?: string; cursor?: string }, @Caller() who: Access) {
+    const page = parsePage(q);
+    return toPage(await this.service.list(who, page), page);
   }
 
   @Get(":id")

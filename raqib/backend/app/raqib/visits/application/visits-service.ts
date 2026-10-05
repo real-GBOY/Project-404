@@ -24,6 +24,7 @@ import {
   type VisitRecord,
   type VisitType,
 } from "../infrastructure/visits-repository.js";
+import type { Page } from "@raqib/raqib/shared/paging.js";
 
 export interface VisitView {
   id: string;
@@ -115,7 +116,7 @@ export class VisitsService {
     return records.map((r) => {
       const p = pMap.get(r.projectId);
       const site = sMap.get(r.siteId);
-      const area = r.areaId ? aMap.get(r.areaId)?.name ?? null : r.areaText;
+      const area = r.areaId ? (aMap.get(r.areaId)?.name ?? null) : r.areaText;
       const insp = r.inspectorId ? iMap.get(r.inspectorId) : undefined;
       return {
         id: r.id,
@@ -147,7 +148,7 @@ export class VisitsService {
     });
   }
 
-  async list(who: Access, q: { projectId?: string; from?: string; to?: string } = {}): Promise<VisitView[]> {
+  async list(who: Access, q: { projectId?: string; from?: string; to?: string } = {}, page?: Page): Promise<VisitView[]> {
     requireCan(who, "visits", "V");
     return readInTenant(async () => {
       const filter: VisitFilter = { from: q.from, to: q.to };
@@ -156,7 +157,7 @@ export class VisitsService {
         filter.projectIds = [q.projectId];
       } else if (!who.allProjects) filter.projectIds = [...who.projectIds];
       if (who.role === "ins") filter.inspectorId = who.userId;
-      return this.assemble(await this.repo.list(filter));
+      return this.assemble(await this.repo.list(filter, page));
     });
   }
 
@@ -207,21 +208,52 @@ export class VisitsService {
         const status = next(null, "schedule", !!input.inspectorId)!;
         const ref = await this.counters.next("VIS", Number(who.today.slice(0, 4)));
         const id = await this.repo.insert({
-          ref, projectId: input.projectId, siteId: input.siteId, areaId: input.areaId, areaText: input.areaText?.trim() || null,
-          inspectorId: input.inspectorId ?? null, type: input.type, shift: input.shift, date: input.date, time: input.time, status, createdBy: who.userId,
+          ref,
+          projectId: input.projectId,
+          siteId: input.siteId,
+          areaId: input.areaId,
+          areaText: input.areaText?.trim() || null,
+          inspectorId: input.inspectorId ?? null,
+          type: input.type,
+          shift: input.shift,
+          date: input.date,
+          time: input.time,
+          status,
+          createdBy: who.userId,
         });
         await this.repo.setGuards(id, guardIds);
         const base = { visitId: id, ...actorOf(who) };
-        await this.repo.appendEvent({ ...base, action: "scheduled", fromStatus: null, toStatus: status === "assigned" ? "scheduled" : status, reason: input.reason });
-        if (status === "assigned") await this.repo.appendEvent({ ...base, action: "assigned", fromStatus: "scheduled", toStatus: "assigned", detail: { inspectorId: input.inspectorId } });
-        await this.audit.record({ actorId: who.userId, action: "raqib.visit.scheduled", resourceType: "raqib_visit", resourceId: id, after: { ref, ...input }, metadata: { reason: input.reason } });
+        await this.repo.appendEvent({
+          ...base,
+          action: "scheduled",
+          fromStatus: null,
+          toStatus: status === "assigned" ? "scheduled" : status,
+          reason: input.reason,
+        });
+        if (status === "assigned")
+          await this.repo.appendEvent({
+            ...base,
+            action: "assigned",
+            fromStatus: "scheduled",
+            toStatus: "assigned",
+            detail: { inspectorId: input.inspectorId },
+          });
+        await this.audit.record({
+          actorId: who.userId,
+          action: "raqib.visit.scheduled",
+          resourceType: "raqib_visit",
+          resourceId: id,
+          after: { ref, ...input },
+          metadata: { reason: input.reason },
+        });
         if (input.inspectorId && input.inspectorId !== who.userId) {
           await this.events.publish(visitAssigned({ visitId: id, inspectorId: input.inspectorId, actorId: who.userId }));
         }
         return (await this.assemble([(await this.repo.find(id))!]))[0]!;
       });
     } catch (err) {
-      if (isUniqueViolation(err, "raqib_visits_inspector_slot_uq")) throw Conflict("raqib.inspector_busy", "The inspector already has a visit at that date and time.");
+      if (isUniqueViolation(err, "raqib_visits_inspector_slot_uq"))
+        throw Conflict("raqib.inspector_busy", "The inspector already has a visit at that date and time.");
       throw err;
     }
   }
@@ -242,13 +274,23 @@ export class VisitsService {
         await this.repo.update(id, { date: input.date, time: input.time, inspectorId, status: to, overdueNotifiedAt: null });
         const base = { visitId: id, ...actorOf(who) };
         await this.repo.appendEvent({
-          ...base, action: "rescheduled", fromStatus: v.status, toStatus: to, reason: input.reason,
+          ...base,
+          action: "rescheduled",
+          fromStatus: v.status,
+          toStatus: to,
+          reason: input.reason,
           detail: { from: { date: v.date, time: v.time, inspectorId: v.inspectorId }, to: { date: input.date, time: input.time, inspectorId } },
         });
-        if (to !== v.status && to === "assigned") await this.repo.appendEvent({ ...base, action: "assigned", fromStatus: v.status, toStatus: to, detail: { inspectorId } });
+        if (to !== v.status && to === "assigned")
+          await this.repo.appendEvent({ ...base, action: "assigned", fromStatus: v.status, toStatus: to, detail: { inspectorId } });
         await this.audit.record({
-          actorId: who.userId, action: "raqib.visit.rescheduled", resourceType: "raqib_visit", resourceId: id,
-          before: { date: v.date, time: v.time, inspectorId: v.inspectorId }, after: { date: input.date, time: input.time, inspectorId }, metadata: { reason: input.reason },
+          actorId: who.userId,
+          action: "raqib.visit.rescheduled",
+          resourceType: "raqib_visit",
+          resourceId: id,
+          before: { date: v.date, time: v.time, inspectorId: v.inspectorId },
+          after: { date: input.date, time: input.time, inspectorId },
+          metadata: { reason: input.reason },
         });
         if (v.inspectorId && v.inspectorId !== inspectorId && v.inspectorId !== who.userId) {
           await this.events.publish(visitUnassigned({ visitId: id, previousInspectorId: v.inspectorId, actorId: who.userId }));
@@ -260,7 +302,8 @@ export class VisitsService {
         return (await this.assemble([(await this.repo.find(id))!]))[0]!;
       });
     } catch (err) {
-      if (isUniqueViolation(err, "raqib_visits_inspector_slot_uq")) throw Conflict("raqib.inspector_busy", "The inspector already has a visit at that date and time.");
+      if (isUniqueViolation(err, "raqib_visits_inspector_slot_uq"))
+        throw Conflict("raqib.inspector_busy", "The inspector already has a visit at that date and time.");
       throw err;
     }
   }
@@ -275,7 +318,15 @@ export class VisitsService {
       if (!to) throw Conflict("raqib.visit_locked", "This visit can no longer be cancelled.");
       await this.repo.update(id, { status: to });
       await this.repo.appendEvent({ visitId: id, ...actorOf(who), action: "cancelled", fromStatus: v.status, toStatus: to, reason });
-      await this.audit.record({ actorId: who.userId, action: "raqib.visit.cancelled", resourceType: "raqib_visit", resourceId: id, before: { status: v.status }, after: { status: to }, metadata: { reason } });
+      await this.audit.record({
+        actorId: who.userId,
+        action: "raqib.visit.cancelled",
+        resourceType: "raqib_visit",
+        resourceId: id,
+        before: { status: v.status },
+        after: { status: to },
+        metadata: { reason },
+      });
       await this.events.publish(visitCancelled({ visitId: id, inspectorId: v.inspectorId, actorId: who.userId, reason }));
       return (await this.assemble([(await this.repo.find(id))!]))[0]!;
     });

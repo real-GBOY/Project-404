@@ -5,6 +5,7 @@ import { getContext } from "@core/kernel/logging/context.js";
 import { raqibId } from "@raqib/raqib/shared/ids.js";
 import type { RoleKey } from "@raqib/raqib/shared/modules.js";
 import type { PersonStatus } from "../domain/person.js";
+import { fetchSize, type Page } from "@raqib/raqib/shared/paging.js";
 
 export interface ProfileRecord {
   userId: string;
@@ -31,35 +32,63 @@ export interface ProfileInput {
   status?: PersonStatus;
 }
 
-const COLS = [
-  "user_id", "role_key", "name_ar", "name_en", "title_ar", "title_en", "employee_no", "phone", "status", "last_active_at",
-] as const;
+const COLS = ["user_id", "role_key", "name_ar", "name_en", "title_ar", "title_en", "employee_no", "phone", "status", "last_active_at"] as const;
 
 function toRecord(r: {
-  user_id: string; role_key: RoleKey; name_ar: string; name_en: string; title_ar: string; title_en: string;
-  employee_no: string | null; phone: string | null; status: PersonStatus; last_active_at: Date | null;
+  user_id: string;
+  role_key: RoleKey;
+  name_ar: string;
+  name_en: string;
+  title_ar: string;
+  title_en: string;
+  employee_no: string | null;
+  phone: string | null;
+  status: PersonStatus;
+  last_active_at: Date | null;
 }): ProfileRecord {
   return {
-    userId: r.user_id, roleKey: r.role_key, nameAr: r.name_ar, nameEn: r.name_en, titleAr: r.title_ar, titleEn: r.title_en,
-    employeeNo: r.employee_no, phone: r.phone, status: r.status, lastActiveAt: r.last_active_at,
+    userId: r.user_id,
+    roleKey: r.role_key,
+    nameAr: r.name_ar,
+    nameEn: r.name_en,
+    titleAr: r.title_ar,
+    titleEn: r.title_en,
+    employeeNo: r.employee_no,
+    phone: r.phone,
+    status: r.status,
+    lastActiveAt: r.last_active_at,
   };
 }
 
 @Injectable()
 export class PeopleRepository {
-  async list(): Promise<ProfileRecord[]> {
-    const rows = await raqibDb().selectFrom("raqib_profiles").select([...COLS]).orderBy("name_en").execute();
+  async list(page?: Page): Promise<ProfileRecord[]> {
+    let q = raqibDb()
+      .selectFrom("raqib_profiles")
+      .select([...COLS])
+      .orderBy("name_en")
+      .orderBy("user_id");
+    if (page) q = q.limit(fetchSize(page)).offset(page.offset);
+    const rows = await q.execute();
     return rows.map(toRecord);
   }
 
   async find(userId: string): Promise<ProfileRecord | null> {
-    const r = await raqibDb().selectFrom("raqib_profiles").select([...COLS]).where("user_id", "=", userId).executeTakeFirst();
+    const r = await raqibDb()
+      .selectFrom("raqib_profiles")
+      .select([...COLS])
+      .where("user_id", "=", userId)
+      .executeTakeFirst();
     return r ? toRecord(r) : null;
   }
 
   async findMany(userIds: string[]): Promise<ProfileRecord[]> {
     if (!userIds.length) return [];
-    const rows = await raqibDb().selectFrom("raqib_profiles").select([...COLS]).where("user_id", "in", userIds).execute();
+    const rows = await raqibDb()
+      .selectFrom("raqib_profiles")
+      .select([...COLS])
+      .where("user_id", "in", userIds)
+      .execute();
     return rows.map(toRecord);
   }
 
@@ -84,11 +113,7 @@ export class PeopleRepository {
   }
 
   async setRole(userId: string, role: RoleKey, titleAr: string, titleEn: string): Promise<void> {
-    await raqibDb()
-      .updateTable("raqib_profiles")
-      .set({ role_key: role, title_ar: titleAr, title_en: titleEn })
-      .where("user_id", "=", userId)
-      .execute();
+    await raqibDb().updateTable("raqib_profiles").set({ role_key: role, title_ar: titleAr, title_en: titleEn }).where("user_id", "=", userId).execute();
   }
 
   async setStatus(userId: string, status: PersonStatus): Promise<void> {
