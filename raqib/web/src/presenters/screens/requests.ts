@@ -1,5 +1,5 @@
 import type { AccountRequest } from "@/api/types";
-import { ApiError } from "@/config";
+import { ApiError } from "@/services/http";
 import { badge } from "../common";
 import type { Ctx } from "../context";
 

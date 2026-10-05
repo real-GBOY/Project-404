@@ -1,8 +1,10 @@
 /* eslint-disable */
-// GENERATED from the approved Claude Design (Raqib.dc.html) by tools/transpile — do not hand-edit.
+// Transpiled once from the approved Claude Design (Raqib.dc.html), now owned in this repo: colors come from @/styles/colors, fonts from @/styles/typography. Behavior belongs in presenters.
 import { Fragment } from "react";
-import { Hover } from "@/ui/Hover";
+import { Hover } from "@/components/Hover";
 import type { VM } from "@/ui/vm";
+import { C } from "@/styles/colors";
+import { FONT } from "@/styles/typography";
 
 export function VisitsList({ vm }: { vm: VM }) {
   const { mobile, notMobile, pad, pageTitle, t, vl } = vm;
@@ -13,12 +15,12 @@ export function VisitsList({ vm }: { vm: VM }) {
 <h1 style={{ margin: "0", fontSize: "22px", fontWeight: "600" }}>
 {pageTitle}
 </h1>
-<div style={{ fontSize: "13px", color: "#5C6168" }}>
+<div style={{ fontSize: "13px", color: C.text.secondary }}>
 {vl.count}
 </div>
 </div>
 <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
-<div style={{ display: "flex", border: "1px solid #D6D3CB", borderRadius: "4px", overflow: "hidden", background: "#fff" }}>
+<div style={{ display: "flex", border: `1px solid ${C.border.input}`, borderRadius: "4px", overflow: "hidden", background: C.surface.white }}>
 {(vl.views || []).map((o: any, __i: number) => (<Fragment key={__i}>
 <button onClick={o.set} style={{ border: "0", height: "36px", padding: "0 14px", fontSize: "13px", cursor: "pointer", background: o.bg, color: o.fg }}>
 {o.label}
@@ -26,7 +28,7 @@ export function VisitsList({ vm }: { vm: VM }) {
 </Fragment>))}
 </div>
 {vl.canSchedule ? (<>
-<button onClick={vl.create} style={{ height: "38px", padding: "0 16px", border: "0", borderRadius: "4px", background: "#0F5C4A", color: "#fff", fontWeight: "500", cursor: "pointer" }}>
+<button onClick={vl.create} style={{ height: "38px", padding: "0 16px", border: "0", borderRadius: "4px", background: C.brand.primary, color: C.surface.white, fontWeight: "500", cursor: "pointer" }}>
 {t.newVisit}
 </button>
 </>) : null}
@@ -42,69 +44,69 @@ export function VisitsList({ vm }: { vm: VM }) {
 </div>
 {vl.has ? (<>
 {notMobile ? (<>
-<div style={{ background: "#fff", border: "1px solid #E3E1DA", borderRadius: "6px", overflowX: "auto" }}>
+<div style={{ background: C.surface.white, border: `1px solid ${C.border.hairline}`, borderRadius: "6px", overflowX: "auto" }}>
 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13.5px", minWidth: "900px" }}>
 <thead>
-<tr style={{ background: "#FAF9F6" }}>
-<th style={{ textAlign: "start", fontWeight: "500", fontSize: "12px", color: "#5C6168", padding: "10px 14px", borderBottom: "1px solid #E3E1DA" }}>
+<tr style={{ background: C.surface.paper }}>
+<th style={{ textAlign: "start", fontWeight: "500", fontSize: "12px", color: C.text.secondary, padding: "10px 14px", borderBottom: `1px solid ${C.border.hairline}` }}>
 {t.c_ref}
 </th>
-<th style={{ textAlign: "start", fontWeight: "500", fontSize: "12px", color: "#5C6168", padding: "10px 14px", borderBottom: "1px solid #E3E1DA" }}>
+<th style={{ textAlign: "start", fontWeight: "500", fontSize: "12px", color: C.text.secondary, padding: "10px 14px", borderBottom: `1px solid ${C.border.hairline}` }}>
 {t.c_projSite}
 </th>
-<th style={{ textAlign: "start", fontWeight: "500", fontSize: "12px", color: "#5C6168", padding: "10px 14px", borderBottom: "1px solid #E3E1DA" }}>
+<th style={{ textAlign: "start", fontWeight: "500", fontSize: "12px", color: C.text.secondary, padding: "10px 14px", borderBottom: `1px solid ${C.border.hairline}` }}>
 {t.f_inspector}
 </th>
-<th style={{ textAlign: "start", fontWeight: "500", fontSize: "12px", color: "#5C6168", padding: "10px 14px", borderBottom: "1px solid #E3E1DA" }}>
+<th style={{ textAlign: "start", fontWeight: "500", fontSize: "12px", color: C.text.secondary, padding: "10px 14px", borderBottom: `1px solid ${C.border.hairline}` }}>
 {t.f_type}
 </th>
-<th style={{ textAlign: "start", fontWeight: "500", fontSize: "12px", color: "#5C6168", padding: "10px 14px", borderBottom: "1px solid #E3E1DA" }}>
+<th style={{ textAlign: "start", fontWeight: "500", fontSize: "12px", color: C.text.secondary, padding: "10px 14px", borderBottom: `1px solid ${C.border.hairline}` }}>
 {t.f_shift}
 </th>
-<th style={{ textAlign: "start", fontWeight: "500", fontSize: "12px", color: "#5C6168", padding: "10px 14px", borderBottom: "1px solid #E3E1DA" }}>
+<th style={{ textAlign: "start", fontWeight: "500", fontSize: "12px", color: C.text.secondary, padding: "10px 14px", borderBottom: `1px solid ${C.border.hairline}` }}>
 {t.f_datetime}
 </th>
-<th style={{ textAlign: "start", fontWeight: "500", fontSize: "12px", color: "#5C6168", padding: "10px 14px", borderBottom: "1px solid #E3E1DA" }}>
+<th style={{ textAlign: "start", fontWeight: "500", fontSize: "12px", color: C.text.secondary, padding: "10px 14px", borderBottom: `1px solid ${C.border.hairline}` }}>
 {t.c_score}
 </th>
-<th style={{ textAlign: "start", fontWeight: "500", fontSize: "12px", color: "#5C6168", padding: "10px 14px", borderBottom: "1px solid #E3E1DA" }}>
+<th style={{ textAlign: "start", fontWeight: "500", fontSize: "12px", color: C.text.secondary, padding: "10px 14px", borderBottom: `1px solid ${C.border.hairline}` }}>
 {t.c_st}
 </th>
 </tr>
 </thead>
 <tbody>
 {(vl.rows || []).map((v: any, __i: number) => (<Fragment key={__i}>
-<Hover as="tr" onClick={v.go} style={{ cursor: "pointer" }} hover={{ background: "#FAF9F6" }}>
-<td style={{ padding: "11px 14px", borderBottom: "1px solid #EFEDE7", fontFamily: "'IBM Plex Mono',monospace", fontSize: "12.5px" }}>
+<Hover as="tr" onClick={v.go} style={{ cursor: "pointer" }} hover={{ background: C.surface.paper }}>
+<td style={{ padding: "11px 14px", borderBottom: `1px solid ${C.surface.track}`, fontFamily: FONT.mono, fontSize: "12.5px" }}>
 {v.ref}
 </td>
-<td style={{ padding: "11px 14px", borderBottom: "1px solid #EFEDE7" }}>
+<td style={{ padding: "11px 14px", borderBottom: `1px solid ${C.surface.track}` }}>
 <div style={{ fontWeight: "500" }}>
 {v.site} — {v.area}
 </div>
-<div style={{ fontSize: "12px", color: "#8B9097" }}>
+<div style={{ fontSize: "12px", color: C.text.muted }}>
 {v.proj}
 </div>
 </td>
-<td style={{ padding: "11px 14px", borderBottom: "1px solid #EFEDE7" }}>
+<td style={{ padding: "11px 14px", borderBottom: `1px solid ${C.surface.track}` }}>
 {v.ins}
 </td>
-<td style={{ padding: "11px 14px", borderBottom: "1px solid #EFEDE7" }}>
+<td style={{ padding: "11px 14px", borderBottom: `1px solid ${C.surface.track}` }}>
 {v.type}
 </td>
-<td style={{ padding: "11px 14px", borderBottom: "1px solid #EFEDE7" }}>
+<td style={{ padding: "11px 14px", borderBottom: `1px solid ${C.surface.track}` }}>
 {v.shift}
 </td>
-<td style={{ padding: "11px 14px", borderBottom: "1px solid #EFEDE7", whiteSpace: "nowrap" }}>
+<td style={{ padding: "11px 14px", borderBottom: `1px solid ${C.surface.track}`, whiteSpace: "nowrap" }}>
 {v.wd} {v.date} · 
-<span dir="ltr" style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: "12.5px" }}>
+<span dir="ltr" style={{ fontFamily: FONT.mono, fontSize: "12.5px" }}>
 {v.time}
 </span>
 </td>
-<td style={{ padding: "11px 14px", borderBottom: "1px solid #EFEDE7", fontWeight: "600", color: v.scoreC }}>
+<td style={{ padding: "11px 14px", borderBottom: `1px solid ${C.surface.track}`, fontWeight: "600", color: v.scoreC }}>
 {v.score}
 </td>
-<td style={{ padding: "11px 14px", borderBottom: "1px solid #EFEDE7" }}>
+<td style={{ padding: "11px 14px", borderBottom: `1px solid ${C.surface.track}` }}>
 <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "22px", padding: "0 8px", borderRadius: "3px", fontSize: "12px", fontWeight: "500", whiteSpace: "nowrap", color: v.st.fg, background: v.st.bg }}>
 <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: v.st.fg }}></span>
 {v.st.label}
@@ -119,9 +121,9 @@ export function VisitsList({ vm }: { vm: VM }) {
 {mobile ? (<>
 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
 {(vl.rows || []).map((v: any, __i: number) => (<Fragment key={__i}>
-<button onClick={v.go} style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "14px", border: "1px solid #E3E1DA", borderRadius: "6px", background: "#fff", cursor: "pointer", textAlign: "start" }}>
+<button onClick={v.go} style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "14px", border: `1px solid ${C.border.hairline}`, borderRadius: "6px", background: C.surface.white, cursor: "pointer", textAlign: "start" }}>
 <span style={{ display: "flex", justifyContent: "space-between", gap: "8px", width: "100%", alignItems: "center" }}>
-<span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: "12px", color: "#5C6168" }}>
+<span style={{ fontFamily: FONT.mono, fontSize: "12px", color: C.text.secondary }}>
 {v.ref}
 </span>
 <span style={{ height: "22px", padding: "0 8px", borderRadius: "3px", fontSize: "12px", fontWeight: "500", color: v.st.fg, background: v.st.bg, display: "inline-flex", alignItems: "center" }}>
@@ -131,7 +133,7 @@ export function VisitsList({ vm }: { vm: VM }) {
 <span style={{ fontWeight: "600" }}>
 {v.site} — {v.area}
 </span>
-<span style={{ fontSize: "12.5px", color: "#5C6168" }}>
+<span style={{ fontSize: "12.5px", color: C.text.secondary }}>
 {v.wd} {v.date} · {v.time} · {v.shift}
 </span>
 </button>
@@ -140,21 +142,21 @@ export function VisitsList({ vm }: { vm: VM }) {
 </>) : null}
 </>) : null}
 {vl.none ? (<>
-<div style={{ background: "#fff", border: "1px dashed #D6D3CB", borderRadius: "6px", padding: "36px 20px", textAlign: "center", color: "#5C6168" }}>
+<div style={{ background: C.surface.white, border: `1px dashed ${C.border.input}`, borderRadius: "6px", padding: "36px 20px", textAlign: "center", color: C.text.secondary }}>
 {t.noVisitsFilter}
 </div>
 </>) : null}
 </>) : null}
 {vl.isWeek ? (<>
-<div style={{ fontSize: "13px", color: "#5C6168" }}>
+<div style={{ fontSize: "13px", color: C.text.secondary }}>
 {vl.weekLabel}
 </div>
 {notMobile ? (<>
-<div style={{ display: "grid", gridTemplateColumns: "repeat(7,minmax(0,1fr))", background: "#fff", border: "1px solid #E3E1DA", borderRadius: "6px", overflow: "hidden", minHeight: "420px" }}>
+<div style={{ display: "grid", gridTemplateColumns: "repeat(7,minmax(0,1fr))", background: C.surface.white, border: `1px solid ${C.border.hairline}`, borderRadius: "6px", overflow: "hidden", minHeight: "420px" }}>
 {(vl.days || []).map((d: any, __i: number) => (<Fragment key={__i}>
-<div style={{ borderInlineEnd: "1px solid #EFEDE7", display: "flex", flexDirection: "column", minWidth: "0" }}>
-<div style={{ padding: "10px", borderBottom: "1px solid #EFEDE7", display: "flex", alignItems: "center", gap: "8px" }}>
-<span style={{ fontSize: "12px", color: "#5C6168" }}>
+<div style={{ borderInlineEnd: `1px solid ${C.surface.track}`, display: "flex", flexDirection: "column", minWidth: "0" }}>
+<div style={{ padding: "10px", borderBottom: `1px solid ${C.surface.track}`, display: "flex", alignItems: "center", gap: "8px" }}>
+<span style={{ fontSize: "12px", color: C.text.secondary }}>
 {d.wd}
 </span>
 <span style={{ minWidth: "26px", height: "26px", borderRadius: "13px", display: "inline-flex", alignItems: "center", justifyContent: "center", fontWeight: "600", background: d.hbg, color: d.hfg }}>
@@ -163,14 +165,14 @@ export function VisitsList({ vm }: { vm: VM }) {
 </div>
 <div style={{ padding: "6px", display: "flex", flexDirection: "column", gap: "6px" }}>
 {(d.items || []).map((v: any, __i: number) => (<Fragment key={__i}>
-<button onClick={v.go} style={{ textAlign: "start", border: "1px solid #E3E1DA", borderTop: `3px solid ${v.bar}`, borderRadius: "3px", background: "#FAF9F6", padding: "6px 8px", cursor: "pointer", display: "flex", flexDirection: "column", gap: "1px", fontSize: "12px", minWidth: "0" }}>
-<span dir="ltr" style={{ fontFamily: "'IBM Plex Mono',monospace", fontWeight: "500", textAlign: "start" }}>
+<button onClick={v.go} style={{ textAlign: "start", border: `1px solid ${C.border.hairline}`, borderTop: `3px solid ${v.bar}`, borderRadius: "3px", background: C.surface.paper, padding: "6px 8px", cursor: "pointer", display: "flex", flexDirection: "column", gap: "1px", fontSize: "12px", minWidth: "0" }}>
+<span dir="ltr" style={{ fontFamily: FONT.mono, fontWeight: "500", textAlign: "start" }}>
 {v.time}
 </span>
 <span style={{ fontWeight: "500", fontSize: "12.5px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
 {v.site}
 </span>
-<span style={{ color: "#5C6168", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+<span style={{ color: C.text.secondary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
 {v.ins}
 </span>
 <span style={{ color: v.st.fg }}>
@@ -191,22 +193,22 @@ export function VisitsList({ vm }: { vm: VM }) {
 {d.full}
 </div>
 {(d.items || []).map((v: any, __i: number) => (<Fragment key={__i}>
-<button onClick={v.go} style={{ width: "100%", display: "flex", gap: "12px", alignItems: "center", padding: "12px", border: "1px solid #E3E1DA", borderInlineStart: `3px solid ${v.bar}`, borderRadius: "4px", background: "#fff", cursor: "pointer", textAlign: "start", marginTop: "6px" }}>
-<span dir="ltr" style={{ fontFamily: "'IBM Plex Mono',monospace" }}>
+<button onClick={v.go} style={{ width: "100%", display: "flex", gap: "12px", alignItems: "center", padding: "12px", border: `1px solid ${C.border.hairline}`, borderInlineStart: `3px solid ${v.bar}`, borderRadius: "4px", background: C.surface.white, cursor: "pointer", textAlign: "start", marginTop: "6px" }}>
+<span dir="ltr" style={{ fontFamily: FONT.mono }}>
 {v.time}
 </span>
 <span style={{ flex: "1" }}>
 <span style={{ display: "block", fontWeight: "500" }}>
 {v.site}
 </span>
-<span style={{ display: "block", fontSize: "12px", color: "#5C6168" }}>
+<span style={{ display: "block", fontSize: "12px", color: C.text.secondary }}>
 {v.st.label}
 </span>
 </span>
 </button>
 </Fragment>))}
 {d.empty ? (<>
-<div style={{ fontSize: "12.5px", color: "#8B9097", padding: "4px 0" }}>
+<div style={{ fontSize: "12.5px", color: C.text.muted, padding: "4px 0" }}>
 {t.noVisitsDay}
 </div>
 </>) : null}

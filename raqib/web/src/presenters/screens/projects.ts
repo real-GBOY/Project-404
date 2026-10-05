@@ -2,6 +2,7 @@ import type { Guard, Project } from "@/api/types";
 import { pBadge, scoreColor, seg } from "../common";
 import type { Ctx } from "../context";
 import { visitRow } from "./visits";
+import { C } from "@/styles/colors";
 
 /** Projects list (design: vmProjects). Compliance figures arrive with the inspection phases. */
 export function projectsList(c: Ctx) {
@@ -27,7 +28,7 @@ export function projectsList(c: Ctx) {
       obs: "0",
       ca: "0",
       od: "0",
-      odC: "#8B9097",
+      odC: C.text.muted,
       last: "—",
       next: i.fd(p.firstVisitDate, "d"),
       go: () => c.go("project", p.id),
@@ -54,8 +55,8 @@ export function projectDetail(c: Ctx, p: Project) {
   const tabs = ["overview", "sites", "visits", "observations", "actions", "analytics"].map((k) => ({
     label: i.S(`pt_${k}`),
     go: () => set({ ptab: k }),
-    fg: ui.ptab === k ? "#191C1F" : "#5C6168",
-    bd: ui.ptab === k ? "#0F5C4A" : "transparent",
+    fg: ui.ptab === k ? C.text.ink : C.text.secondary,
+    bd: ui.ptab === k ? C.brand.primary : "transparent",
     fw: ui.ptab === k ? "600" : "500",
   }));
   const pt = ui.ptab;
@@ -78,7 +79,7 @@ export function projectDetail(c: Ctx, p: Project) {
       scoreTxt: "—",
       scoreC: scoreColor(null),
       delta: "",
-      deltaC: "#5C6168",
+      deltaC: C.text.secondary,
       weeks: [],
       siteRows: p.sites.map((s) => ({
         n: i.L(s.name),
@@ -94,7 +95,7 @@ export function projectDetail(c: Ctx, p: Project) {
       cas: [],
       openCas: [],
       obs: [],
-      attn: overdue.map((v) => ({ t: i.S("attn_vOver", { r: v.ref }), sub: i.L(v.site.name), c: "#A3262A", go: () => c.go("visit", v.id) })),
+      attn: overdue.map((v) => ({ t: i.S("attn_vOver", { r: v.ref }), sub: i.L(v.site.name), c: C.status.danger.fg, go: () => c.go("visit", v.id) })),
       hasAttn: overdue.length > 0,
       noAttn: overdue.length === 0,
       completion: i.S("completion", { a: 0, b: planned.length }),

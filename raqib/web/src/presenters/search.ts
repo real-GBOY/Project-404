@@ -1,5 +1,6 @@
 import type { SearchHit } from "@/api/types";
 import type { Ctx } from "./context";
+import { C } from "@/styles/colors";
 
 const KINDS = ["project", "visit", "report", "observation", "action", "training", "guard", "user"] as const;
 const CONF_WORDS = /confidential|سري|بلاغ|whistle|complaint/i;
@@ -17,7 +18,7 @@ export function searchVM(c: Ctx) {
   };
   const groups = KINDS.map((k) => ({
     label: i.S(`sk_${k}`),
-    items: hits.filter((h) => h.kind === k).map((h) => ({ title: typeof h.title === "string" ? h.title : i.L(h.title), sub: [h.ref, h.sub].filter(Boolean).join(" · "), kind: i.S(`sk_${k}`), go: () => open(h), bg: "#fff" })),
+    items: hits.filter((h) => h.kind === k).map((h) => ({ title: typeof h.title === "string" ? h.title : i.L(h.title), sub: [h.ref, h.sub].filter(Boolean).join(" · "), kind: i.S(`sk_${k}`), go: () => open(h), bg: C.surface.white })),
   })).filter((g) => g.items.length);
   return {
     canSearch: true,

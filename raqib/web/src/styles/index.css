@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./tokens.css";
 
 /* Base styles carried over from the approved design (Raqib.dc.html <helmet>). */
 html,
@@ -6,17 +7,17 @@ body,
 #root {
   margin: 0;
   height: 100%;
-  background: #f5f4f0;
+  background: var(--color-surface-canvas);
 }
 * {
   box-sizing: border-box;
 }
 a {
-  color: #0f5c4a;
+  color: var(--color-brand-primary);
   text-decoration: none;
 }
 a:hover {
-  color: #0a4537;
+  color: var(--color-brand-primary-dark);
   text-decoration: underline;
 }
 button,
@@ -28,18 +29,18 @@ textarea {
 }
 input,
 textarea {
-  background-color: #fff;
-  color: #191c1f;
+  background-color: var(--color-surface-white);
+  color: var(--color-text-ink);
 }
 textarea:focus,
 input:focus,
 select:focus {
-  outline: 2px solid #0f5c4a;
+  outline: 2px solid var(--color-brand-primary);
   outline-offset: -1px;
 }
 button:focus-visible,
 [role="button"]:focus-visible {
-  outline: 2px solid #0f5c4a;
+  outline: 2px solid var(--color-brand-primary);
   outline-offset: 1px;
 }
 @keyframes rqpulse {

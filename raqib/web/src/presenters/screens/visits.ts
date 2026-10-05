@@ -2,6 +2,7 @@ import type { DisplayStatus, Visit } from "@/api/types";
 import { TONE, badge, scoreColor, seg } from "../common";
 import type { Ctx } from "../context";
 import { ROLE_LABEL } from "./users";
+import { C } from "@/styles/colors";
 
 /** Status tone per visit status (approved design). */
 export const VST: Record<DisplayStatus, string> = {
@@ -73,17 +74,17 @@ export function startInspection(c: Ctx, v: Visit): void {
 export function timeline(c: Ctx, v: Visit) {
   const { i } = c;
   const COLOR: Record<string, string> = {
-    scheduled: "#8B9097",
-    assigned: "#1F4E8C",
-    started: "#1F4E8C",
-    submitted: "#5B3E91",
-    resubmitted: "#5B3E91",
-    reviewed: "#5B3E91",
-    returned: "#C98A12",
-    rejected: "#A3262A",
-    approved: "#1E6B45",
-    rescheduled: "#8B9097",
-    cancelled: "#8B9097",
+    scheduled: C.text.muted,
+    assigned: C.status.info.fg,
+    started: C.status.info.fg,
+    submitted: C.status.review.fg,
+    resubmitted: C.status.review.fg,
+    reviewed: C.status.review.fg,
+    returned: C.status.warning.mark,
+    rejected: C.status.danger.fg,
+    approved: C.status.success.fg,
+    rescheduled: C.text.muted,
+    cancelled: C.text.muted,
   };
   return v.history.map((h) => ({
     label: i.S(`h_${h.action}`),
@@ -94,7 +95,7 @@ export function timeline(c: Ctx, v: Visit) {
     at: i.fd(h.at, "dt"),
     reason: h.reason ?? "",
     hasReason: !!h.reason,
-    c: COLOR[h.action] ?? "#8B9097",
+    c: COLOR[h.action] ?? C.text.muted,
   }));
 }
 
@@ -116,9 +117,9 @@ export function visitsList(c: Ctx) {
     return {
       label: `${k === "all" ? i.S("all") : i.S(`vg_${k}`)} ${n}`,
       go: () => set({ vfilter: k }),
-      bg: on ? "#191C1F" : "#fff",
-      fg: on ? "#fff" : "#3D4247",
-      bd: on ? "#191C1F" : "#D6D3CB",
+      bg: on ? C.text.ink : C.surface.white,
+      fg: on ? C.surface.white : C.text.body,
+      bd: on ? C.text.ink : C.border.input,
     };
   });
   const start = new Date(`${me.today}T00:00`);
@@ -134,8 +135,8 @@ export function visitsList(c: Ctx) {
       wd: i.fd(iso, "wd"),
       dn: i.fd(iso, "dn"),
       today,
-      hbg: today ? "#0F5C4A" : "transparent",
-      hfg: today ? "#fff" : "#191C1F",
+      hbg: today ? C.brand.primary : "transparent",
+      hfg: today ? C.surface.white : C.text.ink,
       items,
       empty: !items.length,
       full: i.fd(iso, "dy"),

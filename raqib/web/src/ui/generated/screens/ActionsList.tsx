@@ -1,8 +1,10 @@
 /* eslint-disable */
-// GENERATED from the approved Claude Design (Raqib.dc.html) by tools/transpile — do not hand-edit.
+// Transpiled once from the approved Claude Design (Raqib.dc.html), now owned in this repo: colors come from @/styles/colors, fonts from @/styles/typography. Behavior belongs in presenters.
 import { Fragment } from "react";
-import { Hover } from "@/ui/Hover";
+import { Hover } from "@/components/Hover";
 import type { VM } from "@/ui/vm";
+import { C } from "@/styles/colors";
+import { FONT } from "@/styles/typography";
 
 export function ActionsList({ vm }: { vm: VM }) {
   const { cl, pad, t } = vm;
@@ -12,7 +14,7 @@ export function ActionsList({ vm }: { vm: VM }) {
 <h1 style={{ margin: "0", fontSize: "22px", fontWeight: "600" }}>
 {t.nav_actions_l}
 </h1>
-<div style={{ fontSize: "13px", color: "#5C6168" }}>
+<div style={{ fontSize: "13px", color: C.text.secondary }}>
 {t.caListSub}
 </div>
 </div>
@@ -24,22 +26,22 @@ export function ActionsList({ vm }: { vm: VM }) {
 </Fragment>))}
 </div>
 {cl.has ? (<>
-<section style={{ background: "#fff", border: "1px solid #E3E1DA", borderRadius: "6px" }}>
+<section style={{ background: C.surface.white, border: `1px solid ${C.border.hairline}`, borderRadius: "6px" }}>
 {(cl.rows || []).map((a: any, __i: number) => (<Fragment key={__i}>
-<Hover as="button" onClick={a.go} style={{ width: "100%", display: "flex", gap: "10px 18px", alignItems: "center", padding: "13px 18px", border: "0", borderBottom: "1px solid #EFEDE7", background: "#fff", cursor: "pointer", textAlign: "start", flexWrap: "wrap" }} hover={{ background: "#FAF9F6" }}>
+<Hover as="button" onClick={a.go} style={{ width: "100%", display: "flex", gap: "10px 18px", alignItems: "center", padding: "13px 18px", border: "0", borderBottom: `1px solid ${C.surface.track}`, background: C.surface.white, cursor: "pointer", textAlign: "start", flexWrap: "wrap" }} hover={{ background: C.surface.paper }}>
 <span style={{ flex: "1", minWidth: "240px" }}>
 <span style={{ display: "block", fontWeight: "500" }}>
 {a.t}
 </span>
-<span style={{ display: "block", fontSize: "12px", color: "#8B9097" }}>
-<span style={{ fontFamily: "'IBM Plex Mono',monospace" }}>
+<span style={{ display: "block", fontSize: "12px", color: C.text.muted }}>
+<span style={{ fontFamily: FONT.mono }}>
 {a.ref}
 </span>
  · {a.proj} · {a.resp}
 </span>
 </span>
 {a.hasRep ? (<>
-<span style={{ fontSize: "12px", color: "#8A5A00", fontWeight: "500" }}>
+<span style={{ fontSize: "12px", color: C.status.warning.fg, fontWeight: "500" }}>
 {a.rep}
 </span>
 </>) : null}
@@ -62,7 +64,7 @@ export function ActionsList({ vm }: { vm: VM }) {
 </section>
 </>) : null}
 {cl.none ? (<>
-<div style={{ background: "#fff", border: "1px dashed #D6D3CB", borderRadius: "6px", padding: "40px 20px", textAlign: "center", color: "#5C6168" }}>
+<div style={{ background: C.surface.white, border: `1px dashed ${C.border.input}`, borderRadius: "6px", padding: "40px 20px", textAlign: "center", color: C.text.secondary }}>
 {t.noCAFilter}
 </div>
 </>) : null}

@@ -1,8 +1,10 @@
 /* eslint-disable */
-// GENERATED from the approved Claude Design (Raqib.dc.html) by tools/transpile — do not hand-edit.
+// Transpiled once from the approved Claude Design (Raqib.dc.html), now owned in this repo: colors come from @/styles/colors, fonts from @/styles/typography. Behavior belongs in presenters.
 import { Fragment } from "react";
-import { Hover } from "@/ui/Hover";
+import { Hover } from "@/components/Hover";
 import type { VM } from "@/ui/vm";
+import { C } from "@/styles/colors";
+import { FONT } from "@/styles/typography";
 
 export function ObservationsList({ vm }: { vm: VM }) {
   const { ol, pad, t } = vm;
@@ -12,7 +14,7 @@ export function ObservationsList({ vm }: { vm: VM }) {
 <h1 style={{ margin: "0", fontSize: "22px", fontWeight: "600" }}>
 {t.nav_observations_l}
 </h1>
-<div style={{ fontSize: "13px", color: "#5C6168" }}>
+<div style={{ fontSize: "13px", color: C.text.secondary }}>
 {t.obsSub}
 </div>
 </div>
@@ -24,38 +26,38 @@ export function ObservationsList({ vm }: { vm: VM }) {
 </Fragment>))}
 </div>
 {ol.has ? (<>
-<section style={{ background: "#fff", border: "1px solid #E3E1DA", borderRadius: "6px" }}>
+<section style={{ background: C.surface.white, border: `1px solid ${C.border.hairline}`, borderRadius: "6px" }}>
 {(ol.rows || []).map((o: any, __i: number) => (<Fragment key={__i}>
-<Hover as="button" onClick={o.go} style={{ width: "100%", display: "flex", gap: "10px 16px", alignItems: "center", padding: "13px 18px", border: "0", borderBottom: "1px solid #EFEDE7", background: "#fff", cursor: "pointer", textAlign: "start", flexWrap: "wrap" }} hover={{ background: "#FAF9F6" }}>
+<Hover as="button" onClick={o.go} style={{ width: "100%", display: "flex", gap: "10px 16px", alignItems: "center", padding: "13px 18px", border: "0", borderBottom: `1px solid ${C.surface.track}`, background: C.surface.white, cursor: "pointer", textAlign: "start", flexWrap: "wrap" }} hover={{ background: C.surface.paper }}>
 <span style={{ flex: "1", minWidth: "240px" }}>
 <span style={{ display: "flex", gap: "8px", alignItems: "center" }}>
 <span style={{ height: "20px", padding: "0 7px", borderRadius: "3px", fontSize: "11.5px", color: o.kind.fg, background: o.kind.bg, display: "inline-flex", alignItems: "center" }}>
 {o.kind.label}
 </span>
-<span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: "12px", color: "#5C6168" }}>
+<span style={{ fontFamily: FONT.mono, fontSize: "12px", color: C.text.secondary }}>
 {o.ref}
 </span>
 </span>
 <span style={{ display: "block", fontWeight: "500", marginTop: "2px" }}>
 {o.t}
 </span>
-<span style={{ display: "block", fontSize: "12px", color: "#8B9097" }}>
+<span style={{ display: "block", fontSize: "12px", color: C.text.muted }}>
 {o.proj} · {o.site} · {o.visit} · {t.item} {o.item} · {o.resp}
 </span>
 </span>
 {o.hasRep ? (<>
-<span style={{ fontFamily: "'IBM Plex Mono',monospace", color: "#8A5A00", fontWeight: "600" }}>
+<span style={{ fontFamily: FONT.mono, color: C.status.warning.fg, fontWeight: "600" }}>
 {o.rep}
 </span>
 </>) : null}
 <span style={{ height: "22px", padding: "0 8px", borderRadius: "3px", fontSize: "12px", color: o.sev.fg, background: o.sev.bg, display: "inline-flex", alignItems: "center" }}>
 {o.sev.label}
 </span>
-<span style={{ fontSize: "12px", color: "#5C6168", minWidth: "80px" }}>
+<span style={{ fontSize: "12px", color: C.text.secondary, minWidth: "80px" }}>
 <span style={{ display: "block" }}>
 {t.c_due} {o.due}
 </span>
-<span style={{ display: "block", fontFamily: "'IBM Plex Mono',monospace" }}>
+<span style={{ display: "block", fontFamily: FONT.mono }}>
 {o.ca}
 </span>
 </span>
@@ -67,7 +69,7 @@ export function ObservationsList({ vm }: { vm: VM }) {
 </section>
 </>) : null}
 {ol.none ? (<>
-<div style={{ background: "#fff", border: "1px dashed #D6D3CB", borderRadius: "6px", padding: "40px 20px", textAlign: "center", color: "#5C6168" }}>
+<div style={{ background: C.surface.white, border: `1px dashed ${C.border.input}`, borderRadius: "6px", padding: "40px 20px", textAlign: "center", color: C.text.secondary }}>
 {t.noResults}
 </div>
 </>) : null}

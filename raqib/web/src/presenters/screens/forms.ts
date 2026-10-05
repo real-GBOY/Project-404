@@ -1,6 +1,7 @@
 import type { Form, FormChange, FormSection, FormVersion, ItemType } from "@/api/types";
 import { badge } from "../common";
 import type { Ctx } from "../context";
+import { C } from "@/styles/colors";
 
 const TYPES: ItemType[] = ["cnx", "yesno", "number", "text", "select", "date", "scale5"];
 const catKey = (f: Form) => `fc_${f.category}`;
@@ -38,12 +39,12 @@ export function formsList(c: Ctx) {
 function changeText(c: Ctx, ch: FormChange): { t: string; c: string } {
   const { i } = c;
   switch (ch.kind) {
-    case "added": return { t: i.S("df_added", { n: ch.num, x: i.L(ch.text) }), c: "#1E6B45" };
-    case "removed": return { t: i.S("df_removed", { n: ch.num, x: i.L(ch.text) }), c: "#A3262A" };
-    case "weight": return { t: i.S("df_weight", { n: ch.num, a: ch.from, b: ch.to }), c: "#8A5A00" };
-    case "text": return { t: i.S("df_text", { n: ch.num }), c: "#8A5A00" };
-    case "rules": return { t: i.S("df_rules", { n: ch.num }), c: "#8A5A00" };
-    case "sections": return { t: i.S("df_sections", { a: ch.from, b: ch.to }), c: "#8A5A00" };
+    case "added": return { t: i.S("df_added", { n: ch.num, x: i.L(ch.text) }), c: C.status.success.fg };
+    case "removed": return { t: i.S("df_removed", { n: ch.num, x: i.L(ch.text) }), c: C.status.danger.fg };
+    case "weight": return { t: i.S("df_weight", { n: ch.num, a: ch.from, b: ch.to }), c: C.status.warning.fg };
+    case "text": return { t: i.S("df_text", { n: ch.num }), c: C.status.warning.fg };
+    case "rules": return { t: i.S("df_rules", { n: ch.num }), c: C.status.warning.fg };
+    case "sections": return { t: i.S("df_sections", { a: ch.from, b: ch.to }), c: C.status.warning.fg };
   }
 }
 export const diffLines = changeText;
@@ -88,7 +89,7 @@ export function formBuilder(c: Ctx, f: Form) {
         down: () => ed((s) => { const a = s[si]!.items; if (qi < a.length - 1) [a[qi + 1], a[qi]] = [a[qi]!, a[qi + 1]!]; }),
         canUp: qi > 0, canDown: qi < sec.items.length - 1,
         del: () => ed((s) => { s[si]!.items.splice(qi, 1); }),
-        tgC: q.required ? "#0F5C4A" : "#B9B6AE", naC: q.na ? "#0F5C4A" : "#B9B6AE", evC: q.evidenceOnNc ? "#0F5C4A" : "#B9B6AE",
+        tgC: q.required ? C.brand.primary : C.border.stronger, naC: q.na ? C.brand.primary : C.border.stronger, evC: q.evidenceOnNc ? C.brand.primary : C.border.stronger,
       }))
     : [];
   const wsum = sec ? sec.items.reduce((a, q) => a + q.weight, 0) : 0;
@@ -104,12 +105,12 @@ export function formBuilder(c: Ctx, f: Form) {
       nameVal: i.L(f.name), onName: () => undefined,
       versions: f.versions.map((v) => ({
         v: `v${v.version}`, st: badge(i.S(`fvs_${v.status}`), verTone(v.status)), by: v.by ? i.L(v.by.name) : "—", at: i.fd(v.at, "d"), note: i.L(v.note),
-        uses: i.S("nInsp", { n: v.uses }), bg: v.id === ver.id ? "#F2F7F5" : "#fff", bd: v.id === ver.id ? "#0F5C4A" : "#E3E1DA",
+        uses: i.S("nInsp", { n: v.uses }), bg: v.id === ver.id ? C.brand.wash : C.surface.white, bd: v.id === ver.id ? C.brand.primary : C.border.hairline,
         go: () => set({ fb: { ver: v.id, sec: 0 }, fbDraft: null }),
       })),
       sections: sections.map((x, idx) => ({
         label: `${idx + 1}. ${i.L(x.title)}`, meta: i.S("secMeta", { n: x.items.length, w: x.items.reduce((a, q) => a + q.weight, 0) }),
-        bg: idx === si ? "#F2F7F5" : "#fff", fg: idx === si ? "#0A4537" : "#191C1F", go: () => set({ fb: { ver: ver.id, sec: idx } }),
+        bg: idx === si ? C.brand.wash : C.surface.white, fg: idx === si ? C.brand.primaryDark : C.text.ink, go: () => set({ fb: { ver: ver.id, sec: idx } }),
       })),
       secTitle: sec ? i.L(sec.title) : "", onSecTitle: (e: { target: { value: string } }) => ed((s) => { s[si]!.title[lang] = e.target.value; }), hasSec: !!sec,
       items, hasItems: items.length > 0, noItems: items.length === 0, wsum: i.S("secWeight", { w: wsum, t: total }),

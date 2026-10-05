@@ -1,6 +1,7 @@
 import { ROLE_LABEL } from "./screens/users";
 import { NAV_GROUPS, NAV_META, navKeyOf, visibleNav } from "./nav";
 import type { Ctx } from "./context";
+import { C } from "@/styles/colors";
 
 /** The application chrome: sidebar, top bar, bottom navigation, notification panel (design: vm.build chrome). */
 export function shellVM(c: Ctx, scr: string, pageTitle: string) {
@@ -19,14 +20,14 @@ export function shellVM(c: Ctx, scr: string, pageTitle: string) {
       k,
       label: navLabel(k),
       go: () => c.go(k),
-      bg: on ? "#1F2B28" : "transparent",
-      fg: on ? "#FFFFFF" : "#B7C1BD",
-      bar: on ? "#3FA584" : "transparent",
+      bg: on ? C.chrome.hover : "transparent",
+      fg: on ? C.surface.white : C.chrome.text,
+      bar: on ? C.chrome.accent : "transparent",
       hasCount: false,
       count: 0,
-      countBg: "#2E3B37",
-      mfg: on ? "#0F5C4A" : "#5C6168",
-      mbar: on ? "#0F5C4A" : "transparent",
+      countBg: C.chrome.lineAlt,
+      mfg: on ? C.brand.primary : C.text.secondary,
+      mbar: on ? C.brand.primary : "transparent",
     };
   };
   const scopeText = me.scope === "all" ? i.S("allProjects") : String((c.data.projects ?? []).length ? (c.data.projects ?? []).filter((p) => (me.scope as string[]).includes(p.id)).map((p) => i.L(p.name)).join(ar ? "، " : ", ") : "") || i.S("scope");
@@ -61,7 +62,7 @@ export function shellVM(c: Ctx, scr: string, pageTitle: string) {
     moreOpen: ui.more,
     openMore: () => set({ more: !ui.more }),
     closeMore: () => set({ more: false }),
-    moreFg: ui.more ? "#0F5C4A" : "#5C6168",
+    moreFg: ui.more ? C.brand.primary : C.text.secondary,
     pageTitle,
     pageSub: `${roleLabel} · ${scopeText}`,
     // search arrives with the server-side search phase; the entry point stays hidden until then
@@ -81,8 +82,8 @@ export function shellVM(c: Ctx, scr: string, pageTitle: string) {
       sub: x.body,
       at: i.fd(x.createdAt, "dt"),
       unread: !x.read,
-      bg: x.read ? "#fff" : "#F6FAF8",
-      dot: x.read ? "transparent" : "#0F5C4A",
+      bg: x.read ? C.surface.white : C.brand.washFaint,
+      dot: x.read ? "transparent" : C.brand.primary,
       // opening a notification still goes through the normal screens, which the backend authorizes again
       go: () => {
         if (!x.read) void c.actions.markNotificationRead(x.id);

@@ -1,7 +1,9 @@
 /* eslint-disable */
-// GENERATED from the approved Claude Design (Raqib.dc.html) by tools/transpile — do not hand-edit.
+// Transpiled once from the approved Claude Design (Raqib.dc.html), now owned in this repo: colors come from @/styles/colors, fonts from @/styles/typography. Behavior belongs in presenters.
 import { Fragment } from "react";
 import type { VM } from "@/ui/vm";
+import { C } from "@/styles/colors";
+import { FONT } from "@/styles/typography";
 
 export function ModalFields({ vm }: { vm: VM }) {
   const { md, t } = vm;
@@ -14,7 +16,7 @@ export function ModalFields({ vm }: { vm: VM }) {
 </div>
 {(md.flags || []).map((f: any, __i: number) => (<Fragment key={__i}>
 <div style={{ display: "flex", gap: "8px", padding: "4px 0" }}>
-<span style={{ fontFamily: "'IBM Plex Mono',monospace", color: "#8A5A00" }}>
+<span style={{ fontFamily: FONT.mono, color: C.status.warning.fg }}>
 {f.num}
 </span>
 <span>
@@ -25,22 +27,22 @@ export function ModalFields({ vm }: { vm: VM }) {
 </div>
 </>) : null}
 {md.noFlags ? (<>
-<div style={{ fontSize: "12.5px", color: "#6B4600", background: "#FAEFD8", padding: "8px 10px", borderRadius: "4px" }}>
+<div style={{ fontSize: "12.5px", color: C.status.warning.strong, background: C.status.warning.bg, padding: "8px 10px", borderRadius: "4px" }}>
 {t.noFlagsWarn}
 </div>
 </>) : null}
 </>) : null}
 {md.isSubmit ? (<>
-<div style={{ fontSize: "13.5px", background: "#FAF9F6", borderRadius: "4px", padding: "10px 12px" }}>
+<div style={{ fontSize: "13.5px", background: C.surface.paper, borderRadius: "4px", padding: "10px 12px" }}>
 {md.summary}
 </div>
 </>) : null}
 {md.isApprove ? (<>
-<div style={{ fontSize: "13.5px", background: "#FAF9F6", borderRadius: "4px", padding: "10px 12px" }}>
+<div style={{ fontSize: "13.5px", background: C.surface.paper, borderRadius: "4px", padding: "10px 12px" }}>
 {md.summary}
-<div style={{ fontSize: "12.5px", color: "#5C6168", marginTop: "4px" }}>
+<div style={{ fontSize: "12.5px", color: C.text.secondary, marginTop: "4px" }}>
 {t.approveGenerates} 
-<span style={{ fontFamily: "'IBM Plex Mono',monospace" }}>
+<span style={{ fontFamily: FONT.mono }}>
 {md.reportRef}
 </span>
 </div>
@@ -49,7 +51,7 @@ export function ModalFields({ vm }: { vm: VM }) {
 {md.isCreate ? (<>
 <label style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "13px", fontWeight: "500" }}>
 {t.f_project}
-<select value={md.p.val} onChange={md.p.on} style={{ height: "40px", border: `1px solid ${md.p.bd}`, borderRadius: "4px", padding: "0 10px", fontSize: "14px", background: "#fff" }}>
+<select value={md.p.val} onChange={md.p.on} style={{ height: "40px", border: `1px solid ${md.p.bd}`, borderRadius: "4px", padding: "0 10px", fontSize: "14px", background: C.surface.white }}>
 {(md.pOpts || []).map((o: any, __i: number) => (<Fragment key={__i}>
 <option value={o.v}>
 {o.l}
@@ -60,7 +62,7 @@ export function ModalFields({ vm }: { vm: VM }) {
 <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: "10px" }}>
 <label style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "13px", fontWeight: "500" }}>
 {t.f_site}
-<select value={md.s.val} onChange={md.s.on} style={{ height: "40px", border: `1px solid ${md.s.bd}`, borderRadius: "4px", padding: "0 10px", fontSize: "14px", background: "#fff" }}>
+<select value={md.s.val} onChange={md.s.on} style={{ height: "40px", border: `1px solid ${md.s.bd}`, borderRadius: "4px", padding: "0 10px", fontSize: "14px", background: C.surface.white }}>
 {(md.sOpts || []).map((o: any, __i: number) => (<Fragment key={__i}>
 <option value={o.v}>
 {o.l}
@@ -70,11 +72,11 @@ export function ModalFields({ vm }: { vm: VM }) {
 </label>
 <label style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "13px", fontWeight: "500" }}>
 {t.f_area}
-<input value={md.area.val} onChange={md.area.on} style={{ height: "40px", border: "1px solid #D6D3CB", borderRadius: "4px", padding: "0 10px", fontSize: "14px" }} />
+<input value={md.area.val} onChange={md.area.on} style={{ height: "40px", border: `1px solid ${C.border.input}`, borderRadius: "4px", padding: "0 10px", fontSize: "14px" }} />
 </label>
 <label style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "13px", fontWeight: "500" }}>
 {t.f_type}
-<select value={md.type.val} onChange={md.type.on} style={{ height: "40px", border: "1px solid #D6D3CB", borderRadius: "4px", padding: "0 10px", fontSize: "14px", background: "#fff" }}>
+<select value={md.type.val} onChange={md.type.on} style={{ height: "40px", border: `1px solid ${C.border.input}`, borderRadius: "4px", padding: "0 10px", fontSize: "14px", background: C.surface.white }}>
 {(md.typeOpts || []).map((o: any, __i: number) => (<Fragment key={__i}>
 <option value={o.v}>
 {o.l}
@@ -84,7 +86,7 @@ export function ModalFields({ vm }: { vm: VM }) {
 </label>
 <label style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "13px", fontWeight: "500" }}>
 {t.f_shift}
-<select value={md.shift.val} onChange={md.shift.on} style={{ height: "40px", border: "1px solid #D6D3CB", borderRadius: "4px", padding: "0 10px", fontSize: "14px", background: "#fff" }}>
+<select value={md.shift.val} onChange={md.shift.on} style={{ height: "40px", border: `1px solid ${C.border.input}`, borderRadius: "4px", padding: "0 10px", fontSize: "14px", background: C.surface.white }}>
 {(md.shiftOpts || []).map((o: any, __i: number) => (<Fragment key={__i}>
 <option value={o.v}>
 {o.l}
@@ -107,7 +109,7 @@ export function ModalFields({ vm }: { vm: VM }) {
 </div>
 <label style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "13px", fontWeight: "500" }}>
 {t.f_inspector}
-<select value={md.ins.val} onChange={md.ins.on} style={{ height: "40px", border: `1px solid ${md.ins.bd}`, borderRadius: "4px", padding: "0 10px", fontSize: "14px", background: "#fff" }}>
+<select value={md.ins.val} onChange={md.ins.on} style={{ height: "40px", border: `1px solid ${md.ins.bd}`, borderRadius: "4px", padding: "0 10px", fontSize: "14px", background: C.surface.white }}>
 {(md.insOpts || []).map((o: any, __i: number) => (<Fragment key={__i}>
 <option value={o.v}>
 {o.l}
@@ -117,7 +119,7 @@ export function ModalFields({ vm }: { vm: VM }) {
 </label>
 </>) : null}
 {md.isCA ? (<>
-<div style={{ fontSize: "12.5px", color: "#5C6168", background: "#FAF9F6", borderRadius: "4px", padding: "8px 10px" }}>
+<div style={{ fontSize: "12.5px", color: C.text.secondary, background: C.surface.paper, borderRadius: "4px", padding: "8px 10px" }}>
 {t.f_source}: {md.source}
 </div>
 <label style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "13px", fontWeight: "500" }}>
@@ -126,7 +128,7 @@ export function ModalFields({ vm }: { vm: VM }) {
 </label>
 <label style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "13px", fontWeight: "500" }}>
 {t.f_resp}
-<select value={md.resp.val} onChange={md.resp.on} style={{ height: "40px", border: `1px solid ${md.resp.bd}`, borderRadius: "4px", padding: "0 10px", fontSize: "14px", background: "#fff" }}>
+<select value={md.resp.val} onChange={md.resp.on} style={{ height: "40px", border: `1px solid ${md.resp.bd}`, borderRadius: "4px", padding: "0 10px", fontSize: "14px", background: C.surface.white }}>
 {(md.respOpts || []).map((o: any, __i: number) => (<Fragment key={__i}>
 <option value={o.v}>
 {o.l}
@@ -141,7 +143,7 @@ export function ModalFields({ vm }: { vm: VM }) {
 </label>
 <div style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "13px", fontWeight: "500" }}>
 {t.priority}
-<div style={{ display: "flex", border: "1px solid #D6D3CB", borderRadius: "4px", overflow: "hidden" }}>
+<div style={{ display: "flex", border: `1px solid ${C.border.input}`, borderRadius: "4px", overflow: "hidden" }}>
 {(md.priOpts || []).map((o: any, __i: number) => (<Fragment key={__i}>
 <button onClick={o.set} style={{ flex: "1", border: "0", height: "38px", fontSize: "13px", cursor: "pointer", background: o.bg, color: o.fg }}>
 {o.label}
@@ -154,7 +156,7 @@ export function ModalFields({ vm }: { vm: VM }) {
 {md.isTr ? (<>
 <label style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "13px", fontWeight: "500" }}>
 {t.k_guard}
-<select value={md.g.val} onChange={md.g.on} style={{ height: "40px", border: `1px solid ${md.g.bd}`, borderRadius: "4px", padding: "0 10px", fontSize: "14px", background: "#fff", fontWeight: "400" }}>
+<select value={md.g.val} onChange={md.g.on} style={{ height: "40px", border: `1px solid ${md.g.bd}`, borderRadius: "4px", padding: "0 10px", fontSize: "14px", background: C.surface.white, fontWeight: "400" }}>
 {(md.gOpts || []).map((o: any, __i: number) => (<Fragment key={__i}>
 <option value={o.v}>
 {o.l}
@@ -164,7 +166,7 @@ export function ModalFields({ vm }: { vm: VM }) {
 </label>
 <label style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "13px", fontWeight: "500" }}>
 {t.f_trReason}
-<select value={md.reason2.val} onChange={md.reason2.on} style={{ height: "40px", border: `1px solid ${md.reason2.bd}`, borderRadius: "4px", padding: "0 10px", fontSize: "14px", background: "#fff", fontWeight: "400" }}>
+<select value={md.reason2.val} onChange={md.reason2.on} style={{ height: "40px", border: `1px solid ${md.reason2.bd}`, borderRadius: "4px", padding: "0 10px", fontSize: "14px", background: C.surface.white, fontWeight: "400" }}>
 {(md.reasonOpts || []).map((o: any, __i: number) => (<Fragment key={__i}>
 <option value={o.v}>
 {o.l}
@@ -182,7 +184,7 @@ export function ModalFields({ vm }: { vm: VM }) {
 </label>
 <div style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "13px", fontWeight: "500" }}>
 {t.priority}
-<div style={{ display: "flex", border: "1px solid #D6D3CB", borderRadius: "4px", overflow: "hidden" }}>
+<div style={{ display: "flex", border: `1px solid ${C.border.input}`, borderRadius: "4px", overflow: "hidden" }}>
 {(md.priOpts2 || []).map((o: any, __i: number) => (<Fragment key={__i}>
 <button onClick={o.set} style={{ flex: "1", border: "0", height: "38px", fontSize: "13px", cursor: "pointer", background: o.bg, color: o.fg }}>
 {o.label}
@@ -192,7 +194,7 @@ export function ModalFields({ vm }: { vm: VM }) {
 </div>
 <label style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "13px", fontWeight: "500" }}>
 {t.c_notes}
-<textarea value={md.notes.val} onChange={md.notes.on} rows={2} style={{ border: "1px solid #D6D3CB", borderRadius: "4px", padding: "10px 12px", fontSize: "14px", fontWeight: "400" }}></textarea>
+<textarea value={md.notes.val} onChange={md.notes.on} rows={2} style={{ border: `1px solid ${C.border.input}`, borderRadius: "4px", padding: "10px 12px", fontSize: "14px", fontWeight: "400" }}></textarea>
 </label>
 </>) : null}
 {md.isTrSched ? (<>
@@ -202,7 +204,7 @@ export function ModalFields({ vm }: { vm: VM }) {
 </label>
 <label style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "13px", fontWeight: "500" }}>
 {t.provider}
-<select value={md.provider.val} onChange={md.provider.on} style={{ height: "40px", border: `1px solid ${md.provider.bd}`, borderRadius: "4px", padding: "0 10px", fontSize: "14px", background: "#fff", fontWeight: "400" }}>
+<select value={md.provider.val} onChange={md.provider.on} style={{ height: "40px", border: `1px solid ${md.provider.bd}`, borderRadius: "4px", padding: "0 10px", fontSize: "14px", background: C.surface.white, fontWeight: "400" }}>
 {(md.provOpts || []).map((o: any, __i: number) => (<Fragment key={__i}>
 <option value={o.v}>
 {o.l}
@@ -218,7 +220,7 @@ export function ModalFields({ vm }: { vm: VM }) {
 </label>
 <div style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "13px", fontWeight: "500" }}>
 {t.result}
-<div style={{ display: "flex", border: "1px solid #D6D3CB", borderRadius: "4px", overflow: "hidden" }}>
+<div style={{ display: "flex", border: `1px solid ${C.border.input}`, borderRadius: "4px", overflow: "hidden" }}>
 {(md.resOpts || []).map((o: any, __i: number) => (<Fragment key={__i}>
 <button onClick={o.set} style={{ flex: "1", border: "0", height: "38px", fontSize: "13px", cursor: "pointer", background: o.bg, color: o.fg }}>
 {o.label}
@@ -234,7 +236,7 @@ export function ModalFields({ vm }: { vm: VM }) {
 {md.isRoleSel ? (<>
 <label style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "13px", fontWeight: "500" }}>
 {t.c_role}
-<select value={md.role.val} onChange={md.role.on} style={{ height: "40px", border: `1px solid ${md.role.bd}`, borderRadius: "4px", padding: "0 10px", fontSize: "14px", background: "#fff", fontWeight: "400" }}>
+<select value={md.role.val} onChange={md.role.on} style={{ height: "40px", border: `1px solid ${md.role.bd}`, borderRadius: "4px", padding: "0 10px", fontSize: "14px", background: C.surface.white, fontWeight: "400" }}>
 {(md.roleOpts || []).map((o: any, __i: number) => (<Fragment key={__i}>
 <option value={o.v}>
 {o.l}
@@ -248,7 +250,7 @@ export function ModalFields({ vm }: { vm: VM }) {
 {t.projectScope}
 {(md.projChecks || []).map((p: any, __i: number) => (<Fragment key={__i}>
 <label style={{ display: "flex", gap: "10px", alignItems: "center", minHeight: "34px", fontWeight: "400", cursor: "pointer" }}>
-<input type="checkbox" checked={p.on} onChange={p.toggle} style={{ width: "18px", height: "18px", accentColor: "#0F5C4A" }} />
+<input type="checkbox" checked={p.on} onChange={p.toggle} style={{ width: "18px", height: "18px", accentColor: C.brand.primary }} />
 {p.label}
 </label>
 </Fragment>))}
@@ -257,7 +259,7 @@ export function ModalFields({ vm }: { vm: VM }) {
 {md.isGrantAdd ? (<>
 <label style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "13px", fontWeight: "500" }}>
 {t.grantee}
-<select value={md.guser.val} onChange={md.guser.on} style={{ height: "40px", border: `1px solid ${md.guser.bd}`, borderRadius: "4px", padding: "0 10px", fontSize: "14px", background: "#fff", fontWeight: "400" }}>
+<select value={md.guser.val} onChange={md.guser.on} style={{ height: "40px", border: `1px solid ${md.guser.bd}`, borderRadius: "4px", padding: "0 10px", fontSize: "14px", background: C.surface.white, fontWeight: "400" }}>
 {(md.guserOpts || []).map((o: any, __i: number) => (<Fragment key={__i}>
 <option value={o.v}>
 {o.l}
@@ -267,7 +269,7 @@ export function ModalFields({ vm }: { vm: VM }) {
 </label>
 <div style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "13px", fontWeight: "500" }}>
 {t.grantLevel}
-<div style={{ display: "flex", border: "1px solid #D6D3CB", borderRadius: "4px", overflow: "hidden" }}>
+<div style={{ display: "flex", border: `1px solid ${C.border.input}`, borderRadius: "4px", overflow: "hidden" }}>
 {(md.levelOpts || []).map((o: any, __i: number) => (<Fragment key={__i}>
 <button onClick={o.set} style={{ flex: "1", border: "0", height: "38px", fontSize: "13px", cursor: "pointer", background: o.bg, color: o.fg }}>
 {o.label}
@@ -277,7 +279,7 @@ export function ModalFields({ vm }: { vm: VM }) {
 </div>
 <label style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "13px", fontWeight: "500" }}>
 {t.grantScope}
-<select value={md.gscope.val} onChange={md.gscope.on} style={{ height: "40px", border: `1px solid ${md.gscope.bd}`, borderRadius: "4px", padding: "0 10px", fontSize: "14px", background: "#fff", fontWeight: "400" }}>
+<select value={md.gscope.val} onChange={md.gscope.on} style={{ height: "40px", border: `1px solid ${md.gscope.bd}`, borderRadius: "4px", padding: "0 10px", fontSize: "14px", background: C.surface.white, fontWeight: "400" }}>
 {(md.gscopeOpts || []).map((o: any, __i: number) => (<Fragment key={__i}>
 <option value={o.v}>
 {o.l}
@@ -297,7 +299,7 @@ export function ModalFields({ vm }: { vm: VM }) {
 </label>
 </>) : null}
 {md.hasAffect ? (<>
-<div style={{ fontSize: "12.5px", color: "#1F4E8C", background: "#E2EBF6", borderRadius: "4px", padding: "8px 10px" }}>
+<div style={{ fontSize: "12.5px", color: C.status.info.fg, background: C.status.info.bg, borderRadius: "4px", padding: "8px 10px" }}>
 {md.affect}
 </div>
 </>) : null}

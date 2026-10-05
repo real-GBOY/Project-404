@@ -2,6 +2,7 @@ import type { Report } from "@/api/types";
 import { scoreColor } from "../common";
 import type { Ctx } from "../context";
 import { ROLE_LABEL } from "./users";
+import { C } from "@/styles/colors";
 
 /** Report row on the issued-reports list (design: rl). */
 export function reportsIssued(c: Ctx) {
@@ -59,7 +60,7 @@ export function reportDetail(c: Ctx, r: Report) {
     { isSec: true, isQ: false, label: `${si + 1}. ${L(sec.title)}` },
     ...sec.items.map((it) => ({
       isSec: false, isQ: true, num: it.num, text: L(it.text), w: it.weight,
-      res: it.answer ? S(`ans_${it.answer}`) : "—", resC: it.answer === "c" ? "#1E6B45" : it.answer === "n" ? "#A3262A" : "#5C6168",
+      res: it.answer ? S(`ans_${it.answer}`) : "—", resC: it.answer === "c" ? C.status.success.fg : it.answer === "n" ? C.status.danger.fg : C.text.secondary,
       pts: it.answer === "c" ? it.weight : it.answer === "n" ? 0 : "—", note: it.note,
     })),
   ]);
@@ -80,8 +81,8 @@ export function reportDetail(c: Ctx, r: Report) {
       dir: lang === "ar" ? "rtl" : "ltr",
       printTitle: r.ref,
       status: S("rp_status_issued"),
-      statusC: "#1E6B45",
-      langs: (["ar", "en"] as const).map((l) => ({ label: l === "ar" ? "العربية" : "English", set: () => c.set({ rlang: l }), bg: lang === l ? "#0F5C4A" : "#fff", fg: lang === l ? "#fff" : "#191C1F" })),
+      statusC: C.status.success.fg,
+      langs: (["ar", "en"] as const).map((l) => ({ label: l === "ar" ? "العربية" : "English", set: () => c.set({ rlang: l }), bg: lang === l ? C.brand.primary : C.surface.white, fg: lang === l ? C.surface.white : C.text.ink })),
       meta: [
         [S("rp_visit"), s.visitRef], [S("rp_project"), L(s.project.name)], [S("rp_site"), L(s.site)], [S("rp_area"), s.area == null ? "—" : L(s.area)],
         [S("rp_inspector"), s.inspector ? L(s.inspector) : "—"], [S("rp_date"), `${i.fd(s.date, "full", lang)} ${s.time}`], [S("rp_signer_approver"), L(s.approvedBy.name)], [S("rp_score"), pct == null ? "—" : `${pct}%`],

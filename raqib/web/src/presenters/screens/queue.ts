@@ -2,6 +2,7 @@ import type { DisplayStatus } from "@/api/types";
 import { scoreColor } from "../common";
 import type { Ctx } from "../context";
 import { visitRow } from "./visits";
+import { C } from "@/styles/colors";
 
 /**
  * "My inspections" (inspector) and the review queue share one screen (design: vmReviews). Tabs filter the visits the
@@ -20,7 +21,7 @@ export function reviewQueue(c: Ctx, mine: boolean) {
     const on = k === tk;
     return {
       label: i.S(`rt_${k}`), n: String(n), go: () => set(mine ? { itab: k } : { rtab: k }),
-      fg: on ? "#191C1F" : "#5C6168", bd: on ? "#0F5C4A" : "transparent", fw: on ? "600" : "500",
+      fg: on ? C.text.ink : C.text.secondary, bd: on ? C.brand.primary : "transparent", fw: on ? "600" : "500",
     };
   });
   const rows = vis

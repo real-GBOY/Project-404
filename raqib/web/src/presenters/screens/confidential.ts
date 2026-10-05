@@ -1,9 +1,10 @@
 import type { ConfAccess, ConfGrant, ConfReport } from "@/api/types";
-import { ApiError } from "@/config";
-import { evidenceKindOf } from "@/lib/upload";
-import { pickFiles } from "@/lib/pick-files";
+import { ApiError } from "@/services/http";
+import { evidenceKindOf } from "@/services/upload";
+import { pickFiles } from "@/services/pick-files";
 import { badge } from "../common";
 import type { Ctx } from "../context";
+import { C } from "@/styles/colors";
 
 const KINDS = ["misconduct", "violation", "safety"] as const;
 const MODES = ["named", "confidential", "anonymous"] as const;
@@ -82,7 +83,7 @@ export function confidentialArea(c: Ctx) {
   const sel = c.data.confDetail;
   const selId = ui.cfSel;
   const rep = (r: ConfReport) => ({
-    go: () => set({ cfSel: r.id, cf: {} }), bg: selId === r.id ? "#F6F5F1" : "#fff", ref: r.ref, kind: i.S(`cfk_${r.kind}`), st: statusBadge(c, r.status, false), subject: r.subject,
+    go: () => set({ cfSel: r.id, cf: {} }), bg: selId === r.id ? C.surface.paperAlt : C.surface.white, ref: r.ref, kind: i.S(`cfk_${r.kind}`), st: statusBadge(c, r.status, false), subject: r.subject,
     at: i.fd(r.at, "d"), hasSens: r.sensitivity === "high", sens: i.S("cf_sensHigh"),
   });
   const selVm = sel
@@ -122,13 +123,13 @@ export function confidentialArea(c: Ctx) {
       isGuard,
       done: !!cf.done, doneRef: String(cf.doneRef ?? ""), doneMsg: cf.doneMode === "anonymous" ? i.S("cf_doneAnon") : i.S("cf_doneMsg"), again: () => set({ cf: {} }),
       notDone: !cf.done,
-      kinds: KINDS.map((k) => ({ label: i.S(`cfk_${k}`), set: () => set((s) => ({ cf: { ...s.cf, kind: k } })), bg: kind === k ? "#191C1F" : "#fff", fg: kind === k ? "#fff" : "#191C1F" })),
-      subject: subject.val, onSubject: subject.on, subjBd: cf.err && String(cf.subject ?? "").trim().length < 3 ? "#A3262A" : "#D6D3CB",
-      body: body.val, onBody: body.on, bodyBd: cf.err && String(cf.body ?? "").trim().length < 10 ? "#A3262A" : "#D6D3CB",
+      kinds: KINDS.map((k) => ({ label: i.S(`cfk_${k}`), set: () => set((s) => ({ cf: { ...s.cf, kind: k } })), bg: kind === k ? C.text.ink : C.surface.white, fg: kind === k ? C.surface.white : C.text.ink })),
+      subject: subject.val, onSubject: subject.on, subjBd: cf.err && String(cf.subject ?? "").trim().length < 3 ? C.status.danger.fg : C.border.input,
+      body: body.val, onBody: body.on, bodyBd: cf.err && String(cf.body ?? "").trim().length < 10 ? C.status.danger.fg : C.border.input,
       err: !!cf.err, place: place.val, onPlace: place.on,
-      idOpts: MODES.map((m) => ({ label: i.S(`cfi_${m}`), sub: i.S(`cfi_${m}_sub`), set: () => set((s) => ({ cf: { ...s.cf, mode: m } })), bd: mode === m ? "#0F5C4A" : "#D6D3CB", bg: mode === m ? "#F2F7F5" : "#fff", dot: mode === m ? "#0F5C4A" : "transparent" })),
+      idOpts: MODES.map((m) => ({ label: i.S(`cfi_${m}`), sub: i.S(`cfi_${m}_sub`), set: () => set((s) => ({ cf: { ...s.cf, mode: m } })), bd: mode === m ? C.brand.primary : C.border.input, bg: mode === m ? C.brand.wash : C.surface.white, dot: mode === m ? C.brand.primary : "transparent" })),
       hasFiles: files.length > 0,
-      files: files.map((f) => ({ kindLabel: i.S(f.kind === "video" ? "evVideo" : f.kind === "doc" ? "evDoc" : "evPhoto"), name: f.name, stC: f.status === "done" ? "#1E6B45" : "#1F4E8C", meta: f.status === "done" ? i.S("ev_done") : i.S("ev_uploading", { p: "" }), canRemove: true, remove: () => set((s) => ({ cf: { ...s.cf, files: files.filter((x) => x.id !== f.id) } })) })),
+      files: files.map((f) => ({ kindLabel: i.S(f.kind === "video" ? "evVideo" : f.kind === "doc" ? "evDoc" : "evPhoto"), name: f.name, stC: f.status === "done" ? C.status.success.fg : C.status.info.fg, meta: f.status === "done" ? i.S("ev_done") : i.S("ev_uploading", { p: "" }), canRemove: true, remove: () => set((s) => ({ cf: { ...s.cf, files: files.filter((x) => x.id !== f.id) } })) })),
       attach, submit, mine,
       gate, grant: grantText, reasons: (access?.reasons ?? []).map((r) => ({ v: r, l: i.S(`cfr_${r}`) })), why: String(cf.why ?? ""),
       onWhy: (e: { target: { value: string } }) => set((s) => ({ cf: { ...s.cf, why: e.target.value, gateErr: false } })),

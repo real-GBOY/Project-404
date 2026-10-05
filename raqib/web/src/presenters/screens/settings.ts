@@ -3,6 +3,7 @@ import { getUi } from "@/state/ui-store";
 import { pBadge } from "../common";
 import type { Ctx } from "../context";
 import { ROLE_LABEL } from "./users";
+import { C } from "@/styles/colors";
 
 type Sec = keyof OrgSettings;
 type Draft = Record<string, Record<string, unknown>>;
@@ -50,21 +51,21 @@ export function settingsScreen(c: Ctx) {
       hasHelp: false,
       onText: (e: { target: { value: string } }) => writeVal(kind === "num" ? Number(e.target.value) : e.target.value),
       toggle: () => { if (!ro) upd(sec, k, !raw); },
-      tbg: raw ? "#0F5C4A" : "#C9C6BE",
+      tbg: raw ? C.brand.primary : C.border.strong,
       tpos: raw ? "flex-end" : "flex-start",
     };
     void helpKey;
     if (kind === "pair") {
       const pair = (raw as number[]) ?? [0, 0];
       o.pair = [0, 1].map((idx) => ({
-        l: i.S(idx ? "ch_email" : "ch_app"), on: !!pair[idx], bg: pair[idx] ? "#0F5C4A" : "#C9C6BE", pos: pair[idx] ? "flex-end" : "flex-start",
+        l: i.S(idx ? "ch_email" : "ch_app"), on: !!pair[idx], bg: pair[idx] ? C.brand.primary : C.border.strong, pos: pair[idx] ? "flex-end" : "flex-start",
         toggle: () => { if (ro) return; const n = [...pair]; n[idx] = n[idx] ? 0 : 1; upd(sec, k, n); },
       }));
     }
     if (kind === "chips") {
       const list = String(raw ?? "").split(",").filter(Boolean);
       o.chips = (["qm", "qe", "pm", "ins", "gs", "gm"] as RoleKey[]).map((r) => ({
-        l: i.L(ROLE_LABEL[r]), bg: list.includes(r) ? "#191C1F" : "#fff", fg: list.includes(r) ? "#fff" : "#3D4247",
+        l: i.L(ROLE_LABEL[r]), bg: list.includes(r) ? C.text.ink : C.surface.white, fg: list.includes(r) ? C.surface.white : C.text.body,
         toggle: () => { if (ro) return; upd(sec, k, (list.includes(r) ? list.filter((x) => x !== r) : list.concat([r])).join(",")); },
       }));
     }
@@ -101,8 +102,8 @@ export function settingsScreen(c: Ctx) {
       nav: visibleNav.map((k) => ({
         label: i.S(`set_${k}`),
         go: () => (links[k] ? c.go(links[k]!) : set({ stab: k })),
-        bg: tab === k ? "#F2F7F5" : "transparent",
-        fg: tab === k ? "#0A4537" : "#191C1F",
+        bg: tab === k ? C.brand.wash : "transparent",
+        fg: tab === k ? C.brand.primaryDark : C.text.ink,
         ext: !!links[k],
         arr: links[k] ? arrow : "",
       })),

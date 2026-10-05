@@ -1,5 +1,5 @@
 /* eslint-disable */
-// GENERATED — maps view-model flags (vm.is.*) to screen components.
+// Maps view-model flags (vm.is.*) to screen components.
 import { OverviewQuality } from "./OverviewQuality";
 import { OverviewInspector } from "./OverviewInspector";
 import { OverviewProjectManager } from "./OverviewProjectManager";

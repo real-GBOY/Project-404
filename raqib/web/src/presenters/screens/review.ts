@@ -5,6 +5,7 @@ import { openEvidence } from "../viewer";
 import { openAssign } from "./actions";
 import { ROLE_LABEL } from "./users";
 import { timeline, visitRow } from "./visits";
+import { C } from "@/styles/colors";
 
 const flagKey = (visitId: string, itemId: string) => `${visitId}:${itemId}`;
 
@@ -42,7 +43,7 @@ export function reviewDetail(c: Ctx, insp: Inspection, v: Visit) {
       return {
         num: it.num, text: i.L(it.text), w: i.S("weight", { w: it.weight }),
         pts: it.answer === "c" ? `${it.weight}/${it.weight}` : it.answer === "n" ? `0/${it.weight}` : "—", ans,
-        note: it.note, hasNote: !!it.note, ev, hasEv: ev.length > 0, bg: it.answer === "n" ? "#FDF8F7" : "#fff",
+        note: it.note, hasNote: !!it.note, ev, hasEv: ev.length > 0, bg: it.answer === "n" ? C.status.danger.bgFaint : C.surface.white,
         canFlag: canDecide, flag: !!ui.rflags[flagKey(v.id, it.id)],
         onFlag: () => set((s) => ({ rflags: { ...s.rflags, [flagKey(v.id, it.id)]: !s.rflags[flagKey(v.id, it.id)] } })),
         canCA: !!obs && !obs.action && me.permissions.actions.includes("A"), mkCA: () => obs && openAssign(c, obs),
@@ -79,7 +80,7 @@ export function reviewDetail(c: Ctx, insp: Inspection, v: Visit) {
     const done = idx > n || st === "approved";
     const now = idx === n;
     const bad = st === "rejected" && n === (v.history.some((h) => h.action === "reviewed") ? 2 : 1);
-    return { l: i.S(`stg_${k}`), c: bad ? "#A3262A" : done ? "#1E6B45" : now ? "#5B3E91" : "#C9C6BE", fg: bad || done || now ? "#191C1F" : "#8B9097", fw: now || bad ? "600" : "500", sub: now ? i.S("stg_now") : bad ? i.S("vs_rejected") : "" };
+    return { l: i.S(`stg_${k}`), c: bad ? C.status.danger.fg : done ? C.status.success.fg : now ? C.status.review.fg : C.border.strong, fg: bad || done || now ? C.text.ink : C.text.muted, fw: now || bad ? "600" : "500", sub: now ? i.S("stg_now") : bad ? i.S("vs_rejected") : "" };
   });
   const stageNote = st === "pending_review" ? i.S("stageReview") : st === "pending_approval" ? i.S("stageApproval") : "";
 

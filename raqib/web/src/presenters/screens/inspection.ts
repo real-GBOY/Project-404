@@ -1,13 +1,14 @@
 import type { Inspection, InspectionIssue, InspectionItem, Visit } from "@/api/types";
-import { ApiError } from "@/config";
-import { evidenceKindOf } from "@/lib/upload";
-import { pickFiles } from "@/lib/pick-files";
-import { QueuedUpload } from "@/offline/outbox";
-import { offline } from "@/offline/session";
+import { ApiError } from "@/services/http";
+import { evidenceKindOf } from "@/services/upload";
+import { pickFiles } from "@/services/pick-files";
+import { QueuedUpload } from "@/services/offline/outbox";
+import { offline } from "@/services/offline/session";
 import type { UploadEntry } from "@/state/ui-store";
 import { scoreColor, seg } from "../common";
 import type { Ctx } from "../context";
 import { openEvidence } from "../viewer";
+import { C } from "@/styles/colors";
 
 type Target = { visitId: string; inspectionId: string; itemId?: string; guardId?: string };
 
@@ -75,7 +76,7 @@ function evidenceVM(
     bgImg: "none",
     busy: false,
     pW: "100%",
-    stC: "#5C6168",
+    stC: C.text.secondary,
     failed: false,
     canRemove,
     retry: () => undefined,
@@ -105,7 +106,7 @@ function evidenceVM(
     bgImg: u.url ? `url("${u.url}")` : "none",
     busy: u.status === "uploading",
     pW: `${u.progress}%`,
-    stC: u.status === "uploading" || u.status === "queued" ? "#1F4E8C" : "#A3262A",
+    stC: u.status === "uploading" || u.status === "queued" ? C.status.info.fg : C.status.danger.fg,
     failed: u.status === "failed",
     canRemove: u.status !== "uploading",
     isVideo: u.kind === "video",
@@ -176,13 +177,13 @@ export function inspectionWorkspace(c: Ctx, insp: Inspection, visit: Visit | und
     label: x.label,
     meta: x.meta,
     go: () => go(x.i),
-    bg: x.i === step ? "#E2EEE9" : "transparent",
-    fg: x.i === step ? "#0A4537" : "#191C1F",
-    mark: x.done ? "#1E6B45" : x.warn ? "#C98A12" : "#D6D3CB",
+    bg: x.i === step ? C.brand.tintAlt : "transparent",
+    fg: x.i === step ? C.brand.primaryDark : C.text.ink,
+    mark: x.done ? C.status.success.fg : x.warn ? C.status.warning.mark : C.border.input,
     markTxt: x.done ? "✓" : x.warn ? "!" : "",
-    cbg: x.i === step ? "#0F5C4A" : "#fff",
-    cfg: x.i === step ? "#fff" : "#3D4247",
-    cbd: x.i === step ? "#0F5C4A" : x.warn ? "#C98A12" : "#D6D3CB",
+    cbg: x.i === step ? C.brand.primary : C.surface.white,
+    cfg: x.i === step ? C.surface.white : C.text.body,
+    cbd: x.i === step ? C.brand.primary : x.warn ? C.status.warning.mark : C.border.input,
   }));
 
   const isSec = step < 5;
@@ -201,16 +202,16 @@ export function inspectionWorkspace(c: Ctx, insp: Inspection, visit: Visit | und
               set: q.locked
                 ? () => undefined
                 : () => void c.actions.saveAnswer(vid, q.id, { value: on ? null : val }),
-              bg: on ? col[1] : "#fff",
-              fg: on ? col[0] : "#3D4247",
-              bd: on ? col[0] : "#D6D3CB",
+              bg: on ? col[1] : C.surface.white,
+              fg: on ? col[0] : C.text.body,
+              bd: on ? col[0] : C.border.input,
             };
           };
           const opts = [
-            opt("c", i.S("ans_c"), ["#1E6B45", "#E3F0E7"]),
-            opt("n", i.S("ans_n"), ["#A3262A", "#F7E2E1"]),
+            opt("c", i.S("ans_c"), [C.status.success.fg, C.status.success.bg]),
+            opt("n", i.S("ans_n"), [C.status.danger.fg, C.status.danger.bg]),
           ];
-          if (q.na) opts.push(opt("x", i.S("ans_x"), ["#4A4F57", "#ECEAE5"]));
+          if (q.na) opts.push(opt("x", i.S("ans_x"), [C.text.graphite, C.surface.sunken]));
           const evs = evidenceVM(c, q.evidence, key, tg, !q.locked);
           const pick = (accept: string, capture: boolean) => () =>
             pickFiles(accept, capture, (files) => files.forEach((f) => startUpload(c, f, tg, key)));
@@ -221,12 +222,12 @@ export function inspectionWorkspace(c: Ctx, insp: Inspection, visit: Visit | und
             lockTxt: i.S("lockedItem"),
             text: i.L(q.text),
             wTxt: i.S("weight", { w: q.weight }),
-            border: q.flagged ? "#E5C98F" : nc ? "#E8C4C2" : "#E3E1DA",
+            border: q.flagged ? C.status.warning.borderStrong : nc ? C.status.danger.border : C.border.hairline,
             opts,
             flagged: q.flagged,
             flagMsg: "",
             fixTxt: q.fixed ? i.S("edited") : i.S("notEdited"),
-            fixC: q.fixed ? "#1E6B45" : "#8A5A00",
+            fixC: q.fixed ? C.status.success.fg : C.status.warning.fg,
             showDetail,
             showAdd: !showDetail,
             expand: () => set((s) => ({ expanded: { ...s.expanded, [key]: true } })),
@@ -236,7 +237,7 @@ export function inspectionWorkspace(c: Ctx, insp: Inspection, visit: Visit | und
             onNote: (e: { target: { value: string } }) =>
               void c.actions.saveAnswer(vid, q.id, { note: e.target.value }),
             noteErr: nc && !q.note.trim(),
-            noteBd: nc && !q.note.trim() ? "#D9A3A0" : "#D6D3CB",
+            noteBd: nc && !q.note.trim() ? C.status.danger.borderStrong : C.border.input,
             evLabel: nc ? i.S("evReq") : i.S("evOpt"),
             evErr: nc && q.evidenceOnNc && q.evidence.length === 0,
             ev: evs,
@@ -287,9 +288,9 @@ export function inspectionWorkspace(c: Ctx, insp: Inspection, visit: Visit | und
           return {
             n: String(n),
             set: () => void c.actions.setGuardScore(vid, g.guardId, cr.id, n),
-            bg: on ? "#191C1F" : "#fff",
-            fg: on ? "#fff" : "#3D4247",
-            bd: on ? "#191C1F" : "#D6D3CB",
+            bg: on ? C.text.ink : C.surface.white,
+            fg: on ? C.surface.white : C.text.body,
+            bd: on ? C.text.ink : C.border.input,
           };
         }),
       })),
@@ -325,7 +326,7 @@ export function inspectionWorkspace(c: Ctx, insp: Inspection, visit: Visit | und
       progW: `${sc.total ? (sc.answered / sc.total) * 100 : 0}%`,
       progTxt: i.S("answeredOf", { a: sc.answered, n: sc.total }),
       saveTxt: ui.savedAt ? i.S("autosaved", { t: ui.savedAt }) : i.S("draftSaved"),
-      saveC: "#5C6168",
+      saveC: C.text.secondary,
       steps: stepVM,
       cols: mob ? "minmax(0,1fr)" : "248px minmax(0,1fr)",
       isSection: isSec,
@@ -372,7 +373,7 @@ export function inspectionWorkspace(c: Ctx, insp: Inspection, visit: Visit | und
       decl: ui.decl,
       onDecl: (e: { target: { checked: boolean } }) => set({ decl: e.target.checked }),
       submitDisabled: !ready,
-      submitBg: ready ? "#0F5C4A" : "#B9B6AE",
+      submitBg: ready ? C.brand.primary : C.border.stronger,
       submitLabel: returned ? i.S("resubmit") : i.S("submitReview"),
       submit: () => {
         if (ready)

@@ -1,8 +1,9 @@
 import type { Guard, GuardHistory, TrainingRequest, TrainingStatus } from "@/api/types";
-import { ApiError } from "@/config";
+import { ApiError } from "@/services/http";
 import { TONE, badge, scoreColor } from "../common";
 import type { Ctx } from "../context";
 import { ROLE_LABEL } from "./users";
+import { C } from "@/styles/colors";
 
 const ST_TONE: Record<TrainingStatus, string> = { pending_pm: "rev", returned: "warn", rejected: "bad", approved: "info", scheduled: "info", completed: "ok" };
 const ST_KEY: Record<TrainingStatus, string> = { pending_pm: "trs_pending", returned: "trs_returned", rejected: "trs_rejected", approved: "trs_approved", scheduled: "trs_in_progress", completed: "trs_completed" };
@@ -13,7 +14,7 @@ const RESULTS = ["passed", "attended", "failed"] as const;
 const FILTERS = ["all", "pending_pm", "returned", "approved", "scheduled", "completed", "rejected"] as const;
 
 const stBadge = (c: Ctx, s: TrainingStatus) => badge(c.i.S(ST_KEY[s]), ST_TONE[s]);
-const chip = (label: string, on: boolean, go: () => void) => ({ label, go, bg: on ? "#191C1F" : "#fff", fg: on ? "#fff" : "#3D4247", bd: on ? "#191C1F" : "#D6D3CB" });
+const chip = (label: string, on: boolean, go: () => void) => ({ label, go, bg: on ? C.text.ink : C.surface.white, fg: on ? C.surface.white : C.text.body, bd: on ? C.text.ink : C.border.input });
 const fail = (c: Ctx) => (e: unknown) => c.toast(e instanceof ApiError ? e.message : c.i.S("actionFailed"));
 
 export function trainingList(c: Ctx) {
@@ -59,8 +60,8 @@ export function trainingDetail(c: Ctx, t: TrainingRequest) {
     const now = n === idx && !done;
     const bad = t.status === "rejected" && n === 1;
     return {
-      label: bad ? i.S("tr_rejected") : label, dot: bad ? "#A3262A" : done ? "#1E6B45" : "#fff", dbd: bad ? "#A3262A" : done ? "#1E6B45" : now ? "#0F5C4A" : "#C9C6BE",
-      mark: bad ? "✕" : done ? "✓" : "", fw: now || bad ? "600" : "500", fg: done || now || bad ? "#191C1F" : "#8B9097", sub: now ? i.S("stg_now") : "",
+      label: bad ? i.S("tr_rejected") : label, dot: bad ? C.status.danger.fg : done ? C.status.success.fg : C.surface.white, dbd: bad ? C.status.danger.fg : done ? C.status.success.fg : now ? C.brand.primary : C.border.strong,
+      mark: bad ? "✕" : done ? "✓" : "", fw: now || bad ? "600" : "500", fg: done || now || bad ? C.text.ink : C.text.muted, sub: now ? i.S("stg_now") : "",
     };
   });
   const hist = log.map((l) => ({
@@ -106,7 +107,7 @@ export function guardProfile(c: Ctx, g: Guard, h: GuardHistory | undefined) {
   const avgPct = h?.average ?? null;
   const proj = (c.data.projects ?? []).find((p) => p.id === g.projectId);
   const last = evals.find((e) => e.pct != null);
-  const bars = evals.slice(0, 8).reverse().map((e) => ({ v: e.pct == null ? "—" : String(Math.round(e.pct / 20 * 10) / 10), h: `${e.pct ?? 0}%`, c: e.pct == null ? "#C9C6BE" : scoreColor(e.pct) }));
+  const bars = evals.slice(0, 8).reverse().map((e) => ({ v: e.pct == null ? "—" : String(Math.round(e.pct / 20 * 10) / 10), h: `${e.pct ?? 0}%`, c: e.pct == null ? C.border.strong : scoreColor(e.pct) }));
   const training = h?.training ?? [];
   const flag = last?.pct != null && last.pct < 60 ? i.S("lowScoreFlag", { p: last.pct }) : "";
   return {
@@ -121,7 +122,7 @@ export function guardProfile(c: Ctx, g: Guard, h: GuardHistory | undefined) {
         ref: e.visitRef, date: i.fd(e.date, "d"), note: e.note || "—", st: badge(i.S(e.pct == null ? "notEvaluated" : e.pct >= 80 ? "g_good" : e.pct >= 60 ? "g_ok" : "g_poor"), e.pct == null ? "neu" : e.pct >= 80 ? "ok" : e.pct >= 60 ? "warn" : "bad"),
         score: e.pct == null ? "—" : (e.pct / 20).toFixed(1), scoreC: scoreColor(e.pct), go: () => c.go("report", e.visitId),
       })),
-      rec: training.filter((t) => t.status === "completed").map((t) => ({ course: t.course, ref: t.ref, date: t.completedDate ? i.fd(t.completedDate, "d") : "", res: i.S(`res_${t.result}`), resC: t.result === "failed" ? "#A3262A" : "#1E6B45" })),
+      rec: training.filter((t) => t.status === "completed").map((t) => ({ course: t.course, ref: t.ref, date: t.completedDate ? i.fd(t.completedDate, "d") : "", res: i.S(`res_${t.result}`), resC: t.result === "failed" ? C.status.danger.fg : C.status.success.fg })),
       trs: training.filter((t) => t.status !== "completed").map((t) => ({ course: t.course, ref: t.ref, date: i.fd(t.createdAt, "d"), st: stBadge(c, t.status), go: () => c.go("trainingD", t.id) })),
       hasObs: false, obs: [], hasCas: false, cas: [],
     },

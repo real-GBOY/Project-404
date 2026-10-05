@@ -1,28 +1,29 @@
 import type { ActionDisplayStatus, ActionLogEntry, CorrectiveAction, Observation, Severity } from "@/api/types";
-import { ApiError } from "@/config";
-import { evidenceKindOf } from "@/lib/upload";
-import { pickFiles } from "@/lib/pick-files";
+import { ApiError } from "@/services/http";
+import { evidenceKindOf } from "@/services/upload";
+import { pickFiles } from "@/services/pick-files";
 import type { UploadEntry } from "@/state/ui-store";
 import { TONE, badge } from "../common";
 import type { Ctx } from "../context";
 import { openEvidence } from "../viewer";
 import { ROLE_LABEL } from "./users";
+import { C } from "@/styles/colors";
 
 const SEV_TONE: Record<Severity, string> = { low: "neu", medium: "warn", high: "bad" };
 const AST_TONE: Record<ActionDisplayStatus, string> = { assigned: "info", in_progress: "info", quality_review: "rev", returned: "warn", closed: "ok", overdue: "bad" };
 const STATUS_KEY: Record<ActionDisplayStatus, string> = { assigned: "cs_assigned", in_progress: "cs_in_progress", quality_review: "cs_under_review", returned: "cs_returned", closed: "cs_closed", overdue: "overdue" };
 
-const chip = (label: string, on: boolean, go: () => void) => ({ label, go, bg: on ? "#191C1F" : "#fff", fg: on ? "#fff" : "#3D4247", bd: on ? "#191C1F" : "#D6D3CB" });
+const chip = (label: string, on: boolean, go: () => void) => ({ label, go, bg: on ? C.text.ink : C.surface.white, fg: on ? C.surface.white : C.text.body, bd: on ? C.text.ink : C.border.input });
 const dayDiff = (c: Ctx, iso: string) => c.i.days(c.me.today, iso);
 
 /** "due in 3 days" / "2 days overdue" under the due date. */
 function dueSub(c: Ctx, a: { status: ActionDisplayStatus; dueDate: string }): { text: string; color: string } {
   const { i } = c;
-  if (a.status === "closed" || a.status === "quality_review") return { text: "", color: "#5C6168" };
+  if (a.status === "closed" || a.status === "quality_review") return { text: "", color: C.text.secondary };
   const d = dayDiff(c, a.dueDate);
-  if (d < 0) return { text: i.S("daysOverdue", { n: -d }), color: "#A3262A" };
-  if (d === 0) return { text: i.S("dueToday"), color: "#8A5A00" };
-  return { text: i.S("dueInDays", { n: d }), color: "#5C6168" };
+  if (d < 0) return { text: i.S("daysOverdue", { n: -d }), color: C.status.danger.fg };
+  if (d === 0) return { text: i.S("dueToday"), color: C.status.warning.fg };
+  return { text: i.S("dueInDays", { n: d }), color: C.text.secondary };
 }
 
 const sevBadge = (c: Ctx, s: Severity) => badge(c.i.S(`sev_${s}`), SEV_TONE[s]);
@@ -163,7 +164,7 @@ export function actionDetail(c: Ctx, a: CorrectiveAction) {
   const sub = dueSub(c, a);
   const fail = (e: unknown) => c.toast(e instanceof ApiError ? e.message : i.S("actionFailed"));
 
-  const done = (ok: boolean) => ({ dot: ok ? "#1E6B45" : "#fff", dbd: ok ? "#1E6B45" : "#C9C6BE", line: ok ? "#1E6B45" : "#E3E1DA", mark: ok ? "✓" : "", fg: ok ? "#191C1F" : "#8B9097", fw: "500" });
+  const done = (ok: boolean) => ({ dot: ok ? C.status.success.fg : C.surface.white, dbd: ok ? C.status.success.fg : C.border.strong, line: ok ? C.status.success.fg : C.border.hairline, mark: ok ? "✓" : "", fg: ok ? C.text.ink : C.text.muted, fw: "500" });
   const reviewed = logAt("closed") ?? logAt("returned");
   const steps = [
     { label: i.S("as_recorded"), at: a.createdAt, ok: true },
@@ -178,7 +179,7 @@ export function actionDetail(c: Ctx, a: CorrectiveAction) {
   const stepVms = steps.map((s, idx) => {
     const base = done(s.ok);
     const now = idx === firstPending;
-    return { ...base, dot: now ? "#fff" : base.dot, dbd: now ? "#0F5C4A" : base.dbd, fw: now ? "600" : base.fw, fg: now ? "#191C1F" : base.fg, label: s.label, sub: s.at ? i.fd(s.at, "dt") : now ? i.S("stg_now") : "" };
+    return { ...base, dot: now ? C.surface.white : base.dot, dbd: now ? C.brand.primary : base.dbd, fw: now ? "600" : base.fw, fg: now ? C.text.ink : base.fg, label: s.label, sub: s.at ? i.fd(s.at, "dt") : now ? i.S("stg_now") : "" };
   });
 
   return {
@@ -212,7 +213,7 @@ export function actionDetail(c: Ctx, a: CorrectiveAction) {
       upload: () => pickFiles("image/*,video/*,application/pdf", false, (files) => files.forEach((f) => startUpload(c, f, a.id, key))),
       ev: [
         ...evidence.map((e) => ({
-          name: e.name, kindLabel: i.S(e.kind === "video" ? "evVideo" : e.kind === "doc" ? "evDoc" : "evPhoto"), meta: `${mb(e.sizeBytes)} MB · ${i.S("ev_done")}`, stC: "#5C6168",
+          name: e.name, kindLabel: i.S(e.kind === "video" ? "evVideo" : e.kind === "doc" ? "evDoc" : "evPhoto"), meta: `${mb(e.sizeBytes)} MB · ${i.S("ev_done")}`, stC: C.text.secondary,
           hasUrl: false, bgImg: "none", busy: false, pW: "100%", failed: false, canRemove: canEv, retry: () => undefined,
           remove: () => void c.actions.removeActionEvidence(a.id, e.id).catch(fail),
           open: () => openEvidence(c, e, `${a.ref} · ${i.L(a.title)}`),
@@ -220,7 +221,7 @@ export function actionDetail(c: Ctx, a: CorrectiveAction) {
         ...(ui.uploads[key] ?? []).map((u) => ({
           name: u.name, kindLabel: i.S(u.kind === "video" ? "evVideo" : u.kind === "doc" ? "evDoc" : "evPhoto"),
           meta: u.status === "uploading" ? i.S("ev_uploading", { p: u.progress }) : u.status === "rejected" ? i.S("ev_rejected", { l: u.limitMb ?? "" }) : i.S("ev_failed"),
-          stC: u.status === "uploading" ? "#1F4E8C" : "#A3262A", hasUrl: !!u.url, bgImg: u.url ? `url("${u.url}")` : "none", busy: u.status === "uploading", pW: `${u.progress}%`,
+          stC: u.status === "uploading" ? C.status.info.fg : C.status.danger.fg, hasUrl: !!u.url, bgImg: u.url ? `url("${u.url}")` : "none", busy: u.status === "uploading", pW: `${u.progress}%`,
           failed: u.status === "failed", canRemove: u.status !== "uploading", retry: () => u.file && startUpload(c, u.file, a.id, key, u.id),
           remove: () => set((s) => ({ uploads: { ...s.uploads, [key]: (s.uploads[key] ?? []).filter((x) => x.id !== u.id) } })),
           open: () => undefined,

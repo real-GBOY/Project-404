@@ -2,6 +2,7 @@ import type { Person, RoleKey } from "@/api/types";
 import { badge } from "../common";
 import type { Ctx } from "../context";
 import { requestRows } from "./requests";
+import { C } from "@/styles/colors";
 
 const ROLES: RoleKey[] = ["qm", "qe", "pm", "ins", "gs", "guard", "gm"];
 const US_TONE: Record<string, string> = { active: "ok", invited: "info", disabled: "neu" };
@@ -45,7 +46,7 @@ export function usersList(c: Ctx) {
   }));
   const pending = (data.accountRequests ?? []).filter((r) => r.status === "pending").length;
   const onReqs = ui.utab === "requests";
-  const tab = (key: string, label: string, n: number, on: boolean) => ({ label, n: String(n), go: () => set({ utab: key }), fg: on ? "#191C1F" : "#5C6168", bd: on ? "#0F5C4A" : "transparent", fw: on ? "600" : "500" });
+  const tab = (key: string, label: string, n: number, on: boolean) => ({ label, n: String(n), go: () => set({ utab: key }), fg: on ? C.text.ink : C.text.secondary, bd: on ? C.brand.primary : "transparent", fw: on ? "600" : "500" });
   const tabs = [tab("users", i.S("ut_users"), (data.users ?? []).length, !onReqs), tab("requests", i.S("ut_requests"), pending, onReqs)];
   return {
     ul: {

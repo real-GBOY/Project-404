@@ -1,6 +1,7 @@
 /* eslint-disable */
-// GENERATED from the approved Claude Design (Raqib.dc.html) by tools/transpile — do not hand-edit.
+// Transpiled once from the approved Claude Design (Raqib.dc.html), now owned in this repo: colors come from @/styles/colors, fonts from @/styles/typography. Behavior belongs in presenters.
 import type { VM } from "@/ui/vm";
+import { C } from "@/styles/colors";
 
 export function GuardsHeader({ vm }: { vm: VM }) {
   const { gd, pad, t } = vm;
@@ -10,7 +11,7 @@ export function GuardsHeader({ vm }: { vm: VM }) {
 <h1 style={{ margin: "0", fontSize: "22px", fontWeight: "600" }}>
 {t.nav_guards_h}
 </h1>
-<div style={{ fontSize: "13px", color: "#5C6168" }}>
+<div style={{ fontSize: "13px", color: C.text.secondary }}>
 {gd.count}
 </div>
 </div>

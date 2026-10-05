@@ -1,5 +1,6 @@
 import type { PublicOnboardingInfo } from "@/api/types";
 import type { I18n } from "@/i18n/i18n";
+import { C } from "@/styles/colors";
 
 /** What the person has typed on the public account-request form. */
 export interface RequestForm {
@@ -33,10 +34,10 @@ export const signatureMatches = (f: RequestForm): boolean => f.sig.trim().length
 
 /** The public request form (design: vmPublicRequest) as the three steps: details → declaration → review. */
 export function requestVM(i: I18n, f: RequestForm, set: (p: Partial<RequestForm>) => void, info: PublicOnboardingInfo | null, submit: () => void, goLogin: () => void) {
-  const bd = (k: string) => (f.errs.includes(k) ? "#A3262A" : "#D6D3CB");
+  const bd = (k: string) => (f.errs.includes(k) ? C.status.danger.fg : C.border.input);
   const text = (k: keyof RequestForm) => (e: { target: { value: string } }) => set({ [k]: e.target.value, errs: f.errs.filter((x) => x !== k) } as Partial<RequestForm>);
   const roleLabel = (r: string) => i.S(`req_role_${r}`);
-  const steps = [i.S("rs_details"), i.S("rs_declaration"), i.S("rs_review")].map((l, n) => ({ l: `${n + 1}. ${l}`, bd: f.step >= n ? "#0F5C4A" : "#D6D3CB", fg: f.step >= n ? "#191C1F" : "#8B9097" }));
+  const steps = [i.S("rs_details"), i.S("rs_declaration"), i.S("rs_review")].map((l, n) => ({ l: `${n + 1}. ${l}`, bd: f.step >= n ? C.brand.primary : C.border.input, fg: f.step >= n ? C.text.ink : C.text.muted }));
   const projNames = (info?.projects ?? []).filter((p) => f.projects.includes(p.id)).map((p) => i.L(p.name)).join("، ");
   const signedAt = i.fd(new Date().toISOString(), "dt");
   return {
@@ -49,7 +50,7 @@ export function requestVM(i: I18n, f: RequestForm, set: (p: Partial<RequestForm>
         name: text("name"), email: text("email"), phone: text("phone"), nid: text("nid"), emp: text("emp"), dept: text("dept"), role: text("role"), just: text("just"), sig: text("sig"),
         agree: (e: { target: { checked: boolean } }) => set({ agree: e.target.checked, declErr: false }),
       },
-      bd: { name: bd("name"), email: bd("email"), phone: bd("phone"), nid: bd("nid"), dept: bd("dept"), role: bd("role"), just: bd("just"), projects: bd("projects"), sig: f.declErr && !signatureMatches(f) ? "#A3262A" : "#D6D3CB" },
+      bd: { name: bd("name"), email: bd("email"), phone: bd("phone"), nid: bd("nid"), dept: bd("dept"), role: bd("role"), just: bd("just"), projects: bd("projects"), sig: f.declErr && !signatureMatches(f) ? C.status.danger.fg : C.border.input },
       roleOpts: [{ v: "", l: i.S("choose") }].concat((info?.roles ?? []).map((r) => ({ v: r, l: roleLabel(r) }))),
       projChecks: (info?.projects ?? []).map((p) => ({ l: i.L(p.name), on: f.projects.includes(p.id), toggle: () => set({ projects: f.projects.includes(p.id) ? f.projects.filter((x) => x !== p.id) : [...f.projects, p.id] }) })),
       next1: () => {
@@ -89,7 +90,7 @@ export function setupVM(i: I18n, s: { a: string; b: string; state: "valid" | "us
       name: "", role: "", proj: "", email: "", expires: i.S("pw_expires"),
       a: s.a, b: s.b, onA: (e: { target: { value: string } }) => set({ a: e.target.value }), onB: (e: { target: { value: string } }) => set({ b: e.target.value }),
       rules: rules.map((r) => ({ l: i.S(r.key), mark: r.ok ? "✓" : "○" })),
-      mfa: i.S("pw_note"), notOk: !ok || s.busy, bg: ok ? "#0F5C4A" : "#9DB8B0", submit, toRequest,
+      mfa: i.S("pw_note"), notOk: !ok || s.busy, bg: ok ? C.brand.primary : C.brand.primaryMuted, submit, toRequest,
     },
   };
 }

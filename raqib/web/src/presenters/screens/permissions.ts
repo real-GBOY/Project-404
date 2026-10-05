@@ -2,6 +2,7 @@ import type { ModuleKey, RoleKey } from "@/api/types";
 import { seg } from "../common";
 import type { Ctx } from "../context";
 import { ROLE_LABEL } from "./users";
+import { C } from "@/styles/colors";
 
 const ROLES: RoleKey[] = ["qm", "qe", "pm", "ins", "gs", "guard", "gm"];
 
@@ -32,8 +33,8 @@ export function permissionTemplates(c: Ctx) {
         na: !app,
         on,
         mark: on ? "✓" : "",
-        bg: on ? "#0F5C4A" : "#fff",
-        bd: on ? "#0F5C4A" : "#C9C6BE",
+        bg: on ? C.brand.primary : C.surface.white,
+        bd: on ? C.brand.primary : C.border.strong,
         cur: ui.permEdit ? "pointer" : "default",
         toggle: () => {
           if (!ui.permEdit || !app || !ui.permDraft) return;
@@ -60,7 +61,7 @@ export function permissionTemplates(c: Ctx) {
           const now = after.includes(a);
           if (was !== now) {
             const ref = `${i.L(ROLE_LABEL[r])} · ${i.S(`pm_${m}`)} · ${i.S(`pa_${a}`)}`;
-            diff.push({ t: `${ref}: ${now ? i.S("on") : i.S("off")}`, ref, prev: was ? i.S("on") : i.S("off"), next: now ? i.S("on") : i.S("off"), c: now ? "#1E6B45" : "#A3262A" });
+            diff.push({ t: `${ref}: ${now ? i.S("on") : i.S("off")}`, ref, prev: was ? i.S("on") : i.S("off"), next: now ? i.S("on") : i.S("off"), c: now ? C.status.success.fg : C.status.danger.fg });
           }
         }
       }
@@ -80,8 +81,8 @@ export function permissionTemplates(c: Ctx) {
       return {
         on: has,
         mark: has ? "✓" : "",
-        bg: has ? "#0F5C4A" : "#fff",
-        bd: has ? "#0F5C4A" : "#C9C6BE",
+        bg: has ? C.brand.primary : C.surface.white,
+        bd: has ? C.brand.primary : C.border.strong,
         toggle: () => {
           if (!ui.scopeEdit || !ui.scopeDraft) return;
           const d = { ...ui.scopeDraft };
@@ -102,7 +103,7 @@ export function permissionTemplates(c: Ctx) {
       for (const p of projects) {
         if (a.includes(p.id) !== b.includes(p.id)) {
           changed = true;
-          sdiff.push({ t: `${i.L(u.name)} · ${p.code}: ${b.includes(p.id) ? i.S("added") : i.S("removed")}`, c: b.includes(p.id) ? "#1E6B45" : "#A3262A" });
+          sdiff.push({ t: `${i.L(u.name)} · ${p.code}: ${b.includes(p.id) ? i.S("added") : i.S("removed")}`, c: b.includes(p.id) ? C.status.success.fg : C.status.danger.fg });
         }
       }
       if (changed) scopeChanges.push({ userId: u.id, projectIds: b });
@@ -112,8 +113,8 @@ export function permissionTemplates(c: Ctx) {
   const tabs = ["roles", "scope"].map((k) => ({
     label: i.S(`pt2_${k}`),
     go: () => set({ ptab2: k }),
-    fg: tab === k ? "#191C1F" : "#5C6168",
-    bd: tab === k ? "#0F5C4A" : "transparent",
+    fg: tab === k ? C.text.ink : C.text.secondary,
+    bd: tab === k ? C.brand.primary : "transparent",
     fw: tab === k ? "600" : "500",
   }));
 

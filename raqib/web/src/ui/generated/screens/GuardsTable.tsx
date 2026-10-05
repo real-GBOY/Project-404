@@ -1,40 +1,42 @@
 /* eslint-disable */
-// GENERATED from the approved Claude Design (Raqib.dc.html) by tools/transpile — do not hand-edit.
+// Transpiled once from the approved Claude Design (Raqib.dc.html), now owned in this repo: colors come from @/styles/colors, fonts from @/styles/typography. Behavior belongs in presenters.
 import { Fragment } from "react";
-import { Hover } from "@/ui/Hover";
+import { Hover } from "@/components/Hover";
 import type { VM } from "@/ui/vm";
+import { C } from "@/styles/colors";
+import { FONT } from "@/styles/typography";
 
 export function GuardsTable({ vm }: { vm: VM }) {
   const { gd, hpad, t } = vm;
   return (<>
 <div style={{ padding: `0 ${hpad} 32px`, maxWidth: "1180px", margin: "0 auto" }}>
-<section style={{ background: "#fff", border: "1px solid #E3E1DA", borderRadius: "6px" }}>
-<h2 style={{ margin: "0", fontSize: "15px", fontWeight: "600", padding: "14px 18px", borderBottom: "1px solid #EFEDE7" }}>
+<section style={{ background: C.surface.white, border: `1px solid ${C.border.hairline}`, borderRadius: "6px" }}>
+<h2 style={{ margin: "0", fontSize: "15px", fontWeight: "600", padding: "14px 18px", borderBottom: `1px solid ${C.surface.track}` }}>
 {t.guardsInScope}
 </h2>
 {(gd.rows || []).map((g: any, __i: number) => (<Fragment key={__i}>
-<Hover as="button" onClick={g.go} style={{ width: "100%", border: "0", background: "#fff", cursor: "pointer", textAlign: "start", display: "flex", gap: "14px", alignItems: "center", padding: "12px 18px", borderBottom: "1px solid #F3F1EC", flexWrap: "wrap" }} hover={{ background: "#FAF9F6" }}>
+<Hover as="button" onClick={g.go} style={{ width: "100%", border: "0", background: C.surface.white, cursor: "pointer", textAlign: "start", display: "flex", gap: "14px", alignItems: "center", padding: "12px 18px", borderBottom: `1px solid ${C.surface.subtle}`, flexWrap: "wrap" }} hover={{ background: C.surface.paper }}>
 <span style={{ flex: "1", minWidth: "200px" }}>
 <span style={{ display: "block", fontWeight: "500" }}>
 {g.name}
 </span>
-<span style={{ display: "block", fontSize: "12px", color: "#8B9097" }}>
-<span style={{ fontFamily: "'IBM Plex Mono',monospace" }}>
+<span style={{ display: "block", fontSize: "12px", color: C.text.muted }}>
+<span style={{ fontFamily: FONT.mono }}>
 {g.emp}
 </span>
  · {g.post} · {g.proj}
 </span>
 {g.hasFlag ? (<>
-<span style={{ display: "block", fontSize: "12px", color: "#8A5A00", marginTop: "2px" }}>
+<span style={{ display: "block", fontSize: "12px", color: C.status.warning.fg, marginTop: "2px" }}>
 {g.flag}
 </span>
 </>) : null}
 </span>
-<span style={{ fontSize: "12px", color: "#5C6168" }}>
+<span style={{ fontSize: "12px", color: C.text.secondary }}>
 {g.evals} {t.evaluations}
 </span>
 <span style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: "130px" }}>
-<span style={{ flex: "1", height: "6px", background: "#EFEDE7", borderRadius: "3px", overflow: "hidden", display: "block" }}>
+<span style={{ flex: "1", height: "6px", background: C.surface.track, borderRadius: "3px", overflow: "hidden", display: "block" }}>
 <span style={{ display: "block", height: "100%", width: g.avgW, background: g.avgC }}></span>
 </span>
 <span style={{ fontWeight: "600", color: g.avgC, fontVariantNumeric: "tabular-nums" }}>

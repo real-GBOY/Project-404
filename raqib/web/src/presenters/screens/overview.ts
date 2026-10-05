@@ -2,14 +2,15 @@ import { TONE, badge, scoreColor, seg } from "../common";
 import type { Ctx } from "../context";
 import { guardsList } from "./projects";
 import { VST, startInspection, visitRow } from "./visits";
+import { C } from "@/styles/colors";
 
 const first = (c: Ctx): string => c.i.L(c.me.name).replace("م. ", "").replace("Eng. ", "").split(" ")[0] ?? "";
 const heading = (c: Ctx) => ({ greeting: c.i.S("greet", { n: first(c) }), todayLong: c.i.fd(c.me.today, "dy") });
 
 const VMIX: Array<[string, string[], string]> = [
-  ["upcoming", ["scheduled", "assigned"], "#7A9CC6"], ["in_progress", ["in_progress"], "#1F4E8C"], ["pending", ["pending_review", "pending_approval"], "#5B3E91"],
-  ["returned", ["returned"], "#C98A12"], ["approved", ["approved"], "#1E6B45"], ["rejected", ["rejected"], "#A3262A"],
-  ["overdue", ["overdue"], "#E0605A"], ["cancelled", ["cancelled"], "#B9B6AE"],
+  ["upcoming", ["scheduled", "assigned"], C.status.info.mark], ["in_progress", ["in_progress"], C.status.info.fg], ["pending", ["pending_review", "pending_approval"], C.status.review.fg],
+  ["returned", ["returned"], C.status.warning.mark], ["approved", ["approved"], C.status.success.fg], ["rejected", ["rejected"], C.status.danger.fg],
+  ["overdue", ["overdue"], C.status.danger.bright], ["cancelled", ["cancelled"], C.border.stronger],
 ];
 
 /** Quality / executive overview (design: vmOvMgmt). Figures come from persisted data only; until the inspection phases land every count is a true zero. */
@@ -19,11 +20,11 @@ export function overviewQuality(c: Ctx) {
   const visits = data.visits ?? [];
   const vOver = visits.filter((v) => v.status === "overdue");
   const att = [
-    { n: 0, label: i.S("att_review"), sub: i.S("att_none"), color: "#5B3E91", go: () => c.go("reviews") },
-    { n: 0, label: i.S(c.me.role === "qm" ? "att_approve" : "att_returned"), sub: i.S(c.me.role === "qm" ? "att_approve_sub" : "att_returned_sub"), color: "#5B3E91", go: () => c.go("reviews") },
-    { n: 0, label: i.S("att_caOver"), sub: i.S("att_caOver_sub", { n: 0 }), color: "#A3262A", go: () => c.go("actions") },
-    { n: vOver.length, label: i.S("att_vOver"), sub: i.S("att_vOver_sub"), color: "#A3262A", go: () => c.go("visits", null, { vfilter: "overdue" }) },
-    { n: 0, label: i.S("att_repeat"), sub: i.S("att_repeat_sub"), color: "#8A5A00", go: () => c.go("observations") },
+    { n: 0, label: i.S("att_review"), sub: i.S("att_none"), color: C.status.review.fg, go: () => c.go("reviews") },
+    { n: 0, label: i.S(c.me.role === "qm" ? "att_approve" : "att_returned"), sub: i.S(c.me.role === "qm" ? "att_approve_sub" : "att_returned_sub"), color: C.status.review.fg, go: () => c.go("reviews") },
+    { n: 0, label: i.S("att_caOver"), sub: i.S("att_caOver_sub", { n: 0 }), color: C.status.danger.fg, go: () => c.go("actions") },
+    { n: vOver.length, label: i.S("att_vOver"), sub: i.S("att_vOver_sub"), color: C.status.danger.fg, go: () => c.go("visits", null, { vfilter: "overdue" }) },
+    { n: 0, label: i.S("att_repeat"), sub: i.S("att_repeat_sub"), color: C.status.warning.fg, go: () => c.go("observations") },
   ];
   const stages = ["assigned", "in_progress", "under_review", "returned", "closed"];
   const tone: Record<string, string> = { assigned: "info", in_progress: "info", under_review: "rev", returned: "warn", closed: "ok" };
@@ -33,11 +34,11 @@ export function overviewQuality(c: Ctx) {
       overall: 0,
       overallTxt: "—",
       deltaTxt: "",
-      deltaC: "#5C6168",
+      deltaC: C.text.secondary,
       bars: [],
       projects: projects.map((p) => ({
         name: i.L(p.name), code: p.code, city: i.L(p.city), scoreW: "0%", scoreC: scoreColor(null), scoreTxt: "—",
-        delta: i.S("noData"), deltaC: "#5C6168", obs: "0", overdue: "0", overdueC: "#8B9097", next: i.fd(p.firstVisitDate, "d"), go: () => c.go("project", p.id),
+        delta: i.S("noData"), deltaC: C.text.secondary, obs: "0", overdue: "0", overdueC: C.text.muted, next: i.fd(p.firstVisitDate, "d"), go: () => c.go("project", p.id),
       })),
       vmix: VMIX.map(([k, sts, color]) => {
         const n = visits.filter((v) => sts.includes(v.status)).length;
@@ -69,10 +70,10 @@ export function overviewProjectManager(c: Ctx) {
     ...heading(c),
     pm: {
       attention: [
-        { n: 0, label: i.S("pm_myCA"), sub: i.S("pm_myCA_sub"), color: "#1F4E8C", go: () => c.go("actions") },
-        { n: 0, label: i.S("att_caOver"), sub: i.S("pm_od_sub"), color: "#A3262A", go: () => c.go("actions") },
-        { n: 0, label: i.S("att_repeat"), sub: i.S("att_repeat_sub"), color: "#8A5A00", go: () => c.go("observations") },
-        { n: 0, label: i.S("pm_obs"), sub: i.S("pm_obs_sub"), color: "#191C1F", go: () => c.go("observations") },
+        { n: 0, label: i.S("pm_myCA"), sub: i.S("pm_myCA_sub"), color: C.status.info.fg, go: () => c.go("actions") },
+        { n: 0, label: i.S("att_caOver"), sub: i.S("pm_od_sub"), color: C.status.danger.fg, go: () => c.go("actions") },
+        { n: 0, label: i.S("att_repeat"), sub: i.S("att_repeat_sub"), color: C.status.warning.fg, go: () => c.go("observations") },
+        { n: 0, label: i.S("pm_obs"), sub: i.S("pm_obs_sub"), color: C.text.ink, go: () => c.go("observations") },
       ],
       projects: projects.map((p) => ({
         name: i.L(p.name), code: p.code, city: i.L(p.city), scoreTxt: "—", scoreC: scoreColor(null), scoreW: "0%",

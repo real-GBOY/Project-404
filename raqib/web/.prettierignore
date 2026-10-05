@@ -1,0 +1,5 @@
+# generated from colors.ts by `npm run colors:sync`
+src/styles/tokens.css
+# the approved design's screens, kept as transpiled
+src/ui/generated
+dist
