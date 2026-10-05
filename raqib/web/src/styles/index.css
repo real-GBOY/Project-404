@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+/* Base styles carried over from the approved design (Raqib.dc.html <helmet>). */
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  background: #f5f4f0;
+}
+* {
+  box-sizing: border-box;
+}
+a {
+  color: #0f5c4a;
+  text-decoration: none;
+}
+a:hover {
+  color: #0a4537;
+  text-decoration: underline;
+}
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  color: inherit;
+}
+input,
+textarea {
+  background-color: #fff;
+  color: #191c1f;
+}
+textarea:focus,
+input:focus,
+select:focus {
+  outline: 2px solid #0f5c4a;
+  outline-offset: -1px;
+}
+button:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid #0f5c4a;
+  outline-offset: 1px;
+}
+@keyframes rqpulse {
+  0% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.5;
+  }
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  [data-print-root],
+  [data-print-root] * {
+    visibility: visible;
+  }
+  [data-print-root] {
+    position: absolute;
+    inset: 0;
+  }
+}

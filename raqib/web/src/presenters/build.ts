@@ -1,0 +1,113 @@
+import type { VM } from "@/ui/vm";
+import type { Ctx } from "./context";
+import { NAV_META, navKeyOf, visibleNav } from "./nav";
+import { modalVM } from "./modals";
+import { shellVM } from "./shell";
+import { overviewGuard, overviewGuardsSupervisor, overviewInspector, overviewProjectManager, overviewQuality } from "./screens/overview";
+import { guardsList, projectDetail, projectsList } from "./screens/projects";
+import { permissionTemplates } from "./screens/permissions";
+import { settingsScreen } from "./screens/settings";
+import { userDetail, usersList } from "./screens/users";
+import { visitDetail, visitsList } from "./screens/visits";
+
+export type Denial = { k: "module" | "scope" | "forbidden"; res?: string };
+
+/** Which `vm.is.*` flag drives which approved screen. */
+const FLAG: Record<string, string> = {
+  projects: "projects", project: "project", visits: "visits", visit: "visit", guards: "guards", users: "users", user: "user", permissions: "perms", settings: "settings",
+};
+
+/** The denied screen (design: vmDenied). The backend produced the refusal; this only explains it. */
+function denied(c: Ctx, d: Denial) {
+  const { i, me } = c;
+  const scopeText = me.scope === "all" ? i.S("allProjects") : String((me.scope as string[]).length);
+  return {
+    dn: {
+      title: i.S("accessDenied"),
+      body: d.k === "scope" ? i.S("dn_scope", { r: d.res ?? "" }) : i.S("dn_module", { m: d.res ?? "" }),
+      rows: [
+        [i.S("dn_you"), `${i.L(me.name)} · ${i.L(me.title)}`],
+        [i.S("scope"), scopeText],
+        [i.S("dn_res"), d.res || "—"],
+        [i.S("dn_logged"), i.fd(new Date().toISOString(), "dt")],
+      ].map(([k, v]) => ({ k, v })),
+      home: () => c.go("overview"),
+      request: () => undefined,
+      canRequest: false,
+    },
+  };
+}
+
+/**
+ * The single entry point: server data + UI state + language → the view-model the approved screens render.
+ * `pending` is true while the screen's queries load (the design's skeleton shows); `denial` is set when the
+ * backend refused the resource.
+ */
+export function buildVM(c: Ctx, opts: { pending: boolean; denial: Denial | null }): VM {
+  const { i, me, route } = c;
+  const n = route.n;
+  const nav = visibleNav(me);
+
+  let scr = n;
+  let title = "";
+  const navKey = navKeyOf(n);
+  let denial = opts.denial;
+  if (!denial && navKey !== "overview" && !nav.includes(navKey) && !["setup"].includes(n)) {
+    denial = { k: "module", res: i.t[`nav_${navKey}_${me.role}`] ?? navKey };
+  }
+
+  const is: Record<string, boolean> = {};
+  let body: VM = {};
+  if (denial) {
+    scr = "denied";
+    is.denied = true;
+    body = denied(c, denial);
+  } else if (n === "overview") {
+    const flag = { qm: "ovMgmt", qe: "ovMgmt", gm: "ovMgmt", pm: "ovPm", ins: "ovIns", gs: "ovGs", guard: "ovGuard" }[me.role];
+    is[flag] = true;
+    if (flag === "ovMgmt") body = overviewQuality(c);
+    else if (flag === "ovPm") body = overviewProjectManager(c);
+    else if (flag === "ovIns") body = overviewInspector(c);
+    else if (flag === "ovGs") { body = overviewGuardsSupervisor(c); is.showGuardTable = true; }
+    else body = overviewGuard(c);
+  } else if (FLAG[n]) {
+    is[FLAG[n]!] = true;
+    if (n === "projects") body = projectsList(c);
+    else if (n === "project") {
+      const p = (c.data.projects ?? []).find((x) => x.id === route.id);
+      if (p) { body = projectDetail(c, p); title = i.L(p.name); }
+    } else if (n === "visits") body = visitsList(c);
+    else if (n === "visit") {
+      const v = (c.data.visits ?? []).find((x) => x.id === route.id);
+      if (v) { body = visitDetail(c, v); title = v.ref; }
+    } else if (n === "guards") { body = guardsList(c); is.showGuardTable = true; }
+    else if (n === "users") body = usersList(c);
+    else if (n === "user") {
+      const u = (c.data.users ?? []).find((x) => x.id === route.id);
+      if (u) { body = userDetail(c, u); title = i.L(u.name); }
+    } else if (n === "permissions") body = permissionTemplates(c);
+    else if (n === "settings") body = settingsScreen(c);
+  } else {
+    is.stub = true;
+    body = { stub: { title: i.t[`nav_${navKey}_${me.role}`] ?? navKey, body: i.S("stubPhase"), phase: "" } };
+  }
+
+  const pageTitle =
+    title ||
+    ({ denied: i.S("accessDenied") } as Record<string, string>)[scr] ||
+    i.t[`nav_${navKey}_${me.role}`] ||
+    i.L(NAV_META[navKey]?.l) ||
+    "";
+  return {
+    ...shellVM(c, scr, pageTitle),
+    ...body,
+    ...modalVM(c),
+    is,
+    loading: opts.pending,
+    notLoading: !opts.pending,
+    ready: true,
+    pageTitle,
+  };
+}
+
+export { guardsList };
