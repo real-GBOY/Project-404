@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { sql } from "kysely";
+import { open, seal } from "@raqib/raqib/shared/data-key.js";
 import { raqibDb } from "@raqib/raqib/db/executor.js";
 import { getContext } from "@core/kernel/logging/context.js";
 import { raqibId } from "@raqib/raqib/shared/ids.js";
@@ -109,7 +110,7 @@ const toGuard = (r: GuardRow): GuardRecord => ({
   projectId: r.project_id,
   userId: r.user_id,
   employeeNo: r.employee_no,
-  nationalId: r.national_id,
+  nationalId: open(r.national_id),
   name: { ar: r.name_ar, en: r.name_en },
   post: { ar: r.post_ar, en: r.post_en },
   shift: r.shift,
@@ -188,16 +189,17 @@ export class ProjectsRepository {
       set.first_visit_date = patch.firstVisitDate ? sql`${patch.firstVisitDate}::date` : null;
     }
     if (!Object.keys(set).length) return;
-    await raqibDb().updateTable("raqib_projects").set(set as never).where("id", "=", id).execute();
+    await raqibDb()
+      .updateTable("raqib_projects")
+      .set(set as never)
+      .where("id", "=", id)
+      .execute();
   }
 
   // ── sites & areas ───────────────────────────────────────────────────────
 
   async sites(projectIds?: string[]): Promise<SiteRecord[]> {
-    let q = raqibDb()
-      .selectFrom("raqib_sites")
-      .select(["id", "project_id", "name_ar", "name_en", "sort_order"])
-      .where("archived_at", "is", null);
+    let q = raqibDb().selectFrom("raqib_sites").select(["id", "project_id", "name_ar", "name_en", "sort_order"]).where("archived_at", "is", null);
     if (projectIds) q = q.where("project_id", "in", projectIds.length ? projectIds : ["-"]);
     const rows = await q.orderBy("sort_order").orderBy("name_en").execute();
     return rows.map((r) => ({
@@ -215,9 +217,7 @@ export class ProjectsRepository {
       .where("id", "=", id)
       .where("archived_at", "is", null)
       .executeTakeFirst();
-    return r
-      ? { id: r.id, projectId: r.project_id, name: { ar: r.name_ar, en: r.name_en }, sortOrder: r.sort_order }
-      : null;
+    return r ? { id: r.id, projectId: r.project_id, name: { ar: r.name_ar, en: r.name_en }, sortOrder: r.sort_order } : null;
   }
 
   async createSite(projectId: string, name: L10n, sortOrder = 0): Promise<string> {
@@ -234,7 +234,11 @@ export class ProjectsRepository {
   }
 
   async archiveSite(id: string): Promise<void> {
-    await raqibDb().updateTable("raqib_sites").set({ archived_at: sql`now()` as never }).where("id", "=", id).execute();
+    await raqibDb()
+      .updateTable("raqib_sites")
+      .set({ archived_at: sql`now()` as never })
+      .where("id", "=", id)
+      .execute();
   }
 
   async areas(siteIds: string[]): Promise<AreaRecord[]> {
@@ -280,7 +284,11 @@ export class ProjectsRepository {
   }
 
   async archiveArea(id: string): Promise<void> {
-    await raqibDb().updateTable("raqib_areas").set({ archived_at: sql`now()` as never }).where("id", "=", id).execute();
+    await raqibDb()
+      .updateTable("raqib_areas")
+      .set({ archived_at: sql`now()` as never })
+      .where("id", "=", id)
+      .execute();
   }
 
   // ── guards ──────────────────────────────────────────────────────────────
@@ -316,7 +324,7 @@ export class ProjectsRepository {
         project_id: input.projectId,
         user_id: input.userId ?? null,
         employee_no: input.employeeNo,
-        national_id: input.nationalId,
+        national_id: seal(input.nationalId),
         name_ar: input.name.ar,
         name_en: input.name.en,
         post_ar: input.post.ar,

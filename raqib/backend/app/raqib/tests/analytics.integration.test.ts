@@ -16,7 +16,12 @@ describe.skipIf(!hasTestDb)("Raqib analytics and search", () => {
   const tokens: Record<string, string> = {};
   const call = async (who: string, url: string) => {
     const res = await http.inject({ method: "GET", url: `/api${url}`, headers: { authorization: `Bearer ${tokens[who]}` } });
-    return { status: res.statusCode, body: (res.body && String(res.headers["content-type"]).includes("json") ? JSON.parse(res.body) : {}) as Json, text: res.body, headers: res.headers };
+    return {
+      status: res.statusCode,
+      body: (res.body && String(res.headers["content-type"]).includes("json") ? JSON.parse(res.body) : {}) as Json,
+      text: res.body,
+      headers: res.headers,
+    };
   };
   const kpi = (r: Json, key: string) => (r.kpis as Json[]).find((k) => k.key === key)!;
 
@@ -68,6 +73,15 @@ describe.skipIf(!hasTestDb)("Raqib analytics and search", () => {
       const jed = projects.find((p) => p.code === "PRJ-JED-007")!;
       expect((await call("pm", `/raqib/analytics?period=year&projectId=${jed.id}`)).status).toBe(403);
       expect((await call("insA", "/raqib/analytics")).status).toBe(403);
+    });
+
+    it("offers the same figures as a real Excel workbook, behind the same export right", async () => {
+      const ok = await call("qm", "/raqib/analytics/export.xlsx?period=year");
+      expect(ok.status).toBe(200);
+      expect(String(ok.headers["content-type"])).toContain("spreadsheetml.sheet");
+      expect(ok.text.slice(0, 2)).toBe("PK");
+      expect(ok.text).toContain("compliance");
+      expect((await call("qe", "/raqib/analytics/export.xlsx?period=year")).status).toBe(403);
     });
 
     it("exports CSV only with the export right, and neutralizes formulas", async () => {

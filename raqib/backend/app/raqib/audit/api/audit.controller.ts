@@ -4,6 +4,7 @@ import type { FastifyReply } from "fastify";
 import { z } from "zod";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
 import { ValidationError } from "@core/kernel/errors.js";
+import { csvToXlsx } from "@raqib/raqib/shared/xlsx.js";
 import { Allow, AccessGuard, Caller } from "@raqib/raqib/access/access.guard.js";
 import type { Access } from "@raqib/raqib/access/access.js";
 import { AuditService, type AuditQueryInput } from "../application/audit-service.js";
@@ -42,8 +43,20 @@ export class AuditController {
     const csv = await this.service.csv(parse(q), who);
     reply
       .header("Content-Type", "text/csv; charset=utf-8")
-      .header("Content-Disposition", "attachment; filename=\"raqib-audit.csv\"")
+      .header("Content-Disposition", 'attachment; filename="raqib-audit.csv"')
       .header("Cache-Control", "private, no-store")
       .send(csv);
+  }
+
+  /** The same figures as a native Excel workbook (`.xlsx`), for people who want a spreadsheet rather than a CSV. */
+  @Get("export.xlsx")
+  @Allow("audit", "X")
+  async exportXlsx(@Query() q: unknown, @Caller() who: Access, @Res() reply: FastifyReply) {
+    const csv = await this.service.csv(parse(q), who);
+    reply
+      .header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+      .header("Content-Disposition", 'attachment; filename="raqib-audit.xlsx"')
+      .header("Cache-Control", "private, no-store")
+      .send(csvToXlsx(csv, { sheet: "Audit", rtl: true }));
   }
 }

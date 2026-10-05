@@ -27,6 +27,7 @@ model raqib_account_requests {
   assigned_project_ids Json?
   user_id              String?
   created_at           DateTime  @default(now()) @db.Timestamptz(6)
+  erased_at            DateTime? @db.Timestamptz(6)
 
   @@unique([organization_id, id], map: "raqib_account_requests_org_id_uq")
   @@unique([organization_id, ref], map: "raqib_account_requests_ref_uq")
