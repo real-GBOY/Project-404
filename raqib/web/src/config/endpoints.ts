@@ -8,6 +8,7 @@ export const ENDPOINTS = {
     refresh: "/auth/refresh",
     logout: "/auth/logout",
     forgot: "/auth/password/forgot",
+    reset: "/auth/password/reset",
   },
   account: {
     security: "/raqib/account/security",
@@ -16,6 +17,10 @@ export const ENDPOINTS = {
     mfaDisable: "/raqib/account/mfa/disable",
     password: "/raqib/account/password",
     revoke: "/raqib/account/sessions/revoke",
+  },
+  publicOnboarding: {
+    info: (org: string) => `/raqib/public/onboarding/${encodeURIComponent(org)}`,
+    requests: (org: string) => `/raqib/public/onboarding/${encodeURIComponent(org)}/requests`,
   },
   me: "/raqib/me",
   settings: "/raqib/settings",
