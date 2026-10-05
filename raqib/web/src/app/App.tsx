@@ -1,9 +1,13 @@
 import { useLocation } from "react-router-dom";
-import { useAuth } from "@/auth/auth-provider";
-import { AccountSecurityPage, ForgotPasswordPage } from "./AccountPages";
-import { LoginPage } from "./LoginPage";
-import { PasswordSetupPage, PublicRequestPage } from "./PublicPages";
+import { useAuth } from "@/features/auth/auth-context";
+import { AccountSecurityPage } from "@/features/account/AccountSecurityPage";
+import { ForgotPasswordPage } from "@/features/account/ForgotPasswordPage";
+import { LoginPage } from "@/features/auth/LoginPage";
+import { PasswordSetupPage } from "@/features/onboarding/PasswordSetupPage";
+import { PublicRequestPage } from "@/features/onboarding/PublicRequestPage";
 import { Workspace } from "./Workspace";
+import { C } from "@/styles/colors";
+import { FONT } from "@/styles/typography";
 
 /** Session gate: loading → sign-in → (account set-up the organization requires) → the workspace. Protection here is UX; the API enforces every route. */
 export function App() {
@@ -24,8 +28,8 @@ export function App() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          color: "#5C6168",
-          fontFamily: "'IBM Plex Sans',system-ui,sans-serif",
+          color: C.text.secondary,
+          fontFamily: FONT.latin,
         }}
       >
         …

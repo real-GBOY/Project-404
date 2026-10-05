@@ -1,12 +1,32 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useMemo } from "react";
+import { useLocation } from "react-router-dom";
 import type { Me } from "@/api/types";
-import { createI18n } from "@/i18n/i18n";
+import { DataError } from "@/components/DataError";
+import { EvidenceViewer } from "@/components/EvidenceViewer";
+import { Modal } from "@/components/Modal";
+import { Toast } from "@/components/Toast";
+import { DEMO_MODE } from "@/config";
+import { AccountBar } from "@/features/account/AccountBar";
+import { DemoBar } from "@/features/demo/DemoBar";
+import { useSyncState } from "@/hooks/use-sync-state";
+import { SyncStatus } from "@/components/SyncStatus";
+import { useOfflineSync } from "@/hooks/use-offline-sync";
+import { useActions } from "@/hooks/use-actions";
+import { useDocumentLanguage } from "@/hooks/use-document-language";
+import { useEvidenceObjectUrl } from "@/hooks/use-evidence-object-url";
+import { useFrameWidth } from "@/hooks/use-frame-width";
+import { useGo } from "@/app/use-go";
+import { useI18n } from "@/hooks/use-i18n";
+import { useOverlayDismissal } from "@/hooks/use-overlay-dismissal";
+import { useScreenData } from "@/hooks/use-screen-data";
+import { useScrollReset } from "@/hooks/use-scroll-reset";
 import { buildVM } from "@/presenters/build";
+import type { Ctx } from "@/presenters/context";
 import { saveBlob } from "@/presenters/screens/reports";
 import { viewerVM } from "@/presenters/viewer";
-import type { Ctx } from "@/presenters/context";
 import { setUi, useUi } from "@/state/ui-store";
+import { C } from "@/styles/colors";
+import { FONT } from "@/styles/typography";
 import { BottomNav } from "@/ui/generated/BottomNav";
 import { LoadingSkeleton } from "@/ui/generated/LoadingSkeleton";
 import { MoreSheet } from "@/ui/generated/MoreSheet";
@@ -16,80 +36,29 @@ import { SCREENS } from "@/ui/generated/screens";
 import { SearchPalette } from "@/ui/generated/SearchPalette";
 import { Sidebar } from "@/ui/generated/Sidebar";
 import { TopBar } from "@/ui/generated/TopBar";
-import { EvidenceViewer } from "@/ui/EvidenceViewer";
-import { Modal } from "@/ui/Modal";
-import { Toast } from "@/ui/Toast";
-import { DataError } from "@/ui/DataError";
-import { DEMO_MODE } from "@/config";
-import { SyncStatus } from "@/offline/SyncStatus";
-import { useSyncState } from "@/offline/session";
-import { useOfflineSync } from "@/offline/use-offline-sync";
-import { AccountBar } from "./AccountPages";
-import { DemoBar } from "./DemoBar";
-import { parseRoute, pathFor } from "./routes";
-import { useActions } from "./use-actions";
-import { useScreenData } from "./use-screen-data";
+import { parseRoute } from "./routes";
 
 /**
- * The signed-in application. It owns no business rules: it reads server state through TanStack Query, hands
- * it with the UI state to the presenters, and renders the approved screens from the view-model.
+ * The signed-in application. It owns no business rules: it reads server state through TanStack Query, hands it with the UI
+ * state to the presenters, and renders the approved screens from the view-model. Everything it does besides composing is in
+ * a hook: data (`useScreenData`), commands (`useActions`), the offline queue (`useOfflineSync`), layout and overlay chores.
  */
 export function Workspace({ me }: { me: Me }) {
   const ui = useUi();
-  useOfflineSync(me);
-  const sync = useSyncState();
-  const navigate = useNavigate();
+  const { i } = useI18n();
   const loc = useLocation();
   const route = useMemo(() => parseRoute(loc.pathname), [loc.pathname]);
-  const i = useMemo(() => createI18n(ui.lang), [ui.lang]);
+  const go = useGo();
   const actions = useActions();
+  const sync = useSyncState();
   const { data, pending, denial, error, retry } = useScreenData(route, me, ui);
-  const frame = useRef<HTMLDivElement | null>(null);
-  const scroller = useRef<HTMLDivElement | null>(null);
 
-  // measure the app frame, not the window, so the layout reacts to the real available width
-  useEffect(() => {
-    const el = frame.current;
-    if (!el) return;
-    const ro = new ResizeObserver((entries) => {
-      const w = Math.round(entries[0]!.contentRect.width);
-      setUi((s) => (Math.abs(w - s.w) > 2 ? { w } : {}));
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.lang = ui.lang;
-    document.documentElement.dir = i.dir;
-  }, [ui.lang, i.dir]);
-
-  useEffect(() => {
-    if (scroller.current) scroller.current.scrollTop = 0;
-  }, [loc.pathname]);
-
-  useEffect(() => {
-    if (!ui.toast) return;
-    const t = setTimeout(() => setUi({ toast: null }), 4200);
-    return () => clearTimeout(t);
-  }, [ui.toast]);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape")
-        setUi({ search: false, notif: false, modal: null, more: false, busy: false });
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
-
-  const go = useCallback<Ctx["go"]>(
-    (n, id, extra) => {
-      setUi({ ...(extra ?? {}), search: false, notif: false, more: false, modal: null });
-      navigate(pathFor(n, id));
-    },
-    [navigate],
-  );
+  useOfflineSync(me);
+  useDocumentLanguage();
+  useOverlayDismissal(ui.toast);
+  useEvidenceObjectUrl(ui.viewer?.id, ui.viewerReq, actions);
+  const frame = useFrameWidth();
+  const scroller = useScrollReset(loc.pathname);
 
   const ctx: Ctx = {
     i,
@@ -106,31 +75,7 @@ export function Workspace({ me }: { me: Me }) {
     mobile: ui.w < 760,
   };
 
-  // The evidence viewer fetches the file only when the person asks (photos on open, video on request), through the
-  // authorized endpoint with their credentials; the object URL lives only while the viewer is open.
-  const viewerId = ui.viewer?.id;
-  useEffect(() => {
-    if (!viewerId || !ui.viewerReq) return;
-    let url: string | null = null;
-    let live = true;
-    actions.evidenceBlob(viewerId).then(
-      (b) => {
-        if (!live) return;
-        url = URL.createObjectURL(b);
-        setUi({ viewerUrl: url });
-      },
-      () => live && setUi({ viewerErr: true }),
-    );
-    return () => {
-      live = false;
-      if (url) URL.revokeObjectURL(url);
-    };
-  }, [viewerId, ui.viewerReq, actions]);
-
-  const vm = buildVM(ctx, {
-    pending,
-    denial,
-  });
+  const vm = buildVM(ctx, { pending, denial });
   vm.offline = !sync.online;
   vm.vw = viewerVM(ctx, (id, name) => void actions.evidenceBlob(id).then((b) => saveBlob(b, name)));
   const showError = !!error && !pending;
@@ -143,8 +88,8 @@ export function Workspace({ me }: { me: Me }) {
         height: "100vh",
         display: "flex",
         flexDirection: "column",
-        fontFamily: "'IBM Plex Sans Arabic','IBM Plex Sans',system-ui,sans-serif",
-        color: "#191C1F",
+        fontFamily: FONT.sans,
+        color: C.text.ink,
         fontSize: "14px",
         lineHeight: 1.5,
         WebkitFontSmoothing: "antialiased",
@@ -157,7 +102,7 @@ export function Workspace({ me }: { me: Me }) {
           minHeight: 0,
           display: "flex",
           justifyContent: "center",
-          background: "#2A302E",
+          background: C.chrome.frame,
         }}
       >
         <div
@@ -168,7 +113,7 @@ export function Workspace({ me }: { me: Me }) {
             height: "100%",
             display: "flex",
             overflow: "hidden",
-            background: "#F5F4F0",
+            background: C.surface.canvas,
           }}
         >
           {vm.showSide ? <Sidebar vm={vm} /> : null}

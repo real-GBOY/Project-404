@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { createI18n } from "@/i18n/i18n";
 import { useUi } from "@/state/ui-store";
-import type { StoredOp } from "./outbox";
-import { offline, useSyncState } from "./session";
+import type { StoredOp } from "@/services/offline/outbox";
+import { offline } from "@/services/offline/session";
+import { useSyncState } from "@/hooks/use-sync-state";
+import { C } from "@/styles/colors";
 
 /**
  * A small status pill, bottom corner of the workspace: offline, changes waiting, syncing, or "could not be saved" with
@@ -23,10 +25,10 @@ export function SyncStatus() {
   if (s.online && s.pending === 0 && s.failed === 0) return null;
   const tone =
     s.failed > 0
-      ? { bg: "#FBE9E9", fg: "#A3262A", bd: "#E6B5B6" }
+      ? { bg: C.status.danger.bgTint, fg: C.status.danger.fg, bd: C.status.danger.borderAlt }
       : !s.online
-        ? { bg: "#FAEFD8", fg: "#6B4600", bd: "#E8D2A0" }
-        : { bg: "#E8F0FA", fg: "#1F4E8C", bd: "#B9CDE8" };
+        ? { bg: C.status.warning.bg, fg: C.status.warning.strong, bd: C.status.warning.borderAlt }
+        : { bg: C.status.info.bgAlt, fg: C.status.info.fg, bd: C.status.info.border };
   const text =
     s.failed > 0
       ? i.S("off_failed", { n: s.failed })
@@ -61,7 +63,7 @@ export function SyncStatus() {
           background: tone.bg,
           color: tone.fg,
           cursor: s.failed > 0 ? "pointer" : "default",
-          boxShadow: "0 1px 4px rgba(0,0,0,.12)",
+          boxShadow: `0 1px 4px ${C.shadow.soft}`,
         }}
       >
         <span aria-hidden style={{ width: 8, height: 8, borderRadius: 4, background: tone.fg }} />
@@ -73,8 +75,8 @@ export function SyncStatus() {
           aria-label={i.S("off_failed", { n: s.failed })}
           style={{
             marginTop: 8,
-            background: "#fff",
-            border: "1px solid #E3E1DA",
+            background: C.surface.white,
+            border: `1px solid ${C.border.hairline}`,
             borderRadius: 6,
             padding: 12,
             display: "flex",
@@ -88,10 +90,14 @@ export function SyncStatus() {
           {failed.map((o) => (
             <div
               key={o.seq}
-              style={{ fontSize: 12.5, borderBottom: "1px solid #EEE", paddingBottom: 6 }}
+              style={{
+                fontSize: 12.5,
+                borderBottom: `1px solid ${C.surface.hover}`,
+                paddingBottom: 6,
+              }}
             >
               <strong>{i.S(`off_k_${o.kind}`)}</strong>
-              <div style={{ color: "#5C6168" }}>{o.failed?.message}</div>
+              <div style={{ color: C.text.secondary }}>{o.failed?.message}</div>
               <button
                 type="button"
                 onClick={() =>
@@ -103,9 +109,9 @@ export function SyncStatus() {
                   marginTop: 4,
                   height: 26,
                   padding: "0 10px",
-                  border: "1px solid #D6D3CB",
+                  border: `1px solid ${C.border.input}`,
                   borderRadius: 4,
-                  background: "#fff",
+                  background: C.surface.white,
                   cursor: "pointer",
                 }}
               >
@@ -120,8 +126,8 @@ export function SyncStatus() {
               height: 32,
               border: 0,
               borderRadius: 4,
-              background: "#A3262A",
-              color: "#fff",
+              background: C.status.danger.fg,
+              color: C.surface.white,
               cursor: "pointer",
             }}
           >

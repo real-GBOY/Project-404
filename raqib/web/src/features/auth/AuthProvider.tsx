@@ -1,49 +1,18 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { api } from "@/api/raqib";
-import type { Me, ModuleKey, SecurityStatus } from "@/api/types";
-import { ApiError, setSessionExpiredHandler, tokenStore } from "@/config";
-import { isNetworkError } from "@/offline/outbox";
-import { offline, useSyncState } from "@/offline/session";
-
-export type AuthStatus = "loading" | "authenticated" | "unauthenticated";
-
-export interface AuthContextValue {
-  status: AuthStatus;
-  me: Me | null;
-  /** Why the last sign-in/me call failed, for the sign-in page (e.g. a disabled account). */
-  error: string | null;
-  /** The signed-in person's account-security state (second factor, password age, session rule); null until loaded. */
-  security: SecurityStatus | null;
-  refreshSecurity(): Promise<void>;
-  login(email: string, password: string, otp?: string): Promise<void>;
-  logout(reason?: string): void;
-  /** UX only: the backend enforces every permission. */
-  can(module: ModuleKey, letter: string): boolean;
-}
-
-const AuthContext = createContext<AuthContextValue | null>(null);
-
-export function useAuth(): AuthContextValue {
-  const v = useContext(AuthContext);
-  if (!v) throw new Error("useAuth must be used inside <AuthProvider>");
-  return v;
-}
+import { api } from "@/api";
+import type { Me, SecurityStatus } from "@/api/types";
+import { isNetworkError } from "@/services/offline/outbox";
+import { offline } from "@/services/offline/session";
+import { useSyncState } from "@/hooks/use-sync-state";
+import { ApiError, setSessionExpiredHandler, tokenStore } from "@/services/http";
+import { AuthContext, type AuthContextValue, type AuthStatus } from "./auth-context";
+import { useIdleSignout } from "./use-idle-signout";
 
 /**
- * Session state. A persisted refresh token is exchanged for a fresh access token + `/raqib/me` on boot,
- * so a reload keeps the session; an unrecoverable 401 anywhere drops back to the sign-in page via
- * `setSessionExpiredHandler`. The authenticated user — role, scope, permissions — always comes from the
- * backend; nothing here decides what is allowed.
+ * Session state. A persisted refresh token is exchanged for a fresh access token + `/raqib/me` on boot, so a reload keeps the
+ * session; an unrecoverable 401 anywhere drops back to the sign-in page via `setSessionExpiredHandler`. The authenticated
+ * user (role, scope, permissions) always comes from the backend; nothing here decides what is allowed.
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>("loading");
@@ -97,6 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [refreshSecurity]);
 
+  // opened from the device copy while offline: read the real identity as soon as the connection returns
   const online = useSyncState().online;
   useEffect(() => {
     if (online && fromDevice.current) void loadMe().catch(() => undefined);
@@ -147,25 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [queryClient],
   );
 
-  // The organization's inactivity rule (settings → security → session, minutes): no activity for that long signs out.
-  const lastActive = useRef(Date.now());
-  const idleMinutes = security?.sessionMinutes ?? 0;
-  useEffect(() => {
-    if (status !== "authenticated" || idleMinutes <= 0) return;
-    lastActive.current = Date.now();
-    const touch = () => {
-      lastActive.current = Date.now();
-    };
-    const events = ["pointerdown", "keydown", "scroll", "touchstart"] as const;
-    events.forEach((e) => window.addEventListener(e, touch, { passive: true }));
-    const timer = setInterval(() => {
-      if (Date.now() - lastActive.current > idleMinutes * 60_000) logout("session_idle");
-    }, 15_000);
-    return () => {
-      events.forEach((e) => window.removeEventListener(e, touch));
-      clearInterval(timer);
-    };
-  }, [status, idleMinutes, logout]);
+  useIdleSignout(status, security?.sessionMinutes ?? 0, () => logout("session_idle"));
 
   const value = useMemo<AuthContextValue>(
     () => ({
