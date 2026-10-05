@@ -29,11 +29,13 @@ describe("authorization is declared on every endpoint (static review)", () => {
   });
 
   const isPublic = (src: string) => src.startsWith("// PUBLIC:");
+  /** The operations controller (metrics, readiness): not tenant data, so not behind a person's JWT. It has its own rules below. */
+  const isOps = (src: string) => src.startsWith("// OPS:");
 
   it("every Raqib controller is behind JWT + the access guard, except the one marked PUBLIC", () => {
     for (const f of files) {
       const src = readFileSync(f, "utf8");
-      if (isPublic(src)) continue;
+      if (isPublic(src) || isOps(src)) continue;
       expect(src, f).toMatch(/@UseGuards\(JwtAuthGuard, AccessGuard\)/);
     }
   });
@@ -47,10 +49,20 @@ describe("authorization is declared on every endpoint (static review)", () => {
     expect((src.match(/@Post\(/g) ?? []).length).toBe(1);
   });
 
+  it("the operations controller is a single read-only file: GET routes only, the metrics route needs its token, and it touches no tenant service", () => {
+    const ops = files.filter((f) => isOps(readFileSync(f, "utf8")));
+    expect(ops).toHaveLength(1);
+    const src = readFileSync(ops[0]!, "utf8");
+    expect((src.match(/@(Post|Put|Patch|Delete)\(/g) ?? []).length).toBe(0);
+    expect(src).toMatch(/metricsToken/);
+    expect(src).toMatch(/401/);
+    expect(src).not.toMatch(/Service.*from "@raqib\/raqib\/(?!jobs|reports\/infrastructure)/);
+  });
+
   it("every route declares @Allow(...) — the guard fails closed without it", () => {
     for (const f of files) {
       const src = readFileSync(f, "utf8");
-      if (isPublic(src)) continue;
+      if (isPublic(src) || isOps(src)) continue;
       const routes = (src.match(/@(Get|Post|Put|Patch|Delete)\(/g) ?? []).length;
       const allows = (src.match(/@Allow\(/g) ?? []).length;
       expect(allows, `${f}: ${routes} routes, ${allows} @Allow`).toBe(routes);
@@ -63,7 +75,12 @@ describe.skipIf(!hasTestDb)("Raqib hardening", () => {
   const tokens: Record<string, string> = {};
   const call = async (who: string | null, url: string) => {
     const res = await http.inject({ method: "GET", url: `/api${url}`, headers: who ? { authorization: `Bearer ${tokens[who]}` } : {} });
-    return { status: res.statusCode, body: (res.body && String(res.headers["content-type"]).includes("json") ? JSON.parse(res.body) : {}) as Json, text: res.body, headers: res.headers };
+    return {
+      status: res.statusCode,
+      body: (res.body && String(res.headers["content-type"]).includes("json") ? JSON.parse(res.body) : {}) as Json,
+      text: res.body,
+      headers: res.headers,
+    };
   };
 
   beforeAll(async () => {
@@ -77,7 +94,18 @@ describe.skipIf(!hasTestDb)("Raqib hardening", () => {
   });
 
   it("answers nobody who is not signed in", async () => {
-    for (const url of ["/raqib/me", "/raqib/projects", "/raqib/visits", "/raqib/reports", "/raqib/actions", "/raqib/training", "/raqib/analytics", "/raqib/audit", "/raqib/confidential/access", "/raqib/search?q=gate"]) {
+    for (const url of [
+      "/raqib/me",
+      "/raqib/projects",
+      "/raqib/visits",
+      "/raqib/reports",
+      "/raqib/actions",
+      "/raqib/training",
+      "/raqib/analytics",
+      "/raqib/audit",
+      "/raqib/confidential/access",
+      "/raqib/search?q=gate",
+    ]) {
       expect((await call(null, url)).status, url).toBe(401);
     }
   });
@@ -96,7 +124,8 @@ describe.skipIf(!hasTestDb)("Raqib hardening", () => {
     const r = await call("qm", "/raqib/audit");
     expect(r.status).toBe(200);
     const actions = new Set((r.body.items as Json[]).map((e) => e.action));
-    for (const a of ["raqib.inspection.approved", "raqib.report.issued", "raqib.action.created", "raqib.training.requested"]) expect(actions.has(a), a).toBe(true);
+    for (const a of ["raqib.inspection.approved", "raqib.report.issued", "raqib.action.created", "raqib.training.requested"])
+      expect(actions.has(a), a).toBe(true);
     expect((r.body.items as Json[]).every((e) => e.actor.name.en)).toBe(true);
     const only = (await call("qm", "/raqib/audit?entity=raqib_report")).body.items as Json[];
     expect(only.length).toBeGreaterThan(0);
@@ -116,7 +145,9 @@ describe.skipIf(!hasTestDb)("Raqib hardening", () => {
       if (res.statusCode === 429) limited++;
     }
     expect(limited).toBeGreaterThan(0);
-    const body = JSON.parse((await http.inject({ method: "POST", url: "/api/auth/login", payload: { email: "nobody@example.com", password: "wrong-password-1" } })).body);
+    const body = JSON.parse(
+      (await http.inject({ method: "POST", url: "/api/auth/login", payload: { email: "nobody@example.com", password: "wrong-password-1" } })).body,
+    );
     expect(body.error.code).toBe("raqib.rate_limited");
   });
 });

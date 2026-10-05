@@ -8,6 +8,7 @@ import type { Clock } from "@core/kernel/clock.js";
 import type { IEventBus } from "@core/contracts/index.js";
 import { actionOverdue } from "@raqib/raqib/actions/events.js";
 import { ActionsRepository } from "@raqib/raqib/actions/infrastructure/actions-repository.js";
+import { LifecycleService } from "@raqib/raqib/lifecycle/lifecycle-service.js";
 import { SettingsService } from "@raqib/raqib/settings/application/settings-service.js";
 import { visitOverdue } from "@raqib/raqib/visits/events.js";
 import { effectiveStatus } from "@raqib/raqib/visits/domain/visit-state.js";
@@ -19,6 +20,8 @@ export interface JobsReport {
   organizations: number;
   visitsMarkedOverdue: number;
   actionsMarkedOverdue: number;
+  requestsErased: number;
+  evidencePurged: number;
 }
 
 /**
@@ -31,6 +34,7 @@ export class RaqibJobs {
     private readonly visits: VisitsRepository,
     private readonly actions: ActionsRepository,
     private readonly settings: SettingsService,
+    private readonly lifecycle: LifecycleService,
     @Inject(EVENT_BUS) private readonly events: IEventBus,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
@@ -38,12 +42,15 @@ export class RaqibJobs {
 
   async runAll(): Promise<JobsReport> {
     const orgs = await runAsSystem(() => currentExecutor().selectFrom("organizations").select("id").execute());
-    const report: JobsReport = { organizations: orgs.length, visitsMarkedOverdue: 0, actionsMarkedOverdue: 0 };
+    const report: JobsReport = { organizations: orgs.length, visitsMarkedOverdue: 0, actionsMarkedOverdue: 0, requestsErased: 0, evidencePurged: 0 };
     for (const org of orgs) {
       try {
         await withContext({ userId: undefined, organizationId: org.id }, async () => {
           report.visitsMarkedOverdue += await this.overdueVisits();
           report.actionsMarkedOverdue += await this.overdueActions();
+          const kept = await this.lifecycle.retention();
+          report.requestsErased += kept.requestsErased;
+          report.evidencePurged += kept.evidencePurged;
         });
       } catch (err) {
         log.error({ err, organizationId: org.id }, "raqib jobs failed for organization");
