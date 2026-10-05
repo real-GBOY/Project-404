@@ -7,6 +7,7 @@ import { AppError, ValidationError } from "@core/kernel/errors.js";
 import { Allow, AccessGuard, Caller } from "@raqib/raqib/access/access.guard.js";
 import type { Access } from "@raqib/raqib/access/access.js";
 import { ReportsService } from "../application/reports-service.js";
+import { parsePage, toPage } from "@raqib/raqib/shared/paging.js";
 
 const langSchema = z.enum(["ar", "en"]);
 
@@ -19,8 +20,9 @@ export class ReportsController {
 
   @Get()
   @Allow("reports", "V")
-  async list(@Caller() who: Access) {
-    return { items: await this.service.list(who), pdf: this.service.pdfAvailable() };
+  async list(@Query() q: { limit?: string; cursor?: string }, @Caller() who: Access) {
+    const page = parsePage(q);
+    return { ...toPage(await this.service.list(who, page), page), pdf: this.service.pdfAvailable() };
   }
 
   @Get(":id")

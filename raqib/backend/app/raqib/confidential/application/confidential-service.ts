@@ -1,5 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { Conflict, Forbidden, NotFound, ValidationError } from "@core/kernel/errors.js";
+import { UploadGuard } from "@raqib/raqib/shared/upload-guard.js";
 import { CLOCK, FILE_STORAGE, NOTIFICATION_PROVIDER, USER_PROVIDER } from "@core/kernel/tokens.js";
 import type { Clock } from "@core/kernel/clock.js";
 import type { IFileStorage, INotificationProvider, IUserProvider } from "@core/contracts/index.js";
@@ -11,8 +12,16 @@ import { Counters } from "@raqib/raqib/shared/counters.js";
 import type { L10n } from "@raqib/raqib/shared/l10n.js";
 import { SettingsService } from "@raqib/raqib/settings/application/settings-service.js";
 import {
-  ConfRepository, confidentially,
-  type ConfGrantRecord, type ConfKind, type ConfReportRecord, type ConfStatus, type GrantLevel, type GrantScope, type IdentityMode, type Sensitivity,
+  ConfRepository,
+  confidentially,
+  type ConfGrantRecord,
+  type ConfKind,
+  type ConfReportRecord,
+  type ConfStatus,
+  type GrantLevel,
+  type GrantScope,
+  type IdentityMode,
+  type Sensitivity,
 } from "../infrastructure/conf-repository.js";
 
 /** How long an entry (with its stated reason) keeps the area open before the person must enter again. */
@@ -93,6 +102,7 @@ export class ConfidentialService {
     private readonly counters: Counters,
     private readonly projects: ProjectsRepository,
     private readonly settings: SettingsService,
+    private readonly guard: UploadGuard,
     @Inject(FILE_STORAGE) private readonly files: IFileStorage,
     @Inject(NOTIFICATION_PROVIDER) private readonly notify: INotificationProvider,
     @Inject(USER_PROVIDER) private readonly users: IUserProvider,
@@ -105,10 +115,19 @@ export class ConfidentialService {
 
   async submit(input: SubmitInput, who: Access): Promise<{ id: string | null; ref: string }> {
     if (input.fileIds.length > 5) throw ValidationError("raqib.too_many_files", "Attach at most five files.");
-    return confidentially(async () => {
+    const afterCommits: Array<() => Promise<void>> = [];
+    const result = await confidentially(async () => {
       const now = this.clock.now();
       const ref = await this.counters.next("CNF", now.getUTCFullYear());
-      const id = await this.repo.insertReport({ ref, kind: input.kind, sensitivity: SENSITIVITY[input.kind], subject: input.subject, body: input.body, place: input.place, identityMode: input.identity });
+      const id = await this.repo.insertReport({
+        ref,
+        kind: input.kind,
+        sensitivity: SENSITIVITY[input.kind],
+        subject: input.subject,
+        body: input.body,
+        place: input.place,
+        identityMode: input.identity,
+      });
       if (input.identity !== "anonymous") {
         const guard = (await this.projects.guards()).find((g) => g.userId === who.userId);
         await this.repo.insertIdentity(id, { userId: who.userId, name: this.nameOf(who), employeeNo: guard?.employeeNo ?? "" });
@@ -123,18 +142,34 @@ export class ConfidentialService {
         if (!kind) throw ValidationError("raqib.file_type_not_allowed", "Only photos, videos and PDF documents can be attached.");
         const limitMb = kind === "video" ? s.attach.video : kind === "doc" ? s.attach.doc : s.attach.photo;
         if (file.byteSize > limitMb * 1_048_576) throw ValidationError("raqib.file_too_large", `This file exceeds the ${limitMb} MB limit.`, { limitMb });
-        await this.repo.insertFile(id, { fileId: file.id, name: file.originalName, mime: file.contentType, sizeBytes: file.byteSize });
+        const admitted = await this.guard.admit(file, kind, who.userId);
+        afterCommits.push(admitted.afterCommit);
+        await this.repo.insertFile(id, {
+          fileId: admitted.file.id,
+          name: admitted.file.originalName,
+          mime: admitted.file.contentType,
+          sizeBytes: admitted.file.byteSize,
+        });
       }
       // the log never names the reporter: confidential and anonymous reports must stay that way
       await this.repo.log({ at: this.clock.now(), action: "submit", actorId: null, actor: { ar: "مُبلِّغ", en: "Reporter" }, reportRef: ref });
       await this.announce(ref, now);
       return { id: input.identity === "anonymous" ? null : id, ref };
     });
+    for (const done of afterCommits) await done();
+    return result;
   }
 
   async mine(who: Access): Promise<MineView[]> {
     return confidentially(async () =>
-      (await this.repo.mine(who.userId)).map((r) => ({ ref: r.ref, kind: r.kind, subject: r.subject, status: r.status, at: r.createdAt.toISOString(), response: r.response })),
+      (await this.repo.mine(who.userId)).map((r) => ({
+        ref: r.ref,
+        kind: r.kind,
+        subject: r.subject,
+        status: r.status,
+        at: r.createdAt.toISOString(),
+        response: r.response,
+      })),
     );
   }
 
@@ -240,7 +275,15 @@ export class ConfidentialService {
       const grant = await this.requireOfficer(who, "respond");
       const r = await this.readable(id, grant);
       if (r.identityMode === "anonymous") throw Conflict("raqib.anonymous", "This report is anonymous: there is no identity to reveal.");
-      await this.repo.log({ at: this.clock.now(), action: "reveal_identity", actorId: who.userId, actor: this.nameOf(who), reportRef: r.ref, reason: reason.trim(), device });
+      await this.repo.log({
+        at: this.clock.now(),
+        action: "reveal_identity",
+        actorId: who.userId,
+        actor: this.nameOf(who),
+        reportRef: r.ref,
+        reason: reason.trim(),
+        device,
+      });
       return this.detail(r, grant, who);
     });
   }
@@ -265,9 +308,21 @@ export class ConfidentialService {
       const profiles = new Map((await this.access.allProfiles()).map((p) => [p.userId, p]));
       const now = this.clock.now();
       return (await this.repo.grants()).map((g) => ({
-        id: g.id, user: { id: g.userId, name: { ar: profiles.get(g.userId)?.nameAr ?? "—", en: profiles.get(g.userId)?.nameEn ?? "—" }, role: profiles.get(g.userId)?.roleKey ?? "" },
-        level: g.level, scope: g.scope, reason: g.reason, grantedBy: g.grantedBy, grantedAt: g.grantedAt.toISOString(), expiresAt: g.expiresAt.toISOString(),
-        status: g.revokedAt ? "revoked" : g.expiresAt <= now ? "expired" : "active", revokedBy: g.revokedBy, revokeReason: g.revokeReason,
+        id: g.id,
+        user: {
+          id: g.userId,
+          name: { ar: profiles.get(g.userId)?.nameAr ?? "—", en: profiles.get(g.userId)?.nameEn ?? "—" },
+          role: profiles.get(g.userId)?.roleKey ?? "",
+        },
+        level: g.level,
+        scope: g.scope,
+        reason: g.reason,
+        grantedBy: g.grantedBy,
+        grantedAt: g.grantedAt.toISOString(),
+        expiresAt: g.expiresAt.toISOString(),
+        status: g.revokedAt ? "revoked" : g.expiresAt <= now ? "expired" : "active",
+        revokedBy: g.revokedBy,
+        revokeReason: g.revokeReason,
       }));
     });
   }
@@ -290,10 +345,26 @@ export class ConfidentialService {
       if (!target || target.status !== "active") throw ValidationError("raqib.invalid_grantee", "Choose an active person.");
       const now = this.clock.now();
       const expiresAt = new Date(input.expiresAt);
-      if (Number.isNaN(expiresAt.getTime()) || expiresAt.getTime() < now.getTime() + MIN_GRANT_HOURS * 3_600_000) throw ValidationError("raqib.invalid_expiry", "A grant must last at least an hour.");
-      if (expiresAt.getTime() > now.getTime() + MAX_GRANT_DAYS * 86_400_000) throw ValidationError("raqib.invalid_expiry", "A grant cannot last more than a year.");
-      await this.repo.insertGrant({ userId: input.userId, level: input.level, scope: input.scope, reason: input.reason.trim(), grantedBy: who.userId, grantedByName: this.nameOf(who), expiresAt });
-      await this.repo.log({ at: this.clock.now(), action: "grant_issued", actorId: who.userId, actor: this.nameOf(who), reason: `${target.nameEn}: ${input.level}/${input.scope} — ${input.reason.trim()}` });
+      if (Number.isNaN(expiresAt.getTime()) || expiresAt.getTime() < now.getTime() + MIN_GRANT_HOURS * 3_600_000)
+        throw ValidationError("raqib.invalid_expiry", "A grant must last at least an hour.");
+      if (expiresAt.getTime() > now.getTime() + MAX_GRANT_DAYS * 86_400_000)
+        throw ValidationError("raqib.invalid_expiry", "A grant cannot last more than a year.");
+      await this.repo.insertGrant({
+        userId: input.userId,
+        level: input.level,
+        scope: input.scope,
+        reason: input.reason.trim(),
+        grantedBy: who.userId,
+        grantedByName: this.nameOf(who),
+        expiresAt,
+      });
+      await this.repo.log({
+        at: this.clock.now(),
+        action: "grant_issued",
+        actorId: who.userId,
+        actor: this.nameOf(who),
+        reason: `${target.nameEn}: ${input.level}/${input.scope} — ${input.reason.trim()}`,
+      });
     });
   }
 
@@ -309,17 +380,36 @@ export class ConfidentialService {
     });
   }
 
-  async log(who: Access): Promise<Array<{ id: string; action: string; actor: L10n; reportRef: string | null; reason: string | null; device: string | null; at: string }>> {
+  async log(
+    who: Access,
+  ): Promise<Array<{ id: string; action: string; actor: L10n; reportRef: string | null; reason: string | null; device: string | null; at: string }>> {
     return confidentially(async () => {
       await this.requireGM(who);
-      return (await this.repo.recentLog(200)).map((e) => ({ id: e.id, action: e.action, actor: e.actor, reportRef: e.reportRef, reason: e.reason, device: e.device, at: e.at.toISOString() }));
+      return (await this.repo.recentLog(200)).map((e) => ({
+        id: e.id,
+        action: e.action,
+        actor: e.actor,
+        reportRef: e.reportRef,
+        reason: e.reason,
+        device: e.device,
+        at: e.at.toISOString(),
+      }));
     });
   }
 
   // ── helpers ──────────────────────────────────────────────────────────
 
   private summary(r: ConfReportRecord): ConfReportView {
-    return { id: r.id, ref: r.ref, kind: r.kind, sensitivity: r.sensitivity, subject: r.subject, place: r.place, status: r.status, at: r.createdAt.toISOString() };
+    return {
+      id: r.id,
+      ref: r.ref,
+      kind: r.kind,
+      sensitivity: r.sensitivity,
+      subject: r.subject,
+      place: r.place,
+      status: r.status,
+      at: r.createdAt.toISOString(),
+    };
   }
 
   private async readable(id: string, grant: ConfGrantRecord, lock = false): Promise<ConfReportRecord> {
@@ -337,7 +427,11 @@ export class ConfidentialService {
       files: (await this.repo.files(r.id)).map((f) => ({ id: f.id, name: f.name, mime: f.mime, sizeBytes: f.sizeBytes })),
       response: r.response,
       canRespond: grant.level === "respond",
-      identity: { mode: r.identityMode, revealed: !!identity && revealed, ...(identity && revealed ? { name: identity.name, employeeNo: identity.employeeNo } : {}) },
+      identity: {
+        mode: r.identityMode,
+        revealed: !!identity && revealed,
+        ...(identity && revealed ? { name: identity.name, employeeNo: identity.employeeNo } : {}),
+      },
     };
   }
 

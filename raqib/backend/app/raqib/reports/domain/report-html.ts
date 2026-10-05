@@ -39,8 +39,7 @@ const STR = {
   answers: { c: { ar: "مطابق", en: "Compliant" }, n: { ar: "غير مطابق", en: "Non-compliant" }, x: { ar: "لا ينطبق", en: "N/A" } } as Record<string, L10n>,
 };
 
-const esc = (s: unknown): string =>
-  String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+const esc = (s: unknown): string => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
 /**
  * The printable report, HTML for headless Chromium. Self-contained (no network): fonts are the system's, images are
@@ -64,7 +63,10 @@ export function renderReportHtml(s: ReportSnapshot, lang: Lang, images: Map<stri
             .filter((e) => e.kind === "photo" && images.has(e.id))
             .map((e) => `<img src="${images.get(e.id)}" alt="${esc(e.name)}">`)
             .join("");
-          const other = it.evidence.filter((e) => !(e.kind === "photo" && images.has(e.id))).map((e) => `<span class="chip">${esc(e.name)}</span>`).join("");
+          const other = it.evidence
+            .filter((e) => !(e.kind === "photo" && images.has(e.id)))
+            .map((e) => `<span class="chip">${esc(e.name)}</span>`)
+            .join("");
           return `<tr class="item"><td class="num">${esc(it.num)}</td><td><div>${L(it.text)}</div>${it.note ? `<div class="note">${T(STR.note)}: ${esc(it.note)}</div>` : ""}${imgs ? `<div class="imgs">${imgs}</div>` : ""}${other ? `<div>${other}</div>` : ""}</td><td class="ans" style="color:${color}">${esc(ans)}</td><td class="w">${it.weight}</td></tr>`;
         })
         .join("");
@@ -81,7 +83,10 @@ export function renderReportHtml(s: ReportSnapshot, lang: Lang, images: Map<stri
     : "";
 
   const trail = s.decisions
-    .map((d) => `<tr><td>${esc(T(STR.actions[d.action] ?? { ar: d.action, en: d.action }))}</td><td>${L(d.actor.name)} · ${L(d.actor.title)}</td><td class="when">${when(d.at)}</td></tr>${d.reason ? `<tr><td></td><td colspan="2" class="note">${esc(d.reason)}</td></tr>` : ""}`)
+    .map(
+      (d) =>
+        `<tr><td>${esc(T(STR.actions[d.action] ?? { ar: d.action, en: d.action }))}</td><td>${L(d.actor.name)} · ${L(d.actor.title)}</td><td class="when">${when(d.at)}</td></tr>${d.reason ? `<tr><td></td><td colspan="2" class="note">${esc(d.reason)}</td></tr>` : ""}`,
+    )
     .join("");
 
   return `<!doctype html><html lang="${lang}" dir="${dir}"><head><meta charset="utf-8"><title>${esc(s.ref)}</title><style>

@@ -12,7 +12,8 @@ export type IdentityMode = "named" | "confidential" | "anonymous";
 export type ConfStatus = "new" | "under_review" | "closed";
 export type GrantLevel = "view" | "respond";
 export type GrantScope = "all" | "standard";
-export type ConfAction = "enter" | "exit" | "view_list" | "view_report" | "respond" | "status" | "reveal_identity" | "open_file" | "grant_issued" | "grant_revoked" | "submit";
+export type ConfAction =
+  "enter" | "exit" | "view_list" | "view_report" | "respond" | "status" | "reveal_identity" | "open_file" | "grant_issued" | "grant_revoked" | "submit";
 
 export interface ConfReportRecord {
   id: string;
@@ -74,13 +75,32 @@ export async function confidentially<T>(fn: () => Promise<T>): Promise<T> {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const toReport = (r: any): ConfReportRecord => ({
-  id: r.id, ref: r.ref, kind: r.kind, sensitivity: r.sensitivity, subject: r.subject, body: r.body, place: r.place, identityMode: r.identity_mode,
-  status: r.status, response: r.response, respondedAt: r.responded_at, createdAt: r.created_at,
+  id: r.id,
+  ref: r.ref,
+  kind: r.kind,
+  sensitivity: r.sensitivity,
+  subject: r.subject,
+  body: r.body,
+  place: r.place,
+  identityMode: r.identity_mode,
+  status: r.status,
+  response: r.response,
+  respondedAt: r.responded_at,
+  createdAt: r.created_at,
 });
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const toGrant = (r: any): ConfGrantRecord => ({
-  id: r.id, userId: r.user_id, level: r.level, scope: r.scope, reason: r.reason, grantedBy: { ar: r.granted_by_name_ar, en: r.granted_by_name_en }, grantedAt: r.granted_at,
-  expiresAt: r.expires_at, revokedAt: r.revoked_at, revokedBy: r.revoked_by_name_en ? { ar: r.revoked_by_name_ar, en: r.revoked_by_name_en } : null, revokeReason: r.revoke_reason,
+  id: r.id,
+  userId: r.user_id,
+  level: r.level,
+  scope: r.scope,
+  reason: r.reason,
+  grantedBy: { ar: r.granted_by_name_ar, en: r.granted_by_name_en },
+  grantedAt: r.granted_at,
+  expiresAt: r.expires_at,
+  revokedAt: r.revoked_at,
+  revokedBy: r.revoked_by_name_en ? { ar: r.revoked_by_name_ar, en: r.revoked_by_name_en } : null,
+  revokeReason: r.revoke_reason,
 });
 
 @Injectable()
@@ -89,7 +109,17 @@ export class ConfRepository {
     const id = raqibId("cnf");
     await raqibDb()
       .insertInto("raqib_conf_reports")
-      .values({ id, organization_id: org(), ref: r.ref, kind: r.kind, sensitivity: r.sensitivity, subject: r.subject, body: r.body, place: r.place, identity_mode: r.identityMode })
+      .values({
+        id,
+        organization_id: org(),
+        ref: r.ref,
+        kind: r.kind,
+        sensitivity: r.sensitivity,
+        subject: r.subject,
+        body: r.body,
+        place: r.place,
+        identity_mode: r.identityMode,
+      })
       .execute();
     return id;
   }
@@ -120,7 +150,15 @@ export class ConfRepository {
   async insertFile(reportId: string, f: { fileId: string; name: string; mime: string; sizeBytes: number }): Promise<void> {
     await raqibDb()
       .insertInto("raqib_conf_files")
-      .values({ id: raqibId("evd"), organization_id: org(), report_id: reportId, file_id: f.fileId, name: f.name, mime: f.mime, size_bytes: f.sizeBytes as never })
+      .values({
+        id: raqibId("evd"),
+        organization_id: org(),
+        report_id: reportId,
+        file_id: f.fileId,
+        name: f.name,
+        mime: f.mime,
+        size_bytes: f.sizeBytes as never,
+      })
       .execute();
   }
 
@@ -153,18 +191,38 @@ export class ConfRepository {
       set.response = patch.response;
       set.responded_at = sql`now()`;
     }
-    await raqibDb().updateTable("raqib_conf_reports").set(set as never).where("id", "=", id).execute();
+    await raqibDb()
+      .updateTable("raqib_conf_reports")
+      .set(set as never)
+      .where("id", "=", id)
+      .execute();
   }
 
   // ── grants ─────────────────────────────────────────────────────────────
 
-  async insertGrant(g: { userId: string; level: GrantLevel; scope: GrantScope; reason: string; grantedBy: string; grantedByName: L10n; expiresAt: Date }): Promise<string> {
+  async insertGrant(g: {
+    userId: string;
+    level: GrantLevel;
+    scope: GrantScope;
+    reason: string;
+    grantedBy: string;
+    grantedByName: L10n;
+    expiresAt: Date;
+  }): Promise<string> {
     const id = raqibId("cgr");
     await raqibDb()
       .insertInto("raqib_conf_grants")
       .values({
-        id, organization_id: org(), user_id: g.userId, level: g.level, scope: g.scope, reason: g.reason, granted_by: g.grantedBy,
-        granted_by_name_ar: g.grantedByName.ar, granted_by_name_en: g.grantedByName.en, expires_at: g.expiresAt,
+        id,
+        organization_id: org(),
+        user_id: g.userId,
+        level: g.level,
+        scope: g.scope,
+        reason: g.reason,
+        granted_by: g.grantedBy,
+        granted_by_name_ar: g.grantedByName.ar,
+        granted_by_name_en: g.grantedByName.en,
+        expires_at: g.expiresAt,
       })
       .execute();
     return id;
@@ -209,19 +267,44 @@ export class ConfRepository {
 
   // ── protected log ──────────────────────────────────────────────────────
 
-  async log(e: { at: Date; action: ConfAction; actorId: string | null; actor: L10n; reportRef?: string | null; reason?: string | null; device?: string | null }): Promise<void> {
+  async log(e: {
+    at: Date;
+    action: ConfAction;
+    actorId: string | null;
+    actor: L10n;
+    reportRef?: string | null;
+    reason?: string | null;
+    device?: string | null;
+  }): Promise<void> {
     await raqibDb()
       .insertInto("raqib_conf_access_log")
       .values({
-        id: raqibId("cal2"), organization_id: org(), action: e.action, actor_id: e.actorId, actor_name_ar: e.actor.ar, actor_name_en: e.actor.en,
-        report_ref: e.reportRef ?? null, reason: e.reason ?? null, device: e.device ?? null, at: e.at,
+        id: raqibId("cal2"),
+        organization_id: org(),
+        action: e.action,
+        actor_id: e.actorId,
+        actor_name_ar: e.actor.ar,
+        actor_name_en: e.actor.en,
+        report_ref: e.reportRef ?? null,
+        reason: e.reason ?? null,
+        device: e.device ?? null,
+        at: e.at,
       })
       .execute();
   }
 
   async recentLog(limit: number): Promise<ConfLogRecord[]> {
     const rows = await raqibDb().selectFrom("raqib_conf_access_log").selectAll().orderBy("seq", "desc").limit(limit).execute();
-    return rows.map((r) => ({ id: r.id, action: r.action, actorId: r.actor_id, actor: { ar: r.actor_name_ar, en: r.actor_name_en }, reportRef: r.report_ref, reason: r.reason, device: r.device, at: r.at }));
+    return rows.map((r) => ({
+      id: r.id,
+      action: r.action,
+      actorId: r.actor_id,
+      actor: { ar: r.actor_name_ar, en: r.actor_name_en },
+      reportRef: r.report_ref,
+      reason: r.reason,
+      device: r.device,
+      at: r.at,
+    }));
   }
 
   /** The person's open session: their latest `enter` is within the window and not followed by an `exit`. */

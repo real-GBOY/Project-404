@@ -30,12 +30,34 @@ const org = (): string => {
 };
 
 type Row = {
-  id: string; file_id: string; kind: EvidenceKind; name: string; mime: string; size_bytes: string | number; context: EvidenceContext;
-  inspection_id: string | null; item_id: string | null; guard_id: string | null; ref_id: string | null; uploaded_by: string | null; uploaded_at: Date;
+  id: string;
+  file_id: string;
+  kind: EvidenceKind;
+  name: string;
+  mime: string;
+  size_bytes: string | number;
+  context: EvidenceContext;
+  inspection_id: string | null;
+  item_id: string | null;
+  guard_id: string | null;
+  ref_id: string | null;
+  uploaded_by: string | null;
+  uploaded_at: Date;
 };
 const toRecord = (r: Row): EvidenceRecord => ({
-  id: r.id, fileId: r.file_id, kind: r.kind, name: r.name, mime: r.mime, sizeBytes: Number(r.size_bytes), context: r.context,
-  inspectionId: r.inspection_id, itemId: r.item_id, guardId: r.guard_id, refId: r.ref_id, uploadedBy: r.uploaded_by, uploadedAt: r.uploaded_at,
+  id: r.id,
+  fileId: r.file_id,
+  kind: r.kind,
+  name: r.name,
+  mime: r.mime,
+  sizeBytes: Number(r.size_bytes),
+  context: r.context,
+  inspectionId: r.inspection_id,
+  itemId: r.item_id,
+  guardId: r.guard_id,
+  refId: r.ref_id,
+  uploadedBy: r.uploaded_by,
+  uploadedAt: r.uploaded_at,
 });
 
 @Injectable()
@@ -45,8 +67,19 @@ export class EvidenceRepository {
     await raqibDb()
       .insertInto("raqib_evidence")
       .values({
-        id, organization_id: org(), file_id: e.fileId, kind: e.kind, name: e.name, mime: e.mime, size_bytes: e.sizeBytes as never, context: e.context,
-        inspection_id: e.inspectionId, item_id: e.itemId, guard_id: e.guardId, ref_id: e.refId, uploaded_by: e.uploadedBy,
+        id,
+        organization_id: org(),
+        file_id: e.fileId,
+        kind: e.kind,
+        name: e.name,
+        mime: e.mime,
+        size_bytes: e.sizeBytes as never,
+        context: e.context,
+        inspection_id: e.inspectionId,
+        item_id: e.itemId,
+        guard_id: e.guardId,
+        ref_id: e.refId,
+        uploaded_by: e.uploadedBy,
       })
       .execute();
     return id;
@@ -58,16 +91,33 @@ export class EvidenceRepository {
   }
 
   async forInspection(inspectionId: string): Promise<EvidenceRecord[]> {
-    const rows = await raqibDb().selectFrom("raqib_evidence").selectAll().where("inspection_id", "=", inspectionId).where("removed_at", "is", null).orderBy("uploaded_at").execute();
+    const rows = await raqibDb()
+      .selectFrom("raqib_evidence")
+      .selectAll()
+      .where("inspection_id", "=", inspectionId)
+      .where("removed_at", "is", null)
+      .orderBy("uploaded_at")
+      .execute();
     return rows.map((r) => toRecord(r as Row));
   }
 
   async forRef(context: EvidenceContext, refId: string): Promise<EvidenceRecord[]> {
-    const rows = await raqibDb().selectFrom("raqib_evidence").selectAll().where("context", "=", context).where("ref_id", "=", refId).where("removed_at", "is", null).orderBy("uploaded_at").execute();
+    const rows = await raqibDb()
+      .selectFrom("raqib_evidence")
+      .selectAll()
+      .where("context", "=", context)
+      .where("ref_id", "=", refId)
+      .where("removed_at", "is", null)
+      .orderBy("uploaded_at")
+      .execute();
     return rows.map((r) => toRecord(r as Row));
   }
 
   async markRemoved(id: string): Promise<void> {
-    await raqibDb().updateTable("raqib_evidence").set({ removed_at: sql`now()` as never }).where("id", "=", id).execute();
+    await raqibDb()
+      .updateTable("raqib_evidence")
+      .set({ removed_at: sql`now()` as never })
+      .where("id", "=", id)
+      .execute();
   }
 }

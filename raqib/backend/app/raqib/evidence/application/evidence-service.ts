@@ -11,6 +11,7 @@ import { ActionsRepository } from "@raqib/raqib/actions/infrastructure/actions-r
 import { InspectionsService } from "@raqib/raqib/inspections/application/inspections-service.js";
 import { SettingsService } from "@raqib/raqib/settings/application/settings-service.js";
 import { VisitsRepository } from "@raqib/raqib/visits/infrastructure/visits-repository.js";
+import { UploadGuard } from "@raqib/raqib/shared/upload-guard.js";
 import { EvidenceRepository, type EvidenceKind, type EvidenceRecord } from "../infrastructure/evidence-repository.js";
 
 /** What a file's MIME type means as evidence; anything else is refused. */
@@ -43,6 +44,7 @@ export class EvidenceService {
     private readonly actions: ActionsRepository,
     private readonly actionService: ActionsService,
     private readonly settings: SettingsService,
+    private readonly guard: UploadGuard,
     @Inject(FILE_STORAGE) private readonly files: IFileStorage,
     @Inject(AUDIT_LOGGER) private readonly audit: IAuditLogger,
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
@@ -52,21 +54,40 @@ export class EvidenceService {
     const context = input.guardId ? "guard_eval" : "answer";
     requireCan(who, context === "guard_eval" ? "guardEval" : "inspections", "S");
     if (context === "answer" && !input.itemId) throw ValidationError("raqib.item_required", "Choose the inspection item this evidence supports.");
-    return this.uow.transaction(async () => {
+    let afterCommit = async (): Promise<void> => undefined;
+    const record = await this.uow.transaction(async () => {
       const { v, item } = await this.inspections.assertEditable(input.inspectionId, who, input.itemId);
       if (context === "answer" && item?.kind !== "site") throw ValidationError("raqib.item_not_found", "Item not found.");
       if (context === "guard_eval") {
         const onVisit = ((await this.visits.guardIds([v.id])).get(v.id) ?? []).includes(input.guardId!);
         if (!onVisit) throw ValidationError("raqib.guard_not_on_visit", "This guard is not on this visit.");
       }
-      const { file, kind } = await this.validateUpload(input.fileId, who);
+      const { file, kind, afterCommit: after } = await this.validateUpload(input.fileId, who);
+      afterCommit = after;
       const id = await this.repo.insert({
-        fileId: file.id, kind, name: file.originalName, mime: file.contentType, sizeBytes: file.byteSize, context,
-        inspectionId: input.inspectionId, itemId: input.itemId ?? null, guardId: input.guardId ?? null, refId: null, uploadedBy: who.userId,
+        fileId: file.id,
+        kind,
+        name: file.originalName,
+        mime: file.contentType,
+        sizeBytes: file.byteSize,
+        context,
+        inspectionId: input.inspectionId,
+        itemId: input.itemId ?? null,
+        guardId: input.guardId ?? null,
+        refId: null,
+        uploadedBy: who.userId,
       });
-      await this.audit.record({ actorId: who.userId, action: "raqib.evidence.attached", resourceType: "raqib_evidence", resourceId: id, after: { kind, context, inspectionId: input.inspectionId, itemId: input.itemId ?? null } });
+      await this.audit.record({
+        actorId: who.userId,
+        action: "raqib.evidence.attached",
+        resourceType: "raqib_evidence",
+        resourceId: id,
+        after: { kind, context, inspectionId: input.inspectionId, itemId: input.itemId ?? null },
+      });
       return (await this.repo.find(id))!;
     });
+    await afterCommit();
+    return record;
   }
 
   /** A confirmed upload by this person, of an allowed type and size — shared by every evidence context. */
@@ -80,26 +101,46 @@ export class EvidenceService {
     const s = await this.settings.current();
     const limitMb = kind === "video" ? s.attach.video : kind === "doc" ? s.attach.doc : s.attach.photo;
     if (file.byteSize > limitMb * 1_048_576) throw ValidationError("raqib.file_too_large", `This file exceeds the ${limitMb} MB limit.`, { limitMb });
-    return { file, kind };
+    const admitted = await this.guard.admit(file, kind, who.userId);
+    return { file: admitted.file, kind, afterCommit: admitted.afterCommit };
   }
 
   /** Closure evidence for a corrective action: only the responsible person, only while the work is in progress. */
   async attachToAction(input: { fileId: string; actionId: string }, who: Access): Promise<EvidenceRecord> {
     requireCan(who, "actions", "S");
-    return this.uow.transaction(async () => {
+    let afterCommit = async (): Promise<void> => undefined;
+    const record = await this.uow.transaction(async () => {
       const a = await this.actions.find(input.actionId, true);
       if (!a) throw NotFound("raqib.action_not_found", "Action not found.");
       requireProject(who, a.projectId);
       if (a.responsibleId !== who.userId) throw Forbidden("raqib.not_responsible", "Only the person responsible can attach closure evidence.");
       if (!evidenceOpen(a.status)) throw Conflict("raqib.evidence_closed", "Start the work before attaching closure evidence.");
-      const { file, kind } = await this.validateUpload(input.fileId, who);
+      const { file, kind, afterCommit: after } = await this.validateUpload(input.fileId, who);
+      afterCommit = after;
       const id = await this.repo.insert({
-        fileId: file.id, kind, name: file.originalName, mime: file.contentType, sizeBytes: file.byteSize, context: "corrective_action",
-        inspectionId: null, itemId: null, guardId: null, refId: a.id, uploadedBy: who.userId,
+        fileId: file.id,
+        kind,
+        name: file.originalName,
+        mime: file.contentType,
+        sizeBytes: file.byteSize,
+        context: "corrective_action",
+        inspectionId: null,
+        itemId: null,
+        guardId: null,
+        refId: a.id,
+        uploadedBy: who.userId,
       });
-      await this.audit.record({ actorId: who.userId, action: "raqib.evidence.attached", resourceType: "raqib_evidence", resourceId: id, after: { kind, context: "corrective_action", actionId: a.id } });
+      await this.audit.record({
+        actorId: who.userId,
+        action: "raqib.evidence.attached",
+        resourceType: "raqib_evidence",
+        resourceId: id,
+        after: { kind, context: "corrective_action", actionId: a.id },
+      });
       return (await this.repo.find(id))!;
     });
+    await afterCommit();
+    return record;
   }
 
   async remove(id: string, who: Access): Promise<void> {
@@ -131,7 +172,13 @@ export class EvidenceService {
         if (!v || !this.inspections.canRead(who, v)) throw Forbidden("raqib.out_of_scope", "This resource is outside your scope.");
       }
       const { content } = await this.files.getContent({ id: e.fileId });
-      await this.audit.record({ actorId: who.userId, action: "raqib.evidence.downloaded", resourceType: "raqib_evidence", resourceId: id, metadata: { kind: e.kind } });
+      await this.audit.record({
+        actorId: who.userId,
+        action: "raqib.evidence.downloaded",
+        resourceType: "raqib_evidence",
+        resourceId: id,
+        metadata: { kind: e.kind },
+      });
       return { content, name: e.name, mime: e.mime };
     });
   }

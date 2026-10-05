@@ -24,7 +24,13 @@ const respondSchema = z.object({ text: z.string().trim().min(2).max(3000), statu
 const statusSchema = z.object({ status: z.enum(["new", "under_review", "closed"]) }).strict();
 const reasonSchema = z.object({ reason: z.string().trim().min(3).max(500) }).strict();
 const grantSchema = z
-  .object({ userId: z.string().min(1).max(80), level: z.enum(["view", "respond"]), scope: z.enum(["all", "standard"]), reason: z.string().trim().min(3).max(500), expiresAt: z.string().min(10).max(40) })
+  .object({
+    userId: z.string().min(1).max(80),
+    level: z.enum(["view", "respond"]),
+    scope: z.enum(["all", "standard"]),
+    reason: z.string().trim().min(3).max(500),
+    expiresAt: z.string().min(10).max(40),
+  })
   .strict();
 
 const device = (ua: string | undefined): string | null => (ua ? ua.slice(0, 120) : null);
@@ -91,27 +97,48 @@ export class ConfidentialController {
   @Post("reports/:id/respond")
   @HttpCode(200)
   @Allow()
-  respond(@Param("id") id: string, @Body(ZodBody(respondSchema)) b: z.infer<typeof respondSchema>, @Headers("user-agent") ua: string | undefined, @Caller() who: Access) {
+  respond(
+    @Param("id") id: string,
+    @Body(ZodBody(respondSchema)) b: z.infer<typeof respondSchema>,
+    @Headers("user-agent") ua: string | undefined,
+    @Caller() who: Access,
+  ) {
     return this.service.respond(id, b.text, b.status, device(ua), who);
   }
 
   @Post("reports/:id/status")
   @HttpCode(200)
   @Allow()
-  status(@Param("id") id: string, @Body(ZodBody(statusSchema)) b: z.infer<typeof statusSchema>, @Headers("user-agent") ua: string | undefined, @Caller() who: Access) {
+  status(
+    @Param("id") id: string,
+    @Body(ZodBody(statusSchema)) b: z.infer<typeof statusSchema>,
+    @Headers("user-agent") ua: string | undefined,
+    @Caller() who: Access,
+  ) {
     return this.service.setStatus(id, b.status, device(ua), who);
   }
 
   @Post("reports/:id/reveal")
   @HttpCode(200)
   @Allow()
-  reveal(@Param("id") id: string, @Body(ZodBody(reasonSchema)) b: z.infer<typeof reasonSchema>, @Headers("user-agent") ua: string | undefined, @Caller() who: Access) {
+  reveal(
+    @Param("id") id: string,
+    @Body(ZodBody(reasonSchema)) b: z.infer<typeof reasonSchema>,
+    @Headers("user-agent") ua: string | undefined,
+    @Caller() who: Access,
+  ) {
     return this.service.reveal(id, b.reason, device(ua), who);
   }
 
   @Get("reports/:id/files/:fileId")
   @Allow()
-  async file(@Param("id") id: string, @Param("fileId") fileId: string, @Headers("user-agent") ua: string | undefined, @Caller() who: Access, @Res() reply: FastifyReply) {
+  async file(
+    @Param("id") id: string,
+    @Param("fileId") fileId: string,
+    @Headers("user-agent") ua: string | undefined,
+    @Caller() who: Access,
+    @Res() reply: FastifyReply,
+  ) {
     const f = await this.service.fileContent(id, fileId, device(ua), who);
     reply
       .header("Content-Type", f.mime)

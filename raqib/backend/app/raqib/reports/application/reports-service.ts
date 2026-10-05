@@ -14,6 +14,7 @@ import { renderReportHtml, type Lang } from "../domain/report-html.js";
 import { buildSnapshot, type ReportSnapshot } from "../domain/report-snapshot.js";
 import { PdfRenderer } from "../infrastructure/pdf-renderer.js";
 import { ReportsRepository, type ReportRecord } from "../infrastructure/reports-repository.js";
+import type { Page } from "@raqib/raqib/shared/paging.js";
 
 export interface ReportView {
   id: string;
@@ -26,10 +27,18 @@ export interface ReportView {
 }
 
 const toView = (r: ReportRecord): ReportView => ({
-  id: r.id, ref: r.ref, visitId: r.visitId, projectId: r.projectId, scorePct: r.scorePct, issuedAt: r.generatedAt.toISOString(), snapshot: r.snapshot,
+  id: r.id,
+  ref: r.ref,
+  visitId: r.visitId,
+  projectId: r.projectId,
+  scorePct: r.scorePct,
+  issuedAt: r.generatedAt.toISOString(),
+  snapshot: r.snapshot,
 });
 
 /** Photos beyond these limits are listed by name in the PDF instead of embedded, so one report never balloons. */
+const PDF_CACHE_ENTRIES = 24;
+const PDF_CACHE_BYTES = 96 * 1_048_576;
 const MAX_IMAGES = 40;
 const MAX_IMAGE_BYTES = 4 * 1_048_576;
 
@@ -56,22 +65,37 @@ export class ReportsService {
       if (existing) return toView(existing);
       const visit = await this.visits.get(visitId, who);
       const inspection = await this.inspections.get(visitId, who);
-      const guards = new Map((await this.projects.guards()).filter((g) => visit.guardIds.includes(g.id)).map((g) => [g.id, { employeeNo: g.employeeNo, name: g.name }]));
+      const guards = new Map(
+        (await this.projects.guards()).filter((g) => visit.guardIds.includes(g.id)).map((g) => [g.id, { employeeNo: g.employeeNo, name: g.name }]),
+      );
       const ref = `RPT-${visit.ref.replace(/^VIS-/, "")}`;
       const violations = await this.observations.forInspection(inspection.id);
       const snapshot = buildSnapshot({ ref, issuedAt: this.clock.now(), visit, inspection, guards, violations, approver: who });
       const id = await this.repo.insert({
-        visitId, inspectionId: inspection.id, projectId: visit.project.id, ref, scorePct: inspection.score.pct, snapshot, approvedBy: who.userId,
-        approvedByNameAr: who.nameAr, approvedByNameEn: who.nameEn,
+        visitId,
+        inspectionId: inspection.id,
+        projectId: visit.project.id,
+        ref,
+        scorePct: inspection.score.pct,
+        snapshot,
+        approvedBy: who.userId,
+        approvedByNameAr: who.nameAr,
+        approvedByNameEn: who.nameEn,
       });
-      await this.audit.record({ actorId: who.userId, action: "raqib.report.issued", resourceType: "raqib_report", resourceId: id, after: { ref, visitId, scorePct: inspection.score.pct } });
+      await this.audit.record({
+        actorId: who.userId,
+        action: "raqib.report.issued",
+        resourceType: "raqib_report",
+        resourceId: id,
+        after: { ref, visitId, scorePct: inspection.score.pct },
+      });
       return toView((await this.repo.find(id))!);
     });
   }
 
-  async list(who: Access): Promise<ReportView[]> {
+  async list(who: Access, page?: Page): Promise<ReportView[]> {
     requireCan(who, "reports", "V");
-    const rows = await readInTenant(() => this.repo.list(who.allProjects ? undefined : [...who.projectIds]));
+    const rows = await readInTenant(() => this.repo.list(who.allProjects ? undefined : [...who.projectIds], page));
     return rows.map(toView);
   }
 
@@ -85,10 +109,35 @@ export class ReportsService {
     return toView(r);
   }
 
+  /**
+   * Issued reports are immutable, so a rendered PDF never goes stale: the last few are kept in memory (bounded by count
+   * and bytes) and served again without rendering. Authorization and the download audit still run on every request.
+   */
+  private readonly pdfCache = new Map<string, Buffer>();
+  private cacheBytes = 0;
+  private remember(key: string, content: Buffer): void {
+    if (content.byteLength > PDF_CACHE_BYTES / 2) return;
+    this.pdfCache.set(key, content);
+    this.cacheBytes += content.byteLength;
+    while (this.pdfCache.size > PDF_CACHE_ENTRIES || this.cacheBytes > PDF_CACHE_BYTES) {
+      const [oldest, bytes] = this.pdfCache.entries().next().value as [string, Buffer];
+      this.pdfCache.delete(oldest);
+      this.cacheBytes -= bytes.byteLength;
+    }
+  }
+
   /** The PDF, rendered from the frozen snapshot, authorized by project scope and the download right, and audited. */
   async pdfOf(id: string, lang: Lang, who: Access): Promise<{ name: string; content: Buffer }> {
     requireCan(who, "reports", "D");
     const r = await this.readable(id, who);
+    const key = `${r.id}:${lang}`;
+    const cached = this.pdfCache.get(key);
+    if (cached) {
+      this.pdfCache.delete(key); // refresh recency
+      this.pdfCache.set(key, cached);
+      await this.auditDownload(r.id, who, lang, cached.byteLength, true);
+      return { name: `${r.ref}-${lang}.pdf`, content: cached };
+    }
     const images = new Map<string, string>();
     let n = 0;
     for (const e of r.snapshot.sections.flatMap((s) => s.items.flatMap((it) => it.evidence))) {
@@ -103,8 +152,21 @@ export class ReportsService {
       }
     }
     const content = await this.pdf.render(renderReportHtml(r.snapshot, lang, images));
-    await this.uow.transaction(() => this.audit.record({ actorId: who.userId, action: "raqib.report.downloaded", resourceType: "raqib_report", resourceId: r.id, metadata: { lang, bytes: content.byteLength } }));
+    this.remember(key, content);
+    await this.auditDownload(r.id, who, lang, content.byteLength, false);
     return { name: `${r.ref}-${lang}.pdf`, content };
+  }
+
+  private auditDownload(reportId: string, who: Access, lang: Lang, bytes: number, cached: boolean): Promise<void> {
+    return this.uow.transaction(() =>
+      this.audit.record({
+        actorId: who.userId,
+        action: "raqib.report.downloaded",
+        resourceType: "raqib_report",
+        resourceId: reportId,
+        metadata: { lang, bytes, cached },
+      }),
+    );
   }
 
   pdfAvailable(): boolean {
