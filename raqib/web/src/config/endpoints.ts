@@ -72,6 +72,8 @@ export const ENDPOINTS = {
   conf: {
     base: "/raqib/confidential",
   },
+  audit: (qs: string) => `/raqib/audit?${qs}`,
+  auditExport: (qs: string) => `/raqib/audit/export?${qs}`,
   reports: { list: "/raqib/reports", pdf: (id: string, lang: string) => `/raqib/reports/${id}/pdf?lang=${lang}` },
   evidence: { attach: "/raqib/evidence", byId: (id: string) => `/raqib/evidence/${id}`, content: (id: string) => `/raqib/evidence/${id}/content` },
   files: { presign: "/files/uploads", confirm: (id: string) => `/files/${id}/confirm` },

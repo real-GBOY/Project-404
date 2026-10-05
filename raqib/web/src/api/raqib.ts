@@ -1,7 +1,7 @@
 import { API_BASE_URL, ENDPOINTS, http } from "@/config";
 import type { PresignResponse } from "@/lib/upload";
 import type {
-  Answer, ConfAccess, ConfGrant, ConfGrantee, ConfKind, ConfLogEntry, ConfMine, ConfReport, AnalyticsQueryParams, AnalyticsResult, SearchHit, CorrectiveAction, GuardHistory, GuardSummaries, TrainingReason, TrainingRequest, Observation, Report, ResponsibleOption, Severity, EvidenceItem, Form, FormSection, Inspection,
+  Answer, AuditQueryParams, AuditResult, ConfAccess, ConfGrant, ConfGrantee, ConfKind, ConfLogEntry, ConfMine, ConfReport, AnalyticsQueryParams, AnalyticsResult, SearchHit, CorrectiveAction, GuardHistory, GuardSummaries, TrainingReason, TrainingRequest, Observation, Report, ResponsibleOption, Severity, EvidenceItem, Form, FormSection, Inspection,
   AppNotification, CreateVisitInput, EligibleInspector, RescheduleVisitInput, Visit,
   Guard, LoginResponse, Me, OrgSettings, Person, PermissionsOverview, Project, RoleKey, TemplateChange,
 } from "./types";
@@ -20,6 +20,12 @@ function analyticsQs(q: AnalyticsQueryParams): string {
   }
   if (q.projectId) p.set("projectId", q.projectId);
   if (q.siteId) p.set("siteId", q.siteId);
+  return p.toString();
+}
+
+function auditQs(q: AuditQueryParams): string {
+  const p = new URLSearchParams();
+  for (const [k, v] of Object.entries(q)) if (v) p.set(k, v);
   return p.toString();
 }
 
@@ -153,6 +159,14 @@ export const api = {
     issue: (b: { userId: string; level: "view" | "respond"; scope: "all" | "standard"; reason: string; expiresAt: string }) => http<{ items: ConfGrant[] }>(`${ENDPOINTS.conf.base}/grants`, { method: "POST", body: b }),
     revoke: (id: string, reason: string) => http<{ items: ConfGrant[] }>(`${ENDPOINTS.conf.base}/grants/${id}/revoke`, { method: "POST", body: { reason } }),
     log: () => http<{ items: ConfLogEntry[] }>(`${ENDPOINTS.conf.base}/log`).then((r) => r.items),
+  },
+  audit: {
+    list: (q: AuditQueryParams) => http<AuditResult>(ENDPOINTS.audit(auditQs(q))),
+    exportCsv: async (q: AuditQueryParams): Promise<Blob> => {
+      const r = await fetch(`${API_BASE_URL}${ENDPOINTS.auditExport(auditQs(q))}`, { headers: http.bearerHeaders() });
+      if (!r.ok) throw new Error(`export ${r.status}`);
+      return r.blob();
+    },
   },
   reports: {
     list: () => http<{ items: Report[]; pdf: boolean }>(ENDPOINTS.reports.list),

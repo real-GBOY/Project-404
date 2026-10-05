@@ -6,6 +6,7 @@ import { ApiError } from "@/config";
 import type { Data, Route } from "@/presenters/context";
 import type { Denial } from "@/presenters/build";
 import { analyticsQuery } from "@/presenters/screens/analytics";
+import { auditQuery } from "@/presenters/screens/audit";
 
 /**
  * Which server resources a screen needs. Each is its own TanStack Query (server state stays out of any global
@@ -33,6 +34,7 @@ function needs(route: Route, me: Me) {
     guardHistory: (p.guardEval.includes("V") || p.training.includes("V")) && n === "guard" && !!route.id,
     guardSummary: (p.guardEval.includes("V") || p.training.includes("V")) && ["guards", "overview"].includes(n),
     analytics: p.analytics.includes("V") && n === "analytics",
+    audit: p.audit.includes("V") && n === "audit",
     reports: p.reports.includes("V") && ["reports", "report", "visit", "review"].includes(n),
   };
   // the shell labels a person's scope with project names whenever the template allows reading projects
@@ -46,6 +48,7 @@ export function useScreenData(route: Route, me: Me, ui: UiState): { data: Data; 
   const inspProject = modalOpen ? String(ui.mf.p ?? "") : "";
   const inspDate = String(ui.mf.date ?? me.today) || me.today;
   const aq = analyticsQuery({ ui } as never);
+  const auq = auditQuery({ ui } as never);
   // The confidential area's queries depend on what the backend says this person may do, so ask that first.
   const conf = route.n === "confidential";
   const accessQ = useQuery({ queryKey: ["confAccess"], queryFn: () => api.conf.access(), enabled: conf, staleTime: 5_000, refetchInterval: conf ? 30_000 : false });
@@ -78,6 +81,7 @@ export function useScreenData(route: Route, me: Me, ui: UiState): { data: Data; 
     { key: "confGrants", enabled: gm, fn: () => api.conf.grants() },
     { key: "confGrantees", enabled: gm && !!ui.modal && ui.modal.kind === "grantAdd", fn: () => api.conf.grantees() },
     { key: "confLog", enabled: gm, fn: () => api.conf.log() },
+    { key: "audit", enabled: want.audit, fn: () => api.audit.list(auq), extra: [auq.q, auq.entity, auq.actor, auq.from, auq.to] },
     { key: "reports", enabled: want.reports, fn: () => api.reports.list() },
     { key: "notifications", enabled: true, fn: () => api.notifications.list().then((r) => ({ items: r.notifications, unread: r.unreadCount })), refetch: 30_000 },
     { key: "inspectors", enabled: !!inspProject, fn: () => api.visits.eligibleInspectors(inspProject, inspDate), extra: [inspProject, inspDate] },

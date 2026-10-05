@@ -24,6 +24,9 @@ export const STRINGS_ANALYTICS: Record<string, readonly [string, string]> = {
   kpi_guardAvg_def: ['متوسط درجات تقييم الحراس في التقارير المعتمدة خلال الفترة.', 'Average of guard evaluation scores in approved reports of the period.'],
   kpi_guardAvg_f: ['متوسط نسب تقييم الحراس المُقيَّمين', 'Mean of the evaluated guards\' percentages'],
   gb_low: ['أقل من 60%', 'Below 60%'], gb_mid: ['60–79%', '60–79%'], gb_high: ['80% فأكثر', '80% and above'],
+  allEntities: ['كل الكيانات', 'All entities'], allUsers: ['كل المستخدمين', 'All users'], systemActor: ['النظام', 'System'],
+  auditCount: ['{n} سجل', '{n} entries'], auditTruncated: ['أحدث 1000 سجل', 'latest 1000 shown'],
+  auditNote: ['السجل للقراءة فقط ولا يمكن تعديله أو حذفه.', 'The trail is read-only and cannot be edited or deleted.'], auditFiltered: ['تُطبَّق المرشحات على السجل المحفوظ؛ لا يُحذف شيء.', 'Filters only narrow the view; nothing is removed.'],
   sk_project: ['المشاريع', 'Projects'], sk_visit: ['الزيارات', 'Visits'], sk_report: ['التقارير', 'Reports'], sk_observation: ['الملاحظات', 'Observations'],
   sk_action: ['الإجراءات التصحيحية', 'Corrective actions'], sk_training: ['التدريب', 'Training'], sk_guard: ['الحراس', 'Guards'], sk_user: ['المستخدمون', 'Users'],
 };

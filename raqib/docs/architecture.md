@@ -103,6 +103,18 @@ using real demo accounts (`demo` password) and real data. Arabic/English and RTL
 6. Quality ops — observations, CAs, training. 7. Analytics & search & exports. 8. Confidential system.
 9. Hardening — audit review, rate limits, security tests, backup/restore doc, production config, deploy.
 
+### Status
+
+| Phase | State |
+|---|---|
+| 1 Foundation, 2 Projects & scheduling, 3 Inspection engine, 4 Review workflow | done (PRs #8–#11) |
+| 5 Evidence & reports (frozen snapshots, real PDF, protected viewer) | done (#12) |
+| 6 Quality ops (observations, corrective actions, training, guard records) | done (#13, #14) |
+| 7 Analytics, CSV export, search | done (#15) |
+| 8 Confidential area | done (#16) |
+| 9 Hardening (rate limits, headers, audit log, authz review test, `docs/security.md`, `docs/operations.md`) | done |
+| Account onboarding (requests, e-signature, approval, password setup) | see PR list |
+
 ## 10. Decisions log
 
 | # | Decision | Why |
@@ -114,3 +126,8 @@ using real demo accounts (`demo` password) and real data. Arabic/English and RTL
 | 5 | User-entered text stored once (single language); master data (projects, sites, forms) may carry `name_ar`/`name_en` | Never auto-translate or duplicate user content |
 | 6 | No mock adapter in `web/` | A real backend + demo seeder is the demo |
 | 7 | Nothing is committed/pushed unless asked | Standing repo rule |
+| 8 | Reports are frozen JSON snapshots issued inside the approval transaction; PDF is rendered from them on demand | Later edits must never change what was approved |
+| 9 | Observations are recorded from approved inspections (violations) or reported directly; one corrective action per observation | Findings and the work to fix them stay separate and auditable |
+| 10 | Analytics are pure functions over persisted data | Every number can be explained, drilled into and tested |
+| 11 | Confidential access = explicit GM grant + logged session; identity stored apart; restrictive RLS | No role can open it; nothing about the reporter leaks through ordinary tables |
+| 12 | In-process rate limiter | One process per deployment; documented limit |
