@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api/raqib";
+import { saveBlob } from "@/presenters/screens/reports";
 import type { Inspection } from "@/api/types";
 import { setUi } from "@/state/ui-store";
 import { putWithProgress } from "@/lib/upload";
@@ -146,6 +147,9 @@ export function useActions(): Actions {
         qc.setQueryData(["trainingOne", id], await api.training.step(id, step, body ?? {}));
         await qc.invalidateQueries({ queryKey: ["training"] });
         await qc.invalidateQueries({ queryKey: ["guardHistory"] });
+      },
+      async exportAnalytics(q) {
+        saveBlob(await api.analytics.exportCsv(q), "raqib-analytics.csv");
       },
       reportPdf: (id, lang) => api.reports.pdf(id, lang),
       evidenceBlob: (id) => api.evidence.blob(id),

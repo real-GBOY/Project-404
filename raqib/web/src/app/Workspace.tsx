@@ -13,6 +13,7 @@ import { MoreSheet } from "@/ui/generated/MoreSheet";
 import { NotificationPanel } from "@/ui/generated/NotificationPanel";
 import { OfflineBanner } from "@/ui/generated/OfflineBanner";
 import { SCREENS } from "@/ui/generated/screens";
+import { SearchPalette } from "@/ui/generated/SearchPalette";
 import { Sidebar } from "@/ui/generated/Sidebar";
 import { TopBar } from "@/ui/generated/TopBar";
 import { EvidenceViewer } from "@/ui/EvidenceViewer";
@@ -149,6 +150,7 @@ export function Workspace({ me }: { me: Me }) {
             {vm.showBottom ? <BottomNav vm={vm} /> : null}
           </div>
           {vm.moreOpen ? <MoreSheet vm={vm} /> : null}
+          {vm.searchOpen ? <SearchPalette vm={vm} /> : null}
           {vm.notifOpen ? <NotificationPanel vm={vm} /> : null}
           {vm.hasModal ? <Modal vm={vm} /> : null}
           {vm.vw ? <EvidenceViewer vm={vm} /> : null}

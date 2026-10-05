@@ -15,13 +15,15 @@ import { reviewQueue } from "./screens/queue";
 import { reviewDetail } from "./screens/review";
 import { reportDetail, reportsIssued } from "./screens/reports";
 import { guardProfile, trainingDetail, trainingList } from "./screens/training";
+import { analytics } from "./screens/analytics";
+import { searchVM } from "./search";
 import { actionDetail, actionsList, observationsList } from "./screens/actions";
 
 export type Denial = { k: "module" | "scope" | "forbidden"; res?: string };
 
 /** Which `vm.is.*` flag drives which approved screen. */
 const FLAG: Record<string, string> = {
-  projects: "projects", project: "project", visits: "visits", visit: "visit", forms: "forms", form: "form", inspect: "inspect", inspections: "reviews", reviews: "reviews", review: "review", reports: "reports", report: "report", training: "training", trainingD: "trainingD", guard: "guard", observations: "observations", actions: "actions", action: "action", guards: "guards", users: "users", user: "user", permissions: "perms", settings: "settings",
+  projects: "projects", project: "project", visits: "visits", visit: "visit", forms: "forms", form: "form", inspect: "inspect", inspections: "reviews", reviews: "reviews", review: "review", reports: "reports", report: "report", analytics: "analytics", training: "training", trainingD: "trainingD", guard: "guard", observations: "observations", actions: "actions", action: "action", guards: "guards", users: "users", user: "user", permissions: "perms", settings: "settings",
 };
 
 /** The denied screen (design: vmDenied). The backend produced the refusal; this only explains it. */
@@ -104,6 +106,7 @@ export function buildVM(c: Ctx, opts: { pending: boolean; denial: Denial | null 
       const v = (c.data.visits ?? []).find((x) => x.id === route.id);
       if (c.data.inspection && v) { body = reviewDetail(c, c.data.inspection, v); title = v.ref; }
     }
+    else if (n === "analytics") body = analytics(c, c.data.analytics);
     else if (n === "training") body = trainingList(c);
     else if (n === "trainingD") {
       if (c.data.trainingOne) { body = trainingDetail(c, c.data.trainingOne); title = c.data.trainingOne.ref; }
@@ -141,6 +144,7 @@ export function buildVM(c: Ctx, opts: { pending: boolean; denial: Denial | null 
     "";
   return {
     ...shellVM(c, scr, pageTitle),
+    ...searchVM(c),
     ...body,
     ...modalVM(c),
     is,

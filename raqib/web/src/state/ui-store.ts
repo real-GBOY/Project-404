@@ -75,6 +75,13 @@ export interface UiState {
   ofilter: string;
   afilter: string;
   tfilter: string;
+  anPeriod: string;
+  anFrom: string;
+  anTo: string;
+  anP: string;
+  anS: string;
+  anDd: string;
+  recentQ: string[];
   rlang: "ar" | "en";
   rtab: string;
   fb: { ver?: string; sec?: number };
@@ -131,6 +138,13 @@ const initial = (): UiState => ({
   ofilter: "all",
   afilter: "all",
   tfilter: "all",
+  anPeriod: "month",
+  anFrom: "",
+  anTo: "",
+  anP: "",
+  anS: "",
+  anDd: "",
+  recentQ: [],
   rlang: "en",
   rtab: "pending_review",
   fb: {},

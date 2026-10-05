@@ -5,6 +5,7 @@ import type { UiState } from "@/state/ui-store";
 import { ApiError } from "@/config";
 import type { Data, Route } from "@/presenters/context";
 import type { Denial } from "@/presenters/build";
+import { analyticsQuery } from "@/presenters/screens/analytics";
 
 /**
  * Which server resources a screen needs. Each is its own TanStack Query (server state stays out of any global
@@ -16,7 +17,7 @@ function needs(route: Route, me: Me) {
   const p = me.permissions;
   const n = route.n;
   const want = {
-    projects: p.projects.includes("V") && ["overview", "projects", "project", "users", "user", "permissions", "settings"].includes(n),
+    projects: p.projects.includes("V") && ["overview", "projects", "project", "users", "user", "permissions", "settings", "analytics"].includes(n),
     visits: p.visits.includes("V") && visitScreens.includes(n),
     guards: (p.guardEval.includes("V") || p.training.includes("V")) && ["guards", "guard", "visit", "inspect", "review", "training", "trainingD"].includes(n) || (n === "overview" && me.role === "gs"),
     users: p.users.includes("V") && ["users", "user", "permissions"].includes(n),
@@ -31,6 +32,7 @@ function needs(route: Route, me: Me) {
     trainingOne: p.training.includes("V") && n === "trainingD" && !!route.id,
     guardHistory: (p.guardEval.includes("V") || p.training.includes("V")) && n === "guard" && !!route.id,
     guardSummary: (p.guardEval.includes("V") || p.training.includes("V")) && ["guards", "overview"].includes(n),
+    analytics: p.analytics.includes("V") && n === "analytics",
     reports: p.reports.includes("V") && ["reports", "report", "visit", "review"].includes(n),
   };
   // the shell labels a person's scope with project names whenever the template allows reading projects
@@ -43,6 +45,7 @@ export function useScreenData(route: Route, me: Me, ui: UiState): { data: Data; 
   const modalOpen = ui.modal && ["create", "resched"].includes(ui.modal.kind);
   const inspProject = modalOpen ? String(ui.mf.p ?? "") : "";
   const inspDate = String(ui.mf.date ?? me.today) || me.today;
+  const aq = analyticsQuery({ ui } as never);
   const defs = [
     { key: "projects", enabled: want.projects, fn: () => api.projects.list() },
     { key: "guards", enabled: want.guards, fn: () => api.guards.list() },
@@ -60,6 +63,8 @@ export function useScreenData(route: Route, me: Me, ui: UiState): { data: Data; 
     { key: "trainingOne", enabled: want.trainingOne, fn: () => api.training.get(route.id!), extra: [route.id ?? ""] },
     { key: "guardHistory", enabled: want.guardHistory, fn: () => api.guardHistory(route.id!), extra: [route.id ?? ""] },
     { key: "guardSummary", enabled: want.guardSummary, fn: () => api.guardSummary() },
+    { key: "analytics", enabled: want.analytics, fn: () => api.analytics.get(aq), extra: [aq.period, aq.from, aq.to, aq.projectId, aq.siteId] },
+    { key: "searchHits", enabled: ui.search && ui.q.trim().length >= 2, fn: () => api.search(ui.q.trim()), extra: [ui.q.trim()] },
     { key: "reports", enabled: want.reports, fn: () => api.reports.list() },
     { key: "notifications", enabled: true, fn: () => api.notifications.list().then((r) => ({ items: r.notifications, unread: r.unreadCount })), refetch: 30_000 },
     { key: "inspectors", enabled: !!inspProject, fn: () => api.visits.eligibleInspectors(inspProject, inspDate), extra: [inspProject, inspDate] },
@@ -73,7 +78,7 @@ export function useScreenData(route: Route, me: Me, ui: UiState): { data: Data; 
     const r = results[idx]!;
     if (r.data !== undefined) (data as Record<string, unknown>)[d.key] = r.data;
   });
-  const pending = defs.some((d, idx) => d.enabled && d.key !== "inspectors" && d.key !== "notifications" && d.key !== "responsibles" && results[idx]!.isPending);
+  const pending = defs.some((d, idx) => d.enabled && d.key !== "inspectors" && d.key !== "notifications" && d.key !== "responsibles" && d.key !== "searchHits" && results[idx]!.isPending);
   const failed = results.find((r) => r.error);
   const err = (failed?.error as Error | undefined) ?? null;
 
