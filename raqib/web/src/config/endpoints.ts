@@ -50,6 +50,7 @@ export const ENDPOINTS = {
     guardNote: (visitId: string, guardId: string) => `/raqib/visits/${visitId}/inspection/guards/${guardId}/note`,
     submit: (visitId: string) => `/raqib/visits/${visitId}/inspection/submit`,
   },
+  review: (visitId: string, action: "forward" | "return" | "reject" | "approve") => `/raqib/visits/${visitId}/review/${action}`,
   evidence: { attach: "/raqib/evidence", byId: (id: string) => `/raqib/evidence/${id}`, content: (id: string) => `/raqib/evidence/${id}/content` },
   files: { presign: "/files/uploads", confirm: (id: string) => `/files/${id}/confirm` },
   guards: { list: "/raqib/guards", byId: (id: string) => `/raqib/guards/${id}` },

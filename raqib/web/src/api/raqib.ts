@@ -75,6 +75,10 @@ export const api = {
     guardNote: (visitId: string, guardId: string, note: string) => http<Inspection>(ENDPOINTS.inspection.guardNote(visitId, guardId), { method: "PUT", body: { note } }),
     submit: (visitId: string) => http<Inspection>(ENDPOINTS.inspection.submit(visitId), { method: "POST" }),
   },
+  review: {
+    decide: (visitId: string, action: "forward" | "return" | "reject" | "approve", body: { reason?: string; comment?: string; itemIds?: string[] }) =>
+      http<Inspection>(ENDPOINTS.review(visitId, action), { method: "POST", body }),
+  },
   evidence: {
     presign: (file: { name: string; type: string; size: number }) =>
       http<PresignResponse>(ENDPOINTS.files.presign, { method: "POST", body: { originalName: file.name, contentType: file.type || "application/octet-stream", byteSize: file.size } }),

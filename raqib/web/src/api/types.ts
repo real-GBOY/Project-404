@@ -264,6 +264,7 @@ export interface Inspection {
   sections: Array<{ key: string; title: L10n; items: InspectionItem[] }>;
   guardCriteria: Array<{ id: string; key: string; text: L10n }>;
   guards: GuardEvaluation[];
+  previous: Array<{ round: number; itemIds: string[] }>;
   score: { pct: number | null; answered: number; total: number; compliant: number; nonCompliant: number; na: number; evidence: number };
   issues: InspectionIssue[];
   editable: boolean;

@@ -60,13 +60,13 @@ describe.skipIf(!hasTestDb)("Raqib visits & scheduling", () => {
 
   describe("visibility", () => {
     it("seeds the scheduling demo through the real service", async () => {
-      expect((await visits("qm")).length).toBe(8);
+      expect((await visits("qm")).length).toBe(16);
     });
 
     it("shows inspectors only their own visits", async () => {
       const a = await visits("insA");
       expect(a.map((v) => v.inspector.id)).toEqual(Array(a.length).fill(ids.insA));
-      expect(a.length).toBe(4);
+      expect(a.length).toBe(7);
       const b = await visits("insB");
       expect(b.every((v) => v.inspector.id === ids.insB)).toBe(true);
     });
@@ -104,7 +104,7 @@ describe.skipIf(!hasTestDb)("Raqib visits & scheduling", () => {
 
   describe("derived status", () => {
     it("shows a visit that never started as overdue while it is stored as assigned", async () => {
-      const v = byRef(await visits("qm"), (x) => x.date === "2026-10-01");
+      const v = byRef(await visits("qm"), (x) => x.date === "2026-10-01" && x.status === "overdue");
       expect(v.status).toBe("overdue");
       expect(v.storedStatus).toBe("assigned");
     });

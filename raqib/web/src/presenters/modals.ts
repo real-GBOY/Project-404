@@ -4,7 +4,7 @@ import type { Ctx } from "./context";
 import { ROLE_LABEL } from "./screens/users";
 
 /** Dialogs that need a stated reason (the approved design records who changed what, and why). */
-const NEED_REASON = new Set(["publish", "deactivateForm", "create", "resched", "cancel", "roleChange", "userScope", "userDisable", "userEnable", "permSave", "scopeSave", "settingsSave"]);
+const NEED_REASON = new Set(["return", "reject", "publish", "deactivateForm", "create", "resched", "cancel", "roleChange", "userScope", "userDisable", "userEnable", "permSave", "scopeSave", "settingsSave"]);
 
 const ROLES: RoleKey[] = ["qm", "qe", "pm", "ins", "gs", "guard", "gm"];
 
@@ -45,14 +45,14 @@ export function modalVM(c: Ctx) {
     title: i.S(`m_${K}_t`, { r: ref }),
     sub: i.S(`m_${K}_s`),
     okLabel: i.S(`m_${K}_ok`),
-    okBg: ["userDisable", "cancel", "deactivateForm"].includes(K) ? "#A3262A" : "#0F5C4A",
+    okBg: ["userDisable", "cancel", "deactivateForm", "reject"].includes(K) ? "#A3262A" : ["return"].includes(K) ? "#8A5A00" : "#0F5C4A",
     reason: fld("reason"),
     comment: fld("comment"),
     role: fld("role"),
     hasErr: !!errs.length,
     errTxt: i.S("m_err"),
     needReason: NEED_REASON.has(K),
-    optComment: false,
+    optComment: ["forward", "approve"].includes(K),
     date: fld("date"),
     time: fld("time"),
     ins: fld("ins"),
@@ -71,6 +71,12 @@ export function modalVM(c: Ctx) {
     reasonPh: i.S(`m_reasonPh_${K}`),
     audit: i.S("m_audit"),
     isSubmit: K === "submit",
+    isReturn: K === "return",
+    isApprove: K === "approve",
+    flags: (m.flags as Array<{ num: string; text: string }> | undefined) ?? [],
+    hasFlags: ((m.flags as unknown[] | undefined) ?? []).length > 0,
+    noFlags: ((m.flags as unknown[] | undefined) ?? []).length === 0,
+    reportRef: `RPT-${String(m.ref ?? "").slice(4)}`,
     isNewSection: K === "newSection",
     title2: fld("title"),
     summary: String(m.summary ?? ""),
@@ -137,6 +143,29 @@ export async function submitModal(c: Ctx): Promise<void> {
       case "cancel":
         await actions.cancelVisit(m.vid as string, reason);
         c.toast(i.S("toastCancelled", { r: String(m.ref ?? "") }));
+        break;
+      case "return": {
+        const ids = (m.flags as Array<{ id: string }> | undefined)?.map((x) => x.id) ?? [];
+        await actions.decideReview(m.vid as string, "return", { reason, itemIds: ids });
+        set((st) => ({ rflags: Object.fromEntries(Object.entries(st.rflags).filter(([k]) => !k.startsWith(`${String(m.vid)}:`))) }));
+        c.toast(i.S("toastReturned", { r: String(m.ref ?? "") }));
+        c.go("reviews", null, { rtab: "returned" });
+        break;
+      }
+      case "reject":
+        await actions.decideReview(m.vid as string, "reject", { reason });
+        c.toast(i.S("toastRejected", { r: String(m.ref ?? "") }));
+        c.go("reviews", null, { rtab: "decided" });
+        break;
+      case "forward":
+        await actions.decideReview(m.vid as string, "forward", { comment: String(f.comment ?? "").trim() || undefined });
+        c.toast(i.S("toastForwarded", { r: String(m.ref ?? "") }));
+        c.go("reviews", null, { rtab: "pending_approval" });
+        break;
+      case "approve":
+        await actions.decideReview(m.vid as string, "approve", { comment: String(f.comment ?? "").trim() || undefined });
+        c.toast(i.S("toastApproved", { r: String(m.ref ?? "") }));
+        c.go("visit", m.vid as string);
         break;
       case "submit":
         await actions.submitInspection(m.vid as string);

@@ -49,6 +49,10 @@ export class RaqibNotifications implements OnModuleInit {
     on("raqib.visit_cancelled", (p) => (p.inspectorId ? this.visitTo("raqib.visit_cancelled", p, String(p.inspectorId)) : Promise.resolve()));
     on("raqib.visit_overdue", (p) => this.overdue(p));
     on("raqib.inspection_submitted", (p) => this.submitted(p));
+    on("raqib.inspection_forwarded", (p) => this.forwarded(p));
+    on("raqib.inspection_returned", (p) => this.toInspector(p, "raqib.inspection_returned", ["inspect", String(p.visitId)]));
+    on("raqib.inspection_rejected", (p) => this.toInspector(p, "raqib.inspection_rejected", ["visit", String(p.visitId)]));
+    on("raqib.inspection_approved", (p) => this.approved(p));
   }
 
   private async lang(userId: string): Promise<Lang> {
@@ -72,6 +76,36 @@ export class RaqibNotifications implements OnModuleInit {
     const v = await this.visits.find(String(p.visitId));
     if (!v || recipient === p.actorId) return;
     await this.send(recipient, key, v, key === "raqib.visit_cancelled" ? { reason: String(p.reason ?? "") } : {});
+  }
+
+  private async actorName(p: Payload, lang: Lang): Promise<string> {
+    const a = await this.access.profileOf(String(p.actorId));
+    return a ? (lang === "ar" ? a.nameAr : a.nameEn) : "";
+  }
+
+  /** Forwarded for approval: everyone who can approve in that project (never the forwarder). */
+  private async forwarded(p: Payload): Promise<void> {
+    const v = await this.visits.find(String(p.visitId));
+    if (!v) return;
+    const approvers = await this.access.holders("inspections", "P", v.projectId, await this.settings.today(), String(p.actorId));
+    for (const r of approvers) await this.send(r, "raqib.inspection_forwarded", v, { actor: await this.actorName(p, await this.lang(r)) }, ["review", v.id]);
+  }
+
+  /** A decision that concerns the inspector who did the work: returned (with the reason) or rejected. */
+  private async toInspector(p: Payload, key: string, go: [string, string]): Promise<void> {
+    const v = await this.visits.find(String(p.visitId));
+    if (!v?.inspectorId || v.inspectorId === p.actorId) return;
+    await this.send(v.inspectorId, key, v, { reason: String(p.reason ?? ""), actor: await this.actorName(p, await this.lang(v.inspectorId)) }, go);
+  }
+
+  /** Approved: the inspector and the managers who follow that project. */
+  private async approved(p: Payload): Promise<void> {
+    const v = await this.visits.find(String(p.visitId));
+    if (!v) return;
+    const today = await this.settings.today();
+    const to = new Set<string>(await this.access.holders("reports", "V", v.projectId, today, String(p.actorId)));
+    if (v.inspectorId && v.inspectorId !== p.actorId) to.add(v.inspectorId);
+    for (const r of to) await this.send(r, "raqib.inspection_approved", v, { actor: await this.actorName(p, await this.lang(r)) }, r === v.inspectorId ? ["visit", v.id] : ["visit", v.id]);
   }
 
   /** A submitted inspection goes to everyone who can review in that project (never the submitter). */

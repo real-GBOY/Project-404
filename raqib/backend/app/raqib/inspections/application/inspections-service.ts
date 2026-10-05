@@ -69,6 +69,8 @@ export interface InspectionView {
   guards: GuardEvalView[];
   score: ScoreResult & { evidence: number };
   issues: Issue[];
+  /** Items sent back in earlier submission rounds (for the resubmission comparison). */
+  previous: Array<{ round: number; itemIds: string[] }>;
   editable: boolean;
   submittedAt: string | null;
   startedAt: string;
@@ -169,6 +171,7 @@ export class InspectionsService {
       guardCriteria: criteria.map((c) => ({ id: c.id, key: c.key, text: c.text })),
       guards,
       score: { ...result, pct: i.submittedAt && returned === false ? (i.scorePct ?? result.pct) : result.pct, evidence: ev.filter((e) => e.context === "answer").length },
+      previous: [...new Set(flags.filter((f) => f.round < v.round).map((f) => f.round))].sort().map((round) => ({ round, itemIds: flags.filter((f) => f.round === round).map((f) => f.itemId) })),
       issues, editable: mine && editableState, submittedAt: i.submittedAt?.toISOString() ?? null, startedAt: i.startedAt.toISOString(),
     };
   }
