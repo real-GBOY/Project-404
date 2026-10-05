@@ -17,6 +17,13 @@ setUi({ lang: loadLang() });
 document.documentElement.lang = loadLang();
 document.documentElement.dir = loadLang() === "ar" ? "rtl" : "ltr";
 
+// Installable and available offline: the service worker keeps the app shell (never API data) on the device.
+if ("serviceWorker" in navigator && import.meta.env.PROD) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+  });
+}
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ErrorBoundary>

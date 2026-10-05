@@ -5,8 +5,16 @@ import { ROLE_LABEL } from "./users";
 
 /** Status tone per visit status (approved design). */
 export const VST: Record<DisplayStatus, string> = {
-  scheduled: "neu", assigned: "info", in_progress: "info", pending_review: "rev", pending_approval: "rev",
-  returned: "warn", approved: "ok", rejected: "bad", cancelled: "neu", overdue: "bad",
+  scheduled: "neu",
+  assigned: "info",
+  in_progress: "info",
+  pending_review: "rev",
+  pending_approval: "rev",
+  returned: "warn",
+  approved: "ok",
+  rejected: "bad",
+  cancelled: "neu",
+  overdue: "bad",
 };
 
 /** Status filter groups of the visit list. */
@@ -47,20 +55,42 @@ export function visitRow(c: Ctx, v: Visit) {
 export function startInspection(c: Ctx, v: Visit): void {
   const go = () => c.go("inspect", v.id, { step: 0, decl: false });
   if (v.storedStatus === "in_progress" || v.storedStatus === "returned") return go();
-  void c.actions.startInspection(v.id).then(go).catch((e: unknown) => c.toast(e instanceof Error ? e.message : c.i.S("actionFailed")));
+  void c.actions
+    .startInspection(v.id)
+    .then(go)
+    .catch((e: unknown) =>
+      c.toast(
+        e instanceof Error && e.message === "offline"
+          ? c.i.S("off_needsConnection")
+          : e instanceof Error
+            ? e.message
+            : c.i.S("actionFailed"),
+      ),
+    );
 }
 
 /** Timeline of a visit's history (design: tl). Actor name, role and title are the snapshots stored with each event. */
 export function timeline(c: Ctx, v: Visit) {
   const { i } = c;
   const COLOR: Record<string, string> = {
-    scheduled: "#8B9097", assigned: "#1F4E8C", started: "#1F4E8C", submitted: "#5B3E91", resubmitted: "#5B3E91", reviewed: "#5B3E91",
-    returned: "#C98A12", rejected: "#A3262A", approved: "#1E6B45", rescheduled: "#8B9097", cancelled: "#8B9097",
+    scheduled: "#8B9097",
+    assigned: "#1F4E8C",
+    started: "#1F4E8C",
+    submitted: "#5B3E91",
+    resubmitted: "#5B3E91",
+    reviewed: "#5B3E91",
+    returned: "#C98A12",
+    rejected: "#A3262A",
+    approved: "#1E6B45",
+    rescheduled: "#8B9097",
+    cancelled: "#8B9097",
   };
   return v.history.map((h) => ({
     label: i.S(`h_${h.action}`),
     actor: i.L(h.actor.name),
-    role: h.actor.role ? i.L(ROLE_LABEL[h.actor.role as keyof typeof ROLE_LABEL]) : i.S("automated"),
+    role: h.actor.role
+      ? i.L(ROLE_LABEL[h.actor.role as keyof typeof ROLE_LABEL])
+      : i.S("automated"),
     at: i.fd(h.at, "dt"),
     reason: h.reason ?? "",
     hasReason: !!h.reason,
@@ -100,7 +130,16 @@ export function visitsList(c: Ctx) {
       .sort((a, b) => a.time.localeCompare(b.time))
       .map((v) => ({ ...visitRow(c, v), bar: TONE[VST[v.status]]![0] }));
     const today = iso === me.today;
-    return { wd: i.fd(iso, "wd"), dn: i.fd(iso, "dn"), today, hbg: today ? "#0F5C4A" : "transparent", hfg: today ? "#fff" : "#191C1F", items, empty: !items.length, full: i.fd(iso, "dy") };
+    return {
+      wd: i.fd(iso, "wd"),
+      dn: i.fd(iso, "dn"),
+      today,
+      hbg: today ? "#0F5C4A" : "transparent",
+      hfg: today ? "#fff" : "#191C1F",
+      items,
+      empty: !items.length,
+      full: i.fd(iso, "dy"),
+    };
   });
   const canSchedule = me.permissions.visits.includes("A");
   const weekEnd = new Date(start.getTime() + 6 * 864e5);
@@ -118,7 +157,13 @@ export function visitsList(c: Ctx) {
       weekLabel: `${i.fd(me.today, "d")} – ${i.fd(weekEndIso, "full")}`,
       views: ["list", "week"].map((k) => seg(view, k, i.S(`view_${k}`), () => set({ vview: k }))),
       canSchedule,
-      create: () => c.openModal("create", undefined, { date: nextDay(me.today, 7), time: "09:00", type: "routine", shift: "morning" }),
+      create: () =>
+        c.openModal("create", undefined, {
+          date: nextDay(me.today, 7),
+          time: "09:00",
+          type: "routine",
+          shift: "morning",
+        }),
     },
   };
 }
@@ -139,7 +184,14 @@ export function visitDetail(c: Ctx, v: Visit) {
   const last = (a: string) => v.history.filter((h) => h.action === a).pop();
   const meta = (a: string): string => {
     const h = last(a);
-    return h ? i.S("decMeta", { d: i.S(`h_${a}`), u: i.L(h.actor.name), r: h.actor.role ? i.L(ROLE_LABEL[h.actor.role as keyof typeof ROLE_LABEL]) : "", t: i.fd(h.at, "dt") }) : "";
+    return h
+      ? i.S("decMeta", {
+          d: i.S(`h_${a}`),
+          u: i.L(h.actor.name),
+          r: h.actor.role ? i.L(ROLE_LABEL[h.actor.role as keyof typeof ROLE_LABEL]) : "",
+          t: i.fd(h.at, "dt"),
+        })
+      : "";
   };
   const g = v.guardIds.map((id) => guards.get(id)).filter((x): x is NonNullable<typeof x> => !!x);
   return {
@@ -154,19 +206,46 @@ export function visitDetail(c: Ctx, v: Visit) {
         [i.S("f_shift"), i.S(`sh_${v.shift}`)],
         [i.S("f_datetime"), `${i.fd(v.date, "dy")} · ${v.time}`],
       ].map(([k, val]) => ({ k, v: val })),
-      guards: g.map((x) => ({ name: i.L(x.name), emp: x.employeeNo, post: i.L(x.post), score: i.S("notEvaluated"), scoreC: scoreColor(null) })),
+      guards: g.map((x) => ({
+        name: i.L(x.name),
+        emp: x.employeeNo,
+        post: i.L(x.post),
+        score: i.S("notEvaluated"),
+        scoreC: scoreColor(null),
+      })),
       hasGuards: v.guardIds.length > 0,
       noGuards: v.guardIds.length === 0,
       timeline: timeline(c, v),
-      canStart: v.inspector?.id === me.id && me.permissions.inspections.includes("S") && ["scheduled", "assigned", "overdue", "in_progress", "returned"].includes(v.status),
-      startLabel: v.status === "in_progress" ? i.S("continueInsp") : v.status === "returned" ? i.S("openToFix") : i.S("startInsp"),
+      canStart:
+        v.inspector?.id === me.id &&
+        me.permissions.inspections.includes("S") &&
+        ["scheduled", "assigned", "overdue", "in_progress", "returned"].includes(v.status),
+      startLabel:
+        v.status === "in_progress"
+          ? i.S("continueInsp")
+          : v.status === "returned"
+            ? i.S("openToFix")
+            : i.S("startInsp"),
       start: () => startInspection(c, v),
       canManage: me.permissions.visits.includes("A") && changeable,
-      resched: () => c.openModal("resched", { vid: v.id, ref: v.ref }, { date: v.date, time: v.time, ins: v.inspector?.id ?? "", p: v.project.id }),
+      resched: () =>
+        c.openModal(
+          "resched",
+          { vid: v.id, ref: v.ref },
+          { date: v.date, time: v.time, ins: v.inspector?.id ?? "", p: v.project.id },
+        ),
       cancel: () => c.openModal("cancel", { vid: v.id, ref: v.ref }),
-      canReview: pend && v.inspector?.id !== me.id && ((v.storedStatus === "pending_review" && me.permissions.inspections.includes("R")) || (v.storedStatus === "pending_approval" && me.permissions.inspections.includes("P"))),
+      canReview:
+        pend &&
+        v.inspector?.id !== me.id &&
+        ((v.storedStatus === "pending_review" && me.permissions.inspections.includes("R")) ||
+          (v.storedStatus === "pending_approval" && me.permissions.inspections.includes("P"))),
       review: () => c.go("review", v.id),
-      canSeeResult: !!v.inspectionId && v.inspector?.id !== me.id && (me.permissions.inspections.includes("R") || me.permissions.inspections.includes("P")) && !pend,
+      canSeeResult:
+        !!v.inspectionId &&
+        v.inspector?.id !== me.id &&
+        (me.permissions.inspections.includes("R") || me.permissions.inspections.includes("P")) &&
+        !pend,
       result: () => c.go("review", v.id),
       hasReport: !!report,
       report: () => c.go("report", v.id),
@@ -180,7 +259,10 @@ export function visitDetail(c: Ctx, v: Visit) {
       returnMeta: meta("returned"),
       cancelMeta: meta("cancelled"),
       hasScore: v.scorePct != null,
-      scoreLine: v.scorePct == null ? "" : i.S("scoreLine", { p: v.scorePct, a: "—", n: "—", nc: "—" }).split(" · ")[0]!,
+      scoreLine:
+        v.scorePct == null
+          ? ""
+          : i.S("scoreLine", { p: v.scorePct, a: "—", n: "—", nc: "—" }).split(" · ")[0]!,
       back: () => c.go(me.role === "ins" ? "overview" : "visits"),
     },
   };

@@ -20,6 +20,11 @@ import { EvidenceViewer } from "@/ui/EvidenceViewer";
 import { Modal } from "@/ui/Modal";
 import { Toast } from "@/ui/Toast";
 import { DataError } from "@/ui/DataError";
+import { DEMO_MODE } from "@/config";
+import { SyncStatus } from "@/offline/SyncStatus";
+import { useSyncState } from "@/offline/session";
+import { useOfflineSync } from "@/offline/use-offline-sync";
+import { AccountBar } from "./AccountPages";
 import { DemoBar } from "./DemoBar";
 import { parseRoute, pathFor } from "./routes";
 import { useActions } from "./use-actions";
@@ -31,6 +36,8 @@ import { useScreenData } from "./use-screen-data";
  */
 export function Workspace({ me }: { me: Me }) {
   const ui = useUi();
+  useOfflineSync(me);
+  const sync = useSyncState();
   const navigate = useNavigate();
   const loc = useLocation();
   const route = useMemo(() => parseRoute(loc.pathname), [loc.pathname]);
@@ -69,7 +76,8 @@ export function Workspace({ me }: { me: Me }) {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setUi({ search: false, notif: false, modal: null, more: false, busy: false });
+      if (e.key === "Escape")
+        setUi({ search: false, notif: false, modal: null, more: false, busy: false });
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -92,7 +100,8 @@ export function Workspace({ me }: { me: Me }) {
     data,
     go,
     toast: (msg, action) => setUi({ toast: { msg, action } }),
-    openModal: (kind, d, mf) => setUi({ modal: { kind, ...(d ?? {}) }, mf: mf ?? {}, mErr: null, busy: false }),
+    openModal: (kind, d, mf) =>
+      setUi({ modal: { kind, ...(d ?? {}) }, mf: mf ?? {}, mErr: null, busy: false }),
     actions,
     mobile: ui.w < 760,
   };
@@ -122,6 +131,7 @@ export function Workspace({ me }: { me: Me }) {
     pending,
     denial,
   });
+  vm.offline = !sync.online;
   vm.vw = viewerVM(ctx, (id, name) => void actions.evidenceBlob(id).then((b) => saveBlob(b, name)));
   const showError = !!error && !pending;
 
@@ -129,16 +139,52 @@ export function Workspace({ me }: { me: Me }) {
     <div
       dir={i.dir}
       lang={ui.lang}
-      style={{ height: "100vh", display: "flex", flexDirection: "column", fontFamily: "'IBM Plex Sans Arabic','IBM Plex Sans',system-ui,sans-serif", color: "#191C1F", fontSize: "14px", lineHeight: 1.5, WebkitFontSmoothing: "antialiased" }}
+      style={{
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        fontFamily: "'IBM Plex Sans Arabic','IBM Plex Sans',system-ui,sans-serif",
+        color: "#191C1F",
+        fontSize: "14px",
+        lineHeight: 1.5,
+        WebkitFontSmoothing: "antialiased",
+      }}
     >
-      <DemoBar me={me} lang={ui.lang} />
-      <div style={{ flex: 1, minHeight: 0, display: "flex", justifyContent: "center", background: "#2A302E" }}>
-        <div ref={frame} style={{ position: "relative", width: "100%", height: "100%", display: "flex", overflow: "hidden", background: "#F5F4F0" }}>
+      {DEMO_MODE ? <DemoBar me={me} lang={ui.lang} /> : <AccountBar me={me} />}
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          display: "flex",
+          justifyContent: "center",
+          background: "#2A302E",
+        }}
+      >
+        <div
+          ref={frame}
+          style={{
+            position: "relative",
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            overflow: "hidden",
+            background: "#F5F4F0",
+          }}
+        >
           {vm.showSide ? <Sidebar vm={vm} /> : null}
           <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
             {vm.showTop ? <TopBar vm={vm} /> : null}
             {vm.offline ? <OfflineBanner vm={vm} /> : null}
-            <main ref={scroller} style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden", position: "relative" }}>
+            <main
+              ref={scroller}
+              style={{
+                flex: 1,
+                minHeight: 0,
+                overflowY: "auto",
+                overflowX: "hidden",
+                position: "relative",
+              }}
+            >
               {showError ? (
                 <DataError i={i} error={error} onRetry={retry} pad={vm.pad} />
               ) : vm.loading ? (
@@ -155,6 +201,7 @@ export function Workspace({ me }: { me: Me }) {
           {vm.hasModal ? <Modal vm={vm} /> : null}
           {vm.vw ? <EvidenceViewer vm={vm} /> : null}
           {vm.hasToast ? <Toast vm={vm} /> : null}
+          <SyncStatus />
         </div>
       </div>
     </div>

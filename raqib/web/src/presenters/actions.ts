@@ -1,4 +1,15 @@
-import type { Answer, CorrectiveAction, TrainingRequest, FormSection, Inspection, CreateVisitInput, OrgSettings, RescheduleVisitInput, RoleKey, TemplateChange } from "@/api/types";
+import type {
+  Answer,
+  CorrectiveAction,
+  TrainingRequest,
+  FormSection,
+  Inspection,
+  CreateVisitInput,
+  OrgSettings,
+  RescheduleVisitInput,
+  RoleKey,
+  TemplateChange,
+} from "@/api/types";
 
 /**
  * The application layer's commands: each is one user intention that the backend validates and
@@ -19,37 +30,109 @@ export interface Actions {
   markAllNotificationsRead(): Promise<void>;
   startInspection(visitId: string): Promise<Inspection>;
   /** Text edits are saved after a short pause; choices are saved immediately. The cache updates at once either way. */
-  saveAnswer(visitId: string, itemId: string, patch: { value?: Answer; note?: string | null; severity?: "low" | "medium" | "high" | null }): Promise<void>;
+  saveAnswer(
+    visitId: string,
+    itemId: string,
+    patch: { value?: Answer; note?: string | null; severity?: "low" | "medium" | "high" | null },
+  ): Promise<void>;
   setGuardScore(visitId: string, guardId: string, itemId: string, score: number): Promise<void>;
   setGuardNote(visitId: string, guardId: string, note: string): Promise<void>;
-  submitInspection(visitId: string): Promise<void>;
+  /** `queued` = there is no connection: the submission is kept on the device and sent when it returns. */
+  submitInspection(visitId: string): Promise<{ queued: boolean }>;
   /** presign → direct PUT with progress → confirm → link; resolves when the evidence is stored and linked. */
-  uploadEvidence(file: File, target: { visitId: string; inspectionId: string; itemId?: string; guardId?: string }, onProgress: (pct: number) => void): Promise<void>;
+  uploadEvidence(
+    file: File,
+    target: { visitId: string; inspectionId: string; itemId?: string; guardId?: string },
+    onProgress: (pct: number) => void,
+  ): Promise<void>;
   removeEvidence(visitId: string, evidenceId: string): Promise<void>;
-  assignAction(observationId: string, input: { responsibleId: string; dueDate: string; priority: "low" | "medium" | "high"; description: string }): Promise<CorrectiveAction>;
-  actionStep(id: string, step: "start" | "submit" | "return" | "close", body?: { reason?: string; comment?: string }): Promise<void>;
+  assignAction(
+    observationId: string,
+    input: {
+      responsibleId: string;
+      dueDate: string;
+      priority: "low" | "medium" | "high";
+      description: string;
+    },
+  ): Promise<CorrectiveAction>;
+  actionStep(
+    id: string,
+    step: "start" | "submit" | "return" | "close",
+    body?: { reason?: string; comment?: string },
+  ): Promise<void>;
   commentAction(id: string, text: string): Promise<void>;
-  uploadActionEvidence(file: File, actionId: string, onProgress: (pct: number) => void): Promise<void>;
+  uploadActionEvidence(
+    file: File,
+    actionId: string,
+    onProgress: (pct: number) => void,
+  ): Promise<void>;
   removeActionEvidence(actionId: string, evidenceId: string): Promise<void>;
-  requestTraining(input: { guardId: string; reason: "low_score" | "repeat_issue" | "incident" | "refresher" | "new_assignment"; course: string; related: string; priority: "low" | "medium" | "high"; notes: string }): Promise<TrainingRequest>;
-  trainingStep(id: string, step: "approve" | "return" | "reject" | "resubmit" | "schedule" | "complete", body?: Record<string, unknown>): Promise<void>;
-  exportAnalytics(q: { period: string; from: string; to: string; projectId: string; siteId: string }): Promise<void>;
-  confSubmit(input: { kind: "misconduct" | "violation" | "safety"; subject: string; body: string; place: string; identity: "named" | "confidential" | "anonymous"; fileIds: string[] }): Promise<{ ref: string }>;
+  requestTraining(input: {
+    guardId: string;
+    reason: "low_score" | "repeat_issue" | "incident" | "refresher" | "new_assignment";
+    course: string;
+    related: string;
+    priority: "low" | "medium" | "high";
+    notes: string;
+  }): Promise<TrainingRequest>;
+  trainingStep(
+    id: string,
+    step: "approve" | "return" | "reject" | "resubmit" | "schedule" | "complete",
+    body?: Record<string, unknown>,
+  ): Promise<void>;
+  exportAnalytics(q: {
+    period: string;
+    from: string;
+    to: string;
+    projectId: string;
+    siteId: string;
+  }): Promise<void>;
+  confSubmit(input: {
+    kind: "misconduct" | "violation" | "safety";
+    subject: string;
+    body: string;
+    place: string;
+    identity: "named" | "confidential" | "anonymous";
+    fileIds: string[];
+  }): Promise<{ ref: string }>;
   confUpload(file: File, onProgress: (pct: number) => void): Promise<string>;
   confEnter(reason: string, ack: boolean): Promise<void>;
   confExit(): Promise<void>;
   confRespond(id: string, text: string): Promise<void>;
   confReveal(id: string, reason: string): Promise<void>;
-  confIssueGrant(input: { userId: string; level: "view" | "respond"; scope: "all" | "standard"; reason: string; expiresAt: string }): Promise<void>;
+  confIssueGrant(input: {
+    userId: string;
+    level: "view" | "respond";
+    scope: "all" | "standard";
+    reason: string;
+    expiresAt: string;
+  }): Promise<void>;
   confRevoke(id: string, reason: string): Promise<void>;
-  exportAudit(q: { q: string; entity: string; actor: string; from: string; to: string }): Promise<void>;
-  approveRequest(id: string, input: { role: string; projectIds: string[]; comment?: string }): Promise<void>;
+  exportAudit(q: {
+    q: string;
+    entity: string;
+    actor: string;
+    from: string;
+    to: string;
+  }): Promise<void>;
+  approveRequest(
+    id: string,
+    input: { role: string; projectIds: string[]; comment?: string },
+  ): Promise<void>;
   rejectRequest(id: string, reason: string): Promise<void>;
   resendRequest(id: string): Promise<void>;
   reportPdf(id: string, lang: "ar" | "en"): Promise<Blob>;
   evidenceBlob(id: string): Promise<Blob>;
-  decideReview(visitId: string, action: "forward" | "return" | "reject" | "approve", body: { reason?: string; comment?: string; itemIds?: string[] }): Promise<void>;
-  createForm(input: { code: string; category: "site" | "guard"; name: { ar: string; en: string } }): Promise<{ id: string }>;
+  decideReview(
+    visitId: string,
+    action: "forward" | "return" | "reject" | "approve",
+    body: { reason?: string; comment?: string; itemIds?: string[] },
+  ): Promise<void>;
+  createForm(input: {
+    code: string;
+    category: "site" | "guard";
+    name: { ar: string; en: string };
+  }): Promise<{ id: string }>;
   createDraft(formId: string): Promise<void>;
   saveDraft(formId: string, sections: FormSection[]): Promise<void>;
   discardDraft(formId: string): Promise<void>;

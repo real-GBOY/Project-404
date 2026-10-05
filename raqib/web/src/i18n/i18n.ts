@@ -8,9 +8,23 @@ import { STRINGS_ANALYTICS } from "./strings.analytics";
 import { STRINGS_TRAINING } from "./strings.training";
 import { STRINGS_REPORTS } from "./strings.reports";
 import { STRINGS_SCREENS } from "./strings.screens";
+import { STRINGS_ACCOUNT } from "./strings.account";
+import { STRINGS_OFFLINE } from "./strings.offline";
 
 type Table = Record<string, readonly [string, string]>;
-const STR: Table = { ...STRINGS_ONBOARDING, ...STRINGS_CONFIDENTIAL, ...STRINGS_ANALYTICS, ...STRINGS_TRAINING, ...STRINGS_CORE, ...STRINGS_ADMIN, ...STRINGS_SCREENS, ...STRINGS_REPORTS, ...STRINGS_QUALITY };
+const STR: Table = {
+  ...STRINGS_ONBOARDING,
+  ...STRINGS_CONFIDENTIAL,
+  ...STRINGS_ANALYTICS,
+  ...STRINGS_TRAINING,
+  ...STRINGS_CORE,
+  ...STRINGS_ADMIN,
+  ...STRINGS_SCREENS,
+  ...STRINGS_REPORTS,
+  ...STRINGS_QUALITY,
+  ...STRINGS_ACCOUNT,
+  ...STRINGS_OFFLINE,
+};
 
 /** `{ar, en}` master data, or a plain user-entered string, as display text. User text is never translated. */
 export type Localized = L10n | string | null | undefined;
@@ -62,10 +76,17 @@ export function createI18n(lang: Lang): I18n {
     if (!iso) return "—";
     const d = new Date(iso.length === 10 ? `${iso}T00:00` : iso);
     if (Number.isNaN(d.getTime())) return "—";
-    return new Intl.DateTimeFormat(l === "ar" ? "ar-SA-u-ca-gregory-nu-latn" : "en-GB", OPTS[style]).format(d);
+    return new Intl.DateTimeFormat(
+      l === "ar" ? "ar-SA-u-ca-gregory-nu-latn" : "en-GB",
+      OPTS[style],
+    ).format(d);
   };
   const days: I18n["days"] = (a, b) =>
-    Math.round((new Date(`${b.slice(0, 10)}T00:00`).getTime() - new Date(`${a.slice(0, 10)}T00:00`).getTime()) / 864e5);
+    Math.round(
+      (new Date(`${b.slice(0, 10)}T00:00`).getTime() -
+        new Date(`${a.slice(0, 10)}T00:00`).getTime()) /
+        864e5,
+    );
 
   return { lang, dir: lang === "ar" ? "rtl" : "ltr", t, S, L, fd, days };
 }

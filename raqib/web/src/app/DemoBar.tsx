@@ -36,13 +36,49 @@ export function DemoBar({ me, lang }: { me: Me; lang: Lang }) {
       setBusy(false);
     }
   };
-  const barSelect = { height: 28, background: "#18201E", color: "#E8EEEB", border: "1px solid #2A3431", borderRadius: 4, padding: "0 6px", fontSize: 12 } as const;
+  const barSelect = {
+    height: 28,
+    background: "#18201E",
+    color: "#E8EEEB",
+    border: "1px solid #2A3431",
+    borderRadius: 4,
+    padding: "0 6px",
+    fontSize: 12,
+  } as const;
   return (
-    <div dir="ltr" style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: "8px 16px", flexWrap: "wrap", padding: "7px 14px", background: "#0B0F0E", color: "#9AA6A1", fontFamily: "'IBM Plex Sans',system-ui,sans-serif", fontSize: 12 }}>
-      <span style={{ fontFamily: "'IBM Plex Mono',monospace", color: "#E8EEEB", letterSpacing: ".1em", fontSize: 11 }}>RAQIB · PRESENTER</span>
+    <div
+      dir="ltr"
+      style={{
+        flexShrink: 0,
+        display: "flex",
+        alignItems: "center",
+        gap: "8px 16px",
+        flexWrap: "wrap",
+        padding: "7px 14px",
+        background: "#0B0F0E",
+        color: "#9AA6A1",
+        fontFamily: "'IBM Plex Sans',system-ui,sans-serif",
+        fontSize: 12,
+      }}
+    >
+      <span
+        style={{
+          fontFamily: "'IBM Plex Mono',monospace",
+          color: "#E8EEEB",
+          letterSpacing: ".1em",
+          fontSize: 11,
+        }}
+      >
+        RAQIB · PRESENTER
+      </span>
       <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
         Signed in as
-        <select value={current} disabled={busy} onChange={(e) => void switchTo(e.target.value)} style={barSelect}>
+        <select
+          value={current}
+          disabled={busy}
+          onChange={(e) => void switchTo(e.target.value)}
+          style={barSelect}
+        >
           {current ? null : <option value="">{me.email}</option>}
           {DEMO_ACCOUNTS.map((a) => (
             <option key={a.email} value={a.email}>
@@ -51,17 +87,49 @@ export function DemoBar({ me, lang }: { me: Me; lang: Lang }) {
           ))}
         </select>
       </label>
-      <div style={{ display: "flex", border: "1px solid #2A3431", borderRadius: 4, overflow: "hidden" }}>
+      <div
+        style={{
+          display: "flex",
+          border: "1px solid #2A3431",
+          borderRadius: 4,
+          overflow: "hidden",
+        }}
+      >
         {(["ar", "en"] as const).map((l) => {
           const s = seg(lang, l, l === "ar" ? "العربية" : "English", () => setLang(l), true);
           return (
-            <button key={l} onClick={s.set} style={{ border: 0, padding: "0 10px", height: 26, fontSize: 12, cursor: "pointer", background: s.bg, color: s.fg }}>
+            <button
+              key={l}
+              onClick={s.set}
+              style={{
+                border: 0,
+                padding: "0 10px",
+                height: 26,
+                fontSize: 12,
+                cursor: "pointer",
+                background: s.bg,
+                color: s.fg,
+              }}
+            >
               {s.label}
             </button>
           );
         })}
       </div>
-      <button onClick={auth.logout} style={{ height: 26, padding: "0 10px", border: "1px solid #2A3431", borderRadius: 4, fontSize: 12, cursor: "pointer", color: "#E8EEEB", background: "transparent", marginInlineStart: "auto" }}>
+      <button
+        onClick={() => auth.logout()}
+        style={{
+          height: 26,
+          padding: "0 10px",
+          border: "1px solid #2A3431",
+          borderRadius: 4,
+          fontSize: 12,
+          cursor: "pointer",
+          color: "#E8EEEB",
+          background: "transparent",
+          marginInlineStart: "auto",
+        }}
+      >
         Sign out
       </button>
     </div>

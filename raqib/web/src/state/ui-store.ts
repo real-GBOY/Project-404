@@ -14,11 +14,13 @@ export interface UploadEntry {
   kind: "photo" | "video" | "doc";
   size: number;
   progress: number;
-  status: "uploading" | "failed" | "rejected";
+  status: "uploading" | "failed" | "rejected" | "queued";
   /** Local preview of a photo (an object URL; never leaves the browser). */
   url: string | null;
   limitMb?: number;
   file?: File;
+  /** Set while the file waits on the device for a connection (the offline outbox's blob key). */
+  queueKey?: string;
 }
 
 export interface ViewerFile {
