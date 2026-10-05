@@ -1,10 +1,10 @@
 # AURIC Core — the complete picture
 
-> One document: what Core is, everything it contains, how **Mizan** and **Atlas** consume it today,
-> and how every **upcoming project** will consume it. It summarises and links; the per-module
+> One document: what Core is, everything it contains, how **Mizan**, **Atlas**, **HotelOS** and
+> **Flux** consume it today, and how every **upcoming project** will consume it. It summarises and links; the per-module
 > `core/<module>/README.md` files and the docs listed in §14 stay the detailed contracts.
 >
-> Snapshot: 2026-09-20, `main` @ `e4bc310`. Where this file and a module README disagree, the
+> Snapshot: 2026-10-05. Where this file and a module README disagree, the
 > module README wins for that module. (Known stale spot: `core/README.md` §4–§7 does not yet list
 > `assistant` and `messaging` in its responsibilities — this file does.)
 
@@ -15,31 +15,35 @@
 **AURIC Core** is a NestJS (Fastify) modular-monolith *library* of domain-agnostic platform
 capabilities: identity, RBAC, organizations/tenancy, files, audit, notifications, events + outbox,
 messaging, AI-assistant infrastructure, localization and observability. It knows nothing about law
-firms or real estate. Every product (Mizan, Atlas, and the next ones) is a **separate deployment**
+firms, real estate, hotels or fitness. Every product (Mizan, Atlas, HotelOS, Flux, and the next ones) is a **separate deployment**
 that imports Core's modules into its own Nest root module, adds its own domain module, and talks to
 Core only through **DI tokens and interfaces**.
 
 ```
-                       ┌──────────────── AURIC CORE (core/) ────────────────┐
-                       │ kernel · identity · rbac · organizations · files   │
-                       │ audit · notifications · events/outbox · messaging  │
-                       │ assistant · localization · observability · http    │
-                       └───────────▲───────────────────────▲────────────────┘
-              imports Core modules │                       │ imports Core modules
-                                   │                       │
-                 ┌─────────────────┴──────┐     ┌──────────┴──────────────┐      ┌───────────────┐
-                 │ MIZAN backend          │     │ ATLAS backend           │      │ Project #3…   │
-                 │ mizan/backend/app      │     │ atlas/backend/app       │      │ (upcoming)    │
-                 │  └ lawfirm/*           │     │  └ realestate/*         │      │               │
-                 └───────────▲────────────┘     └───────────▲─────────────┘      └───────────────┘
-                             │ HTTP /api (+ Socket.IO)      │
-                 ┌───────────┴──────────┐        ┌──────────┴───────────┐
-                 │ mizan/web · /mobile  │        │ atlas/web            │      both webs share @auric/web
-                 └──────────────────────┘        └──────────────────────┘
+┌────────────────────────────────────────────── AURIC CORE (core/) ─────────────────────────────────────────────┐
+│                    kernel · identity · rbac · organizations · files · audit · notifications                   │
+│                  events/outbox · messaging · assistant · localization · observability · http                  │
+└────────────▲────────────────────────────▲────────────────────────────▲────────────────────────────▲───────────┘
+             │                            │                            │                            │
+                         imports Core modules (compose · inject · contribute · bootstrap)
+             │                            │                            │                            │
+┌────────────────────────┐   ┌────────────────────────┐   ┌────────────────────────┐   ┌────────────────────────┐`
+│ MIZAN backend          │   │ ATLAS backend          │   │ HOTELOS backend        │   │ FLUX backend           │
+│ mizan/backend/app      │   │ atlas/backend/app      │   │ hotel-project/backend  │   │ flux/backend/app       │
+│ └ lawfirm/*            │   │ └ realestate/*         │   │ └ hotel/*              │   │ └ fitness/*            │
+└────────────────────────┘   └────────────────────────┘   └────────────────────────┘   └────────────────────────┘
+             ▲                            ▲                            ▲                            ▲
+                                             HTTP /api (+ Socket.IO)
+┌────────────────────────┐   ┌────────────────────────┐   ┌────────────────────────┐   ┌────────────────────────┐
+│ mizan/web              │   │ atlas/web              │   │ hotel-project/app      │   │ flux/mobile            │
+│ mizan/mobile           │   │                        │   │ hotel-project/web      │   │                        │
+└────────────────────────┘   └────────────────────────┘   └────────────────────────┘   └────────────────────────┘
 ```
 
-Dependency direction is one-way: **Core ◀ product backend ◀ product clients**. Never `Core → mizan/`
-or `Core → atlas/`, never `Core → web`. (`grep -rn "mizan/" core/` is empty.)
+Dependency direction is one-way: **Core ◀ product backend ◀ product clients**. Never `Core → mizan/`,
+`Core → atlas/`, `Core → hotel-project/` or `Core → flux/`, never `Core → web`. (`grep -rn "mizan/" core/`
+is empty, and so are the same greps for `atlas/`, `hotel-project/` and `flux/`.) The Mizan and Atlas
+web clients share `@auric/web`; the HotelOS and Flux clients keep their own transport.
 
 ---
 
@@ -171,30 +175,30 @@ Tests override `CLOCK`, `UNIT_OF_WORK`, `AI_CLIENT` (with `ScriptedAiClient`), e
 
 ---
 
-## 6. How the two current projects use Core
+## 6. How the four current products use Core
 
-Both are **separate deployments** — own process, port, Postgres database, `.env`, JWT secret, users,
+All four are **separate deployments** — own process, port, Postgres database, `.env`, JWT secret, users,
 orgs and roles. They share Core's **source** (relative import `@core/*`) and nothing at runtime.
 
 ### 6.1 Side-by-side
 
-| | **Mizan** (Law Firm ERP) | **Atlas** (Real-Estate OS) |
-|---|---|---|
-| Backend root | `mizan/backend/app/app.module.ts` | `atlas/backend/app/app.module.ts` |
-| Domain module | `LawfirmModule` → `mizan/backend/app/lawfirm/*` (clients, matters, hearings, tasks, documents, billing, time, staff, settings, dashboard, activity, calendar, admin, assistant, demo) | `RealestateModule` → `atlas/backend/app/realestate/*` (properties, sales, CRM, finance, operations, dashboard, lead-intelligence, conversation-intelligence, assistant, admin, demo) |
-| Core modules imported | Kernel, Events, Audit, Rbac, Identity, Organizations, Notifications, Files, Security | same **+ `MessagingModule`** |
-| Entry point | root `main.ts` → `bootstrapAuricApp` | `atlas/backend/main.ts` → `bootstrapAuricApp` |
-| Prisma project | repo-root `prisma/` (Core tables + `lawfirm-*.prisma`) | `atlas/backend/prisma/` (Core baseline copied in + `realestate-*.prisma`) |
-| Migrate | `core.migrateToLatest` (root Prisma project) | Atlas's own `scripts/migrate.ts` (same "shell `prisma migrate deploy`" approach, pointed at Atlas's Prisma project) |
-| Seed | `AppSeedService`: Core `SeedService` + law-firm RBAC (`firm_admin`, `partner`, `lawyer`, `paralegal`, `finance`, `read_only`) | `AppSeedService`: Core `SeedService` + real-estate RBAC |
-| AI Copilot | `lawfirm/assistant/` — matters/hearings/tasks tools, law-firm prompt + scope vocabulary, `use:assistant`, `POST /api/ai/chat` | `realestate/assistant/` — units/leads tools, real-estate prompt + scope, `ask:ai_conversation`; plus lead-intelligence (`StructuredAi`) |
-| Messaging | **Not used yet** (a matter chat is the obvious first caller) | **Used** — `conversation-intelligence` reads conversations via `MESSAGING_PROVIDER`, analyses them with AI, stores insights, feeds the UI |
-| Web | `mizan/web` (React 19 + Vite + Tailwind, Court Navy/Brass/Paper, Spectral + Public Sans + Amiri), real backend only (MSW is test-only) | `atlas/web` (React 19 + Vite + Tailwind 4; all colors in `src/styles/colors.ts`) |
-| Mobile | `mizan/mobile` (Expo / expo-router, 18 screens) | — |
-| Web ↔ Core | `@auric/web` transport + messaging contracts (in-place) | `@auric/web` transport + `@auric/contracts/messaging`; keeps its own axios layer |
-| Deploy | AWS ARM VPS (systemd + nginx + Postgres 12), API at `https://100-26-109-162.sslip.io`; web on Vercel | Same VPS/cluster, separate Postgres **database**, own port/systemd unit (`docs/atlas-deployment.md`) |
+| | **Mizan** (Law Firm ERP) | **Atlas** (Real-Estate OS) | **HotelOS** (Hotel PMS) | **Flux** (Fitness) |
+|---|---|---|---|---|
+| Backend root | `mizan/backend/app/app.module.ts` | `atlas/backend/app/app.module.ts` | `hotel-project/backend/app/app.module.ts` | `flux/backend/app/app.module.ts` |
+| Domain module | `LawfirmModule` → `mizan/backend/app/lawfirm/*` (clients, matters, hearings, tasks, documents, billing, time, staff, settings, dashboard, activity, calendar, admin, assistant, demo) | `RealestateModule` → `atlas/backend/app/realestate/*` (properties, sales, CRM, finance, operations, dashboard, lead-intelligence, conversation-intelligence, assistant, admin, demo) | `HotelModule` → `hotel-project/backend/app/hotel/*` (rooms, reservations, front-desk, guests, housekeeping, maintenance, billing, pricing, staff, analytics, public booking, dashboard, activity, notifications, search, settings, demo) | `FluxModule` → `flux/backend/app/fitness/*` (workouts, programs, sessions, exercises, progression, targets, personal records) |
+| Core modules imported | Kernel, Events, Audit, Rbac, Identity, Organizations, Notifications, Files, Security | same **+ `MessagingModule`** | Kernel, Events, Audit, Rbac, Identity, Organizations, Notifications, Files, Security (no Messaging) | same as HotelOS |
+| Entry point | root `main.ts` → `bootstrapAuricApp` | `atlas/backend/main.ts` → `bootstrapAuricApp` | `hotel-project/backend/main.ts` → `bootstrapAuricApp` | `flux/backend/main.ts` → `bootstrapAuricApp` |
+| Prisma project | repo-root `prisma/` (Core tables + `lawfirm-*.prisma`) | `atlas/backend/prisma/` (Core baseline copied in + `realestate-*.prisma`) | `hotel-project/backend/prisma/` (Core baseline + hotel models) | `flux/backend/prisma/` (Core baseline + `fitness-*.prisma`) |
+| Migrate | `core.migrateToLatest` (root Prisma project) | Atlas's own `scripts/migrate.ts` (same "shell `prisma migrate deploy`" approach, pointed at Atlas's Prisma project) | Own `scripts/migrate.ts`, same approach as Atlas | Own `scripts/migrate.ts`, same approach as Atlas |
+| Seed | `AppSeedService`: Core `SeedService` + law-firm RBAC (`firm_admin`, `partner`, `lawyer`, `paralegal`, `finance`, `read_only`) | `AppSeedService`: Core `SeedService` + real-estate RBAC | `AppSeedService`: Core `SeedService` + hotel RBAC | `AppSeedService`: Core `SeedService` + fitness RBAC |
+| AI Copilot | `lawfirm/assistant/` — matters/hearings/tasks tools, law-firm prompt + scope vocabulary, `use:assistant`, `POST /api/ai/chat` | `realestate/assistant/` — units/leads tools, real-estate prompt + scope, `ask:ai_conversation`; plus lead-intelligence (`StructuredAi`) | — | — |
+| Messaging | **Not used yet** (a matter chat is the obvious first caller) | **Used** — `conversation-intelligence` reads conversations via `MESSAGING_PROVIDER`, analyses them with AI, stores insights, feeds the UI | Not used | Not used |
+| Web | `mizan/web` (React 19 + Vite + Tailwind, Court Navy/Brass/Paper, Spectral + Public Sans + Amiri), real backend only (MSW is test-only) | `atlas/web` (React 19 + Vite + Tailwind 4; all colors in `src/styles/colors.ts`) | `hotel-project/web` (public landing and booking site) and `hotel-project/app` (staff app) | — (mobile only) |
+| Mobile | `mizan/mobile` (Expo / expo-router, 18 screens) | — | — | `flux/mobile` (Expo / expo-router), Bearer-token `/api`, offline cache of server-derived history, targets and PRs |
+| Web ↔ Core | `@auric/web` transport + messaging contracts (in-place) | `@auric/web` transport + `@auric/contracts/messaging`; keeps its own axios layer | Own transport | Own transport (mobile client) |
+| Deploy | AWS ARM VPS (systemd + nginx + Postgres 12), API at `https://100-26-109-162.sslip.io`; web on Vercel | Same VPS/cluster, separate Postgres **database**, own port/systemd unit (`docs/atlas-deployment.md`) | Same VPS/cluster, own database, port `3200`, systemd unit `hotelos`; staff app and site on Vercel | Same VPS/cluster, own database, port, systemd unit and `.env`; app ships through Expo (`docs/backend-deployment-overview.md`) |
 
-Both roots are near-identical by design — the composition-root shape is the contract:
+All four roots are near-identical by design — the composition-root shape is the contract:
 
 ```ts
 @Module({
@@ -238,7 +242,7 @@ integration tests.)
 ### 6.3 How the frontends touch Core
 
 - **HTTP contract**: `/api/*` with a Bearer JWT; errors always `{ error: { code, message, details } }`.
-- **`@auric/web`** (`packages/web`, source-only, aliased in Vite + tsconfig `paths`):
+- **`@auric/web`** (`packages/web`, source-only, aliased in Vite + tsconfig `paths`; used by Mizan and Atlas web):
   `createHttpClient` (bearer, one retry via refresh on 401), `createTokenStore` (in-memory access,
   persisted refresh, safe without storage), `createRefresher` (**single-flight** — refresh tokens
   are single-use and reuse revokes the session), `ApiError`.
@@ -252,7 +256,7 @@ integration tests.)
 
 ## 7. What was extracted from products into Core (proof the process works)
 
-Extraction happened only where Mizan **and** Atlas had independently written the same thing
+Extraction happened only where Mizan **and** Atlas (the first two products) had independently written the same thing
 (`docs/core-extractions.md`):
 
 | Extracted to Core | Product keeps |
@@ -280,8 +284,9 @@ Prisma project.
 
 ## 8. Upcoming projects — how each will use Core
 
-There is **no third product in the repo yet**, so nothing below is built; it is the intended path,
-derived from `Plan.md`, `docs/system-architecture.md` and what Atlas already proved.
+HotelOS and Flux already followed this path after Atlas; the **next** product, whatever it is, will
+follow it too. It is derived from `Plan.md`, `docs/system-architecture.md` and what Mizan, Atlas,
+HotelOS and Flux already proved.
 
 ### 8.1 What every new project gets on day one
 
@@ -290,7 +295,7 @@ switcher, RBAC engine, RLS tenancy, presigned file uploads (local/R2), audit tra
 notifications + outbox, health/readiness, error envelope, OpenAPI, structured logs, and — if it
 opts in — realtime messaging and the AI-copilot engine.
 
-### 8.2 The recipe (Atlas is the worked example — it took Mizan's shape)
+### 8.2 The recipe (Atlas is the worked example — it took Mizan's shape; HotelOS and Flux repeated it)
 
 1. **Scaffold** `<product>/backend/app/` with `app.module.ts`, `main.ts`, `seed.ts`, `version.ts`,
    `<domain>/` (mirror Atlas; the roots are the template).
@@ -312,9 +317,9 @@ opts in — realtime messaging and the AI-copilot engine.
    vocabulary, controller + permission). Reuse `StructuredAi` for JSON-extraction features.
 8. **Web**: Vite alias `@auric/web` for transport; alias `@auric/contracts/messaging` if realtime;
    own auth provider/design system; mirror `ar-EG` / RTL rules from `core/localization`.
-   **Mobile**: separate Expo client of the same API (Mizan mobile is the reference).
+   **Mobile**: separate Expo client of the same API (Mizan mobile is the reference; Flux is mobile-only).
 9. **Deploy**: `bootstrapAuricApp` boots it; per-product systemd unit + nginx location + `.env`
-   (see `docs/deployment.md`, `docs/atlas-deployment.md`); web on Vercel.
+   (see `docs/deployment.md`, `docs/atlas-deployment.md`, `docs/backend-deployment-overview.md`); web on Vercel.
 10. **Tests**: unit (pure domain), integration against a throwaway Postgres including
     **tenant A ⊗ tenant B**, unauthorized-blocked, RLS-not-bypassable, outbox-once.
 
@@ -331,10 +336,10 @@ These are candidates, **not promises**, and each waits for real second/third usa
 
 | Candidate | Trigger |
 |---|---|
-| Conversation analysis (coalescing, single-flight, retry, persistence) from Atlas → `core/messaging` or a sibling | Mizan (or a 3rd product) adopts messaging |
-| Web auth provider, query client, upload helper | A 3rd frontend needs them |
-| Generic `migrate` that accepts a package root (removes Atlas's copy) | A 3rd product with its own Prisma project |
-| Admin adapters / demo seeders | 3rd product |
+| Conversation analysis (coalescing, single-flight, retry, persistence) from Atlas → `core/messaging` or a sibling | Mizan, HotelOS or Flux adopts messaging |
+| Web auth provider, query client, upload helper | A 3rd frontend needs them (the HotelOS and Flux clients already keep their own, so this is due for review) |
+| Generic `migrate` that accepts a package root (removes Atlas's copy) | A 3rd product with its own Prisma project (HotelOS and Flux each carry a copy, so this is due) |
+| Admin adapters / demo seeders | 3rd product (HotelOS and Flux each wrote their own, so compare them) |
 | Domain modules (Documents, Tasks, CRM/Clients, Billing, Approvals, Scheduling, HR, Projects, Reporting) | Same domain built **three** times → forkable `modules/<name>/` starting point |
 | `packages/contracts` (API DTOs, permission ids, enums) | Proven cross-client need; today only messaging contracts are shared |
 | Per-tenant custom roles (`organization_id` on `roles`/`role_permissions`) | A tenant needs roles it defines itself (documented in `tenancy.md`) |
@@ -354,11 +359,11 @@ extract and why).
 in its own repo/folder pinning its own Core version, `modules/` earned by three builds.
 **Today** is the pragmatic first stage of that:
 
-- One repo. `core/` at the root; `mizan/` and `atlas/` beside it. Products import Core **source** by
+- One repo. `core/` at the root; `mizan/`, `atlas/`, `hotel-project/` and `flux/` beside it. Products import Core **source** by
   relative alias (`@core/*` → `../../core/*` in Atlas; `@core/*` + `@app/*` in Mizan; the web apps
   use `@/*`). Core also exposes `"."`/`"./contracts"` in `package.json` (`@auric/core`).
 - Consequence: **a Core change reaches every product on its next build.** There is no version pin
-  yet, so Core changes must stay backward compatible or be rolled out to Mizan and Atlas together.
+  yet, so Core changes must stay backward compatible or be rolled out to all four products together.
   `CORE_VERSION` exists (`core/version.ts`, `0.1.0`) for when pinning starts.
 - The Plan/system-architecture text about "each future client is its own repo consuming pinned Core"
   is the destination; when a client that is *not* ours arrives (or when Core changes start to
@@ -366,8 +371,9 @@ in its own repo/folder pinning its own Core version, `modules/` earned by three 
   earlier (§47 rule 17).
 
 Also note: `docs/system-architecture.md` still shows Mizan as "Project #1, one client" and says "no
-`client-00N/`". Atlas as Project #2 (in-repo, separate deployment) is the current reality and the
-first proof that Core is genuinely reusable.
+`client-00N/`". Atlas (Project #2), HotelOS (#3) and Flux (#4), each in-repo and a separate
+deployment, are the current reality. Atlas was the first proof that Core is genuinely reusable;
+HotelOS and Flux confirm it.
 
 ---
 
@@ -401,7 +407,7 @@ npm run migrate           # prisma migrate deploy (root Prisma project)
 npm run migrate:dev -- --name <change>
 npm run db:generate       # regenerate core/kernel/db/schema.ts (Kysely types)
 npm run build && npm start
-# Atlas: same scripts inside atlas/backend
+# Atlas, HotelOS, Flux: same scripts inside atlas/backend, hotel-project/backend, flux/backend
 ```
 
 - Tool shells here have a stale PATH → `export PATH="/c/nvm4w/nodejs:$PATH"` before `node`/`npm`.
@@ -410,9 +416,9 @@ npm run build && npm start
 - A new Core module ships domain + use-case + repository/integration + API tests **before** it is
   wired into any composition root.
 
-**Changing Core** (because it is shared source today): run Mizan's *and* Atlas's backend test suites
-and typecheck before merging; never add a product word to Core; if a change alters a table, both
-Prisma projects need a migration (Atlas carries its own copy of Core's baseline).
+**Changing Core** (because it is shared source today): run every product's backend test suite
+(Mizan, Atlas, HotelOS, Flux) and typecheck before merging; never add a product word to Core; if a change alters a table, every
+Prisma project needs a migration (all products except Mizan carry their own copy of Core's baseline).
 
 ---
 
@@ -430,10 +436,10 @@ Prisma projects need a migration (Atlas carries its own copy of Core's baseline)
 
 ## 13. Known gaps / honest caveats
 
-- No Core version pinning yet (§9) — shared-source coupling between Mizan and Atlas.
-- Atlas duplicates Core's baseline migrations and a small `migrate.ts` (Core's runner is
-  root-project-only).
-- Mizan does not use messaging yet; conversation-intelligence is Atlas-only, so it is not in Core.
+- No Core version pinning yet (§9) — shared-source coupling between all four products.
+- Atlas, HotelOS and Flux each duplicate Core's baseline migrations and a small `migrate.ts`
+  (Core's runner is root-project-only).
+- Only Atlas uses messaging; Mizan, HotelOS and Flux do not; conversation-intelligence is Atlas-only, so it is not in Core.
 - Web layer duplication remains (§7).
 - `core/README.md` should be refreshed to list `assistant` + `messaging` in §4–§7 (this doc already
   does).
@@ -457,6 +463,35 @@ Prisma projects need a migration (Atlas carries its own copy of Core's baseline)
 | AI copilot | `docs/assistant.md`, `docs/atlas-assistant.md`, `docs/lead-intelligence.md`, `core/assistant/README.md` |
 | Uploads | `docs/uploads-and-assistant.md`, `core/files/README.md` |
 | What moved into Core | `docs/core-extractions.md` |
-| Deployment | `docs/deployment.md`, `docs/atlas-deployment.md` |
+| Deployment | `docs/deployment.md`, `docs/atlas-deployment.md`, `docs/backend-deployment-overview.md` |
+| Products | `docs/products/` |
 | Engineering deep-dive | `docs/engineering-overview.md` |
 | Shared web transport | `packages/web/README.md` |
+
+---
+
+## 15. Latest: Flux joins Mizan, Atlas and HotelOS
+
+Flux (fitness and workout tracking, `flux/`) is the newest product built on Core. It follows the same
+recipe as Atlas and HotelOS (§8.2): its own top-level folder, its own `FluxModule` domain module under
+`flux/backend/app/`, an entry point that calls `bootstrapAuricApp`, and its own Prisma project that
+carries Core's baseline plus `fitness-*.prisma`.
+
+| | **Flux** (Fitness) |
+|---|---|
+| Domain module | workouts, programs, sessions, exercises, progression, targets, personal records |
+| Takes from Core | identity, organizations, RBAC, files, audit, events, the request pipeline, RLS tenancy |
+| Client | `flux/mobile` (Expo / expo-router), talking to the Flux backend over the same Bearer-token `/api` contract as Mizan mobile |
+| Derived data | session history, targets and PRs are computed from logged sessions on the server; the app caches them for offline use |
+| Deploy | shared VPS, own systemd unit, own port, own Postgres **database**, own `.env` and JWT secret; same build-locally, ship-artifacts flow and `deploy-vps.sh` (`docs/backend-deployment-overview.md`) |
+
+What this confirms:
+
+- Core stayed domain-agnostic. Nothing fitness-specific lives in `core/`, and `grep -rn "flux/" core/`
+  is empty.
+- Flux needed no new Core module and no change to the Core public surface (§3.4). Everything it uses
+  already existed.
+- It is another product on the shared-source model, so the version-pinning caveat in §13 covers it
+  too: a Core change reaches Flux on its next build.
+- It is a further data point toward the Rule of Three for extracting shared domain modules (§7, §13).
+
