@@ -69,6 +69,9 @@ export interface UiState {
   viewer: ViewerFile | null;
   viewerUrl: string | null;
   viewerReq: boolean;
+  viewerErr: boolean;
+  /** Language of the report being read (independent of the interface language). */
+  rlang: "ar" | "en";
   rtab: string;
   fb: { ver?: string; sec?: number };
   /** Unsaved edits to a form draft (shown immediately, sent after a pause). */
@@ -120,6 +123,8 @@ const initial = (): UiState => ({
   viewer: null,
   viewerUrl: null,
   viewerReq: false,
+  viewerErr: false,
+  rlang: "en",
   rtab: "pending_review",
   fb: {},
   fbDraft: null,

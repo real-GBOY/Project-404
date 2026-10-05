@@ -1,7 +1,7 @@
 import { API_BASE_URL, ENDPOINTS, http } from "@/config";
 import type { PresignResponse } from "@/lib/upload";
 import type {
-  Answer, EvidenceItem, Form, FormSection, Inspection,
+  Answer, Report, EvidenceItem, Form, FormSection, Inspection,
   AppNotification, CreateVisitInput, EligibleInspector, RescheduleVisitInput, Visit,
   Guard, LoginResponse, Me, OrgSettings, Person, PermissionsOverview, Project, RoleKey, TemplateChange,
 } from "./types";
@@ -89,6 +89,15 @@ export const api = {
     blob: async (id: string): Promise<Blob> => {
       const r = await fetch(`${API_BASE_URL}${ENDPOINTS.evidence.content(id)}`, { headers: http.bearerHeaders() });
       if (!r.ok) throw new Error(`evidence ${r.status}`);
+      return r.blob();
+    },
+  },
+  reports: {
+    list: () => http<{ items: Report[]; pdf: boolean }>(ENDPOINTS.reports.list),
+    /** The rendered PDF, fetched with the caller's credentials. */
+    pdf: async (id: string, lang: "ar" | "en"): Promise<Blob> => {
+      const r = await fetch(`${API_BASE_URL}${ENDPOINTS.reports.pdf(id, lang)}`, { headers: http.bearerHeaders() });
+      if (!r.ok) throw Object.assign(new Error(`pdf ${r.status}`), { status: r.status });
       return r.blob();
     },
   },

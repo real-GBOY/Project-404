@@ -51,6 +51,7 @@ export const ENDPOINTS = {
     submit: (visitId: string) => `/raqib/visits/${visitId}/inspection/submit`,
   },
   review: (visitId: string, action: "forward" | "return" | "reject" | "approve") => `/raqib/visits/${visitId}/review/${action}`,
+  reports: { list: "/raqib/reports", pdf: (id: string, lang: string) => `/raqib/reports/${id}/pdf?lang=${lang}` },
   evidence: { attach: "/raqib/evidence", byId: (id: string) => `/raqib/evidence/${id}`, content: (id: string) => `/raqib/evidence/${id}/content` },
   files: { presign: "/files/uploads", confirm: (id: string) => `/files/${id}/confirm` },
   guards: { list: "/raqib/guards", byId: (id: string) => `/raqib/guards/${id}` },

@@ -240,6 +240,23 @@ export type raqib_projects = {
   created_at: Generated<Timestamp>;
   updated_at: Generated<Timestamp>;
 };
+export type raqib_reports = {
+  id: string;
+  organization_id: string;
+  visit_id: string;
+  inspection_id: string;
+  project_id: string;
+  ref: string;
+  score_pct: number | null;
+  /**
+   * @kyselyType(Json<Record<string, unknown>>)
+   */
+  snapshot: Json<Record<string, unknown>>;
+  approved_by: string | null;
+  approved_by_name_ar: string;
+  approved_by_name_en: string;
+  generated_at: Generated<Timestamp>;
+};
 export type raqib_role_templates = {
   id: string;
   organization_id: string;
@@ -369,6 +386,7 @@ export type RaqibTables = {
   raqib_profiles: raqib_profiles;
   raqib_project_assignments: raqib_project_assignments;
   raqib_projects: raqib_projects;
+  raqib_reports: raqib_reports;
   raqib_role_templates: raqib_role_templates;
   raqib_settings: raqib_settings;
   raqib_sites: raqib_sites;

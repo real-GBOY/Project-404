@@ -26,6 +26,8 @@ export interface Actions {
   /** presign → direct PUT with progress → confirm → link; resolves when the evidence is stored and linked. */
   uploadEvidence(file: File, target: { visitId: string; inspectionId: string; itemId?: string; guardId?: string }, onProgress: (pct: number) => void): Promise<void>;
   removeEvidence(visitId: string, evidenceId: string): Promise<void>;
+  reportPdf(id: string, lang: "ar" | "en"): Promise<Blob>;
+  evidenceBlob(id: string): Promise<Blob>;
   decideReview(visitId: string, action: "forward" | "return" | "reject" | "approve", body: { reason?: string; comment?: string; itemIds?: string[] }): Promise<void>;
   createForm(input: { code: string; category: "site" | "guard"; name: { ar: string; en: string } }): Promise<{ id: string }>;
   createDraft(formId: string): Promise<void>;

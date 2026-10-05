@@ -3,6 +3,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import type { Me } from "@/api/types";
 import { createI18n } from "@/i18n/i18n";
 import { buildVM } from "@/presenters/build";
+import { saveBlob } from "@/presenters/screens/reports";
+import { viewerVM } from "@/presenters/viewer";
 import type { Ctx } from "@/presenters/context";
 import { setUi, useUi } from "@/state/ui-store";
 import { BottomNav } from "@/ui/generated/BottomNav";
@@ -13,6 +15,7 @@ import { OfflineBanner } from "@/ui/generated/OfflineBanner";
 import { SCREENS } from "@/ui/generated/screens";
 import { Sidebar } from "@/ui/generated/Sidebar";
 import { TopBar } from "@/ui/generated/TopBar";
+import { EvidenceViewer } from "@/ui/EvidenceViewer";
 import { Modal } from "@/ui/Modal";
 import { Toast } from "@/ui/Toast";
 import { DataError } from "@/ui/DataError";
@@ -93,7 +96,32 @@ export function Workspace({ me }: { me: Me }) {
     mobile: ui.w < 760,
   };
 
-  const vm = buildVM(ctx, { pending, denial });
+  // The evidence viewer fetches the file only when the person asks (photos on open, video on request), through the
+  // authorized endpoint with their credentials; the object URL lives only while the viewer is open.
+  const viewerId = ui.viewer?.id;
+  useEffect(() => {
+    if (!viewerId || !ui.viewerReq) return;
+    let url: string | null = null;
+    let live = true;
+    actions.evidenceBlob(viewerId).then(
+      (b) => {
+        if (!live) return;
+        url = URL.createObjectURL(b);
+        setUi({ viewerUrl: url });
+      },
+      () => live && setUi({ viewerErr: true }),
+    );
+    return () => {
+      live = false;
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [viewerId, ui.viewerReq, actions]);
+
+  const vm = buildVM(ctx, {
+    pending,
+    denial,
+  });
+  vm.vw = viewerVM(ctx, (id, name) => void actions.evidenceBlob(id).then((b) => saveBlob(b, name)));
   const showError = !!error && !pending;
 
   return (
@@ -123,6 +151,7 @@ export function Workspace({ me }: { me: Me }) {
           {vm.moreOpen ? <MoreSheet vm={vm} /> : null}
           {vm.notifOpen ? <NotificationPanel vm={vm} /> : null}
           {vm.hasModal ? <Modal vm={vm} /> : null}
+          {vm.vw ? <EvidenceViewer vm={vm} /> : null}
           {vm.hasToast ? <Toast vm={vm} /> : null}
         </div>
       </div>

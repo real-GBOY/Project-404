@@ -133,6 +133,8 @@ function nextDay(iso: string, n: number): string {
 export function visitDetail(c: Ctx, v: Visit) {
   const { i, me, data } = c;
   const guards = new Map((data.guards ?? []).map((g) => [g.id, g]));
+  const pend = v.storedStatus === "pending_review" || v.storedStatus === "pending_approval";
+  const report = data.reports?.items.find((x) => x.visitId === v.id);
   const changeable = ["scheduled", "assigned", "in_progress", "returned"].includes(v.storedStatus);
   const last = (a: string) => v.history.filter((h) => h.action === a).pop();
   const meta = (a: string): string => {
@@ -162,20 +164,20 @@ export function visitDetail(c: Ctx, v: Visit) {
       canManage: me.permissions.visits.includes("A") && changeable,
       resched: () => c.openModal("resched", { vid: v.id, ref: v.ref }, { date: v.date, time: v.time, ins: v.inspector?.id ?? "", p: v.project.id }),
       cancel: () => c.openModal("cancel", { vid: v.id, ref: v.ref }),
-      canReview: false,
-      review: () => undefined,
-      canSeeResult: false,
-      result: () => undefined,
-      hasReport: false,
-      report: () => undefined,
-      isReturned: false,
-      returnReason: "",
-      isRejected: false,
-      rejectReason: "",
+      canReview: pend && v.inspector?.id !== me.id && ((v.storedStatus === "pending_review" && me.permissions.inspections.includes("R")) || (v.storedStatus === "pending_approval" && me.permissions.inspections.includes("P"))),
+      review: () => c.go("review", v.id),
+      canSeeResult: !!v.inspectionId && v.inspector?.id !== me.id && (me.permissions.inspections.includes("R") || me.permissions.inspections.includes("P")) && !pend,
+      result: () => c.go("review", v.id),
+      hasReport: !!report,
+      report: () => c.go("report", v.id),
+      isReturned: v.storedStatus === "returned",
+      returnReason: last("returned")?.reason ?? "",
+      isRejected: v.storedStatus === "rejected",
+      rejectReason: last("rejected")?.reason ?? "",
       isCancelled: v.storedStatus === "cancelled",
       cancelReason: last("cancelled")?.reason ?? "",
-      rejectMeta: "",
-      returnMeta: "",
+      rejectMeta: meta("rejected"),
+      returnMeta: meta("returned"),
       cancelMeta: meta("cancelled"),
       hasScore: v.scorePct != null,
       scoreLine: v.scorePct == null ? "" : i.S("scoreLine", { p: v.scorePct, a: "—", n: "—", nc: "—" }).split(" · ")[0]!,
