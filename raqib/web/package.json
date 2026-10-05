@@ -14,7 +14,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
-    "e2e:ui": "playwright test --ui"
+    "e2e:ui": "playwright test --ui",
+    "colors:sync": "node scripts/colors-css.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.62.7",

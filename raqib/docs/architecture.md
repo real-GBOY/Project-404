@@ -86,7 +86,7 @@ through the real repositories with a deterministic RNG.
 ## 8. Frontend strategy (what changes vs. the interrupted mock approach)
 
 The earlier plan of an in-browser mock adapter is **dropped**: the real backend replaces it. `web/` keeps the
-design-faithful screens (transpiled from the design file into `src/ui/generated`) and the presenters
+design-faithful screens (transpiled once from the design file into `src/ui/generated`, now owned source) and the presenters
 (view-model builders), now fed by TanStack Query hooks over `src/api` (typed client, token refresh via
 `@auric/web`-style single-flight). Business logic that the design kept in the browser (transitions,
 notifications, audit, analytics, report data, search) moves to the backend. Scenario/demo switcher stays,
@@ -135,12 +135,12 @@ using real demo accounts (`demo` password) and real data. Arabic/English and RTL
 
 ## 11. Offline field inspections (web)
 
-`web/src/offline/`: an installable PWA (`public/sw.js` keeps the app shell, never API data, on the device) plus a per-user
+`web/src/services/offline/` (with `hooks/use-offline-sync.ts` and `components/SyncStatus.tsx`): an installable PWA (`public/sw.js` keeps the app shell, never API data, on the device) plus a per-user
 IndexedDB store. Reads of the screens an inspector needs (projects, guards, visits, the open inspection) are remembered and served
 when the network is down; edits to an inspection (answers, notes, guard scores, evidence, submit) are queued in an outbox and replayed
 in order when the connection returns (`session.ts` probes `/api/health`; `outbox.ts` merges repeated edits and separates "try later"
 from "refused for good"). Queued files are kept as bytes on the device. Starting a new inspection still needs a connection (the server
 snapshots the form). Everything is scoped by user id; sign-out clears the cached copies and keeps only that person's unsent changes.
 A real-browser test (`web/e2e`) drives this against the real backend: answer offline, reload with no network, reconnect, verify the
-server. New UI that is not in the approved design lives in hand-written files (`app/AccountPages.tsx`, `offline/SyncStatus.tsx`);
-`src/ui/generated` stays untouched.
+server. The web app's structure, layering rules and where to add things are in `web/README.md`; colors live only in
+`web/src/styles/colors.ts`.
