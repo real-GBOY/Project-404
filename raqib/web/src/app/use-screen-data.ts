@@ -12,7 +12,7 @@ import type { Denial } from "@/presenters/build";
  * asks the backend for something it would refuse.
  */
 function needs(route: Route, me: Me) {
-  const visitScreens = ["overview", "visits", "visit", "project", "inspect", "inspections", "reviews", "review"];
+  const visitScreens = ["overview", "visits", "visit", "project", "inspect", "inspections", "reviews", "review", "report"];
   const p = me.permissions;
   const n = route.n;
   const want = {
@@ -24,6 +24,7 @@ function needs(route: Route, me: Me) {
     settings: p.settings.includes("V") && n === "settings",
     forms: p.forms.includes("V") && ["forms", "form"].includes(n),
     inspection: ["inspect", "review"].includes(n) && !!route.id,
+    reports: p.reports.includes("V") && ["reports", "report", "visit", "review"].includes(n),
   };
   // the shell labels a person's scope with project names whenever the template allows reading projects
   if (p.projects.includes("V")) want.projects = true;
@@ -44,6 +45,7 @@ export function useScreenData(route: Route, me: Me, ui: UiState): { data: Data; 
     { key: "visits", enabled: want.visits, fn: () => api.visits.list() },
     { key: "forms", enabled: want.forms, fn: () => api.forms.list().then(async (items) => ({ items, capabilities: { add: me.permissions.forms.includes("A"), edit: me.permissions.forms.includes("E"), publish: me.permissions.forms.includes("P") } })) },
     { key: "inspection", enabled: want.inspection, fn: () => api.inspection.get(route.id!), extra: [route.id ?? ""] },
+    { key: "reports", enabled: want.reports, fn: () => api.reports.list() },
     { key: "notifications", enabled: true, fn: () => api.notifications.list().then((r) => ({ items: r.notifications, unread: r.unreadCount })), refetch: 30_000 },
     { key: "inspectors", enabled: !!inspProject, fn: () => api.visits.eligibleInspectors(inspProject, inspDate), extra: [inspProject, inspDate] },
   ] as const;
@@ -67,6 +69,7 @@ export function useScreenData(route: Route, me: Me, ui: UiState): { data: Data; 
     if (route.n === "project" && data.projects && !data.projects.some((x) => x.id === route.id)) denial = { k: "scope", res: route.id ?? "" };
     if ((route.n === "visit" || route.n === "review" || route.n === "inspect") && data.visits && !data.visits.some((x) => x.id === route.id)) denial = { k: "scope", res: route.id ?? "" };
     if (route.n === "visit" && data.visits && !data.visits.some((x) => x.id === route.id)) denial = { k: "scope", res: route.id ?? "" };
+    if (route.n === "report" && data.visits && !data.visits.some((x) => x.id === route.id)) denial = { k: "scope", res: route.id ?? "" };
     if (route.n === "user" && data.users && !data.users.some((x) => x.id === route.id)) denial = { k: "scope", res: route.id ?? "" };
   }
   return { data, pending, denial, error: denial ? null : err, retry: () => results.forEach((r) => void r.refetch()) };

@@ -5,6 +5,7 @@ import { pickFiles } from "@/lib/pick-files";
 import type { UploadEntry } from "@/state/ui-store";
 import { scoreColor, seg } from "../common";
 import type { Ctx } from "../context";
+import { openEvidence } from "../viewer";
 
 type Target = { visitId: string; inspectionId: string; itemId?: string; guardId?: string };
 
@@ -40,7 +41,7 @@ function evidenceVM(c: Ctx, stored: Inspection["sections"][number]["items"][numb
     hasUrl: false, url: "", bgImg: "none", busy: false, pW: "100%", stC: "#5C6168", failed: false,
     canRemove, retry: () => undefined, isVideo: e.kind === "video",
     remove: () => void c.actions.removeEvidence(target.visitId, e.id).catch((err: unknown) => c.toast(err instanceof ApiError ? err.message : i.S("actionFailed"))),
-    open: () => undefined,
+    open: () => openEvidence(c, e, c.data.inspection?.ref ?? ""),
   }));
   const pending = (ui.uploads[key] ?? []).map((u) => ({
     name: u.name,

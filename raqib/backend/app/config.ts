@@ -21,6 +21,11 @@ const schema = z.object({
    * client's address from X-Forwarded-For only this many hops from the right — the entries our
    * own proxies appended — so a visitor can't spoof it to dodge rate limits. 0 = direct.
    */
+  /**
+   * Path of the Chromium/Chrome executable used to render report PDFs (headless, via puppeteer-core). Empty = PDF
+   * generation is unavailable and the API answers 503 `raqib.pdf_unavailable` instead of failing obscurely.
+   */
+  chromiumPath: z.string().trim().default(""),
   trustedProxyHops: z.coerce.number().int().min(0).max(5).default(0),
 });
 
@@ -31,6 +36,7 @@ export function readRaqibConfig(env: NodeJS.ProcessEnv = process.env): RaqibConf
     seedDemo: env.RAQIB_SEED_DEMO,
     demoHistoryDays: env.RAQIB_DEMO_HISTORY_DAYS,
     jobsIntervalMs: env.RAQIB_JOBS_INTERVAL_MS,
+    chromiumPath: env.RAQIB_CHROMIUM_PATH,
     trustedProxyHops: env.RAQIB_TRUSTED_PROXY_HOPS,
   });
   if (!parsed.success) {

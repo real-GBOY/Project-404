@@ -113,6 +113,8 @@ export function useActions(): Actions {
         await api.evidence.remove(evidenceId);
         put(visitId, await api.inspection.get(visitId));
       },
+      reportPdf: (id, lang) => api.reports.pdf(id, lang),
+      evidenceBlob: (id) => api.evidence.blob(id),
       async decideReview(visitId, action, body) {
         put(visitId, await api.review.decide(visitId, action, body));
         await qc.invalidateQueries({ queryKey: ["visits"] });

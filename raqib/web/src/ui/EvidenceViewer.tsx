@@ -24,7 +24,8 @@ export function EvidenceViewer({ vm }: { vm: VM }) {
         <div style={{ padding: "16px 18px", display: "flex", flexDirection: "column", gap: "14px" }}>
           <div style={{ minHeight: "220px", background: "#ECEAE5", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", backgroundImage: vw.bgImg, backgroundSize: "contain", backgroundRepeat: "no-repeat", backgroundPosition: "center", color: "#5C6168", fontSize: "13px", textAlign: "center", padding: "12px" }}>
             {vw.isVideo ? (
-              vw.linked ? <span>{vw.linkTxt}</span> : (
+              // eslint-disable-next-line jsx-a11y/media-has-caption -- field footage has no captions
+              vw.videoUrl ? <video src={vw.videoUrl} controls controlsList="nodownload" style={{ maxWidth: "100%", maxHeight: "60vh" }} /> : (
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "center" }}>
                   <span>{vw.protectedTxt}</span>
                   <button onClick={vw.reqLink} style={{ ...btn, background: "#0F5C4A", color: "#fff", border: 0 }}>{t.requestPlayback}</button>

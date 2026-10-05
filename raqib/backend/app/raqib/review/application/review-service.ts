@@ -5,6 +5,7 @@ import { AUDIT_LOGGER, EVENT_BUS, UNIT_OF_WORK } from "@core/kernel/tokens.js";
 import type { IAuditLogger, IEventBus } from "@core/contracts/index.js";
 import { actorOf, requireCan, requireProject, type Access } from "@raqib/raqib/access/access.js";
 import { InspectionsRepository } from "@raqib/raqib/inspections/infrastructure/inspections-repository.js";
+import { ReportsService } from "@raqib/raqib/reports/application/reports-service.js";
 import { InspectionsService, type InspectionView } from "@raqib/raqib/inspections/application/inspections-service.js";
 import { letterFor, reviewNext, type ReviewAction } from "@raqib/raqib/visits/domain/visit-state.js";
 import { VisitsRepository } from "@raqib/raqib/visits/infrastructure/visits-repository.js";
@@ -34,6 +35,7 @@ export class ReviewService {
     private readonly visits: VisitsRepository,
     private readonly inspections: InspectionsRepository,
     private readonly inspectionService: InspectionsService,
+    private readonly reports: ReportsService,
     @Inject(AUDIT_LOGGER) private readonly audit: IAuditLogger,
     @Inject(EVENT_BUS) private readonly events: IEventBus,
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
@@ -77,7 +79,11 @@ export class ReviewService {
       if (action === "forward") await this.events.publish(inspectionForwarded(base));
       if (action === "return") await this.events.publish(inspectionReturned({ ...base, reason }));
       if (action === "reject") await this.events.publish(inspectionRejected({ ...base, reason }));
-      if (action === "approve") await this.events.publish(inspectionApproved(base));
+      if (action === "approve") {
+        // The report is frozen in the same transaction as the approval: no approved inspection without its report.
+        await this.reports.issue(visitId, who);
+        await this.events.publish(inspectionApproved(base));
+      }
     });
     return this.inspectionService.get(visitId, who);
   }

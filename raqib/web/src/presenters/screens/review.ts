@@ -1,6 +1,7 @@
 import type { Inspection, InspectionItem, Visit } from "@/api/types";
 import { badge, scoreColor } from "../common";
 import type { Ctx } from "../context";
+import { openEvidence } from "../viewer";
 import { ROLE_LABEL } from "./users";
 import { timeline, visitRow } from "./visits";
 
@@ -13,7 +14,7 @@ function evidenceChips(c: Ctx, insp: Inspection, it: InspectionItem) {
     name: e.name,
     kindLabel: e.kind === "video" ? i.S("evVideo") : e.kind === "doc" ? i.S("evDoc") : i.S("evPhoto"),
     hasUrl: false, bgImg: "none",
-    open: () => c.set({ viewer: { id: e.id, name: e.name, kind: e.kind, mime: e.mime, sizeBytes: e.sizeBytes, at: e.at, by: e.by, link: `${insp.ref} · ${it.num} ${i.L(it.text)}` }, viewerUrl: null, viewerReq: e.kind !== "video" }),
+    open: () => openEvidence(c, e, `${insp.ref} · ${it.num} ${i.L(it.text)}`),
   }));
 }
 
@@ -103,7 +104,7 @@ export function reviewDetail(c: Ctx, insp: Inspection, v: Visit) {
       forward: () => c.openModal("forward", { vid: v.id, ref: v.ref }),
       ret: () => c.openModal("return", { vid: v.id, ref: v.ref, flags: flags.map((f) => ({ id: f.id, num: f.num, text: i.L(f.text) })) }),
       reject: () => c.openModal("reject", { vid: v.id, ref: v.ref }),
-      timeline: timeline(c, v), hasReport: false, report: () => undefined,
+      timeline: timeline(c, v), hasReport: !!c.data.reports?.items.some((x) => x.visitId === v.id), report: () => c.go("report", v.id),
       back: () => c.go(p.includes("R") || p.includes("P") ? "reviews" : "visit", p.includes("R") || p.includes("P") ? null : v.id),
       reviewedNote: reviewed?.reason ?? "", hasReviewedNote: !!reviewed?.reason, reviewedBy: reviewed ? i.S("reviewedBy", { u: i.L(reviewed.actor.name) }) : "",
       stages, stageNote, hasStageNote: !!stageNote,

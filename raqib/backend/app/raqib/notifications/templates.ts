@@ -20,5 +20,5 @@ export const RAQIB_TEMPLATES: TemplateSeed[] = [
   ...t("raqib.inspection_forwarded", ["{{ref}} بانتظار اعتمادك", "{{site}} — روجع بواسطة {{actor}}"], ["{{ref}} awaiting your approval", "{{site}} — reviewed by {{actor}}"]),
   ...t("raqib.inspection_returned", ["أُعيد التفتيش {{ref}} للاستكمال", "{{reason}}"], ["{{ref}} returned for completion", "{{reason}}"]),
   ...t("raqib.inspection_rejected", ["رُفض التفتيش {{ref}}", "{{reason}}"], ["{{ref}} rejected", "{{reason}}"]),
-  ...t("raqib.inspection_approved", ["اعتُمد التفتيش {{ref}}", "{{site}} — اعتمده {{actor}}"], ["{{ref}} approved", "{{site}} — approved by {{actor}}"]),
+  ...t("raqib.inspection_approved", ["اعتُمد التفتيش {{ref}}", "{{site}} — اعتمده {{actor}} · التقرير متاح"], ["{{ref}} approved", "{{site}} — approved by {{actor}} · report available"]),
 ];

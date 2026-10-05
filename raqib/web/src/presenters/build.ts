@@ -13,12 +13,13 @@ import { formBuilder, formsList } from "./screens/forms";
 import { inspectionWorkspace } from "./screens/inspection";
 import { reviewQueue } from "./screens/queue";
 import { reviewDetail } from "./screens/review";
+import { reportDetail, reportsIssued } from "./screens/reports";
 
 export type Denial = { k: "module" | "scope" | "forbidden"; res?: string };
 
 /** Which `vm.is.*` flag drives which approved screen. */
 const FLAG: Record<string, string> = {
-  projects: "projects", project: "project", visits: "visits", visit: "visit", forms: "forms", form: "form", inspect: "inspect", inspections: "reviews", reviews: "reviews", review: "review", guards: "guards", users: "users", user: "user", permissions: "perms", settings: "settings",
+  projects: "projects", project: "project", visits: "visits", visit: "visit", forms: "forms", form: "form", inspect: "inspect", inspections: "reviews", reviews: "reviews", review: "review", reports: "reports", report: "report", guards: "guards", users: "users", user: "user", permissions: "perms", settings: "settings",
 };
 
 /** The denied screen (design: vmDenied). The backend produced the refusal; this only explains it. */
@@ -100,6 +101,11 @@ export function buildVM(c: Ctx, opts: { pending: boolean; denial: Denial | null 
     else if (n === "review") {
       const v = (c.data.visits ?? []).find((x) => x.id === route.id);
       if (c.data.inspection && v) { body = reviewDetail(c, c.data.inspection, v); title = v.ref; }
+    }
+    else if (n === "reports") body = reportsIssued(c);
+    else if (n === "report") {
+      const r = c.data.reports?.items.find((x) => x.visitId === route.id);
+      if (r) { body = reportDetail(c, r); title = r.ref; }
     }
     else if (n === "guards") { body = guardsList(c); is.showGuardTable = true; }
     else if (n === "users") body = usersList(c);
