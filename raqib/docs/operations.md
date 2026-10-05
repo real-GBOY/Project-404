@@ -18,7 +18,13 @@ All variables are listed in `backend/.env.example`. The ones that matter in prod
 | `AURIC_FILE_STORAGE_DRIVER=r2` + the R2 keys | evidence and attachments in Cloudflare R2. `local` writes under `AURIC_FILE_STORAGE_PATH` and is for a single small server |
 | `RAQIB_CHROMIUM_PATH` | Chromium/Chrome binary used to render report PDFs, e.g. `/usr/bin/chromium`. Empty = PDF download answers `raqib.pdf_unavailable` (everything else works) |
 | `RAQIB_TRUSTED_PROXY_HOPS=1` | behind nginx. The rate limiter reads the client address that many hops from the right of `X-Forwarded-For`; with `0` behind a proxy every visitor shares one address |
-| `RAQIB_SEED_DEMO=false` | **never** `true` against real data |
+| `RAQIB_SEED_DEMO=false` | **never** `true` against real data (the process refuses to start with it in production) |
+| `RAQIB_DATA_KEY` | **required in production**: 32 random bytes, base64 (`openssl rand -base64 32`). Seals national IDs and second-factor secrets; back it up with the database password, because without it those values are unrecoverable |
+| `RAQIB_ENFORCE_ACCOUNT_POLICY` | defaults to on in production: people owing a second factor or a new password are held at account set-up |
+| `RAQIB_METRICS_TOKEN` | bearer token for `GET /api/metrics`; unset = 404 |
+| `RAQIB_ALERT_WEBHOOK_URL` | Slack/Teams/PagerDuty-style webhook for server errors and failed jobs |
+| `RAQIB_CLAMAV_HOST` / `_PORT` | optional antivirus daemon for uploads |
+| `RAQIB_PDF_CONCURRENCY` / `_QUEUE_MAX` / `_TIMEOUT_MS` | bounds on PDF rendering (defaults 2 / 20 / 45 s) |
 
 Chromium on the VPS: `sudo apt-get install -y chromium` (or `chromium-browser`) and point `RAQIB_CHROMIUM_PATH` at it.
 It is started per render, headless, with JavaScript disabled and no network needed.
@@ -74,6 +80,35 @@ server {
 
 The web app (`raqib/web`) is a static build (`npm run build`) served from any static host with `VITE_API_BASE` set to
 the API origin at build time.
+
+## Provisioning a customer
+
+```bash
+cd raqib/backend
+npm run provision -- --name "Acme Security" --slug acme --owner-email ceo@acme.example --owner-name "Sara Ali"
+# optional: --name-ar, --owner-name-ar, --city, --owner-role gm, --no-starter-forms, --migrate
+```
+
+Creates the organization, its first administrator (quality manager by default), default settings and the starter forms, and prints
+a single-use link (valid 7 days) for the owner to choose a password. It refuses an existing slug or e-mail. The public account-request
+page for the company is `/request-account/<slug>`; further people join through account requests the owner approves.
+
+## Monitoring
+
+- `GET /api/health` (liveness), `GET /api/health/ready` (Core: database, outbox), `GET /api/health/raqib` (jobs running on time,
+  storage writable, PDF queue). A hard failure answers 503.
+- `GET /api/metrics` (Prometheus, token-protected): request counts and latency, process memory, last job run, PDF queue, outbox
+  backlog and dead letters. Alert on `raqib_jobs_last_run_timestamp_seconds` going stale and on `raqib_outbox_dead_lettered > 0`.
+- Server errors and failed jobs are posted to `RAQIB_ALERT_WEBHOOK_URL` (de-duplicated, at most 30 an hour).
+- Retention runs with the scheduled jobs: decided account requests are erased after `RAQIB_ACCOUNT_REQUEST_RETENTION_DAYS`; evidence
+  older than the organization's attachment retention (settings, years; 0 = keep) is deleted from storage and flagged purged.
+- `GET /api/raqib/account/users/:id/personal-data` (users export right) produces a person's data for a data-subject request.
+
+## Browser tests
+
+`cd raqib/web && npm run e2e` builds the app, starts the backend on a throw-away database (`raqib_e2e`, seeded with the demo
+organization) and drives real Chrome through every role's screens, offline work, sign-in and account security. CI runs it on every
+change.
 
 ## Database roles and RLS
 

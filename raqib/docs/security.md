@@ -64,9 +64,37 @@ notifications carry references only; the area is excluded from search, analytics
 5. New notification → references only, recipients by live permission and scope, never the actor.
 6. Anything confidential → separate tables, grant + session, protected log, excluded from search/analytics/exports.
 
-## 8. Known limits
+## 8. Account security
 
-- The rate limiter is in-process memory (one API process per deployment); a multi-process deployment needs a shared store.
-- PDFs need Chromium on the server; without it the endpoint answers `raqib.pdf_unavailable`.
-- Excel export is CSV (opens in Excel with Arabic intact); a native `.xlsx` writer is not included.
+- **Lock-out.** Wrong passwords (and wrong second-factor codes) are counted per e-mail address in `raqib_auth_throttle`; the
+  organization's `security.lockout` setting (default 5 within 15 minutes) locks the address for `RAQIB_LOCKOUT_MINUTES`.
+  Unknown addresses are locked the same way, so the answer never reveals whether an account exists. A success clears the count.
+- **Second factor.** TOTP (RFC 6238) with ten one-time recovery codes. Secrets are sealed with the data key; a code works once.
+  The organization's `security.mfa` setting names the roles that must have it. A person with it enrolled is challenged after the
+  password is right. An administrator with the users *edit* right can clear someone's second factor (audited, with a reason).
+- **Set-up enforcement.** With `RAQIB_ENFORCE_ACCOUNT_POLICY` on (the default in production), a person whose role requires a second
+  factor, or whose password is older than `security.pwRotate` days, can reach only identity and the account-security routes
+  (`@SetupRoute`) until done; everything else answers `403 raqib.security_setup_required`.
+- **Password rule.** `security.pwLen` is enforced on reset and on change; a change ends every other session.
+- **Idle sign-out.** `security.session` minutes of inactivity sign the web app out.
+- **Data sealing.** National IDs and second-factor secrets are AES-256-GCM encrypted with keys derived from `RAQIB_DATA_KEY`
+  (required in production). Existing plaintext rows are sealed at boot.
+
+## 9. Uploads
+
+Every photo and PDF is read and checked before it becomes evidence: its content must match its declared type, a PDF with scripts or
+launch actions is refused, photos are re-stored without GPS and device metadata (orientation is kept), and, when
+`RAQIB_CLAMAV_HOST` is set, the file is scanned by ClamAV (an unreachable scanner refuses the upload). The same gate covers
+confidential attachments. Videos are checked by type and size only (they are not read into memory). Thumbnails are not generated
+server-side (they need native image libraries); the web app previews photos locally.
+
+## 10. Known limits
+
+- The rate limiter is in-process memory (one API process per deployment); a multi-process deployment needs a shared store. The
+  scheduled jobs are already safe to run in several processes (a Postgres advisory lock elects one).
+- PDFs need Chromium on the server; without it the endpoint answers `raqib.pdf_unavailable`. Renders are queued and bounded.
 - Video evidence is streamed through the authenticated API (blob), not a time-limited signed storage URL.
+- Audit entries are append-only at the database level and are never deleted by the application; the audit retention setting is the
+  minimum the organization commits to keep (archival happens outside the app).
+- A refresh token lives in the browser's local storage (see `packages/web`); it is protected by the strict CSP and the API's rotation
+  and reuse detection, and is revoked on password change.

@@ -114,6 +114,7 @@ using real demo accounts (`demo` password) and real data. Arabic/English and RTL
 | 8 Confidential area | done (#16) |
 | 9 Hardening (rate limits, headers, audit log, authz review test, `docs/security.md`, `docs/operations.md`) | done |
 | Account onboarding (public request + e-signature, review, approval creating the account, emailed password setup) | done |
+| Product readiness: pagination, tenant provisioning CLI, account security (lock-out, TOTP, password policy, enforcement), upload safety, PDF queue, observability, data lifecycle, offline field inspections (PWA + outbox), native Excel export, browser end-to-end tests, CI | done; see `security.md`, `operations.md` and section 11 |
 
 ## 10. Decisions log
 
@@ -131,3 +132,15 @@ using real demo accounts (`demo` password) and real data. Arabic/English and RTL
 | 10 | Analytics are pure functions over persisted data | Every number can be explained, drilled into and tested |
 | 11 | Confidential access = explicit GM grant + logged session; identity stored apart; restrictive RLS | No role can open it; nothing about the reporter leaks through ordinary tables |
 | 12 | In-process rate limiter | One process per deployment; documented limit |
+
+## 11. Offline field inspections (web)
+
+`web/src/offline/`: an installable PWA (`public/sw.js` keeps the app shell, never API data, on the device) plus a per-user
+IndexedDB store. Reads of the screens an inspector needs (projects, guards, visits, the open inspection) are remembered and served
+when the network is down; edits to an inspection (answers, notes, guard scores, evidence, submit) are queued in an outbox and replayed
+in order when the connection returns (`session.ts` probes `/api/health`; `outbox.ts` merges repeated edits and separates "try later"
+from "refused for good"). Queued files are kept as bytes on the device. Starting a new inspection still needs a connection (the server
+snapshots the form). Everything is scoped by user id; sign-out clears the cached copies and keeps only that person's unsent changes.
+A real-browser test (`web/e2e`) drives this against the real backend: answer offline, reload with no network, reconnect, verify the
+server. New UI that is not in the approved design lives in hand-written files (`app/AccountPages.tsx`, `offline/SyncStatus.tsx`);
+`src/ui/generated` stays untouched.
