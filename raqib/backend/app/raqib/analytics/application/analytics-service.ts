@@ -109,6 +109,6 @@ export class AnalyticsService {
       ["Repeated issue", "Reference", "Site", "Times"],
       ...r.repeated.map((x) => [x.title.en, x.ref, x.site.en, x.times]),
     ];
-    return `FEFF${rows.map((row) => row.map(csvField).join(",")).join("\r\n")}\r\n`;
+    return `﻿${rows.map((row) => row.map(csvField).join(",")).join("\r\n")}\r\n`;
   }
 }
