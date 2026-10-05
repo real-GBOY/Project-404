@@ -33,6 +33,7 @@ export interface Actions {
   removeActionEvidence(actionId: string, evidenceId: string): Promise<void>;
   requestTraining(input: { guardId: string; reason: "low_score" | "repeat_issue" | "incident" | "refresher" | "new_assignment"; course: string; related: string; priority: "low" | "medium" | "high"; notes: string }): Promise<TrainingRequest>;
   trainingStep(id: string, step: "approve" | "return" | "reject" | "resubmit" | "schedule" | "complete", body?: Record<string, unknown>): Promise<void>;
+  exportAnalytics(q: { period: string; from: string; to: string; projectId: string; siteId: string }): Promise<void>;
   reportPdf(id: string, lang: "ar" | "en"): Promise<Blob>;
   evidenceBlob(id: string): Promise<Blob>;
   decideReview(visitId: string, action: "forward" | "return" | "reject" | "approve", body: { reason?: string; comment?: string; itemIds?: string[] }): Promise<void>;

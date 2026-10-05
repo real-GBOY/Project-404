@@ -7,6 +7,6 @@ import { AccessRepository } from "./infrastructure/access-repository.js";
 @Module({
   imports: [SettingsModule],
   providers: [AccessRepository, AccessService, AccessGuard],
-  exports: [AccessService, AccessGuard],
+  exports: [AccessService, AccessGuard, AccessRepository],
 })
 export class AccessModule {}

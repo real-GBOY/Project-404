@@ -1,7 +1,7 @@
 import { API_BASE_URL, ENDPOINTS, http } from "@/config";
 import type { PresignResponse } from "@/lib/upload";
 import type {
-  Answer, CorrectiveAction, GuardHistory, GuardSummaries, TrainingReason, TrainingRequest, Observation, Report, ResponsibleOption, Severity, EvidenceItem, Form, FormSection, Inspection,
+  Answer, AnalyticsQueryParams, AnalyticsResult, SearchHit, CorrectiveAction, GuardHistory, GuardSummaries, TrainingReason, TrainingRequest, Observation, Report, ResponsibleOption, Severity, EvidenceItem, Form, FormSection, Inspection,
   AppNotification, CreateVisitInput, EligibleInspector, RescheduleVisitInput, Visit,
   Guard, LoginResponse, Me, OrgSettings, Person, PermissionsOverview, Project, RoleKey, TemplateChange,
 } from "./types";
@@ -11,6 +11,18 @@ import type {
  * documented call to one backend route (no business rules, no URL building elsewhere). Hooks and
  * presenters depend on these; swapping transport or adding a mock for tests happens here.
  */
+/** Analytics filters as a query string (empty values are left out; custom dates only apply to a custom period). */
+function analyticsQs(q: AnalyticsQueryParams): string {
+  const p = new URLSearchParams({ period: q.period });
+  if (q.period === "custom") {
+    if (q.from) p.set("from", q.from);
+    if (q.to) p.set("to", q.to);
+  }
+  if (q.projectId) p.set("projectId", q.projectId);
+  if (q.siteId) p.set("siteId", q.siteId);
+  return p.toString();
+}
+
 export const api = {
   auth: {
     login: (email: string, password: string) =>
@@ -116,6 +128,15 @@ export const api = {
   },
   guardHistory: (id: string) => http<GuardHistory>(ENDPOINTS.guardHistory(id)),
   guardSummary: () => http<{ items: GuardSummaries }>(ENDPOINTS.guardSummary).then((r) => r.items),
+  analytics: {
+    get: (q: AnalyticsQueryParams) => http<AnalyticsResult>(ENDPOINTS.analytics(analyticsQs(q))),
+    exportCsv: async (q: AnalyticsQueryParams): Promise<Blob> => {
+      const r = await fetch(`${API_BASE_URL}${ENDPOINTS.analyticsExport(analyticsQs(q))}`, { headers: http.bearerHeaders() });
+      if (!r.ok) throw new Error(`export ${r.status}`);
+      return r.blob();
+    },
+  },
+  search: (q: string) => http<{ items: SearchHit[] }>(ENDPOINTS.search(q)).then((r) => r.items),
   reports: {
     list: () => http<{ items: Report[]; pdf: boolean }>(ENDPOINTS.reports.list),
     /** The rendered PDF, fetched with the caller's credentials. */
