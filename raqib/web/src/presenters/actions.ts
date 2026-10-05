@@ -34,6 +34,14 @@ export interface Actions {
   requestTraining(input: { guardId: string; reason: "low_score" | "repeat_issue" | "incident" | "refresher" | "new_assignment"; course: string; related: string; priority: "low" | "medium" | "high"; notes: string }): Promise<TrainingRequest>;
   trainingStep(id: string, step: "approve" | "return" | "reject" | "resubmit" | "schedule" | "complete", body?: Record<string, unknown>): Promise<void>;
   exportAnalytics(q: { period: string; from: string; to: string; projectId: string; siteId: string }): Promise<void>;
+  confSubmit(input: { kind: "misconduct" | "violation" | "safety"; subject: string; body: string; place: string; identity: "named" | "confidential" | "anonymous"; fileIds: string[] }): Promise<{ ref: string }>;
+  confUpload(file: File, onProgress: (pct: number) => void): Promise<string>;
+  confEnter(reason: string, ack: boolean): Promise<void>;
+  confExit(): Promise<void>;
+  confRespond(id: string, text: string): Promise<void>;
+  confReveal(id: string, reason: string): Promise<void>;
+  confIssueGrant(input: { userId: string; level: "view" | "respond"; scope: "all" | "standard"; reason: string; expiresAt: string }): Promise<void>;
+  confRevoke(id: string, reason: string): Promise<void>;
   reportPdf(id: string, lang: "ar" | "en"): Promise<Blob>;
   evidenceBlob(id: string): Promise<Blob>;
   decideReview(visitId: string, action: "forward" | "return" | "reject" | "approve", body: { reason?: string; comment?: string; itemIds?: string[] }): Promise<void>;

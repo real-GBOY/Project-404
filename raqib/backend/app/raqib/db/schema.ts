@@ -55,6 +55,103 @@ export type raqib_areas = {
   created_at: Generated<Timestamp>;
   updated_at: Generated<Timestamp>;
 };
+export type raqib_conf_access_log = {
+  id: string;
+  organization_id: string;
+  seq: Generated<string>;
+  /**
+   * @kyselyType('enter' | 'exit' | 'view_list' | 'view_report' | 'respond' | 'status' | 'reveal_identity' | 'open_file' | 'grant_issued' | 'grant_revoked' | 'submit')
+   */
+  action:
+    | "enter"
+    | "exit"
+    | "view_list"
+    | "view_report"
+    | "respond"
+    | "status"
+    | "reveal_identity"
+    | "open_file"
+    | "grant_issued"
+    | "grant_revoked"
+    | "submit";
+  actor_id: string | null;
+  actor_name_ar: string;
+  actor_name_en: string;
+  report_ref: string | null;
+  reason: string | null;
+  device: string | null;
+  at: Generated<Timestamp>;
+};
+export type raqib_conf_files = {
+  id: string;
+  organization_id: string;
+  report_id: string;
+  file_id: string;
+  name: string;
+  mime: string;
+  size_bytes: string;
+  created_at: Generated<Timestamp>;
+};
+export type raqib_conf_grants = {
+  id: string;
+  organization_id: string;
+  user_id: string;
+  /**
+   * @kyselyType('view' | 'respond')
+   */
+  level: "view" | "respond";
+  /**
+   * @kyselyType('all' | 'standard')
+   */
+  scope: "all" | "standard";
+  reason: string;
+  granted_by: string | null;
+  granted_by_name_ar: string;
+  granted_by_name_en: string;
+  granted_at: Generated<Timestamp>;
+  expires_at: Timestamp;
+  revoked_at: Timestamp | null;
+  revoked_by: string | null;
+  revoked_by_name_ar: string | null;
+  revoked_by_name_en: string | null;
+  revoke_reason: string | null;
+};
+export type raqib_conf_identities = {
+  organization_id: string;
+  report_id: string;
+  user_id: string;
+  name_ar: string;
+  name_en: string;
+  employee_no: Generated<string>;
+};
+export type raqib_conf_reports = {
+  id: string;
+  organization_id: string;
+  ref: string;
+  /**
+   * @kyselyType('misconduct' | 'violation' | 'safety')
+   */
+  kind: "misconduct" | "violation" | "safety";
+  /**
+   * @kyselyType('standard' | 'high')
+   */
+  sensitivity: "standard" | "high";
+  subject: string;
+  body: string;
+  place: Generated<string>;
+  /**
+   * @kyselyType('named' | 'confidential' | 'anonymous')
+   */
+  identity_mode: "named" | "confidential" | "anonymous";
+  /**
+   * @kyselyType('new' | 'under_review' | 'closed')
+   */
+  status: Generated<"new" | "under_review" | "closed">;
+  response: string | null;
+  responded_at: Timestamp | null;
+  created_at: Generated<Timestamp>;
+  updated_at: Generated<Timestamp>;
+};
 export type raqib_corrective_actions = {
   id: string;
   organization_id: string;
@@ -507,6 +604,11 @@ export type RaqibTables = {
   raqib_action_events: raqib_action_events;
   raqib_answers: raqib_answers;
   raqib_areas: raqib_areas;
+  raqib_conf_access_log: raqib_conf_access_log;
+  raqib_conf_files: raqib_conf_files;
+  raqib_conf_grants: raqib_conf_grants;
+  raqib_conf_identities: raqib_conf_identities;
+  raqib_conf_reports: raqib_conf_reports;
   raqib_corrective_actions: raqib_corrective_actions;
   raqib_counters: raqib_counters;
   raqib_evidence: raqib_evidence;

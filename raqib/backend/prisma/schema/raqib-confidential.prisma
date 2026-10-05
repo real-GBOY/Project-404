@@ -1,0 +1,91 @@
+model raqib_conf_reports {
+  id              String    @id
+  organization_id String
+  ref             String
+  /// @kyselyType('misconduct' | 'violation' | 'safety')
+  kind            String
+  /// @kyselyType('standard' | 'high')
+  sensitivity     String
+  subject         String
+  body            String
+  place           String    @default("")
+  /// @kyselyType('named' | 'confidential' | 'anonymous')
+  identity_mode   String
+  /// @kyselyType('new' | 'under_review' | 'closed')
+  status          String    @default("new")
+  response        String?
+  responded_at    DateTime? @db.Timestamptz(6)
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "raqib_conf_reports_org_id_uq")
+  @@unique([organization_id, ref], map: "raqib_conf_reports_ref_uq")
+  @@map("raqib_conf_reports")
+}
+
+model raqib_conf_identities {
+  organization_id String
+  report_id       String
+  user_id         String
+  name_ar         String
+  name_en         String
+  employee_no     String @default("")
+
+  @@id([organization_id, report_id])
+  @@map("raqib_conf_identities")
+}
+
+model raqib_conf_files {
+  id              String   @id
+  organization_id String
+  report_id       String
+  file_id         String
+  name            String
+  mime            String
+  size_bytes      BigInt
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, file_id], map: "raqib_conf_files_file_uq")
+  @@map("raqib_conf_files")
+}
+
+model raqib_conf_grants {
+  id                 String    @id
+  organization_id    String
+  user_id            String
+  /// @kyselyType('view' | 'respond')
+  level              String
+  /// @kyselyType('all' | 'standard')
+  scope              String
+  reason             String
+  granted_by         String?
+  granted_by_name_ar String
+  granted_by_name_en String
+  granted_at         DateTime  @default(now()) @db.Timestamptz(6)
+  expires_at         DateTime  @db.Timestamptz(6)
+  revoked_at         DateTime? @db.Timestamptz(6)
+  revoked_by         String?
+  revoked_by_name_ar String?
+  revoked_by_name_en String?
+  revoke_reason      String?
+
+  @@unique([organization_id, id], map: "raqib_conf_grants_org_id_uq")
+  @@map("raqib_conf_grants")
+}
+
+model raqib_conf_access_log {
+  id              String   @id
+  organization_id String
+  seq             BigInt   @default(autoincrement())
+  /// @kyselyType('enter' | 'exit' | 'view_list' | 'view_report' | 'respond' | 'status' | 'reveal_identity' | 'open_file' | 'grant_issued' | 'grant_revoked' | 'submit')
+  action          String
+  actor_id        String?
+  actor_name_ar   String
+  actor_name_en   String
+  report_ref      String?
+  reason          String?
+  device          String?
+  at              DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("raqib_conf_access_log")
+}

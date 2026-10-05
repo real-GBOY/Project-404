@@ -1,7 +1,7 @@
 import { API_BASE_URL, ENDPOINTS, http } from "@/config";
 import type { PresignResponse } from "@/lib/upload";
 import type {
-  Answer, AnalyticsQueryParams, AnalyticsResult, SearchHit, CorrectiveAction, GuardHistory, GuardSummaries, TrainingReason, TrainingRequest, Observation, Report, ResponsibleOption, Severity, EvidenceItem, Form, FormSection, Inspection,
+  Answer, ConfAccess, ConfGrant, ConfGrantee, ConfKind, ConfLogEntry, ConfMine, ConfReport, AnalyticsQueryParams, AnalyticsResult, SearchHit, CorrectiveAction, GuardHistory, GuardSummaries, TrainingReason, TrainingRequest, Observation, Report, ResponsibleOption, Severity, EvidenceItem, Form, FormSection, Inspection,
   AppNotification, CreateVisitInput, EligibleInspector, RescheduleVisitInput, Visit,
   Guard, LoginResponse, Me, OrgSettings, Person, PermissionsOverview, Project, RoleKey, TemplateChange,
 } from "./types";
@@ -137,6 +137,23 @@ export const api = {
     },
   },
   search: (q: string) => http<{ items: SearchHit[] }>(ENDPOINTS.search(q)).then((r) => r.items),
+  conf: {
+    access: () => http<ConfAccess>(`${ENDPOINTS.conf.base}/access`),
+    mine: () => http<{ items: ConfMine[] }>(`${ENDPOINTS.conf.base}/mine`).then((r) => r.items),
+    submit: (b: { kind: ConfKind; subject: string; body: string; place: string; identity: "named" | "confidential" | "anonymous"; fileIds: string[] }) =>
+      http<{ id: string | null; ref: string }>(`${ENDPOINTS.conf.base}/reports`, { method: "POST", body: b }),
+    enter: (reason: string, ack: boolean) => http<{ until: string }>(`${ENDPOINTS.conf.base}/session`, { method: "POST", body: { reason, ack } }),
+    exit: () => http<void>(`${ENDPOINTS.conf.base}/session/exit`, { method: "POST" }),
+    list: () => http<{ items: ConfReport[] }>(`${ENDPOINTS.conf.base}/reports`).then((r) => r.items),
+    get: (id: string) => http<ConfReport>(`${ENDPOINTS.conf.base}/reports/${id}`),
+    respond: (id: string, text: string) => http<ConfReport>(`${ENDPOINTS.conf.base}/reports/${id}/respond`, { method: "POST", body: { text } }),
+    reveal: (id: string, reason: string) => http<ConfReport>(`${ENDPOINTS.conf.base}/reports/${id}/reveal`, { method: "POST", body: { reason } }),
+    grants: () => http<{ items: ConfGrant[] }>(`${ENDPOINTS.conf.base}/grants`).then((r) => r.items),
+    grantees: () => http<{ items: ConfGrantee[] }>(`${ENDPOINTS.conf.base}/grantees`).then((r) => r.items),
+    issue: (b: { userId: string; level: "view" | "respond"; scope: "all" | "standard"; reason: string; expiresAt: string }) => http<{ items: ConfGrant[] }>(`${ENDPOINTS.conf.base}/grants`, { method: "POST", body: b }),
+    revoke: (id: string, reason: string) => http<{ items: ConfGrant[] }>(`${ENDPOINTS.conf.base}/grants/${id}/revoke`, { method: "POST", body: { reason } }),
+    log: () => http<{ items: ConfLogEntry[] }>(`${ENDPOINTS.conf.base}/log`).then((r) => r.items),
+  },
   reports: {
     list: () => http<{ items: Report[]; pdf: boolean }>(ENDPOINTS.reports.list),
     /** The rendered PDF, fetched with the caller's credentials. */
