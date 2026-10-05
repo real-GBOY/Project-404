@@ -48,6 +48,7 @@ export class RaqibNotifications implements OnModuleInit {
     on("raqib.visit_unassigned", (p) => this.visitTo("raqib.visit_unassigned", p, String(p.previousInspectorId)));
     on("raqib.visit_cancelled", (p) => (p.inspectorId ? this.visitTo("raqib.visit_cancelled", p, String(p.inspectorId)) : Promise.resolve()));
     on("raqib.visit_overdue", (p) => this.overdue(p));
+    on("raqib.inspection_submitted", (p) => this.submitted(p));
   }
 
   private async lang(userId: string): Promise<Lang> {
@@ -55,7 +56,7 @@ export class RaqibNotifications implements OnModuleInit {
     return u?.locale === "en" ? "en" : "ar";
   }
 
-  private async send(userId: string, key: string, v: VisitRecord, extra: Record<string, string> = {}): Promise<void> {
+  private async send(userId: string, key: string, v: VisitRecord, extra: Record<string, string> = {}, go: [string, string] = ["visit", v.id]): Promise<void> {
     const lang = await this.lang(userId);
     const site = await this.projects.findSite(v.siteId);
     await this.notify.send({
@@ -63,7 +64,7 @@ export class RaqibNotifications implements OnModuleInit {
       templateKey: key,
       type: key,
       locale: lang,
-      data: { ref: v.ref, site: site ? site.name[lang] : "", when: when(v.date, v.time, lang), ...extra, go: ["visit", v.id] },
+      data: { ref: v.ref, site: site ? site.name[lang] : "", when: when(v.date, v.time, lang), ...extra, go },
     });
   }
 
@@ -71,6 +72,19 @@ export class RaqibNotifications implements OnModuleInit {
     const v = await this.visits.find(String(p.visitId));
     if (!v || recipient === p.actorId) return;
     await this.send(recipient, key, v, key === "raqib.visit_cancelled" ? { reason: String(p.reason ?? "") } : {});
+  }
+
+  /** A submitted inspection goes to everyone who can review in that project (never the submitter). */
+  private async submitted(p: Payload): Promise<void> {
+    const v = await this.visits.find(String(p.visitId));
+    if (!v) return;
+    const today = await this.settings.today();
+    const reviewers = await this.access.holders("inspections", "R", v.projectId, today, String(p.actorId));
+    const actor = (await this.access.profileOf(String(p.actorId)));
+    for (const r of reviewers) {
+      const lang = await this.lang(r);
+      await this.send(r, p.resubmission ? "raqib.inspection_resubmitted" : "raqib.inspection_submitted", v, { actor: actor ? (lang === "ar" ? actor.nameAr : actor.nameEn) : "" }, ["review", v.id]);
+    }
   }
 
   private async overdue(p: Payload): Promise<void> {

@@ -6,6 +6,24 @@ export type Generated<T> =
     : ColumnType<T, T | undefined, T>;
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
+export type raqib_answers = {
+  id: string;
+  organization_id: string;
+  inspection_id: string;
+  item_id: string;
+  /**
+   * @kyselyType('c' | 'n' | 'x' | null)
+   */
+  value: "c" | "n" | "x" | null | null;
+  note: string | null;
+  /**
+   * @kyselyType('low' | 'medium' | 'high' | null)
+   */
+  severity: "low" | "medium" | "high" | null | null;
+  edited_round: Generated<number>;
+  updated_by: string | null;
+  updated_at: Generated<Timestamp>;
+};
 export type raqib_areas = {
   id: string;
   organization_id: string;
@@ -22,6 +40,83 @@ export type raqib_counters = {
   kind: string;
   year: number;
   value: Generated<number>;
+};
+export type raqib_evidence = {
+  id: string;
+  organization_id: string;
+  file_id: string;
+  /**
+   * @kyselyType('photo' | 'video' | 'doc')
+   */
+  kind: "photo" | "video" | "doc";
+  name: string;
+  mime: string;
+  size_bytes: string;
+  /**
+   * @kyselyType('answer' | 'guard_eval' | 'corrective_action' | 'observation')
+   */
+  context: "answer" | "guard_eval" | "corrective_action" | "observation";
+  inspection_id: string | null;
+  item_id: string | null;
+  guard_id: string | null;
+  ref_id: string | null;
+  uploaded_by: string | null;
+  uploaded_at: Generated<Timestamp>;
+  removed_at: Timestamp | null;
+};
+export type raqib_form_versions = {
+  id: string;
+  organization_id: string;
+  form_id: string;
+  version: string;
+  /**
+   * @kyselyType('draft' | 'published' | 'archived')
+   */
+  status: Generated<"draft" | "published" | "archived">;
+  /**
+   * @kyselyType(Json<unknown[]>)
+   */
+  sections: Generated<Json<unknown[]>>;
+  note_ar: Generated<string>;
+  note_en: Generated<string>;
+  created_by: string | null;
+  created_at: Generated<Timestamp>;
+  published_by: string | null;
+  published_at: Timestamp | null;
+  superseded_at: Timestamp | null;
+};
+export type raqib_forms = {
+  id: string;
+  organization_id: string;
+  code: string;
+  /**
+   * @kyselyType('site' | 'guard')
+   */
+  category: "site" | "guard";
+  name_ar: string;
+  name_en: string;
+  description_ar: Generated<string>;
+  description_en: Generated<string>;
+  active: Generated<boolean>;
+  is_default: Generated<boolean>;
+  created_by: string | null;
+  created_at: Generated<Timestamp>;
+  updated_at: Generated<Timestamp>;
+};
+export type raqib_guard_notes = {
+  organization_id: string;
+  inspection_id: string;
+  guard_id: string;
+  note: Generated<string>;
+  updated_at: Generated<Timestamp>;
+};
+export type raqib_guard_scores = {
+  organization_id: string;
+  inspection_id: string;
+  guard_id: string;
+  item_id: string;
+  score: number;
+  updated_at: Generated<Timestamp>;
 };
 export type raqib_guards = {
   id: string;
@@ -44,6 +139,53 @@ export type raqib_guards = {
   status: Generated<"active" | "inactive">;
   created_at: Generated<Timestamp>;
   updated_at: Generated<Timestamp>;
+};
+export type raqib_inspection_flags = {
+  id: string;
+  organization_id: string;
+  inspection_id: string;
+  item_id: string;
+  round: number;
+  created_by: string | null;
+  created_at: Generated<Timestamp>;
+};
+export type raqib_inspection_items = {
+  id: string;
+  organization_id: string;
+  inspection_id: string;
+  /**
+   * @kyselyType('site' | 'guard')
+   */
+  kind: "site" | "guard";
+  section_pos: number;
+  section_key: string;
+  section_title_ar: string;
+  section_title_en: string;
+  position: number;
+  item_key: string;
+  text_ar: string;
+  text_en: string;
+  weight: number;
+  answer_type: string;
+  required: boolean;
+  na_allowed: boolean;
+  evidence_on_nc: boolean;
+};
+export type raqib_inspections = {
+  id: string;
+  organization_id: string;
+  visit_id: string;
+  form_version_id: string;
+  guard_form_version_id: string | null;
+  scoring_policy: Generated<string>;
+  started_by: string | null;
+  started_at: Generated<Timestamp>;
+  submitted_at: Timestamp | null;
+  score_pct: number | null;
+  /**
+   * @kyselyType(Json<Record<string, unknown>> | null)
+   */
+  counts: Json<Record<string, unknown>> | null | null;
 };
 export type raqib_profiles = {
   organization_id: string;
@@ -212,9 +354,18 @@ export type raqib_visits = {
   updated_at: Generated<Timestamp>;
 };
 export type RaqibTables = {
+  raqib_answers: raqib_answers;
   raqib_areas: raqib_areas;
   raqib_counters: raqib_counters;
+  raqib_evidence: raqib_evidence;
+  raqib_form_versions: raqib_form_versions;
+  raqib_forms: raqib_forms;
+  raqib_guard_notes: raqib_guard_notes;
+  raqib_guard_scores: raqib_guard_scores;
   raqib_guards: raqib_guards;
+  raqib_inspection_flags: raqib_inspection_flags;
+  raqib_inspection_items: raqib_inspection_items;
+  raqib_inspections: raqib_inspections;
   raqib_profiles: raqib_profiles;
   raqib_project_assignments: raqib_project_assignments;
   raqib_projects: raqib_projects;

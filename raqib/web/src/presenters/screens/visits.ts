@@ -37,10 +37,17 @@ export function visitRow(c: Ctx, v: Visit) {
     wd: i.fd(v.date, "wd"),
     time: v.time,
     st: badge(i.S(`vs_${v.status}`), VST[v.status]),
-    score: "—",
-    scoreC: scoreColor(null),
+    score: v.scorePct == null ? "—" : `${v.scorePct}%`,
+    scoreC: scoreColor(v.scorePct),
     go: () => c.go("visit", v.id),
   };
+}
+
+/** Start (or continue) the inspection, then open the workspace. The backend snapshots the form on first start. */
+export function startInspection(c: Ctx, v: Visit): void {
+  const go = () => c.go("inspect", v.id, { step: 0, decl: false });
+  if (v.storedStatus === "in_progress" || v.storedStatus === "returned") return go();
+  void c.actions.startInspection(v.id).then(go).catch((e: unknown) => c.toast(e instanceof Error ? e.message : c.i.S("actionFailed")));
 }
 
 /** Timeline of a visit's history (design: tl). Actor name, role and title are the snapshots stored with each event. */
@@ -149,9 +156,9 @@ export function visitDetail(c: Ctx, v: Visit) {
       hasGuards: v.guardIds.length > 0,
       noGuards: v.guardIds.length === 0,
       timeline: timeline(c, v),
-      canStart: false,
-      startLabel: i.S("startInsp"),
-      start: () => undefined,
+      canStart: v.inspector?.id === me.id && me.permissions.inspections.includes("S") && ["scheduled", "assigned", "overdue", "in_progress", "returned"].includes(v.status),
+      startLabel: v.status === "in_progress" ? i.S("continueInsp") : v.status === "returned" ? i.S("openToFix") : i.S("startInsp"),
+      start: () => startInspection(c, v),
       canManage: me.permissions.visits.includes("A") && changeable,
       resched: () => c.openModal("resched", { vid: v.id, ref: v.ref }, { date: v.date, time: v.time, ins: v.inspector?.id ?? "", p: v.project.id }),
       cancel: () => c.openModal("cancel", { vid: v.id, ref: v.ref }),
@@ -170,8 +177,8 @@ export function visitDetail(c: Ctx, v: Visit) {
       rejectMeta: "",
       returnMeta: "",
       cancelMeta: meta("cancelled"),
-      hasScore: false,
-      scoreLine: "",
+      hasScore: v.scorePct != null,
+      scoreLine: v.scorePct == null ? "" : i.S("scoreLine", { p: v.scorePct, a: "—", n: "—", nc: "—" }).split(" · ")[0]!,
       back: () => c.go(me.role === "ins" ? "overview" : "visits"),
     },
   };

@@ -19,6 +19,12 @@ import { VisitsService } from "@raqib/raqib/visits/application/visits-service.js
 import { runAsOf } from "@raqib/raqib/shared/business-date.js";
 import { addDays } from "@raqib/raqib/shared/dates.js";
 import { DEMO_VISITS } from "./demo-visits.js";
+import { DEMO_FORMS } from "./demo-forms.js";
+import { FormsRepository } from "@raqib/raqib/forms/infrastructure/forms-repository.js";
+import { InspectionsService } from "@raqib/raqib/inspections/application/inspections-service.js";
+import { EvidenceService } from "@raqib/raqib/evidence/application/evidence-service.js";
+import { FILE_STORAGE } from "@core/kernel/tokens.js";
+import type { IFileStorage } from "@core/contracts/index.js";
 import { DEFAULT_SETTINGS } from "@raqib/raqib/settings/domain/defaults.js";
 import { DEMO_NAMED_GUARDS, DEMO_ORG, DEMO_PASSWORD, DEMO_PEOPLE, DEMO_PROJECTS, fillerGuards } from "./demo-data.js";
 
@@ -40,6 +46,10 @@ export class DemoSeeder {
     private readonly settings: SettingsRepository,
     private readonly access: AccessService,
     private readonly visits: VisitsService,
+    private readonly forms: FormsRepository,
+    private readonly inspections: InspectionsService,
+    private readonly evidence: EvidenceService,
+    @Inject(FILE_STORAGE) private readonly files: IFileStorage,
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
 
@@ -68,6 +78,22 @@ export class DemoSeeder {
         );
         visitId = created.id;
       });
+      if (v.inspect && v.inspector) {
+        const ins = v.inspect;
+        const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
+        await withContext({ userId: userIds.get(v.inspector)!, organizationId: orgId }, async () => {
+          const who = await this.access.resolve({ userId: userIds.get(v.inspector!)!, email: "", organizationId: orgId, permissions: [] });
+          let view = await this.inspections.start(visitId, who);
+          const itemByKey = (key: string) => view.sections.flatMap((x) => x.items).find((x) => x.key === key)!;
+          for (const [key, value] of Object.entries(ins.answers)) {
+            view = await this.inspections.saveAnswer(visitId, itemByKey(key).id, { value, ...(ins.notes[key] ? { note: ins.notes[key] } : {}) }, who);
+          }
+          for (const key of ins.evidenceFor) {
+            const ref = await this.files.upload({ content: png, originalName: `IMG_2112.png`, contentType: "image/png", ownerId: who.userId, visibility: "private" });
+            await this.evidence.attach({ fileId: ref.id, inspectionId: view.id, itemId: itemByKey(key).id }, who);
+          }
+        });
+      }
       if (v.reschedule) {
         const r = v.reschedule;
         await as(r.by, 2, (who) => this.visits.reschedule(visitId, { date: addDays(today, r.day), time: r.time, reason: r.reason }, who));
@@ -133,6 +159,14 @@ export class DemoSeeder {
     await withContext({ userId: ownerId, organizationId: orgId }, async () => {
       await this.uow.transaction(async () => {
         await this.settings.save(DEFAULT_SETTINGS, ownerId);
+
+        for (const f of DEMO_FORMS) {
+          const fid = await this.forms.insertForm({ code: f.code, category: f.category, name: f.name, description: f.description, active: f.active, isDefault: f.isDefault, createdBy: ownerId });
+          for (const v of f.versions) {
+            const vid = await this.forms.insertVersion({ formId: fid, version: v.version, status: v.status === "archived" ? "published" : v.status, sections: v.sections, note: v.note, createdBy: ownerId });
+            if (v.status === "archived") await this.forms.archive(vid, new Date());
+          }
+        }
 
         for (const p of DEMO_PEOPLE) {
           await this.people.insert({

@@ -129,6 +129,8 @@ export interface Visit {
   storedStatus: VisitStatus;
   round: number;
   guardIds: string[];
+  scorePct: number | null;
+  inspectionId: string | null;
   history: VisitHistoryEntry[];
   createdAt: string;
 }
@@ -164,4 +166,107 @@ export interface AppNotification {
   data: { go?: [string, string | null] } | null;
   read: boolean;
   createdAt: string;
+}
+
+export type ItemType = "cnx" | "yesno" | "number" | "text" | "select" | "date" | "scale5";
+export interface FormItem {
+  key: string;
+  text: L10n;
+  weight: number;
+  type: ItemType;
+  required: boolean;
+  na: boolean;
+  evidenceOnNc: boolean;
+}
+export interface FormSection {
+  key: string;
+  title: L10n;
+  items: FormItem[];
+}
+export type FormChange =
+  | { kind: "added"; num: string; text: L10n }
+  | { kind: "removed"; num: string; text: L10n }
+  | { kind: "weight"; num: string; from: number; to: number }
+  | { kind: "text"; num: string }
+  | { kind: "rules"; num: string }
+  | { kind: "sections"; from: number; to: number };
+export interface FormVersion {
+  id: string;
+  version: string;
+  status: "draft" | "published" | "archived";
+  note: L10n;
+  at: string;
+  by: { id: string; name: L10n } | null;
+  uses: number;
+  sections: FormSection[];
+}
+export interface Form {
+  id: string;
+  code: string;
+  category: "site" | "guard";
+  name: L10n;
+  description: L10n;
+  active: boolean;
+  isDefault: boolean;
+  updatedAt: string;
+  versions: FormVersion[];
+  diff: FormChange[];
+}
+
+export type Answer = "c" | "n" | "x" | null;
+export interface EvidenceItem {
+  id: string;
+  name: string;
+  kind: "photo" | "video" | "doc";
+  mime: string;
+  sizeBytes: number;
+  at: string;
+  by: string | null;
+}
+export interface InspectionItem {
+  id: string;
+  key: string;
+  num: string;
+  text: L10n;
+  weight: number;
+  required: boolean;
+  na: boolean;
+  evidenceOnNc: boolean;
+  answer: Answer;
+  note: string;
+  severity: "low" | "medium" | "high" | null;
+  evidence: EvidenceItem[];
+  flagged: boolean;
+  fixed: boolean;
+  locked: boolean;
+}
+export interface GuardEvaluation {
+  guardId: string;
+  scores: Record<string, number>;
+  note: string;
+  evidence: EvidenceItem[];
+  pct: number | null;
+  done: boolean;
+  answered: number;
+}
+export interface InspectionIssue {
+  code: "unanswered" | "note_required" | "evidence_required" | "evidence_pending" | "flag_untouched" | "guard_incomplete";
+  at: string;
+  step: number;
+}
+export interface Inspection {
+  id: string;
+  visitId: string;
+  ref: string;
+  status: string;
+  round: number;
+  form: { versionId: string; code: string; version: string; name: L10n };
+  sections: Array<{ key: string; title: L10n; items: InspectionItem[] }>;
+  guardCriteria: Array<{ id: string; key: string; text: L10n }>;
+  guards: GuardEvaluation[];
+  score: { pct: number | null; answered: number; total: number; compliant: number; nonCompliant: number; na: number; evidence: number };
+  issues: InspectionIssue[];
+  editable: boolean;
+  submittedAt: string | null;
+  startedAt: string;
 }

@@ -1,4 +1,4 @@
-import type { CreateVisitInput, OrgSettings, RescheduleVisitInput, RoleKey, TemplateChange } from "@/api/types";
+import type { Answer, FormSection, Inspection, CreateVisitInput, OrgSettings, RescheduleVisitInput, RoleKey, TemplateChange } from "@/api/types";
 
 /**
  * The application layer's commands: each is one user intention that the backend validates and
@@ -17,4 +17,19 @@ export interface Actions {
   cancelVisit(id: string, reason: string): Promise<void>;
   markNotificationRead(id: string): Promise<void>;
   markAllNotificationsRead(): Promise<void>;
+  startInspection(visitId: string): Promise<Inspection>;
+  /** Text edits are saved after a short pause; choices are saved immediately. The cache updates at once either way. */
+  saveAnswer(visitId: string, itemId: string, patch: { value?: Answer; note?: string | null; severity?: "low" | "medium" | "high" | null }): Promise<void>;
+  setGuardScore(visitId: string, guardId: string, itemId: string, score: number): Promise<void>;
+  setGuardNote(visitId: string, guardId: string, note: string): Promise<void>;
+  submitInspection(visitId: string): Promise<void>;
+  /** presign → direct PUT with progress → confirm → link; resolves when the evidence is stored and linked. */
+  uploadEvidence(file: File, target: { visitId: string; inspectionId: string; itemId?: string; guardId?: string }, onProgress: (pct: number) => void): Promise<void>;
+  removeEvidence(visitId: string, evidenceId: string): Promise<void>;
+  createForm(input: { code: string; category: "site" | "guard"; name: { ar: string; en: string } }): Promise<{ id: string }>;
+  createDraft(formId: string): Promise<void>;
+  saveDraft(formId: string, sections: FormSection[]): Promise<void>;
+  discardDraft(formId: string): Promise<void>;
+  publishForm(formId: string, reason: string): Promise<void>;
+  setFormActive(formId: string, active: boolean, reason: string): Promise<void>;
 }

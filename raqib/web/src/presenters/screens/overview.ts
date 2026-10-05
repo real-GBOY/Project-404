@@ -1,7 +1,7 @@
 import { TONE, badge, scoreColor, seg } from "../common";
 import type { Ctx } from "../context";
 import { guardsList } from "./projects";
-import { VST, visitRow } from "./visits";
+import { VST, startInspection, visitRow } from "./visits";
 
 const first = (c: Ctx): string => c.i.L(c.me.name).replace("م. ", "").replace("Eng. ", "").split(" ")[0] ?? "";
 const heading = (c: Ctx) => ({ greeting: c.i.S("greet", { n: first(c) }), todayLong: c.i.fd(c.me.today, "dy") });
@@ -92,9 +92,8 @@ export function overviewInspector(c: Ctx) {
   const mine = data.visits ?? [];
   const card = (v: (typeof mine)[number]) => ({
     ...visitRow(c, v),
-    // starting an inspection arrives with the inspection engine; until then the card opens the visit
-    primaryLabel: i.S("view"),
-    primary: () => c.go("visit", v.id),
+    primaryLabel: v.status === "in_progress" ? i.S("continueInsp") : v.status === "returned" ? i.S("openToFix") : ["assigned", "scheduled", "overdue"].includes(v.status) ? i.S("startInsp") : i.S("view"),
+    primary: () => (["assigned", "scheduled", "overdue", "in_progress", "returned"].includes(v.status) ? startInspection(c, v) : c.go("visit", v.id)),
     progress: "",
     hasProgress: false,
   });
