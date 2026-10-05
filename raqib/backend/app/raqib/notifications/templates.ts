@@ -32,4 +32,6 @@ export const RAQIB_TEMPLATES: TemplateSeed[] = [
   ...t("raqib.training_rejected", ["رُفض طلب التدريب {{ref}}", "{{reason}}"], ["Training request {{ref}} rejected", "{{reason}}"]),
   ...t("raqib.training_scheduled", ["جُدول التدريب {{ref}}", "{{course}} — {{date}}"], ["Training {{ref}} scheduled", "{{course}} — {{date}}"]),
   ...t("raqib.training_completed", ["اكتمل التدريب {{ref}}", "{{course}} — {{guard}}"], ["Training {{ref}} completed", "{{course}} — {{guard}}"]),
+  ...t("raqib.conf_new", ["بلاغ سري جديد {{ref}}", "افتح المنطقة المحمية لمراجعته."], ["New confidential report {{ref}}", "Open the restricted area to review it."]),
+  ...t("raqib.conf_response", ["ردّ على بلاغك {{ref}}", "يمكنك الاطلاع على الرد في منطقة البلاغات السرية."], ["A response to your report {{ref}}", "You can read it in the confidential reports area."]),
 ];

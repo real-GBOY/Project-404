@@ -7,7 +7,7 @@ import { TRAINING_OPTIONS } from "./screens/training";
 const { REASONS: TRAINING_REASONS, PROVIDERS: TRAINING_PROVIDERS, RESULTS: TRAINING_RESULTS } = TRAINING_OPTIONS;
 
 /** Dialogs that need a stated reason (the approved design records who changed what, and why). */
-const NEED_REASON = new Set(["trReturn", "trReject", "caReturn", "return", "reject", "publish", "deactivateForm", "create", "resched", "cancel", "roleChange", "userScope", "userDisable", "userEnable", "permSave", "scopeSave", "settingsSave"]);
+const NEED_REASON = new Set(["reveal", "revoke", "grantAdd", "trReturn", "trReject", "caReturn", "return", "reject", "publish", "deactivateForm", "create", "resched", "cancel", "roleChange", "userScope", "userDisable", "userEnable", "permSave", "scopeSave", "settingsSave"]);
 
 const ROLES: RoleKey[] = ["qm", "qe", "pm", "ins", "gs", "guard", "gm"];
 
@@ -48,7 +48,7 @@ export function modalVM(c: Ctx) {
     title: i.S(`m_${K}_t`, { r: ref }),
     sub: i.S(`m_${K}_s`),
     okLabel: i.S(`m_${K}_ok`),
-    okBg: ["userDisable", "cancel", "deactivateForm", "reject", "trReject"].includes(K) ? "#A3262A" : ["return", "caReturn", "trReturn"].includes(K) ? "#8A5A00" : "#0F5C4A",
+    okBg: ["userDisable", "cancel", "deactivateForm", "reject", "trReject", "revoke"].includes(K) ? "#A3262A" : ["return", "caReturn", "trReturn"].includes(K) ? "#8A5A00" : "#0F5C4A",
     reason: fld("reason"),
     comment: fld("comment"),
     role: fld("role"),
@@ -76,6 +76,13 @@ export function modalVM(c: Ctx) {
     isSubmit: K === "submit",
     isReturn: K === "return",
     isCA: K === "ca",
+    isGrantAdd: K === "grantAdd",
+    guser: fld("guser"),
+    guserOpts: [{ v: "", l: i.S("choose") }].concat((c.data.confGrantees ?? []).map((x) => ({ v: x.id, l: `${i.L(x.name)} · ${i.L(ROLE_LABEL[x.role as keyof typeof ROLE_LABEL])}` }))),
+    gscope: fld("gscope"),
+    gscopeOpts: (["standard", "all"] as const).map((k) => ({ v: k, l: i.S(`sc_${k}`) })),
+    expires: fld("expires"),
+    levelOpts: (["view", "respond"] as const).map((k) => ({ label: i.S(`lv_${k}`), set: () => set((s) => ({ mf: { ...s.mf, level: k } })), bg: (f.level ?? "view") === k ? "#191C1F" : "#fff", fg: (f.level ?? "view") === k ? "#fff" : "#191C1F" })),
     isTr: K === "tr",
     isTrSched: K === "trSchedule",
     isTrDone: K === "trComplete",
@@ -146,6 +153,7 @@ export async function submitModal(c: Ctx): Promise<void> {
   if (m.kind === "tr") for (const k of ["g", "course"]) if (!String(f[k] ?? "").trim()) missing.push(k);
   if (m.kind === "trSchedule") for (const k of ["date", "provider"]) if (!String(f[k] ?? "").trim()) missing.push(k);
   if (m.kind === "trComplete" && !String(f.date ?? "").trim()) missing.push("date");
+  if (m.kind === "grantAdd") for (const k of ["guser", "expires"]) if (!String(f[k] ?? "").trim()) missing.push(k);
   if (m.kind === "newSection" && !String(f.title ?? "").trim()) missing.push("title");
   if (m.kind === "roleChange" && !String(f.role ?? "").trim()) missing.push("role");
   if (missing.length) {
@@ -228,6 +236,17 @@ export async function submitModal(c: Ctx): Promise<void> {
       case "trComplete":
         await actions.trainingStep(m.tid as string, "complete", { date: f.date, result: f.res || "passed", note: String(f.note ?? "").trim() || undefined });
         c.toast(i.S("toastTrCompleted", { r: String(m.ref ?? "") }));
+        break;
+      case "reveal":
+        await actions.confReveal(m.rid as string, reason);
+        break;
+      case "revoke":
+        await actions.confRevoke(m.gid as string, reason);
+        c.toast(i.S("toastGrantRevoked"));
+        break;
+      case "grantAdd":
+        await actions.confIssueGrant({ userId: f.guser as string, level: ((f.level as never) || "view"), scope: ((f.gscope as never) || "standard"), reason, expiresAt: `${String(f.expires)}T23:59:00Z` });
+        c.toast(i.S("toastGrantIssued"));
         break;
       case "submit":
         await actions.submitInspection(m.vid as string);

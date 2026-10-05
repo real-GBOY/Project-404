@@ -151,6 +151,45 @@ export function useActions(): Actions {
       async exportAnalytics(q) {
         saveBlob(await api.analytics.exportCsv(q), "raqib-analytics.csv");
       },
+      async confSubmit(input) {
+        const r = await api.conf.submit(input);
+        await qc.invalidateQueries({ queryKey: ["confMine"] });
+        return r;
+      },
+      async confUpload(file, onProgress) {
+        const p = await api.evidence.presign({ name: file.name, type: file.type, size: file.size });
+        await putWithProgress(file, p.upload, onProgress);
+        await api.evidence.confirm(p.fileId);
+        return p.fileId;
+      },
+      async confEnter(reason, ack) {
+        await api.conf.enter(reason, ack);
+        await qc.invalidateQueries({ queryKey: ["confAccess"] });
+      },
+      async confExit() {
+        await api.conf.exit();
+        qc.removeQueries({ queryKey: ["confList"] });
+        qc.removeQueries({ queryKey: ["confDetail"] });
+        qc.removeQueries({ queryKey: ["confGrants"] });
+        qc.removeQueries({ queryKey: ["confLog"] });
+        await qc.invalidateQueries({ queryKey: ["confAccess"] });
+      },
+      async confRespond(id, text) {
+        qc.setQueryData(["confDetail", id], await api.conf.respond(id, text));
+        await qc.invalidateQueries({ queryKey: ["confList"] });
+      },
+      async confReveal(id, reason) {
+        qc.setQueryData(["confDetail", id], await api.conf.reveal(id, reason));
+        await qc.invalidateQueries({ queryKey: ["confLog"] });
+      },
+      async confIssueGrant(input) {
+        qc.setQueryData(["confGrants"], (await api.conf.issue(input)).items);
+        await qc.invalidateQueries({ queryKey: ["confLog"] });
+      },
+      async confRevoke(id, reason) {
+        qc.setQueryData(["confGrants"], (await api.conf.revoke(id, reason)).items);
+        await qc.invalidateQueries({ queryKey: ["confLog"] });
+      },
       reportPdf: (id, lang) => api.reports.pdf(id, lang),
       evidenceBlob: (id) => api.evidence.blob(id),
       async decideReview(visitId, action, body) {

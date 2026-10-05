@@ -20,6 +20,7 @@ import { runAsOf } from "@raqib/raqib/shared/business-date.js";
 import { addDays } from "@raqib/raqib/shared/dates.js";
 import { DEMO_VISITS } from "./demo-visits.js";
 import { DEMO_FORMS } from "./demo-forms.js";
+import { ConfidentialService } from "@raqib/raqib/confidential/application/confidential-service.js";
 import { TrainingService } from "@raqib/raqib/training/application/training-service.js";
 import { ActionsService } from "@raqib/raqib/actions/application/actions-service.js";
 import { ObservationsService } from "@raqib/raqib/observations/application/observations-service.js";
@@ -57,6 +58,7 @@ export class DemoSeeder {
     private readonly observations: ObservationsService,
     private readonly actions: ActionsService,
     private readonly training: TrainingService,
+    private readonly confidential: ConfidentialService,
     @Inject(FILE_STORAGE) private readonly files: IFileStorage,
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
@@ -230,6 +232,41 @@ export class DemoSeeder {
     await step("pm", rejected.id, "reject", { text: "Not justified by any finding; revisit next quarter." }, 11);
   }
 
+  /**
+   * The confidential area: grants issued by the General Manager (through a logged entry), a few reports from the
+   * guards in each identity mode, and the quality manager working them. Everything goes through the real service.
+   */
+  private async seedConfidential(orgId: string, userIds: Map<string, string>, today: string): Promise<void> {
+    const as = async <T,>(key: string, fn: (who: Awaited<ReturnType<AccessService["resolve"]>>) => Promise<T>): Promise<T> =>
+      withContext({ userId: userIds.get(key)!, organizationId: orgId }, () =>
+        runAsOf(today, async () => fn(await this.access.resolve({ userId: userIds.get(key)!, email: "", organizationId: orgId, permissions: [] }))),
+      );
+    const inDays = (n: number) => new Date(Date.parse(`${today}T12:00:00Z`) + n * 86_400_000).toISOString();
+    await as("gm", async (who) => {
+      await this.confidential.enter("grant_review", true, null, who);
+      await this.confidential.issueGrant({ userId: userIds.get("qm")!, level: "respond", scope: "all", reason: "Director of Quality investigates reports", expiresAt: inDays(120) }, who);
+      await this.confidential.issueGrant({ userId: userIds.get("legal")!, level: "view", scope: "standard", reason: "Legal counsel review of the October reports", expiresAt: inDays(30) }, who);
+      await this.confidential.issueGrant({ userId: userIds.get("bandar")!, level: "view", scope: "standard", reason: "Temporary site review", expiresAt: inDays(14) }, who);
+      const grants = await this.confidential.grants(who);
+      const temp = grants.find((g) => g.user.id === userIds.get("bandar"))!;
+      await this.confidential.revokeGrant(temp.id, "Site review finished early.", who);
+      await this.confidential.exit(null, who);
+    });
+    const submit = (key: string, input: Parameters<ConfidentialService["submit"]>[0]) => as(key, (who) => this.confidential.submit(input, who));
+    const a = await submit("guard", { kind: "safety", subject: "Broken lock on the parking attendants room", body: "The lock on the attendants room at level P1 has been broken for two weeks and equipment is exposed.", place: "Parking P1", identity: "named", fileIds: [] });
+    const b = await submit("turki", { kind: "misconduct", subject: "A supervisor asked for payment to arrange shifts", body: "A site supervisor asked me for money in exchange for better shifts. This happened twice this month in front of the main gate.", place: "Main gate", identity: "confidential", fileIds: [] });
+    await submit("guard", { kind: "violation", subject: "Visitors admitted without ID at night", body: "On two nights this week visitors were allowed in through the vehicle gate without any ID check.", place: "Vehicle gate", identity: "anonymous", fileIds: [] });
+    await as("qm", async (who) => {
+      await this.confidential.enter("investigation", true, null, who);
+      const list = await this.confidential.list(null, who);
+      const first = list.find((r) => r.ref === a.ref)!;
+      await this.confidential.respond(first.id, "Thank you. The lock has been replaced and the room is secured.", "closed", null, who);
+      const second = list.find((r) => r.ref === b.ref)!;
+      await this.confidential.respond(second.id, "We have opened a formal inquiry. You will be told the outcome.", "under_review", null, who);
+      await this.confidential.exit(null, who);
+    });
+  }
+
   async seed(clock: Clock): Promise<void> {
     const already = await runAsSystem(() =>
       currentExecutor().selectFrom("organizations").select("id").where("slug", "=", DEMO_ORG.slug).executeTakeFirst(),
@@ -354,6 +391,7 @@ export class DemoSeeder {
     await this.seedVisits(orgId, userIds, today);
     await this.seedQuality(orgId, userIds, today);
     await this.seedTraining(orgId, userIds, today);
+    await this.seedConfidential(orgId, userIds, today);
 
     log.info({ orgId, people: DEMO_PEOPLE.length, projects: DEMO_PROJECTS.length, today }, "raqib demo organization seeded");
   }

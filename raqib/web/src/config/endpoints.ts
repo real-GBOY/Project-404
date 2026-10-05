@@ -69,6 +69,9 @@ export const ENDPOINTS = {
   analytics: (qs: string) => `/raqib/analytics?${qs}`,
   analyticsExport: (qs: string) => `/raqib/analytics/export?${qs}`,
   search: (q: string) => `/raqib/search?q=${encodeURIComponent(q)}`,
+  conf: {
+    base: "/raqib/confidential",
+  },
   reports: { list: "/raqib/reports", pdf: (id: string, lang: string) => `/raqib/reports/${id}/pdf?lang=${lang}` },
   evidence: { attach: "/raqib/evidence", byId: (id: string) => `/raqib/evidence/${id}`, content: (id: string) => `/raqib/evidence/${id}/content` },
   files: { presign: "/files/uploads", confirm: (id: string) => `/files/${id}/confirm` },
