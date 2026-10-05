@@ -20,6 +20,9 @@ const STR = {
   evidence: { ar: "الأدلة", en: "Evidence" },
   note: { ar: "ملاحظة", en: "Note" },
   guards: { ar: "تقييم الحراس", en: "Guard evaluations" },
+  violations: { ar: "المخالفات", en: "Violations" },
+  severity: { low: { ar: "منخفضة", en: "Low" }, medium: { ar: "متوسطة", en: "Medium" }, high: { ar: "عالية", en: "High" } } as Record<string, L10n>,
+  repeat: { ar: "تكرار", en: "Repeat" },
   decisions: { ar: "مسار القرارات", en: "Decision trail" },
   approvedBy: { ar: "اعتمد بواسطة", en: "Approved by" },
   issued: { ar: "أُصدر في", en: "Issued" },
@@ -69,6 +72,10 @@ export function renderReportHtml(s: ReportSnapshot, lang: Lang, images: Map<stri
     })
     .join("");
 
+  const violations = s.violations?.length
+    ? `<h2>${T(STR.violations)}</h2><table>${s.violations.map((o) => `<tr><td class="num">${esc(o.num ?? "")}</td><td>${L(o.text)}${o.note ? `<div class="note">${esc(o.note)}</div>` : ""}</td><td class="ans" style="color:#a3262a">${esc(T(STR.severity[o.severity] ?? STR.severity.medium!))}${o.repeatCount ? ` · ${T(STR.repeat)} ×${o.repeatCount}` : ""}</td></tr>`).join("")}</table>`
+    : "";
+
   const guards = s.guards.length
     ? `<h2>${T(STR.guards)}</h2><table>${s.guards.map((g) => `<tr><td class="num">${esc(g.employeeNo)}</td><td>${L(g.name)}${g.note ? `<div class="note">${esc(g.note)}</div>` : ""}</td><td class="ans">${g.pct == null ? "—" : g.pct + "%"}</td></tr>`).join("")}</table>`
     : "";
@@ -101,7 +108,7 @@ tr.item { page-break-inside: avoid; }
 <div><span>${T(STR.datetime)}:</span> ${esc(s.date)} ${esc(s.time)}</div><div><span>${T(STR.approvedBy)}:</span> ${L(s.approvedBy.name)}</div>
 </div>
 <div class="stats"><div>${T(STR.compliant)}: <b>${s.score.compliant}</b></div><div>${T(STR.nonCompliant)}: <b>${s.score.nonCompliant}</b></div><div>${T(STR.na)}: <b>${s.score.na}</b></div><div>${T(STR.evidence)}: <b>${s.score.evidence}</b></div></div>
-${sections}${guards}
+${sections}${violations}${guards}
 <h2>${T(STR.decisions)}</h2><table>${trail}</table>
 <div class="foot">${T(STR.issued)}: ${when(s.issuedAt)} · ${T(STR.immutable)}</div>
 </body></html>`;

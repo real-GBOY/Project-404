@@ -20,6 +20,8 @@ import { runAsOf } from "@raqib/raqib/shared/business-date.js";
 import { addDays } from "@raqib/raqib/shared/dates.js";
 import { DEMO_VISITS } from "./demo-visits.js";
 import { DEMO_FORMS } from "./demo-forms.js";
+import { ActionsService } from "@raqib/raqib/actions/application/actions-service.js";
+import { ObservationsService } from "@raqib/raqib/observations/application/observations-service.js";
 import { ReviewService } from "@raqib/raqib/review/application/review-service.js";
 import { FormsRepository } from "@raqib/raqib/forms/infrastructure/forms-repository.js";
 import { InspectionsService } from "@raqib/raqib/inspections/application/inspections-service.js";
@@ -51,6 +53,8 @@ export class DemoSeeder {
     private readonly review: ReviewService,
     private readonly inspections: InspectionsService,
     private readonly evidence: EvidenceService,
+    private readonly observations: ObservationsService,
+    private readonly actions: ActionsService,
     @Inject(FILE_STORAGE) private readonly files: IFileStorage,
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
@@ -141,6 +145,59 @@ export class DemoSeeder {
         await as(c.by, 14, (who) => this.visits.cancel(visitId, c.reason, who));
       }
     }
+  }
+
+  /**
+   * Observations and corrective actions in every state, produced by the real services. Violations already exist
+   * (recorded when the demo's approved inspections were approved); here people report two more observations and
+   * work corrective actions through assigned, in progress, quality review, returned, closed and overdue.
+   */
+  private async seedQuality(orgId: string, userIds: Map<string, string>, today: string): Promise<void> {
+    const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
+    const as = async <T,>(key: string, agoDays: number, fn: (who: Awaited<ReturnType<AccessService["resolve"]>>) => Promise<T>): Promise<T> =>
+      withContext({ userId: userIds.get(key)!, organizationId: orgId }, () =>
+        runAsOf(addDays(today, -agoDays), async () => fn(await this.access.resolve({ userId: userIds.get(key)!, email: "", organizationId: orgId, permissions: [] }))),
+      );
+    const violations = await as("qm", 0, (who) => this.observations.list(who));
+    const find = (site: string, key: string) => violations.find((o) => o.kind === "violation" && o.site.en === site && o.itemKey === key)!;
+    const assign = (obs: string, by: string, to: string, dueDay: number, priority: "low" | "medium" | "high", description: string, ago: number) =>
+      as(by, ago, (who) => this.actions.create(obs, { responsibleId: userIds.get(to)!, dueDate: addDays(today, dueDay), priority, description }, who));
+    const evidenceFor = (key: string, actionId: string) =>
+      as(key, 0, async (who) => {
+        const ref = await this.files.upload({ content: png, originalName: "closure.png", contentType: "image/png", ownerId: who.userId, visibility: "private" });
+        await this.evidence.attachToAction({ fileId: ref.id, actionId }, who);
+      });
+    const step = (key: string, id: string, s: "start" | "submit" | "return" | "close", text?: string) => as(key, 0, (who) => this.actions.step(id, s, { text }, who));
+
+    // two observations reported directly
+    await as("insA", 6, (who) =>
+      this.observations.create({ projectId: this.ids.projectIds.get("p1")!, siteId: this.ids.siteIds.get("s1")!, text: "Visitor turnstile left unlocked at the pedestrian gate", note: "Seen at the shift change.", severity: "medium" }, who));
+    await as("insB", 4, (who) =>
+      this.observations.create({ projectId: this.ids.projectIds.get("p2")!, siteId: this.ids.siteIds.get("s8")!, text: "Floodlight out on the north fence", note: "Dark stretch of about 30 m.", severity: "high" }, who));
+
+    // assigned and not yet started (on time)
+    await assign(find("Control room", "q5").id, "qm", "pm", 5, "high", "Restore the two offline cameras and confirm recording.", 6);
+    // overdue: created long ago, due date passed, never started
+    await assign(find("Control room", "q15").id, "qm", "pm", -3, "medium", "Complete the shift handover log for the last two weeks.", 12);
+    // in progress
+    await assign(find("Main entrance", "q13").id, "qm", "buqami", 7, "low", "Post the evacuation plan on every floor.", 5).then((a) => step("buqami", a.id, "start"));
+    // waiting for quality review
+    const waiting = await assign(find("Truck gate", "q3").id, "qe", "sultan", 4, "high", "Vehicle search for every truck, logged at the gate.", 9);
+    await step("sultan", waiting.id, "start");
+    await evidenceFor("sultan", waiting.id);
+    await step("sultan", waiting.id, "submit");
+    // returned by quality, back with the responsible person
+    const returned = await assign(find("Truck gate", "q9").id, "qm", "sultan", 6, "medium", "Scan every checkpoint on each patrol.", 9);
+    await step("sultan", returned.id, "start");
+    await evidenceFor("sultan", returned.id);
+    await step("sultan", returned.id, "submit");
+    await step("qe", returned.id, "return", "The attached photo shows the scanner, not the patrol log. Attach the log for the last three patrols.");
+    // closed
+    const closed = await assign(find("Truck gate", "q8").id, "qe", "sultan", 3, "medium", "Re-issue the patrol schedule and brief the shift.", 10);
+    await step("sultan", closed.id, "start");
+    await evidenceFor("sultan", closed.id);
+    await step("sultan", closed.id, "submit");
+    await step("qm", closed.id, "close", "Schedule re-issued and signed by the shift lead.");
   }
 
   async seed(clock: Clock): Promise<void> {
@@ -265,6 +322,7 @@ export class DemoSeeder {
     });
 
     await this.seedVisits(orgId, userIds, today);
+    await this.seedQuality(orgId, userIds, today);
 
     log.info({ orgId, people: DEMO_PEOPLE.length, projects: DEMO_PROJECTS.length, today }, "raqib demo organization seeded");
   }

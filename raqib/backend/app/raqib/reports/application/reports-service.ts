@@ -7,6 +7,7 @@ import type { IAuditLogger, IFileStorage } from "@core/contracts/index.js";
 import { can, inScope, requireCan, type Access } from "@raqib/raqib/access/access.js";
 import { InspectionsService } from "@raqib/raqib/inspections/application/inspections-service.js";
 import { EvidenceRepository } from "@raqib/raqib/evidence/infrastructure/evidence-repository.js";
+import { ObservationsRepository } from "@raqib/raqib/observations/infrastructure/observations-repository.js";
 import { ProjectsRepository } from "@raqib/raqib/projects/infrastructure/projects-repository.js";
 import { VisitsService } from "@raqib/raqib/visits/application/visits-service.js";
 import { renderReportHtml, type Lang } from "../domain/report-html.js";
@@ -40,6 +41,7 @@ export class ReportsService {
     private readonly inspections: InspectionsService,
     private readonly projects: ProjectsRepository,
     private readonly evidence: EvidenceRepository,
+    private readonly observations: ObservationsRepository,
     private readonly pdf: PdfRenderer,
     @Inject(FILE_STORAGE) private readonly files: IFileStorage,
     @Inject(AUDIT_LOGGER) private readonly audit: IAuditLogger,
@@ -56,7 +58,8 @@ export class ReportsService {
       const inspection = await this.inspections.get(visitId, who);
       const guards = new Map((await this.projects.guards()).filter((g) => visit.guardIds.includes(g.id)).map((g) => [g.id, { employeeNo: g.employeeNo, name: g.name }]));
       const ref = `RPT-${visit.ref.replace(/^VIS-/, "")}`;
-      const snapshot = buildSnapshot({ ref, issuedAt: this.clock.now(), visit, inspection, guards, approver: who });
+      const violations = await this.observations.forInspection(inspection.id);
+      const snapshot = buildSnapshot({ ref, issuedAt: this.clock.now(), visit, inspection, guards, violations, approver: who });
       const id = await this.repo.insert({
         visitId, inspectionId: inspection.id, projectId: visit.project.id, ref, scorePct: inspection.score.pct, snapshot, approvedBy: who.userId,
         approvedByNameAr: who.nameAr, approvedByNameEn: who.nameEn,

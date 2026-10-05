@@ -5,9 +5,11 @@ import { AUDIT_LOGGER, EVENT_BUS, UNIT_OF_WORK } from "@core/kernel/tokens.js";
 import type { IAuditLogger, IEventBus } from "@core/contracts/index.js";
 import { actorOf, requireCan, requireProject, type Access } from "@raqib/raqib/access/access.js";
 import { InspectionsRepository } from "@raqib/raqib/inspections/infrastructure/inspections-repository.js";
+import { ObservationsService } from "@raqib/raqib/observations/application/observations-service.js";
 import { ReportsService } from "@raqib/raqib/reports/application/reports-service.js";
 import { InspectionsService, type InspectionView } from "@raqib/raqib/inspections/application/inspections-service.js";
 import { letterFor, reviewNext, type ReviewAction } from "@raqib/raqib/visits/domain/visit-state.js";
+import { VisitsService } from "@raqib/raqib/visits/application/visits-service.js";
 import { VisitsRepository } from "@raqib/raqib/visits/infrastructure/visits-repository.js";
 import { inspectionApproved, inspectionForwarded, inspectionRejected, inspectionReturned } from "../events.js";
 
@@ -36,6 +38,8 @@ export class ReviewService {
     private readonly inspections: InspectionsRepository,
     private readonly inspectionService: InspectionsService,
     private readonly reports: ReportsService,
+    private readonly observations: ObservationsService,
+    private readonly visitsService: VisitsService,
     @Inject(AUDIT_LOGGER) private readonly audit: IAuditLogger,
     @Inject(EVENT_BUS) private readonly events: IEventBus,
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
@@ -81,6 +85,9 @@ export class ReviewService {
       if (action === "reject") await this.events.publish(inspectionRejected({ ...base, reason }));
       if (action === "approve") {
         // The report is frozen in the same transaction as the approval: no approved inspection without its report.
+        const visitView = await this.visitsService.get(visitId, who);
+        const inspectionView = await this.inspectionService.get(visitId, who);
+        await this.observations.recordViolations(visitView, inspectionView, who);
         await this.reports.issue(visitId, who);
         await this.events.publish(inspectionApproved(base));
       }

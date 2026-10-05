@@ -21,4 +21,9 @@ export const RAQIB_TEMPLATES: TemplateSeed[] = [
   ...t("raqib.inspection_returned", ["أُعيد التفتيش {{ref}} للاستكمال", "{{reason}}"], ["{{ref}} returned for completion", "{{reason}}"]),
   ...t("raqib.inspection_rejected", ["رُفض التفتيش {{ref}}", "{{reason}}"], ["{{ref}} rejected", "{{reason}}"]),
   ...t("raqib.inspection_approved", ["اعتُمد التفتيش {{ref}}", "{{site}} — اعتمده {{actor}} · التقرير متاح"], ["{{ref}} approved", "{{site}} — approved by {{actor}} · report available"]),
+  ...t("raqib.action_assigned", ["إجراء تصحيحي جديد: {{ref}}", "{{title}} — الموعد {{due}}"], ["New corrective action: {{ref}}", "{{title}} — due {{due}}"]),
+  ...t("raqib.action_submitted", ["{{ref}} بانتظار مراجعة الجودة", "{{title}} — سلّمه {{actor}}"], ["{{ref}} awaiting quality review", "{{title}} — handed over by {{actor}}"]),
+  ...t("raqib.action_returned", ["أُعيد الإجراء {{ref}}", "{{reason}}"], ["{{ref}} returned", "{{reason}}"]),
+  ...t("raqib.action_closed", ["أُغلق الإجراء {{ref}}", "{{title}} — أغلقه {{actor}}"], ["{{ref}} closed", "{{title}} — closed by {{actor}}"]),
+  ...t("raqib.action_overdue", ["إجراء متأخر: {{ref}}", "{{title}} — كان موعده {{due}}"], ["Action overdue: {{ref}}", "{{title}} — was due {{due}}"]),
 ];

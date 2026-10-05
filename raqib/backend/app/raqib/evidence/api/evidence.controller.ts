@@ -9,8 +9,9 @@ import type { Access } from "@raqib/raqib/access/access.js";
 import { EvidenceService } from "../application/evidence-service.js";
 
 const attachSchema = z
-  .object({ fileId: z.string().min(1).max(80), inspectionId: z.string().min(1).max(80), itemId: z.string().min(1).max(80).nullish(), guardId: z.string().min(1).max(80).nullish() })
-  .strict();
+  .object({ fileId: z.string().min(1).max(80), inspectionId: z.string().min(1).max(80).optional(), actionId: z.string().min(1).max(80).optional(), itemId: z.string().min(1).max(80).nullish(), guardId: z.string().min(1).max(80).nullish() })
+  .strict()
+  .refine((b) => !!b.inspectionId !== !!b.actionId, { message: "Give either inspectionId or actionId." });
 type AttachBody = z.infer<typeof attachSchema>;
 
 @ApiTags("raqib · evidence")
@@ -25,7 +26,7 @@ export class EvidenceController {
   @HttpCode(201)
   @Allow()
   async attach(@Body(ZodBody(attachSchema)) b: AttachBody, @Caller() who: Access) {
-    const e = await this.service.attach(b, who);
+    const e = b.actionId ? await this.service.attachToAction({ fileId: b.fileId, actionId: b.actionId }, who) : await this.service.attach({ ...b, inspectionId: b.inspectionId! }, who);
     return { id: e.id, name: e.name, kind: e.kind, mime: e.mime, sizeBytes: e.sizeBytes, at: e.uploadedAt.toISOString(), by: null };
   }
 
