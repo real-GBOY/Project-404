@@ -14,6 +14,6 @@ import { ReportsRepository } from "./infrastructure/reports-repository.js";
   imports: [AuditModule, FilesModule, AccessModule, InspectionsModule, ObservationsModule, ProjectsModule, VisitsModule],
   controllers: [ReportsController],
   providers: [ReportsRepository, PdfRenderer, ReportsService],
-  exports: [ReportsService],
+  exports: [ReportsService, ReportsRepository],
 })
 export class ReportsModule {}

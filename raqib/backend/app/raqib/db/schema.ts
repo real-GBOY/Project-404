@@ -367,6 +367,63 @@ export type raqib_sites = {
   created_at: Generated<Timestamp>;
   updated_at: Generated<Timestamp>;
 };
+export type raqib_training_events = {
+  id: string;
+  organization_id: string;
+  request_id: string;
+  seq: Generated<string>;
+  /**
+   * @kyselyType('requested' | 'returned' | 'resubmitted' | 'approved' | 'rejected' | 'scheduled' | 'completed')
+   */
+  kind:
+    "requested" | "returned" | "resubmitted" | "approved" | "rejected" | "scheduled" | "completed";
+  from_status: string | null;
+  to_status: string;
+  text: string | null;
+  actor_id: string | null;
+  actor_name_ar: string;
+  actor_name_en: string;
+  actor_role: string | null;
+  actor_title_ar: Generated<string>;
+  actor_title_en: Generated<string>;
+  at: Generated<Timestamp>;
+};
+export type raqib_training_requests = {
+  id: string;
+  organization_id: string;
+  ref: string;
+  guard_id: string;
+  project_id: string;
+  /**
+   * @kyselyType('low_score' | 'repeat_issue' | 'incident' | 'refresher' | 'new_assignment')
+   */
+  reason: "low_score" | "repeat_issue" | "incident" | "refresher" | "new_assignment";
+  course: string;
+  related: Generated<string>;
+  /**
+   * @kyselyType('low' | 'medium' | 'high')
+   */
+  priority: "low" | "medium" | "high";
+  notes: Generated<string>;
+  /**
+   * @kyselyType('pending_pm' | 'returned' | 'rejected' | 'approved' | 'scheduled' | 'completed')
+   */
+  status: Generated<
+    "pending_pm" | "returned" | "rejected" | "approved" | "scheduled" | "completed"
+  >;
+  round: Generated<number>;
+  requested_by: string | null;
+  scheduled_date: Timestamp | null;
+  provider: string | null;
+  completed_date: Timestamp | null;
+  /**
+   * @kyselyType('passed' | 'attended' | 'failed')
+   */
+  result: "passed" | "attended" | "failed" | null;
+  result_note: string | null;
+  created_at: Generated<Timestamp>;
+  updated_at: Generated<Timestamp>;
+};
 export type raqib_visit_events = {
   id: string;
   organization_id: string;
@@ -469,6 +526,8 @@ export type RaqibTables = {
   raqib_role_templates: raqib_role_templates;
   raqib_settings: raqib_settings;
   raqib_sites: raqib_sites;
+  raqib_training_events: raqib_training_events;
+  raqib_training_requests: raqib_training_requests;
   raqib_visit_events: raqib_visit_events;
   raqib_visit_guards: raqib_visit_guards;
   raqib_visits: raqib_visits;

@@ -1,7 +1,7 @@
 import { API_BASE_URL, ENDPOINTS, http } from "@/config";
 import type { PresignResponse } from "@/lib/upload";
 import type {
-  Answer, CorrectiveAction, Observation, Report, ResponsibleOption, Severity, EvidenceItem, Form, FormSection, Inspection,
+  Answer, CorrectiveAction, GuardHistory, GuardSummaries, TrainingReason, TrainingRequest, Observation, Report, ResponsibleOption, Severity, EvidenceItem, Form, FormSection, Inspection,
   AppNotification, CreateVisitInput, EligibleInspector, RescheduleVisitInput, Visit,
   Guard, LoginResponse, Me, OrgSettings, Person, PermissionsOverview, Project, RoleKey, TemplateChange,
 } from "./types";
@@ -106,6 +106,16 @@ export const api = {
       http<CorrectiveAction>(ENDPOINTS.actions.step(id, step), { method: "POST", body }),
     comment: (id: string, text: string) => http<CorrectiveAction>(ENDPOINTS.actions.comments(id), { method: "POST", body: { text } }),
   },
+  training: {
+    list: () => http<{ items: TrainingRequest[] }>(ENDPOINTS.training.list).then((r) => r.items),
+    get: (id: string) => http<TrainingRequest>(ENDPOINTS.training.byId(id)),
+    create: (b: { guardId: string; reason: TrainingReason; course: string; related: string; priority: Severity; notes: string }) =>
+      http<TrainingRequest>(ENDPOINTS.training.list, { method: "POST", body: b }),
+    step: (id: string, step: "approve" | "return" | "reject" | "resubmit" | "schedule" | "complete", body: Record<string, unknown> = {}) =>
+      http<TrainingRequest>(ENDPOINTS.training.step(id, step), { method: "POST", body }),
+  },
+  guardHistory: (id: string) => http<GuardHistory>(ENDPOINTS.guardHistory(id)),
+  guardSummary: () => http<{ items: GuardSummaries }>(ENDPOINTS.guardSummary).then((r) => r.items),
   reports: {
     list: () => http<{ items: Report[]; pdf: boolean }>(ENDPOINTS.reports.list),
     /** The rendered PDF, fetched with the caller's credentials. */

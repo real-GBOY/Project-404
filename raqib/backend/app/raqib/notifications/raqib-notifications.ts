@@ -7,6 +7,7 @@ import { AccessService } from "@raqib/raqib/access/application/access-service.js
 import { SettingsService } from "@raqib/raqib/settings/application/settings-service.js";
 import { ProjectsRepository } from "@raqib/raqib/projects/infrastructure/projects-repository.js";
 import { ActionsRepository, type ActionRecord } from "@raqib/raqib/actions/infrastructure/actions-repository.js";
+import { TrainingRepository, type TrainingRecord } from "@raqib/raqib/training/infrastructure/training-repository.js";
 import { VisitsRepository, type VisitRecord } from "@raqib/raqib/visits/infrastructure/visits-repository.js";
 
 type Lang = "ar" | "en";
@@ -38,6 +39,7 @@ export class RaqibNotifications implements OnModuleInit {
     @Inject(USER_PROVIDER) private readonly users: IUserProvider,
     private readonly visits: VisitsRepository,
     private readonly actions: ActionsRepository,
+    private readonly training: TrainingRepository,
     private readonly projects: ProjectsRepository,
     private readonly access: AccessService,
     private readonly settings: SettingsService,
@@ -59,6 +61,11 @@ export class RaqibNotifications implements OnModuleInit {
     on("raqib.action_submitted", (p) => this.action(p, "raqib.action_submitted", (a, today) => this.access.holders("actions", "R", a.projectId, today, String(p.actorId)), false));
     on("raqib.action_returned", (p) => this.action(p, "raqib.action_returned", async () => []));
     on("raqib.action_closed", (p) => this.action(p, "raqib.action_closed", async (a) => (a.createdBy ? [a.createdBy] : [])));
+    on("raqib.training_requested", (p) => this.trainingTo(p, "raqib.training_requested", (t, today) => this.access.holders("training", "P", t.projectId, today, String(p.actorId))));
+    on("raqib.training_approved", (p) => this.trainingTo(p, "raqib.training_approved", async (t, today) => [...(t.requestedBy ? [t.requestedBy] : []), ...(await this.access.holders("training", "R", t.projectId, today, String(p.actorId)))]));
+    on("raqib.training_decided", (p) => this.trainingTo(p, p.decision === "rejected" ? "raqib.training_rejected" : "raqib.training_returned", async (t) => (t.requestedBy ? [t.requestedBy] : [])));
+    on("raqib.training_scheduled", (p) => this.trainingTo(p, "raqib.training_scheduled", async (t) => (t.requestedBy ? [t.requestedBy] : [])));
+    on("raqib.training_completed", (p) => this.trainingTo(p, "raqib.training_completed", async (t) => (t.requestedBy ? [t.requestedBy] : [])));
     on("raqib.action_overdue", (p) => this.action(p, "raqib.action_overdue", (a, today) => this.access.holders("actions", "R", a.projectId, today), true));
   }
 
@@ -156,6 +163,21 @@ export class RaqibNotifications implements OnModuleInit {
         type: key,
         locale: lang,
         data: { ref: a.ref, title: a.title[lang], due: a.dueDate, reason: String(p.reason ?? ""), actor: p.actorId ? await this.actorName(p, lang) : "", go: ["action", a.id] },
+      });
+    }
+  }
+
+  private async trainingTo(p: Payload, key: string, who: (t: TrainingRecord, today: string) => Promise<string[]>): Promise<void> {
+    const t = await this.training.find(String(p.requestId));
+    if (!t) return;
+    const guard = await this.projects.findGuard(t.guardId);
+    const to = new Set(await who(t, await this.settings.today()));
+    if (p.actorId) to.delete(String(p.actorId));
+    for (const r of to) {
+      const lang = await this.lang(r);
+      await this.notify.send({
+        userId: r, templateKey: key, type: key, locale: lang,
+        data: { ref: t.ref, course: t.course, guard: guard ? guard.name[lang] : "", reason: String(p.reason ?? ""), date: t.scheduledDate ?? "", go: ["trainingD", t.id] },
       });
     }
   }

@@ -1,0 +1,51 @@
+model raqib_training_requests {
+  id              String    @id
+  organization_id String
+  ref             String
+  guard_id        String
+  project_id      String
+  /// @kyselyType('low_score' | 'repeat_issue' | 'incident' | 'refresher' | 'new_assignment')
+  reason          String
+  course          String
+  related         String    @default("")
+  /// @kyselyType('low' | 'medium' | 'high')
+  priority        String
+  notes           String    @default("")
+  /// @kyselyType('pending_pm' | 'returned' | 'rejected' | 'approved' | 'scheduled' | 'completed')
+  status          String    @default("pending_pm")
+  round           Int       @default(1)
+  requested_by    String?
+  scheduled_date  DateTime? @db.Date
+  provider        String?
+  completed_date  DateTime? @db.Date
+  /// @kyselyType('passed' | 'attended' | 'failed')
+  result          String?
+  result_note     String?
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "raqib_training_requests_org_id_uq")
+  @@unique([organization_id, ref], map: "raqib_training_requests_ref_uq")
+  @@map("raqib_training_requests")
+}
+
+model raqib_training_events {
+  id              String   @id
+  organization_id String
+  request_id      String
+  seq             BigInt   @default(autoincrement())
+  /// @kyselyType('requested' | 'returned' | 'resubmitted' | 'approved' | 'rejected' | 'scheduled' | 'completed')
+  kind            String
+  from_status     String?
+  to_status       String
+  text            String?
+  actor_id        String?
+  actor_name_ar   String
+  actor_name_en   String
+  actor_role      String?
+  actor_title_ar  String   @default("")
+  actor_title_en  String   @default("")
+  at              DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("raqib_training_events")
+}

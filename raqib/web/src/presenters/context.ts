@@ -1,4 +1,4 @@
-import type { AppNotification, CorrectiveAction, EligibleInspector, Form, Guard, Inspection, Me, OrgSettings, PermissionsOverview, Observation, Person, Project, Report, ResponsibleOption, Visit } from "@/api/types";
+import type { AppNotification, CorrectiveAction, GuardHistory, GuardSummaries, TrainingRequest, EligibleInspector, Form, Guard, Inspection, Me, OrgSettings, PermissionsOverview, Observation, Person, Project, Report, ResponsibleOption, Visit } from "@/api/types";
 import type { I18n } from "@/i18n/i18n";
 import type { UiState } from "@/state/ui-store";
 import type { Actions } from "./actions";
@@ -16,6 +16,10 @@ export interface Data {
   reports?: { items: Report[]; pdf: boolean };
   observations?: Observation[];
   actions?: CorrectiveAction[];
+  training?: TrainingRequest[];
+  trainingOne?: TrainingRequest;
+  guardHistory?: GuardHistory;
+  guardSummary?: GuardSummaries;
   action?: CorrectiveAction;
   /** People who may be given an action on the project chosen in the open dialog. */
   responsibles?: ResponsibleOption[];

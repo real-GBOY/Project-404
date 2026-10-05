@@ -20,6 +20,7 @@ import { runAsOf } from "@raqib/raqib/shared/business-date.js";
 import { addDays } from "@raqib/raqib/shared/dates.js";
 import { DEMO_VISITS } from "./demo-visits.js";
 import { DEMO_FORMS } from "./demo-forms.js";
+import { TrainingService } from "@raqib/raqib/training/application/training-service.js";
 import { ActionsService } from "@raqib/raqib/actions/application/actions-service.js";
 import { ObservationsService } from "@raqib/raqib/observations/application/observations-service.js";
 import { ReviewService } from "@raqib/raqib/review/application/review-service.js";
@@ -55,6 +56,7 @@ export class DemoSeeder {
     private readonly evidence: EvidenceService,
     private readonly observations: ObservationsService,
     private readonly actions: ActionsService,
+    private readonly training: TrainingService,
     @Inject(FILE_STORAGE) private readonly files: IFileStorage,
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
@@ -200,6 +202,34 @@ export class DemoSeeder {
     await step("qm", closed.id, "close", "Schedule re-issued and signed by the shift lead.");
   }
 
+  /** Training requests in every state, produced by the real service: supervisor asks, manager decides, quality runs it. */
+  private async seedTraining(orgId: string, userIds: Map<string, string>, today: string): Promise<void> {
+    const as = async <T,>(key: string, agoDays: number, fn: (who: Awaited<ReturnType<AccessService["resolve"]>>) => Promise<T>): Promise<T> =>
+      withContext({ userId: userIds.get(key)!, organizationId: orgId }, () =>
+        runAsOf(addDays(today, -agoDays), async () => fn(await this.access.resolve({ userId: userIds.get(key)!, email: "", organizationId: orgId, permissions: [] }))),
+      );
+    const guard = (no: string) => this.ids.guardIds.get(no)!;
+    const ask = (g: string, course: string, reason: "low_score" | "repeat_issue" | "incident" | "refresher" | "new_assignment", priority: "low" | "medium" | "high", related: string, notes: string, ago: number) =>
+      as("gs", ago, (who) => this.training.create({ guardId: guard(g), course, reason, priority, related, notes }, who));
+    const step = (key: string, id: string, s: "approve" | "return" | "reject" | "resubmit" | "schedule" | "complete", input: Parameters<TrainingService["step"]>[2], ago = 0) =>
+      as(key, ago, (who) => this.training.step(id, s, input, who));
+
+    await ask("G-10251", "Access control and visitor screening", "low_score", "high", "VIS pending review - Tower A", "Scored 55% on visitor screening in the last inspection.", 2);
+    const returned = await ask("G-10288", "Control room operations", "repeat_issue", "medium", "Shift handover log", "Handover log incomplete twice this month.", 6);
+    await step("pm", returned.id, "return", { text: "Attach the two inspection findings this is based on." }, 5);
+    const approved = await ask("G-10234", "Emergency evacuation drills", "refresher", "low", "", "Annual refresher.", 7);
+    await step("pm", approved.id, "approve", {}, 6);
+    const scheduled = await ask("G-10302", "Fire safety awareness", "incident", "high", "OBS-26 extinguishers expired", "Missed expired extinguishers during a round.", 9);
+    await step("pm", scheduled.id, "approve", {}, 8);
+    await step("qm", scheduled.id, "schedule", { date: addDays(today, 5), provider: "academy" }, 7);
+    const done = await ask("G-10234", "Customer-facing conduct", "new_assignment", "medium", "", "New post at the main gate.", 20);
+    await step("pm", done.id, "approve", {}, 19);
+    await step("qe", done.id, "schedule", { date: addDays(today, -6), provider: "internal" }, 18);
+    await step("qe", done.id, "complete", { date: addDays(today, -3), result: "passed", text: "Passed the assessment with 90%." }, 0);
+    const rejected = await ask("G-10288", "Advanced surveillance", "refresher", "low", "", "Not needed this quarter.", 12);
+    await step("pm", rejected.id, "reject", { text: "Not justified by any finding; revisit next quarter." }, 11);
+  }
+
   async seed(clock: Clock): Promise<void> {
     const already = await runAsSystem(() =>
       currentExecutor().selectFrom("organizations").select("id").where("slug", "=", DEMO_ORG.slug).executeTakeFirst(),
@@ -323,6 +353,7 @@ export class DemoSeeder {
 
     await this.seedVisits(orgId, userIds, today);
     await this.seedQuality(orgId, userIds, today);
+    await this.seedTraining(orgId, userIds, today);
 
     log.info({ orgId, people: DEMO_PEOPLE.length, projects: DEMO_PROJECTS.length, today }, "raqib demo organization seeded");
   }

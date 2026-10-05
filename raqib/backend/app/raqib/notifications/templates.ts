@@ -26,4 +26,10 @@ export const RAQIB_TEMPLATES: TemplateSeed[] = [
   ...t("raqib.action_returned", ["أُعيد الإجراء {{ref}}", "{{reason}}"], ["{{ref}} returned", "{{reason}}"]),
   ...t("raqib.action_closed", ["أُغلق الإجراء {{ref}}", "{{title}} — أغلقه {{actor}}"], ["{{ref}} closed", "{{title}} — closed by {{actor}}"]),
   ...t("raqib.action_overdue", ["إجراء متأخر: {{ref}}", "{{title}} — كان موعده {{due}}"], ["Action overdue: {{ref}}", "{{title}} — was due {{due}}"]),
+  ...t("raqib.training_requested", ["طلب تدريب {{ref}} بانتظار قرارك", "{{course}} — {{guard}}"], ["Training request {{ref}} awaiting your decision", "{{course}} — {{guard}}"]),
+  ...t("raqib.training_approved", ["اعتُمد طلب التدريب {{ref}}", "{{course}} — {{guard}}"], ["Training request {{ref}} approved", "{{course}} — {{guard}}"]),
+  ...t("raqib.training_returned", ["أُعيد طلب التدريب {{ref}}", "{{reason}}"], ["Training request {{ref}} returned", "{{reason}}"]),
+  ...t("raqib.training_rejected", ["رُفض طلب التدريب {{ref}}", "{{reason}}"], ["Training request {{ref}} rejected", "{{reason}}"]),
+  ...t("raqib.training_scheduled", ["جُدول التدريب {{ref}}", "{{course}} — {{date}}"], ["Training {{ref}} scheduled", "{{course}} — {{date}}"]),
+  ...t("raqib.training_completed", ["اكتمل التدريب {{ref}}", "{{course}} — {{guard}}"], ["Training {{ref}} completed", "{{course}} — {{guard}}"]),
 ];

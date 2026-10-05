@@ -18,7 +18,7 @@ function needs(route: Route, me: Me) {
   const want = {
     projects: p.projects.includes("V") && ["overview", "projects", "project", "users", "user", "permissions", "settings"].includes(n),
     visits: p.visits.includes("V") && visitScreens.includes(n),
-    guards: (p.guardEval.includes("V") || p.training.includes("V")) && ["guards", "visit", "inspect", "review"].includes(n) || (n === "overview" && me.role === "gs"),
+    guards: (p.guardEval.includes("V") || p.training.includes("V")) && ["guards", "guard", "visit", "inspect", "review", "training", "trainingD"].includes(n) || (n === "overview" && me.role === "gs"),
     users: p.users.includes("V") && ["users", "user", "permissions"].includes(n),
     permissions: p.permissions.includes("V") && ["user", "permissions"].includes(n),
     settings: p.settings.includes("V") && n === "settings",
@@ -27,6 +27,10 @@ function needs(route: Route, me: Me) {
     observations: p.observations.includes("V") && ["observations", "review"].includes(n),
     actions: p.actions.includes("V") && ["actions"].includes(n),
     action: p.actions.includes("V") && n === "action" && !!route.id,
+    training: p.training.includes("V") && ["training"].includes(n),
+    trainingOne: p.training.includes("V") && n === "trainingD" && !!route.id,
+    guardHistory: (p.guardEval.includes("V") || p.training.includes("V")) && n === "guard" && !!route.id,
+    guardSummary: (p.guardEval.includes("V") || p.training.includes("V")) && ["guards", "overview"].includes(n),
     reports: p.reports.includes("V") && ["reports", "report", "visit", "review"].includes(n),
   };
   // the shell labels a person's scope with project names whenever the template allows reading projects
@@ -52,6 +56,10 @@ export function useScreenData(route: Route, me: Me, ui: UiState): { data: Data; 
     { key: "actions", enabled: want.actions, fn: () => api.actions.list() },
     { key: "action", enabled: want.action, fn: () => api.actions.get(route.id!), extra: [route.id ?? ""] },
     { key: "responsibles", enabled: !!ui.modal && ui.modal.kind === "ca", fn: () => api.actions.responsible(String(ui.modal?.pid ?? "")), extra: [String(ui.modal?.pid ?? "")] },
+    { key: "training", enabled: want.training, fn: () => api.training.list() },
+    { key: "trainingOne", enabled: want.trainingOne, fn: () => api.training.get(route.id!), extra: [route.id ?? ""] },
+    { key: "guardHistory", enabled: want.guardHistory, fn: () => api.guardHistory(route.id!), extra: [route.id ?? ""] },
+    { key: "guardSummary", enabled: want.guardSummary, fn: () => api.guardSummary() },
     { key: "reports", enabled: want.reports, fn: () => api.reports.list() },
     { key: "notifications", enabled: true, fn: () => api.notifications.list().then((r) => ({ items: r.notifications, unread: r.unreadCount })), refetch: 30_000 },
     { key: "inspectors", enabled: !!inspProject, fn: () => api.visits.eligibleInspectors(inspProject, inspDate), extra: [inspProject, inspDate] },
