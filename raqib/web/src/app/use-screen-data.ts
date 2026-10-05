@@ -12,16 +12,18 @@ import type { Denial } from "@/presenters/build";
  * asks the backend for something it would refuse.
  */
 function needs(route: Route, me: Me) {
-  const visitScreens = ["overview", "visits", "visit", "project"];
+  const visitScreens = ["overview", "visits", "visit", "project", "inspect", "inspections"];
   const p = me.permissions;
   const n = route.n;
   const want = {
     projects: p.projects.includes("V") && ["overview", "projects", "project", "users", "user", "permissions", "settings"].includes(n),
     visits: p.visits.includes("V") && visitScreens.includes(n),
-    guards: (p.guardEval.includes("V") || p.training.includes("V")) && ["guards", "visit"].includes(n) || (n === "overview" && me.role === "gs"),
+    guards: (p.guardEval.includes("V") || p.training.includes("V")) && ["guards", "visit", "inspect"].includes(n) || (n === "overview" && me.role === "gs"),
     users: p.users.includes("V") && ["users", "user", "permissions"].includes(n),
     permissions: p.permissions.includes("V") && ["user", "permissions"].includes(n),
     settings: p.settings.includes("V") && n === "settings",
+    forms: p.forms.includes("V") && ["forms", "form"].includes(n),
+    inspection: n === "inspect" && !!route.id,
   };
   // the shell labels a person's scope with project names whenever the template allows reading projects
   if (p.projects.includes("V")) want.projects = true;
@@ -40,6 +42,8 @@ export function useScreenData(route: Route, me: Me, ui: UiState): { data: Data; 
     { key: "permissions", enabled: want.permissions, fn: () => api.permissions.overview() },
     { key: "settings", enabled: want.settings, fn: () => api.settings.get() },
     { key: "visits", enabled: want.visits, fn: () => api.visits.list() },
+    { key: "forms", enabled: want.forms, fn: () => api.forms.list().then(async (items) => ({ items, capabilities: { add: me.permissions.forms.includes("A"), edit: me.permissions.forms.includes("E"), publish: me.permissions.forms.includes("P") } })) },
+    { key: "inspection", enabled: want.inspection, fn: () => api.inspection.get(route.id!), extra: [route.id ?? ""] },
     { key: "notifications", enabled: true, fn: () => api.notifications.list().then((r) => ({ items: r.notifications, unread: r.unreadCount })), refetch: 30_000 },
     { key: "inspectors", enabled: !!inspProject, fn: () => api.visits.eligibleInspectors(inspProject, inspDate), extra: [inspProject, inspDate] },
   ] as const;

@@ -8,6 +8,9 @@ import { VisitsModule } from "@raqib/raqib/visits/visits.module.js";
 import { RaqibNotificationsModule } from "@raqib/raqib/notifications/notifications.module.js";
 import { JobsModule } from "@raqib/raqib/jobs/jobs.module.js";
 import { SharedModule } from "@raqib/raqib/shared/shared.module.js";
+import { FormsModule } from "@raqib/raqib/forms/forms.module.js";
+import { InspectionsModule } from "@raqib/raqib/inspections/inspections.module.js";
+import { EvidenceModule } from "@raqib/raqib/evidence/evidence.module.js";
 import { SettingsModule } from "@raqib/raqib/settings/settings.module.js";
 
 /**
@@ -16,6 +19,6 @@ import { SettingsModule } from "@raqib/raqib/settings/settings.module.js";
  * services; Raqib behaviour never moves into Core. Architecture: `raqib/docs/architecture.md`.
  */
 @Module({
-  imports: [SettingsModule, SettingsApiModule, AccessModule, PeopleModule, ProjectsModule, PermissionsModule, SharedModule, VisitsModule, RaqibNotificationsModule, JobsModule],
+  imports: [SettingsModule, SettingsApiModule, AccessModule, PeopleModule, ProjectsModule, PermissionsModule, SharedModule, VisitsModule, RaqibNotificationsModule, JobsModule, FormsModule, InspectionsModule, EvidenceModule],
 })
 export class RaqibModule {}

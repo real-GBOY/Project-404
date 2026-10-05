@@ -42,6 +42,9 @@ export interface VisitView {
   storedStatus: VisitStatus;
   round: number;
   guardIds: string[];
+  /** Stored score of the submitted inspection (null until submitted, or when not scoreable). */
+  scorePct: number | null;
+  inspectionId: string | null;
   history: Array<{
     action: string;
     from: string | null;
@@ -96,13 +99,14 @@ export class VisitsService {
     if (!records.length) return [];
     const s = await this.settings.current();
     const now = this.clock.now();
-    const [projects, sites, areas, guards, events, profiles] = await Promise.all([
+    const [projects, sites, areas, guards, events, profiles, scores] = await Promise.all([
       this.projects.list(),
       this.projects.sites(),
       this.projects.areasBySite(),
       this.repo.guardIds(records.map((r) => r.id)),
       this.repo.events(records.map((r) => r.id)),
       this.people.findMany([...new Set(records.map((r) => r.inspectorId).filter((x): x is string => !!x))]),
+      this.repo.scores(records.map((r) => r.id)),
     ]);
     const pMap = new Map(projects.map((p) => [p.id, p]));
     const sMap = new Map(sites.map((x) => [x.id, x]));
@@ -128,6 +132,8 @@ export class VisitsService {
         storedStatus: r.status,
         round: r.round,
         guardIds: guards.get(r.id) ?? [],
+        scorePct: scores.get(r.id)?.scorePct ?? null,
+        inspectionId: scores.get(r.id)?.inspectionId ?? null,
         history: (events.get(r.id) ?? []).map((e: VisitEventRecord) => ({
           action: e.action,
           from: e.fromStatus,

@@ -60,13 +60,13 @@ describe.skipIf(!hasTestDb)("Raqib visits & scheduling", () => {
 
   describe("visibility", () => {
     it("seeds the scheduling demo through the real service", async () => {
-      expect((await visits("qm")).length).toBe(7);
+      expect((await visits("qm")).length).toBe(8);
     });
 
     it("shows inspectors only their own visits", async () => {
       const a = await visits("insA");
       expect(a.map((v) => v.inspector.id)).toEqual(Array(a.length).fill(ids.insA));
-      expect(a.length).toBe(3);
+      expect(a.length).toBe(4);
       const b = await visits("insB");
       expect(b.every((v) => v.inspector.id === ids.insB)).toBe(true);
     });

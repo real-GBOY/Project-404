@@ -1,6 +1,9 @@
 import { useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api/raqib";
+import type { Inspection } from "@/api/types";
+import { setUi } from "@/state/ui-store";
+import { putWithProgress } from "@/lib/upload";
 import type { Actions } from "@/presenters/actions";
 
 /**
@@ -9,8 +12,18 @@ import type { Actions } from "@/presenters/actions";
  */
 export function useActions(): Actions {
   const qc = useQueryClient();
-  return useMemo<Actions>(
-    () => ({
+  return useMemo<Actions>(() => {
+    const timers = new Map<string, ReturnType<typeof setTimeout>>();
+    const put = (visitId: string, view: Inspection) => {
+      qc.setQueryData(["inspection", visitId], view);
+      setUi({ savedAt: new Date().toTimeString().slice(0, 5) });
+    };
+    /** Show the text immediately; send it once the person pauses. Everything else is sent at once. */
+    const optimistic = (visitId: string, fn: (v: Inspection) => Inspection) => {
+      const cur = qc.getQueryData<Inspection>(["inspection", visitId]);
+      if (cur) put(visitId, fn(cur));
+    };
+    return {
       async changeRole(id, role, reason) {
         await api.users.changeRole(id, role, reason);
         await qc.invalidateQueries({ queryKey: ["users"] });
@@ -53,7 +66,78 @@ export function useActions(): Actions {
         await api.notifications.markAllRead();
         await qc.invalidateQueries({ queryKey: ["notifications"] });
       },
-    }),
-    [qc],
-  );
+      async startInspection(visitId) {
+        const v = await api.inspection.start(visitId);
+        put(visitId, v);
+        await qc.invalidateQueries({ queryKey: ["visits"] });
+        return v;
+      },
+      async saveAnswer(visitId, itemId, patch) {
+        optimistic(visitId, (v) => ({
+          ...v,
+          sections: v.sections.map((s) => ({ ...s, items: s.items.map((it) => (it.id === itemId ? { ...it, ...(patch.value !== undefined ? { answer: patch.value } : {}), ...(patch.note !== undefined ? { note: patch.note ?? "" } : {}), ...(patch.severity !== undefined ? { severity: patch.severity } : {}) } : it)) })),
+        }));
+        const send = async (): Promise<void> => {
+          put(visitId, await api.inspection.answer(visitId, itemId, patch));
+        };
+        if (patch.note === undefined) return send();
+        const key = `a:${itemId}`;
+        clearTimeout(timers.get(key));
+        await new Promise<void>((resolve, reject) => timers.set(key, setTimeout(() => send().then(() => resolve(), reject), 600)));
+      },
+      async setGuardScore(visitId, guardId, itemId, score) {
+        optimistic(visitId, (v) => ({ ...v, guards: v.guards.map((g) => (g.guardId === guardId ? { ...g, scores: { ...g.scores, [itemId]: score } } : g)) }));
+        put(visitId, await api.inspection.guardScore(visitId, guardId, itemId, score));
+      },
+      async setGuardNote(visitId, guardId, note) {
+        optimistic(visitId, (v) => ({ ...v, guards: v.guards.map((g) => (g.guardId === guardId ? { ...g, note } : g)) }));
+        const key = `g:${guardId}`;
+        clearTimeout(timers.get(key));
+        await new Promise<void>((resolve, reject) => timers.set(key, setTimeout(() => api.inspection.guardNote(visitId, guardId, note).then((v) => { put(visitId, v); resolve(); }, reject), 600)));
+      },
+      async submitInspection(visitId) {
+        // flush any pending text first so the backend checks what the person sees
+        for (const t of timers.values()) clearTimeout(t);
+        const v = await api.inspection.submit(visitId);
+        put(visitId, v);
+        await qc.invalidateQueries({ queryKey: ["visits"] });
+      },
+      async uploadEvidence(file, target, onProgress) {
+        const p = await api.evidence.presign({ name: file.name, type: file.type, size: file.size });
+        await putWithProgress(file, p.upload, onProgress);
+        await api.evidence.confirm(p.fileId);
+        await api.evidence.attach({ fileId: p.fileId, inspectionId: target.inspectionId, itemId: target.itemId ?? null, guardId: target.guardId ?? null });
+        put(target.visitId, await api.inspection.get(target.visitId));
+      },
+      async removeEvidence(visitId, evidenceId) {
+        await api.evidence.remove(evidenceId);
+        put(visitId, await api.inspection.get(visitId));
+      },
+      async createForm(input) {
+        const f = await api.forms.create(input);
+        await qc.invalidateQueries({ queryKey: ["forms"] });
+        return { id: f.id };
+      },
+      async createDraft(formId) {
+        await api.forms.createDraft(formId);
+        await qc.invalidateQueries({ queryKey: ["forms"] });
+      },
+      async saveDraft(formId, sections) {
+        await api.forms.saveDraft(formId, sections);
+        await qc.invalidateQueries({ queryKey: ["forms"] });
+      },
+      async discardDraft(formId) {
+        await api.forms.discardDraft(formId);
+        await qc.invalidateQueries({ queryKey: ["forms"] });
+      },
+      async publishForm(formId, reason) {
+        await api.forms.publish(formId, reason);
+        await qc.invalidateQueries({ queryKey: ["forms"] });
+      },
+      async setFormActive(formId, active, reason) {
+        await api.forms.setActive(formId, active, reason);
+        await qc.invalidateQueries({ queryKey: ["forms"] });
+      },
+    };
+  }, [qc]);
 }

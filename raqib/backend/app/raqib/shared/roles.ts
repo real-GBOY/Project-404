@@ -9,10 +9,10 @@ import { ROLE_KEYS, type RoleKey } from "./modules.js";
  * can edit without touching global Core roles. Domain code never branches on a role key for
  * authorization — it asks the access service.
  */
-const FILE_KEYS = ["upload:file", "read:file"];
+const FILE_KEYS = ["upload:file"];
 
 const META: Record<RoleKey, { name: string; description: string; permissionKeys: string[] }> = {
-  qm: { name: "Quality Management", description: "Operational control across projects, reviews, approvals and forms.", permissionKeys: [...FILE_KEYS, "delete:file"] },
+  qm: { name: "Quality Management", description: "Operational control across projects, reviews, approvals and forms.", permissionKeys: [...FILE_KEYS] },
   qe: { name: "Quality Employee", description: "Reviews, returns and follows up inspections within assigned projects.", permissionKeys: FILE_KEYS },
   pm: { name: "Project Manager", description: "Results, observations and corrective actions of assigned projects.", permissionKeys: FILE_KEYS },
   ins: { name: "Inspector", description: "Performs assigned visits and submits inspections.", permissionKeys: FILE_KEYS },

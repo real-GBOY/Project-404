@@ -4,7 +4,7 @@ import type { Ctx } from "./context";
 import { ROLE_LABEL } from "./screens/users";
 
 /** Dialogs that need a stated reason (the approved design records who changed what, and why). */
-const NEED_REASON = new Set(["create", "resched", "cancel", "roleChange", "userScope", "userDisable", "userEnable", "permSave", "scopeSave", "settingsSave"]);
+const NEED_REASON = new Set(["publish", "deactivateForm", "create", "resched", "cancel", "roleChange", "userScope", "userDisable", "userEnable", "permSave", "scopeSave", "settingsSave"]);
 
 const ROLES: RoleKey[] = ["qm", "qe", "pm", "ins", "gs", "guard", "gm"];
 
@@ -45,7 +45,7 @@ export function modalVM(c: Ctx) {
     title: i.S(`m_${K}_t`, { r: ref }),
     sub: i.S(`m_${K}_s`),
     okLabel: i.S(`m_${K}_ok`),
-    okBg: ["userDisable", "cancel"].includes(K) ? "#A3262A" : "#0F5C4A",
+    okBg: ["userDisable", "cancel", "deactivateForm"].includes(K) ? "#A3262A" : "#0F5C4A",
     reason: fld("reason"),
     comment: fld("comment"),
     role: fld("role"),
@@ -67,14 +67,20 @@ export function modalVM(c: Ctx) {
     isSched: ["resched", "create"].includes(K),
     isCreate: K === "create",
     ...visitOptions(c),
-    reasonLabel: K === "create" ? i.S("m_createReason") : i.S("m_reason"),
+    reasonLabel: K === "create" ? i.S("m_createReason") : K === "publish" ? i.S("m_releaseNote") : i.S("m_reason"),
     reasonPh: i.S(`m_reasonPh_${K}`),
     audit: i.S("m_audit"),
+    isSubmit: K === "submit",
+    isNewSection: K === "newSection",
+    title2: fld("title"),
+    summary: String(m.summary ?? ""),
+    hasAffect: K === "publish",
+    affect: K === "publish" ? i.S("pubAffect", { n: Number(m.uses ?? 0), v: String(m.oldV ?? "") }) : "",
     isRoleSel: ["roleChange"].includes(K),
     roleOpts: [{ v: "", l: i.S("choose") }].concat(ROLES.map((k) => ({ v: k, l: i.L(ROLE_LABEL[k]) }))),
     isProj: ["userScope"].includes(K),
     projChecks,
-    isDiff: ["permSave", "scopeSave", "settingsSave"].includes(K) && !!diff.length,
+    isDiff: ["permSave", "scopeSave", "settingsSave", "publish"].includes(K) && !!diff.length,
     diff,
   };
   return { hasModal: true, md };
@@ -106,6 +112,7 @@ export async function submitModal(c: Ctx): Promise<void> {
   if (NEED_REASON.has(m.kind) && reason.length < 3) missing.push("reason");
   if (m.kind === "create") for (const k of ["p", "s", "date", "time"]) if (!String(f[k] ?? "").trim()) missing.push(k);
   if (m.kind === "resched") for (const k of ["date", "time"]) if (!String(f[k] ?? "").trim()) missing.push(k);
+  if (m.kind === "newSection" && !String(f.title ?? "").trim()) missing.push("title");
   if (m.kind === "roleChange" && !String(f.role ?? "").trim()) missing.push("role");
   if (missing.length) {
     set({ mErr: missing });
@@ -131,6 +138,35 @@ export async function submitModal(c: Ctx): Promise<void> {
         await actions.cancelVisit(m.vid as string, reason);
         c.toast(i.S("toastCancelled", { r: String(m.ref ?? "") }));
         break;
+      case "submit":
+        await actions.submitInspection(m.vid as string);
+        c.toast(i.S("toastSubmitted", { r: String(m.ref ?? "") }));
+        c.go("visit", m.vid as string);
+        break;
+      case "publish":
+        await actions.publishForm(m.fid as string, reason);
+        set({ fb: {}, fbDraft: null });
+        c.toast(i.S("toastPublished", { v: String(m.ref ?? "").split(" v")[1] ?? "" }));
+        break;
+      case "discardDraft":
+        await actions.discardDraft(m.fid as string);
+        set({ fb: {}, fbDraft: null });
+        break;
+      case "deactivateForm":
+        await actions.setFormActive(m.fid as string, false, reason);
+        c.toast(i.S("toastFormOff"));
+        break;
+      case "newSection": {
+        const form = c.data.forms?.items.find((x) => x.id === m.fid);
+        const ver = form?.versions.find((v) => v.id === m.vid);
+        if (form && ver) {
+          const cur = ui.fbDraft && ui.fbDraft.versionId === ver.id ? ui.fbDraft.sections : ver.sections;
+          const t = String(f.title);
+          await actions.saveDraft(form.id, [...cur, { key: `s${Date.now().toString(36)}`, title: { ar: t, en: t }, items: [] }]);
+          set({ fb: { ver: ver.id, sec: cur.length }, fbDraft: null });
+        }
+        break;
+      }
       case "roleChange":
         await actions.changeRole(m.uid as string, f.role as RoleKey, reason);
         c.toast(i.S("toastRole"));

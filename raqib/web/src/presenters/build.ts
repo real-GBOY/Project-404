@@ -9,12 +9,15 @@ import { permissionTemplates } from "./screens/permissions";
 import { settingsScreen } from "./screens/settings";
 import { userDetail, usersList } from "./screens/users";
 import { visitDetail, visitsList } from "./screens/visits";
+import { formBuilder, formsList } from "./screens/forms";
+import { inspectionWorkspace } from "./screens/inspection";
+import { reviewQueue } from "./screens/queue";
 
 export type Denial = { k: "module" | "scope" | "forbidden"; res?: string };
 
 /** Which `vm.is.*` flag drives which approved screen. */
 const FLAG: Record<string, string> = {
-  projects: "projects", project: "project", visits: "visits", visit: "visit", guards: "guards", users: "users", user: "user", permissions: "perms", settings: "settings",
+  projects: "projects", project: "project", visits: "visits", visit: "visit", forms: "forms", form: "form", inspect: "inspect", inspections: "reviews", guards: "guards", users: "users", user: "user", permissions: "perms", settings: "settings",
 };
 
 /** The denied screen (design: vmDenied). The backend produced the refusal; this only explains it. */
@@ -80,7 +83,15 @@ export function buildVM(c: Ctx, opts: { pending: boolean; denial: Denial | null 
     else if (n === "visit") {
       const v = (c.data.visits ?? []).find((x) => x.id === route.id);
       if (v) { body = visitDetail(c, v); title = v.ref; }
-    } else if (n === "guards") { body = guardsList(c); is.showGuardTable = true; }
+    } else if (n === "forms") body = formsList(c);
+    else if (n === "form") {
+      const fm = c.data.forms?.items.find((x) => x.id === route.id);
+      if (fm) { body = formBuilder(c, fm); title = i.L(fm.name); }
+    } else if (n === "inspect") {
+      const v = (c.data.visits ?? []).find((x) => x.id === route.id);
+      if (c.data.inspection) { body = inspectionWorkspace(c, c.data.inspection, v); title = i.S("inspection"); }
+    } else if (n === "inspections") body = reviewQueue(c, true);
+    else if (n === "guards") { body = guardsList(c); is.showGuardTable = true; }
     else if (n === "users") body = usersList(c);
     else if (n === "user") {
       const u = (c.data.users ?? []).find((x) => x.id === route.id);

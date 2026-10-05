@@ -84,6 +84,11 @@ export class AccessService {
     });
   }
 
+  /** A person's profile (names and role) for snapshots and message text. */
+  async profileOf(userId: string) {
+    return readInTenant(() => this.repo.profile(userId));
+  }
+
   /** The effective templates of every role (for the permission-templates screen). */
   async allTemplates(): Promise<Record<RoleKey, Template>> {
     return readInTenant(async () => {

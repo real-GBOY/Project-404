@@ -1,4 +1,4 @@
-import type { AppNotification, EligibleInspector, Guard, Me, OrgSettings, PermissionsOverview, Person, Project, Visit } from "@/api/types";
+import type { AppNotification, EligibleInspector, Form, Guard, Inspection, Me, OrgSettings, PermissionsOverview, Person, Project, Visit } from "@/api/types";
 import type { I18n } from "@/i18n/i18n";
 import type { UiState } from "@/state/ui-store";
 import type { Actions } from "./actions";
@@ -11,6 +11,8 @@ export interface Data {
   permissions?: PermissionsOverview;
   settings?: OrgSettings;
   visits?: Visit[];
+  forms?: { items: Form[]; capabilities: { add: boolean; edit: boolean; publish: boolean } };
+  inspection?: Inspection;
   notifications?: { items: AppNotification[]; unread: number };
   /** Inspectors a visit can be assigned to for the project chosen in the open dialog. */
   inspectors?: EligibleInspector[];

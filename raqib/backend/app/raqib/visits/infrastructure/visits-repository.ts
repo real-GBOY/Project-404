@@ -164,6 +164,15 @@ export class VisitsRepository {
       .execute();
   }
 
+  /** Stored inspection scores by visit (set at submission) - a read model for lists; the inspection module owns the data. */
+  async scores(visitIds: string[]): Promise<Map<string, { scorePct: number | null; submittedAt: Date | null; inspectionId: string }>> {
+    const out = new Map<string, { scorePct: number | null; submittedAt: Date | null; inspectionId: string }>();
+    if (!visitIds.length) return out;
+    const rows = await raqibDb().selectFrom("raqib_inspections").select(["id", "visit_id", "score_pct", "submitted_at"]).where("visit_id", "in", visitIds).execute();
+    for (const r of rows) out.set(r.visit_id, { scorePct: r.score_pct, submittedAt: r.submitted_at, inspectionId: r.id });
+    return out;
+  }
+
   // ── events ──────────────────────────────────────────────────────────────
 
   async appendEvent(e: {

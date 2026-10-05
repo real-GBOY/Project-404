@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import type { FormSection } from "@/api/types";
 
 /**
  * UI state only — never server data. Filters, tabs, open dialogs, form drafts, the language. (Server
@@ -6,6 +7,20 @@ import { useSyncExternalStore } from "react";
  * store with the design's `setState(partial | fn)` shape, so presenters stay close to the approved
  * interaction logic.
  */
+/** A file the person picked that has not finished becoming stored evidence. */
+export interface UploadEntry {
+  id: string;
+  name: string;
+  kind: "photo" | "video" | "doc";
+  size: number;
+  progress: number;
+  status: "uploading" | "failed" | "rejected";
+  /** Local preview of a photo (an object URL; never leaves the browser). */
+  url: string | null;
+  limitMb?: number;
+  file?: File;
+}
+
 export interface UiState {
   lang: "ar" | "en";
   w: number;
@@ -29,6 +44,19 @@ export interface UiState {
   pstatus: string;
   ptab: string;
   vview: string;
+  /** Inspection workspace: current step, expanded detail panels, observation toggles, in-flight uploads, declaration. */
+  step: number;
+  expanded: Record<string, boolean>;
+  obsOn: Record<string, boolean>;
+  decl: boolean;
+  uploads: Record<string, UploadEntry[]>;
+  itab: string;
+  rtab: string;
+  fb: { ver?: string; sec?: number };
+  /** Unsaved edits to a form draft (shown immediately, sent after a pause). */
+  fbDraft: { versionId: string; sections: FormSection[] } | null;
+  /** Wall-clock time of the last successful autosave. */
+  savedAt: string | null;
   vfilter: string;
   utab: string;
   ufilter: { q: string; role: string };
@@ -64,6 +92,16 @@ const initial = (): UiState => ({
   pstatus: "all",
   ptab: "overview",
   vview: "list",
+  step: 0,
+  expanded: {},
+  obsOn: {},
+  decl: false,
+  uploads: {},
+  itab: "active",
+  rtab: "pending_review",
+  fb: {},
+  fbDraft: null,
+  savedAt: null,
   vfilter: "all",
   utab: "users",
   ufilter: { q: "", role: "all" },
