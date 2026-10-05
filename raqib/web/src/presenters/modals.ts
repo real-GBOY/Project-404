@@ -4,7 +4,7 @@ import type { Ctx } from "./context";
 import { ROLE_LABEL } from "./screens/users";
 
 /** Dialogs that need a stated reason (the approved design records who changed what, and why). */
-const NEED_REASON = new Set(["return", "reject", "publish", "deactivateForm", "create", "resched", "cancel", "roleChange", "userScope", "userDisable", "userEnable", "permSave", "scopeSave", "settingsSave"]);
+const NEED_REASON = new Set(["caReturn", "return", "reject", "publish", "deactivateForm", "create", "resched", "cancel", "roleChange", "userScope", "userDisable", "userEnable", "permSave", "scopeSave", "settingsSave"]);
 
 const ROLES: RoleKey[] = ["qm", "qe", "pm", "ins", "gs", "guard", "gm"];
 
@@ -45,14 +45,14 @@ export function modalVM(c: Ctx) {
     title: i.S(`m_${K}_t`, { r: ref }),
     sub: i.S(`m_${K}_s`),
     okLabel: i.S(`m_${K}_ok`),
-    okBg: ["userDisable", "cancel", "deactivateForm", "reject"].includes(K) ? "#A3262A" : ["return"].includes(K) ? "#8A5A00" : "#0F5C4A",
+    okBg: ["userDisable", "cancel", "deactivateForm", "reject"].includes(K) ? "#A3262A" : ["return", "caReturn"].includes(K) ? "#8A5A00" : "#0F5C4A",
     reason: fld("reason"),
     comment: fld("comment"),
     role: fld("role"),
     hasErr: !!errs.length,
     errTxt: i.S("m_err"),
     needReason: NEED_REASON.has(K),
-    optComment: ["forward", "approve"].includes(K),
+    optComment: ["forward", "approve", "caClose"].includes(K),
     date: fld("date"),
     time: fld("time"),
     ins: fld("ins"),
@@ -72,6 +72,12 @@ export function modalVM(c: Ctx) {
     audit: i.S("m_audit"),
     isSubmit: K === "submit",
     isReturn: K === "return",
+    isCA: K === "ca",
+    source: String(m.source ?? ""),
+    resp: fld("resp"),
+    respOpts: [{ v: "", l: i.S("choose") }].concat((c.data.responsibles ?? []).map((x) => ({ v: x.id, l: i.L(x.name) }))),
+    due: fld("due"),
+    priOpts: (["low", "medium", "high"] as const).map((k) => ({ label: i.S(`pri_${k}`), set: () => set((s) => ({ mf: { ...s.mf, pri: k } })), bg: (f.pri ?? "medium") === k ? "#191C1F" : "#fff", fg: (f.pri ?? "medium") === k ? "#fff" : "#191C1F" })),
     isApprove: K === "approve",
     flags: (m.flags as Array<{ num: string; text: string }> | undefined) ?? [],
     hasFlags: ((m.flags as unknown[] | undefined) ?? []).length > 0,
@@ -118,6 +124,7 @@ export async function submitModal(c: Ctx): Promise<void> {
   if (NEED_REASON.has(m.kind) && reason.length < 3) missing.push("reason");
   if (m.kind === "create") for (const k of ["p", "s", "date", "time"]) if (!String(f[k] ?? "").trim()) missing.push(k);
   if (m.kind === "resched") for (const k of ["date", "time"]) if (!String(f[k] ?? "").trim()) missing.push(k);
+  if (m.kind === "ca") for (const k of ["title", "resp", "due"]) if (!String(f[k] ?? "").trim()) missing.push(k);
   if (m.kind === "newSection" && !String(f.title ?? "").trim()) missing.push("title");
   if (m.kind === "roleChange" && !String(f.role ?? "").trim()) missing.push("role");
   if (missing.length) {
@@ -166,6 +173,19 @@ export async function submitModal(c: Ctx): Promise<void> {
         await actions.decideReview(m.vid as string, "approve", { comment: String(f.comment ?? "").trim() || undefined });
         c.toast(i.S("toastApproved", { r: String(m.ref ?? "") }));
         c.go("visit", m.vid as string);
+        break;
+      case "ca": {
+        const a = await actions.assignAction(m.oid as string, { responsibleId: f.resp as string, dueDate: f.due as string, priority: ((f.pri as never) || "medium"), description: String(f.title).trim() });
+        c.toast(i.S("toastCaCreated", { r: a.ref }), { label: i.S("open"), fn: () => c.go("action", a.id) });
+        break;
+      }
+      case "caReturn":
+        await actions.actionStep(m.aid as string, "return", { reason });
+        c.toast(i.S("toastCaReturned", { r: String(m.ref ?? "") }));
+        break;
+      case "caClose":
+        await actions.actionStep(m.aid as string, "close", { comment: String(f.comment ?? "").trim() || undefined });
+        c.toast(i.S("toastCaClosed", { r: String(m.ref ?? "") }));
         break;
       case "submit":
         await actions.submitInspection(m.vid as string);

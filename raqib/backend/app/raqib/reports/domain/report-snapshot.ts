@@ -33,6 +33,7 @@ export interface ReportSnapshot {
       evidence: Array<{ id: string; name: string; kind: string; mime: string }>;
     }>;
   }>;
+  violations: Array<{ ref: string; num: string | null; text: L10n; note: string; severity: string; repeatCount: number }>;
   guards: Array<{ employeeNo: string; name: L10n; pct: number | null; note: string }>;
   decisions: Array<{ action: string; at: string; reason: string | null; actor: { name: L10n; title: L10n; role: string | null } }>;
   approvedBy: { name: L10n; title: L10n };
@@ -49,6 +50,7 @@ export function buildSnapshot(args: {
   visit: VisitView;
   inspection: InspectionView;
   guards: Map<string, GuardLite>;
+  violations: Array<{ ref: string; itemNum: string | null; title: L10n; note: string; severity: string; repeatCount: number }>;
   approver: { nameAr: string; nameEn: string; titleAr: string; titleEn: string };
 }): ReportSnapshot {
   const { visit: v, inspection: ins } = args;
@@ -79,6 +81,7 @@ export function buildSnapshot(args: {
         evidence: it.evidence.map((e) => ({ id: e.id, name: e.name, kind: e.kind, mime: e.mime })),
       })),
     })),
+    violations: args.violations.map((o) => ({ ref: o.ref, num: o.itemNum, text: o.title, note: o.note, severity: o.severity, repeatCount: o.repeatCount })),
     guards: ins.guards.map((g) => {
       const info = args.guards.get(g.guardId);
       return { employeeNo: info?.employeeNo ?? "", name: info?.name ?? { ar: "—", en: "—" }, pct: g.pct, note: g.note };

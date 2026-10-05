@@ -1,4 +1,4 @@
-import type { AppNotification, EligibleInspector, Form, Guard, Inspection, Me, OrgSettings, PermissionsOverview, Person, Project, Report, Visit } from "@/api/types";
+import type { AppNotification, CorrectiveAction, EligibleInspector, Form, Guard, Inspection, Me, OrgSettings, PermissionsOverview, Observation, Person, Project, Report, ResponsibleOption, Visit } from "@/api/types";
 import type { I18n } from "@/i18n/i18n";
 import type { UiState } from "@/state/ui-store";
 import type { Actions } from "./actions";
@@ -14,6 +14,11 @@ export interface Data {
   forms?: { items: Form[]; capabilities: { add: boolean; edit: boolean; publish: boolean } };
   inspection?: Inspection;
   reports?: { items: Report[]; pdf: boolean };
+  observations?: Observation[];
+  actions?: CorrectiveAction[];
+  action?: CorrectiveAction;
+  /** People who may be given an action on the project chosen in the open dialog. */
+  responsibles?: ResponsibleOption[];
   notifications?: { items: AppNotification[]; unread: number };
   /** Inspectors a visit can be assigned to for the project chosen in the open dialog. */
   inspectors?: EligibleInspector[];

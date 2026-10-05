@@ -6,6 +6,7 @@ import { NOTIFICATION_PROVIDER, USER_PROVIDER } from "@core/kernel/tokens.js";
 import { AccessService } from "@raqib/raqib/access/application/access-service.js";
 import { SettingsService } from "@raqib/raqib/settings/application/settings-service.js";
 import { ProjectsRepository } from "@raqib/raqib/projects/infrastructure/projects-repository.js";
+import { ActionsRepository, type ActionRecord } from "@raqib/raqib/actions/infrastructure/actions-repository.js";
 import { VisitsRepository, type VisitRecord } from "@raqib/raqib/visits/infrastructure/visits-repository.js";
 
 type Lang = "ar" | "en";
@@ -36,6 +37,7 @@ export class RaqibNotifications implements OnModuleInit {
     @Inject(NOTIFICATION_PROVIDER) private readonly notify: INotificationProvider,
     @Inject(USER_PROVIDER) private readonly users: IUserProvider,
     private readonly visits: VisitsRepository,
+    private readonly actions: ActionsRepository,
     private readonly projects: ProjectsRepository,
     private readonly access: AccessService,
     private readonly settings: SettingsService,
@@ -53,6 +55,11 @@ export class RaqibNotifications implements OnModuleInit {
     on("raqib.inspection_returned", (p) => this.toInspector(p, "raqib.inspection_returned", ["inspect", String(p.visitId)]));
     on("raqib.inspection_rejected", (p) => this.toInspector(p, "raqib.inspection_rejected", ["visit", String(p.visitId)]));
     on("raqib.inspection_approved", (p) => this.approved(p));
+    on("raqib.action_assigned", (p) => this.action(p, "raqib.action_assigned", async () => []));
+    on("raqib.action_submitted", (p) => this.action(p, "raqib.action_submitted", (a, today) => this.access.holders("actions", "R", a.projectId, today, String(p.actorId)), false));
+    on("raqib.action_returned", (p) => this.action(p, "raqib.action_returned", async () => []));
+    on("raqib.action_closed", (p) => this.action(p, "raqib.action_closed", async (a) => (a.createdBy ? [a.createdBy] : [])));
+    on("raqib.action_overdue", (p) => this.action(p, "raqib.action_overdue", (a, today) => this.access.holders("actions", "R", a.projectId, today), true));
   }
 
   private async lang(userId: string): Promise<Lang> {
@@ -128,5 +135,28 @@ export class RaqibNotifications implements OnModuleInit {
     const recipients = new Set<string>(await this.access.holders("visits", "A", v.projectId, today));
     if (v.inspectorId) recipients.add(v.inspectorId);
     for (const r of recipients) await this.send(r, "raqib.visit_overdue", v);
+  }
+
+  /**
+   * Corrective-action notifications. `extra` adds recipients beyond the responsible person; `includeResponsible`
+   * says whether the responsible person hears about it (not when they themselves just handed the work over).
+   */
+  private async action(p: Payload, key: string, extra: (a: ActionRecord, today: string) => Promise<string[]>, includeResponsible = true): Promise<void> {
+    const a = await this.actions.find(String(p.actionId));
+    if (!a) return;
+    const today = await this.settings.today();
+    const to = new Set<string>(await extra(a, today));
+    if (includeResponsible) to.add(a.responsibleId);
+    if (p.actorId) to.delete(String(p.actorId));
+    for (const r of to) {
+      const lang = await this.lang(r);
+      await this.notify.send({
+        userId: r,
+        templateKey: key,
+        type: key,
+        locale: lang,
+        data: { ref: a.ref, title: a.title[lang], due: a.dueDate, reason: String(p.reason ?? ""), actor: p.actorId ? await this.actorName(p, lang) : "", go: ["action", a.id] },
+      });
+    }
   }
 }

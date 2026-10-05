@@ -1,7 +1,7 @@
 import { API_BASE_URL, ENDPOINTS, http } from "@/config";
 import type { PresignResponse } from "@/lib/upload";
 import type {
-  Answer, Report, EvidenceItem, Form, FormSection, Inspection,
+  Answer, CorrectiveAction, Observation, Report, ResponsibleOption, Severity, EvidenceItem, Form, FormSection, Inspection,
   AppNotification, CreateVisitInput, EligibleInspector, RescheduleVisitInput, Visit,
   Guard, LoginResponse, Me, OrgSettings, Person, PermissionsOverview, Project, RoleKey, TemplateChange,
 } from "./types";
@@ -83,7 +83,7 @@ export const api = {
     presign: (file: { name: string; type: string; size: number }) =>
       http<PresignResponse>(ENDPOINTS.files.presign, { method: "POST", body: { originalName: file.name, contentType: file.type || "application/octet-stream", byteSize: file.size } }),
     confirm: (fileId: string) => http<unknown>(ENDPOINTS.files.confirm(fileId), { method: "POST" }),
-    attach: (b: { fileId: string; inspectionId: string; itemId?: string | null; guardId?: string | null }) => http<EvidenceItem>(ENDPOINTS.evidence.attach, { method: "POST", body: b }),
+    attach: (b: { fileId: string; inspectionId?: string; actionId?: string; itemId?: string | null; guardId?: string | null }) => http<EvidenceItem>(ENDPOINTS.evidence.attach, { method: "POST", body: b }),
     remove: (id: string) => http<void>(ENDPOINTS.evidence.byId(id), { method: "DELETE" }),
     /** The bytes, fetched with the caller's credentials (never a public URL). */
     blob: async (id: string): Promise<Blob> => {
@@ -91,6 +91,20 @@ export const api = {
       if (!r.ok) throw new Error(`evidence ${r.status}`);
       return r.blob();
     },
+  },
+  observations: {
+    list: () => http<{ items: Observation[] }>(ENDPOINTS.observations.list).then((r) => r.items),
+    create: (b: { projectId: string; siteId: string; text: string; note?: string; severity: Severity }) => http<Observation>(ENDPOINTS.observations.create, { method: "POST", body: b }),
+  },
+  actions: {
+    list: () => http<{ items: CorrectiveAction[] }>(ENDPOINTS.actions.list).then((r) => r.items),
+    get: (id: string) => http<CorrectiveAction>(ENDPOINTS.actions.byId(id)),
+    responsible: (projectId: string) => http<{ items: ResponsibleOption[] }>(ENDPOINTS.actions.responsible(projectId)).then((r) => r.items),
+    create: (observationId: string, b: { responsibleId: string; dueDate: string; priority: Severity; description: string }) =>
+      http<CorrectiveAction>(ENDPOINTS.observations.action(observationId), { method: "POST", body: b }),
+    step: (id: string, step: "start" | "submit" | "return" | "close", body: { reason?: string; comment?: string } = {}) =>
+      http<CorrectiveAction>(ENDPOINTS.actions.step(id, step), { method: "POST", body }),
+    comment: (id: string, text: string) => http<CorrectiveAction>(ENDPOINTS.actions.comments(id), { method: "POST", body: { text } }),
   },
   reports: {
     list: () => http<{ items: Report[]; pdf: boolean }>(ENDPOINTS.reports.list),

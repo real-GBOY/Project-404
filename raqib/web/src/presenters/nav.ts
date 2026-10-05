@@ -53,7 +53,7 @@ const MODULE_OF_NAV: Record<string, ModuleKey> = {
 };
 
 /** Entries whose backend exists in this build. Grows phase by phase (see raqib/docs/architecture.md §9). */
-export const ENABLED_NAV: ReadonlySet<string> = new Set(["overview", "projects", "visits", "reviews", "inspections", "forms", "reports", "guards", "users", "permissions", "settings"]);
+export const ENABLED_NAV: ReadonlySet<string> = new Set(["overview", "projects", "visits", "reviews", "inspections", "forms", "reports", "observations", "actions", "guards", "users", "permissions", "settings"]);
 
 export function visibleNav(me: Me): string[] {
   const t = me.permissions;

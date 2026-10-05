@@ -1,4 +1,4 @@
-import type { Answer, FormSection, Inspection, CreateVisitInput, OrgSettings, RescheduleVisitInput, RoleKey, TemplateChange } from "@/api/types";
+import type { Answer, CorrectiveAction, FormSection, Inspection, CreateVisitInput, OrgSettings, RescheduleVisitInput, RoleKey, TemplateChange } from "@/api/types";
 
 /**
  * The application layer's commands: each is one user intention that the backend validates and
@@ -26,6 +26,11 @@ export interface Actions {
   /** presign → direct PUT with progress → confirm → link; resolves when the evidence is stored and linked. */
   uploadEvidence(file: File, target: { visitId: string; inspectionId: string; itemId?: string; guardId?: string }, onProgress: (pct: number) => void): Promise<void>;
   removeEvidence(visitId: string, evidenceId: string): Promise<void>;
+  assignAction(observationId: string, input: { responsibleId: string; dueDate: string; priority: "low" | "medium" | "high"; description: string }): Promise<CorrectiveAction>;
+  actionStep(id: string, step: "start" | "submit" | "return" | "close", body?: { reason?: string; comment?: string }): Promise<void>;
+  commentAction(id: string, text: string): Promise<void>;
+  uploadActionEvidence(file: File, actionId: string, onProgress: (pct: number) => void): Promise<void>;
+  removeActionEvidence(actionId: string, evidenceId: string): Promise<void>;
   reportPdf(id: string, lang: "ar" | "en"): Promise<Blob>;
   evidenceBlob(id: string): Promise<Blob>;
   decideReview(visitId: string, action: "forward" | "return" | "reject" | "approve", body: { reason?: string; comment?: string; itemIds?: string[] }): Promise<void>;
