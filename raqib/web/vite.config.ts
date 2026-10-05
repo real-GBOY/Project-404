@@ -16,7 +16,10 @@ export default defineConfig({
     // Real-backend mode (VITE_API_MODE=http) calls relative /api paths; proxy them to the Raqib backend.
     proxy: { "/api": { target: process.env.RAQIB_API_PROXY_TARGET ?? "http://localhost:3300", changeOrigin: true } },
   },
+  // `vite preview` (the built app, with its service worker) is what the browser end-to-end tests drive.
+  preview: { port: 4599, strictPort: true, proxy: { "/api": { target: process.env.RAQIB_API_PROXY_TARGET ?? "http://localhost:3300", changeOrigin: true } } },
   test: {
+    exclude: ["e2e/**", "node_modules/**"],
     environment: "jsdom",
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
