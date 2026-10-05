@@ -1,7 +1,7 @@
 import { API_BASE_URL, ENDPOINTS, http } from "@/config";
 import type { PresignResponse } from "@/lib/upload";
 import type {
-  Answer, AuditQueryParams, AuditResult, ConfAccess, ConfGrant, ConfGrantee, ConfKind, ConfLogEntry, ConfMine, ConfReport, AnalyticsQueryParams, AnalyticsResult, SearchHit, CorrectiveAction, GuardHistory, GuardSummaries, TrainingReason, TrainingRequest, Observation, Report, ResponsibleOption, Severity, EvidenceItem, Form, FormSection, Inspection,
+  Answer, AccountRequest, AuditQueryParams, AuditResult, ConfAccess, ConfGrant, ConfGrantee, ConfKind, ConfLogEntry, ConfMine, ConfReport, AnalyticsQueryParams, AnalyticsResult, SearchHit, CorrectiveAction, GuardHistory, GuardSummaries, TrainingReason, TrainingRequest, Observation, Report, ResponsibleOption, Severity, EvidenceItem, Form, FormSection, Inspection,
   AppNotification, CreateVisitInput, EligibleInspector, RescheduleVisitInput, Visit,
   Guard, LoginResponse, Me, OrgSettings, Person, PermissionsOverview, Project, RoleKey, TemplateChange,
 } from "./types";
@@ -167,6 +167,13 @@ export const api = {
       if (!r.ok) throw new Error(`export ${r.status}`);
       return r.blob();
     },
+  },
+  accountRequests: {
+    list: () => http<{ items: AccountRequest[] }>(ENDPOINTS.accountRequests.list).then((r) => r.items),
+    get: (id: string) => http<AccountRequest>(ENDPOINTS.accountRequests.byId(id)),
+    approve: (id: string, b: { role: string; projectIds: string[]; comment?: string }) => http<AccountRequest>(ENDPOINTS.accountRequests.step(id, "approve"), { method: "POST", body: b }),
+    reject: (id: string, reason: string) => http<AccountRequest>(ENDPOINTS.accountRequests.step(id, "reject"), { method: "POST", body: { reason } }),
+    resend: (id: string) => http<void>(ENDPOINTS.accountRequests.step(id, "resend"), { method: "POST" }),
   },
   reports: {
     list: () => http<{ items: Report[]; pdf: boolean }>(ENDPOINTS.reports.list),

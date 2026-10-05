@@ -18,7 +18,7 @@ function needs(route: Route, me: Me) {
   const p = me.permissions;
   const n = route.n;
   const want = {
-    projects: p.projects.includes("V") && ["overview", "projects", "project", "users", "user", "permissions", "settings", "analytics"].includes(n),
+    projects: p.projects.includes("V") && ["overview", "projects", "project", "users", "user", "request", "permissions", "settings", "analytics"].includes(n),
     visits: p.visits.includes("V") && visitScreens.includes(n),
     guards: (p.guardEval.includes("V") || p.training.includes("V")) && ["guards", "guard", "visit", "inspect", "review", "training", "trainingD"].includes(n) || (n === "overview" && me.role === "gs"),
     users: p.users.includes("V") && ["users", "user", "permissions"].includes(n),
@@ -35,6 +35,8 @@ function needs(route: Route, me: Me) {
     guardSummary: (p.guardEval.includes("V") || p.training.includes("V")) && ["guards", "overview"].includes(n),
     analytics: p.analytics.includes("V") && n === "analytics",
     audit: p.audit.includes("V") && n === "audit",
+    accountRequests: p.users.includes("V") && ["users", "request"].includes(n),
+    accountRequest: p.users.includes("V") && n === "request" && !!route.id,
     reports: p.reports.includes("V") && ["reports", "report", "visit", "review"].includes(n),
   };
   // the shell labels a person's scope with project names whenever the template allows reading projects
@@ -82,6 +84,8 @@ export function useScreenData(route: Route, me: Me, ui: UiState): { data: Data; 
     { key: "confGrantees", enabled: gm && !!ui.modal && ui.modal.kind === "grantAdd", fn: () => api.conf.grantees() },
     { key: "confLog", enabled: gm, fn: () => api.conf.log() },
     { key: "audit", enabled: want.audit, fn: () => api.audit.list(auq), extra: [auq.q, auq.entity, auq.actor, auq.from, auq.to] },
+    { key: "accountRequests", enabled: want.accountRequests, fn: () => api.accountRequests.list() },
+    { key: "accountRequest", enabled: want.accountRequest, fn: () => api.accountRequests.get(route.id!), extra: [route.id ?? ""] },
     { key: "reports", enabled: want.reports, fn: () => api.reports.list() },
     { key: "notifications", enabled: true, fn: () => api.notifications.list().then((r) => ({ items: r.notifications, unread: r.unreadCount })), refetch: 30_000 },
     { key: "inspectors", enabled: !!inspProject, fn: () => api.visits.eligibleInspectors(inspProject, inspDate), extra: [inspProject, inspDate] },

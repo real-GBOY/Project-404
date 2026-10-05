@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { ApiError } from "@/config";
-import { DEMO_MODE, DEMO_PASSWORD } from "@/config";
+import { DEMO_MODE, DEMO_PASSWORD, ORG_SLUG } from "@/config";
 import { DEMO_ACCOUNTS } from "@/config/demo-accounts";
 import { useAuth } from "@/auth/auth-provider";
 import { createI18n, saveLang } from "@/i18n/i18n";
@@ -80,6 +80,7 @@ export function LoginPage() {
             {busy ? i.S("signingIn") : i.S("signIn")}
           </button>
         </form>
+        <a href={`/request-account/${ORG_SLUG}`} style={{ fontSize: 13, color: "#0F5C4A", textAlign: "center" }}>{i.S("requestAccountLink")}</a>
 
         {DEMO_MODE ? (
           <div style={{ ...card, padding: 14 }}>

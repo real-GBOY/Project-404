@@ -469,3 +469,26 @@ export interface AuditEntry {
 }
 export interface AuditResult { items: AuditEntry[]; entities: string[]; actors: Array<{ id: string; name: L10n }>; truncated: boolean }
 export interface AuditQueryParams { q: string; entity: string; actor: string; from: string; to: string }
+
+export interface AccountRequest {
+  id: string;
+  ref: string;
+  name: string;
+  email: string;
+  phone: string;
+  nationalId: string;
+  employeeNo: string;
+  department: string;
+  requestedRole: "qe" | "pm" | "ins" | "gs" | "guard";
+  requestedProjects: string;
+  justification: string;
+  declaration: { version: string; signedName: string; signedAt: string };
+  status: "pending" | "approved" | "rejected";
+  decidedBy: L10n | null;
+  decidedAt: string | null;
+  decisionReason: string | null;
+  assignedRole: string | null;
+  assignedProjectIds: string[];
+  createdAt: string;
+}
+export interface PublicOnboardingInfo { organization: { name: string }; projects: Array<{ id: string; name: L10n }>; roles: string[]; declarationVersion: string }

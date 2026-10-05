@@ -17,6 +17,7 @@ import { reportDetail, reportsIssued } from "./screens/reports";
 import { guardProfile, trainingDetail, trainingList } from "./screens/training";
 import { analytics } from "./screens/analytics";
 import { auditLog } from "./screens/audit";
+import { requestDetail } from "./screens/requests";
 import { confidentialArea } from "./screens/confidential";
 import { searchVM } from "./search";
 import { actionDetail, actionsList, observationsList } from "./screens/actions";
@@ -25,7 +26,7 @@ export type Denial = { k: "module" | "scope" | "forbidden"; res?: string };
 
 /** Which `vm.is.*` flag drives which approved screen. */
 const FLAG: Record<string, string> = {
-  projects: "projects", project: "project", visits: "visits", visit: "visit", forms: "forms", form: "form", inspect: "inspect", inspections: "reviews", reviews: "reviews", review: "review", reports: "reports", report: "report", analytics: "analytics", audit: "audit", confidential: "conf", training: "training", trainingD: "trainingD", guard: "guard", observations: "observations", actions: "actions", action: "action", guards: "guards", users: "users", user: "user", permissions: "perms", settings: "settings",
+  projects: "projects", project: "project", visits: "visits", visit: "visit", forms: "forms", form: "form", inspect: "inspect", inspections: "reviews", reviews: "reviews", review: "review", reports: "reports", report: "report", analytics: "analytics", audit: "audit", request: "request", confidential: "conf", training: "training", trainingD: "trainingD", guard: "guard", observations: "observations", actions: "actions", action: "action", guards: "guards", users: "users", user: "user", permissions: "perms", settings: "settings",
 };
 
 /** The denied screen (design: vmDenied). The backend produced the refusal; this only explains it. */
@@ -110,6 +111,9 @@ export function buildVM(c: Ctx, opts: { pending: boolean; denial: Denial | null 
     }
     else if (n === "analytics") body = analytics(c, c.data.analytics);
     else if (n === "audit") body = auditLog(c);
+    else if (n === "request") {
+      if (c.data.accountRequest) { body = requestDetail(c, c.data.accountRequest); title = c.data.accountRequest.ref; }
+    }
     else if (n === "confidential") body = confidentialArea(c);
     else if (n === "training") body = trainingList(c);
     else if (n === "trainingD") {

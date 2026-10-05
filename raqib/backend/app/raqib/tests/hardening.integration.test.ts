@@ -28,16 +28,29 @@ describe("authorization is declared on every endpoint (static review)", () => {
     expect(files.length).toBeGreaterThan(15);
   });
 
-  it("every Raqib controller is behind JWT + the access guard", () => {
+  const isPublic = (src: string) => src.startsWith("// PUBLIC:");
+
+  it("every Raqib controller is behind JWT + the access guard, except the one marked PUBLIC", () => {
     for (const f of files) {
       const src = readFileSync(f, "utf8");
+      if (isPublic(src)) continue;
       expect(src, f).toMatch(/@UseGuards\(JwtAuthGuard, AccessGuard\)/);
     }
+  });
+
+  it("the public controller is a single file, lives under /raqib/public/ and only reads options or creates a pending request", () => {
+    const pub = files.filter((f) => isPublic(readFileSync(f, "utf8")));
+    expect(pub).toHaveLength(1);
+    const src = readFileSync(pub[0]!, "utf8");
+    expect(src).toMatch(/@Controller\("raqib\/public\//);
+    expect((src.match(/@(Put|Patch|Delete)\(/g) ?? []).length).toBe(0);
+    expect((src.match(/@Post\(/g) ?? []).length).toBe(1);
   });
 
   it("every route declares @Allow(...) — the guard fails closed without it", () => {
     for (const f of files) {
       const src = readFileSync(f, "utf8");
+      if (isPublic(src)) continue;
       const routes = (src.match(/@(Get|Post|Put|Patch|Delete)\(/g) ?? []).length;
       const allows = (src.match(/@Allow\(/g) ?? []).length;
       expect(allows, `${f}: ${routes} routes, ${allows} @Allow`).toBe(routes);

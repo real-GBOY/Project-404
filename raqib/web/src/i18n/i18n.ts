@@ -2,6 +2,7 @@ import type { Lang, L10n } from "@/api/types";
 import { STRINGS_ADMIN } from "./strings.admin";
 import { STRINGS_CORE } from "./strings.core";
 import { STRINGS_QUALITY } from "./strings.quality";
+import { STRINGS_ONBOARDING } from "./strings.onboarding";
 import { STRINGS_CONFIDENTIAL } from "./strings.confidential";
 import { STRINGS_ANALYTICS } from "./strings.analytics";
 import { STRINGS_TRAINING } from "./strings.training";
@@ -9,7 +10,7 @@ import { STRINGS_REPORTS } from "./strings.reports";
 import { STRINGS_SCREENS } from "./strings.screens";
 
 type Table = Record<string, readonly [string, string]>;
-const STR: Table = { ...STRINGS_CONFIDENTIAL, ...STRINGS_ANALYTICS, ...STRINGS_TRAINING, ...STRINGS_CORE, ...STRINGS_ADMIN, ...STRINGS_SCREENS, ...STRINGS_REPORTS, ...STRINGS_QUALITY };
+const STR: Table = { ...STRINGS_ONBOARDING, ...STRINGS_CONFIDENTIAL, ...STRINGS_ANALYTICS, ...STRINGS_TRAINING, ...STRINGS_CORE, ...STRINGS_ADMIN, ...STRINGS_SCREENS, ...STRINGS_REPORTS, ...STRINGS_QUALITY };
 
 /** `{ar, en}` master data, or a plain user-entered string, as display text. User text is never translated. */
 export type Localized = L10n | string | null | undefined;

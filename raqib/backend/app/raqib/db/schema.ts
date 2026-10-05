@@ -6,6 +6,42 @@ export type Generated<T> =
     : ColumnType<T, T | undefined, T>;
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
+export type raqib_account_requests = {
+  id: string;
+  organization_id: string;
+  ref: string;
+  name: string;
+  email: string;
+  phone: string;
+  national_id: string;
+  employee_no: Generated<string>;
+  department: Generated<string>;
+  /**
+   * @kyselyType('qe' | 'pm' | 'ins' | 'gs' | 'guard')
+   */
+  requested_role: "qe" | "pm" | "ins" | "gs" | "guard";
+  requested_projects: Generated<string>;
+  justification: string;
+  declaration_version: string;
+  signed_name: string;
+  signed_at: Timestamp;
+  /**
+   * @kyselyType('pending' | 'approved' | 'rejected')
+   */
+  status: Generated<"pending" | "approved" | "rejected">;
+  decided_by: string | null;
+  decided_by_name_ar: string | null;
+  decided_by_name_en: string | null;
+  decided_at: Timestamp | null;
+  decision_reason: string | null;
+  assigned_role: string | null;
+  /**
+   * @kyselyType(Json<string[]>)
+   */
+  assigned_project_ids: Json<string[]> | null;
+  user_id: string | null;
+  created_at: Generated<Timestamp>;
+};
 export type raqib_action_events = {
   id: string;
   organization_id: string;
@@ -601,6 +637,7 @@ export type raqib_visits = {
   updated_at: Generated<Timestamp>;
 };
 export type RaqibTables = {
+  raqib_account_requests: raqib_account_requests;
   raqib_action_events: raqib_action_events;
   raqib_answers: raqib_answers;
   raqib_areas: raqib_areas;

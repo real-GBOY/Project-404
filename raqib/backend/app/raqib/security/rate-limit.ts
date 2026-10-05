@@ -8,7 +8,7 @@ interface Rule {
   name: string;
   /** Path prefix (after /api) and optional method the rule applies to. */
   match: (method: string, path: string) => boolean;
-  limit: number;
+  limit: number | (() => number);
   windowMs: number;
   /** Count per authenticated person when known, else per client address. */
   by: "ip" | "user";
@@ -21,7 +21,7 @@ interface Rule {
  */
 export const RULES: Rule[] = [
   { name: "auth", match: (m, p) => m === "POST" && /^\/auth\/(login|refresh|password|forgot|reset|register)/.test(p), limit: 20, windowMs: 60_000, by: "ip" },
-  { name: "account-request", match: (m, p) => m === "POST" && p.startsWith("/raqib/account-requests"), limit: 5, windowMs: 3_600_000, by: "ip" },
+  { name: "account-request", match: (m, p) => m === "POST" && p.startsWith("/raqib/public/onboarding"), limit: () => readRaqibConfig().accountRequestsPerHour, windowMs: 3_600_000, by: "ip" },
   { name: "confidential-submit", match: (m, p) => m === "POST" && p === "/raqib/confidential/reports", limit: 5, windowMs: 3_600_000, by: "user" },
   { name: "confidential-session", match: (m, p) => m === "POST" && p === "/raqib/confidential/session", limit: 20, windowMs: 3_600_000, by: "user" },
   { name: "pdf", match: (m, p) => m === "GET" && /^\/raqib\/reports\/[^/]+\/pdf/.test(p), limit: 12, windowMs: 60_000, by: "user" },
@@ -50,7 +50,7 @@ export class RateLimiter {
       return { allowed: true, retryAfterSec: 0, rule: rule.name };
     }
     cur.n += 1;
-    if (cur.n > rule.limit) return { allowed: false, retryAfterSec: Math.max(1, Math.ceil((cur.resetAt - now) / 1000)), rule: rule.name };
+    if (cur.n > (typeof rule.limit === "function" ? rule.limit() : rule.limit)) return { allowed: false, retryAfterSec: Math.max(1, Math.ceil((cur.resetAt - now) / 1000)), rule: rule.name };
     return { allowed: true, retryAfterSec: 0, rule: rule.name };
   }
 

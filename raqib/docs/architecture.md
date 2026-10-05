@@ -113,7 +113,7 @@ using real demo accounts (`demo` password) and real data. Arabic/English and RTL
 | 7 Analytics, CSV export, search | done (#15) |
 | 8 Confidential area | done (#16) |
 | 9 Hardening (rate limits, headers, audit log, authz review test, `docs/security.md`, `docs/operations.md`) | done |
-| Account onboarding (requests, e-signature, approval, password setup) | see PR list |
+| Account onboarding (public request + e-signature, review, approval creating the account, emailed password setup) | done |
 
 ## 10. Decisions log
 

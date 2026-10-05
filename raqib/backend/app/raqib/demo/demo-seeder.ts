@@ -20,6 +20,7 @@ import { runAsOf } from "@raqib/raqib/shared/business-date.js";
 import { addDays } from "@raqib/raqib/shared/dates.js";
 import { DEMO_VISITS } from "./demo-visits.js";
 import { DEMO_FORMS } from "./demo-forms.js";
+import { OnboardingService } from "@raqib/raqib/onboarding/application/onboarding-service.js";
 import { ConfidentialService } from "@raqib/raqib/confidential/application/confidential-service.js";
 import { TrainingService } from "@raqib/raqib/training/application/training-service.js";
 import { ActionsService } from "@raqib/raqib/actions/application/actions-service.js";
@@ -59,6 +60,7 @@ export class DemoSeeder {
     private readonly actions: ActionsService,
     private readonly training: TrainingService,
     private readonly confidential: ConfidentialService,
+    private readonly onboarding: OnboardingService,
     @Inject(FILE_STORAGE) private readonly files: IFileStorage,
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
@@ -267,6 +269,25 @@ export class DemoSeeder {
     });
   }
 
+  /** Two people waiting for an account and one already turned down, through the real public path and the reviewer's decision. */
+  private async seedRequests(orgId: string, userIds: Map<string, string>, today: string): Promise<void> {
+    const form = (name: string, email: string, nid: string, role: "qe" | "pm" | "ins" | "gs" | "guard", projects: string, just: string) => ({
+      name, email, phone: "0550000000", nationalId: nid, employeeNo: "", department: "Operations", role, projects, justification: just, signature: name, agree: true,
+    });
+    const a = await this.onboarding.submitPublic(DEMO_ORG.slug, form("Hamad Al-Dossary", "h.aldossary@example.com", "1011223344", "ins", "Al-Waha Business Park", "Joining the Riyadh inspection team next month."));
+    await this.onboarding.submitPublic(DEMO_ORG.slug, form("Layan Al-Harbi", "l.alharbi@example.com", "1022334455", "gs", "Eastern Specialist Hospital", "Covering the guards supervisor post at the hospital."));
+    const c = await this.onboarding.submitPublic(DEMO_ORG.slug, form("Nasser Al-Qahtani", "n.alqahtani2@example.com", "1033445566", "pm", "Jeddah Logistics Hub", "Requesting manager access to the Jeddah project."));
+    void a;
+    await withContext({ userId: userIds.get("qm")!, organizationId: orgId }, () =>
+      runAsOf(today, async () => {
+        const who = await this.access.resolve({ userId: userIds.get("qm")!, email: "", organizationId: orgId, permissions: [] });
+        const list = await this.onboarding.list(who);
+        const target = list.find((r) => r.ref === c.ref)!;
+        await this.onboarding.reject(target.id, "That project already has a manager.", who);
+      }),
+    );
+  }
+
   async seed(clock: Clock): Promise<void> {
     const already = await runAsSystem(() =>
       currentExecutor().selectFrom("organizations").select("id").where("slug", "=", DEMO_ORG.slug).executeTakeFirst(),
@@ -392,6 +413,7 @@ export class DemoSeeder {
     await this.seedQuality(orgId, userIds, today);
     await this.seedTraining(orgId, userIds, today);
     await this.seedConfidential(orgId, userIds, today);
+    await this.seedRequests(orgId, userIds, today);
 
     log.info({ orgId, people: DEMO_PEOPLE.length, projects: DEMO_PROJECTS.length, today }, "raqib demo organization seeded");
   }

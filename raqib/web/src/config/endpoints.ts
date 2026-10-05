@@ -74,6 +74,11 @@ export const ENDPOINTS = {
   },
   audit: (qs: string) => `/raqib/audit?${qs}`,
   auditExport: (qs: string) => `/raqib/audit/export?${qs}`,
+  accountRequests: {
+    list: "/raqib/account-requests",
+    byId: (id: string) => `/raqib/account-requests/${id}`,
+    step: (id: string, step: "approve" | "reject" | "resend") => `/raqib/account-requests/${id}/${step}`,
+  },
   reports: { list: "/raqib/reports", pdf: (id: string, lang: string) => `/raqib/reports/${id}/pdf?lang=${lang}` },
   evidence: { attach: "/raqib/evidence", byId: (id: string) => `/raqib/evidence/${id}`, content: (id: string) => `/raqib/evidence/${id}/content` },
   files: { presign: "/files/uploads", confirm: (id: string) => `/files/${id}/confirm` },

@@ -193,6 +193,17 @@ export function useActions(): Actions {
       async exportAudit(q) {
         saveBlob(await api.audit.exportCsv(q), "raqib-audit.csv");
       },
+      async approveRequest(id, input) {
+        qc.setQueryData(["accountRequest", id], await api.accountRequests.approve(id, input));
+        await Promise.all([qc.invalidateQueries({ queryKey: ["accountRequests"] }), qc.invalidateQueries({ queryKey: ["users"] })]);
+      },
+      async rejectRequest(id, reason) {
+        qc.setQueryData(["accountRequest", id], await api.accountRequests.reject(id, reason));
+        await qc.invalidateQueries({ queryKey: ["accountRequests"] });
+      },
+      async resendRequest(id) {
+        await api.accountRequests.resend(id);
+      },
       reportPdf: (id, lang) => api.reports.pdf(id, lang),
       evidenceBlob: (id) => api.evidence.blob(id),
       async decideReview(visitId, action, body) {

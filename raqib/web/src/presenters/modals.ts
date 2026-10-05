@@ -7,7 +7,7 @@ import { TRAINING_OPTIONS } from "./screens/training";
 const { REASONS: TRAINING_REASONS, PROVIDERS: TRAINING_PROVIDERS, RESULTS: TRAINING_RESULTS } = TRAINING_OPTIONS;
 
 /** Dialogs that need a stated reason (the approved design records who changed what, and why). */
-const NEED_REASON = new Set(["reveal", "revoke", "grantAdd", "trReturn", "trReject", "caReturn", "return", "reject", "publish", "deactivateForm", "create", "resched", "cancel", "roleChange", "userScope", "userDisable", "userEnable", "permSave", "scopeSave", "settingsSave"]);
+const NEED_REASON = new Set(["reqReject", "reveal", "revoke", "grantAdd", "trReturn", "trReject", "caReturn", "return", "reject", "publish", "deactivateForm", "create", "resched", "cancel", "roleChange", "userScope", "userDisable", "userEnable", "permSave", "scopeSave", "settingsSave"]);
 
 const ROLES: RoleKey[] = ["qm", "qe", "pm", "ins", "gs", "guard", "gm"];
 
@@ -48,7 +48,7 @@ export function modalVM(c: Ctx) {
     title: i.S(`m_${K}_t`, { r: ref }),
     sub: i.S(`m_${K}_s`),
     okLabel: i.S(`m_${K}_ok`),
-    okBg: ["userDisable", "cancel", "deactivateForm", "reject", "trReject", "revoke"].includes(K) ? "#A3262A" : ["return", "caReturn", "trReturn"].includes(K) ? "#8A5A00" : "#0F5C4A",
+    okBg: ["userDisable", "cancel", "deactivateForm", "reject", "trReject", "revoke", "reqReject"].includes(K) ? "#A3262A" : ["return", "caReturn", "trReturn"].includes(K) ? "#8A5A00" : "#0F5C4A",
     reason: fld("reason"),
     comment: fld("comment"),
     role: fld("role"),
@@ -113,9 +113,9 @@ export function modalVM(c: Ctx) {
     summary: String(m.summary ?? ""),
     hasAffect: K === "publish",
     affect: K === "publish" ? i.S("pubAffect", { n: Number(m.uses ?? 0), v: String(m.oldV ?? "") }) : "",
-    isRoleSel: ["roleChange"].includes(K),
-    roleOpts: [{ v: "", l: i.S("choose") }].concat(ROLES.map((k) => ({ v: k, l: i.L(ROLE_LABEL[k]) }))),
-    isProj: ["userScope"].includes(K),
+    isRoleSel: ["roleChange", "reqApprove"].includes(K),
+    roleOpts: [{ v: "", l: i.S("choose") }].concat((K === "reqApprove" ? (["qe", "pm", "ins", "gs", "guard"] as RoleKey[]) : ROLES).map((k) => ({ v: k, l: i.L(ROLE_LABEL[k]) }))),
+    isProj: ["userScope", "reqApprove"].includes(K),
     projChecks,
     isDiff: ["permSave", "scopeSave", "settingsSave", "publish"].includes(K) && !!diff.length,
     diff,
@@ -153,6 +153,7 @@ export async function submitModal(c: Ctx): Promise<void> {
   if (m.kind === "tr") for (const k of ["g", "course"]) if (!String(f[k] ?? "").trim()) missing.push(k);
   if (m.kind === "trSchedule") for (const k of ["date", "provider"]) if (!String(f[k] ?? "").trim()) missing.push(k);
   if (m.kind === "trComplete" && !String(f.date ?? "").trim()) missing.push("date");
+  if (m.kind === "reqApprove" && !String(f.role ?? "").trim()) missing.push("role");
   if (m.kind === "grantAdd") for (const k of ["guser", "expires"]) if (!String(f[k] ?? "").trim()) missing.push(k);
   if (m.kind === "newSection" && !String(f.title ?? "").trim()) missing.push("title");
   if (m.kind === "roleChange" && !String(f.role ?? "").trim()) missing.push("role");
@@ -236,6 +237,14 @@ export async function submitModal(c: Ctx): Promise<void> {
       case "trComplete":
         await actions.trainingStep(m.tid as string, "complete", { date: f.date, result: f.res || "passed", note: String(f.note ?? "").trim() || undefined });
         c.toast(i.S("toastTrCompleted", { r: String(m.ref ?? "") }));
+        break;
+      case "reqApprove":
+        await actions.approveRequest(m.rid as string, { role: f.role as string, projectIds: (f.projects as string[] | undefined) ?? [] });
+        c.toast(i.S("toastReqApproved", { r: String(m.ref ?? "") }));
+        break;
+      case "reqReject":
+        await actions.rejectRequest(m.rid as string, reason);
+        c.toast(i.S("toastReqRejected", { r: String(m.ref ?? "") }));
         break;
       case "reveal":
         await actions.confReveal(m.rid as string, reason);

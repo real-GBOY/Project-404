@@ -26,6 +26,8 @@ const schema = z.object({
    * generation is unavailable and the API answers 503 `raqib.pdf_unavailable` instead of failing obscurely.
    */
   chromiumPath: z.string().trim().default(""),
+  /** Public account requests accepted per client address per hour. */
+  accountRequestsPerHour: z.coerce.number().int().min(1).max(1000).default(5),
   trustedProxyHops: z.coerce.number().int().min(0).max(5).default(0),
 });
 
@@ -37,6 +39,7 @@ export function readRaqibConfig(env: NodeJS.ProcessEnv = process.env): RaqibConf
     demoHistoryDays: env.RAQIB_DEMO_HISTORY_DAYS,
     jobsIntervalMs: env.RAQIB_JOBS_INTERVAL_MS,
     chromiumPath: env.RAQIB_CHROMIUM_PATH,
+    accountRequestsPerHour: env.RAQIB_ACCOUNT_REQUESTS_PER_HOUR,
     trustedProxyHops: env.RAQIB_TRUSTED_PROXY_HOPS,
   });
   if (!parsed.success) {
