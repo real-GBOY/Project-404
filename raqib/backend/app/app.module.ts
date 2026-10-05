@@ -15,9 +15,14 @@ import {
 import { AppExceptionFilter } from "@core/http/app-exception.filter.js";
 import { RequestContextMiddleware } from "@core/http/request-context.middleware.js";
 import { HealthController } from "@core/observability/health.controller.js";
+import { LifecycleModule } from "@raqib/raqib/lifecycle/lifecycle.module.js";
 import { RaqibModule } from "@raqib/raqib/raqib.module.js";
 import { DemoModule } from "@raqib/raqib/demo/demo.module.js";
 import { RateLimitGuard } from "@raqib/raqib/security/rate-limit.js";
+import { ERROR_TRACKER } from "@core/kernel/tokens.js";
+import { AlertingErrorTracker } from "@raqib/raqib/observability/alerts.js";
+import { MetricsMiddleware } from "@raqib/raqib/observability/metrics.middleware.js";
+import { ObservabilityModule } from "@raqib/raqib/observability/observability.module.js";
 import { SecurityHeadersMiddleware } from "@raqib/raqib/security/security-headers.middleware.js";
 import { AppSeedService } from "./seed.js";
 
@@ -42,6 +47,8 @@ import { AppSeedService } from "./seed.js";
     FilesModule,
     SecurityModule,
     RaqibModule,
+    LifecycleModule,
+    ObservabilityModule,
     DemoModule,
   ],
   controllers: [HealthController],
@@ -49,12 +56,13 @@ import { AppSeedService } from "./seed.js";
     SeedService,
     AppSeedService,
     RequestContextMiddleware,
+    { provide: ERROR_TRACKER, useExisting: AlertingErrorTracker },
     { provide: APP_FILTER, useClass: AppExceptionFilter },
     { provide: APP_GUARD, useClass: RateLimitGuard },
   ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
-    consumer.apply(RequestContextMiddleware, SecurityHeadersMiddleware).forRoutes("{*path}");
+    consumer.apply(RequestContextMiddleware, SecurityHeadersMiddleware, MetricsMiddleware).forRoutes("{*path}");
   }
 }

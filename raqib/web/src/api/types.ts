@@ -10,8 +10,20 @@ export interface L10n {
 
 export type RoleKey = "qm" | "qe" | "pm" | "ins" | "gs" | "guard" | "gm";
 export type ModuleKey =
-  | "projects" | "visits" | "inspections" | "guardEval" | "observations" | "actions" | "training"
-  | "reports" | "analytics" | "forms" | "users" | "permissions" | "audit" | "settings";
+  | "projects"
+  | "visits"
+  | "inspections"
+  | "guardEval"
+  | "observations"
+  | "actions"
+  | "training"
+  | "reports"
+  | "analytics"
+  | "forms"
+  | "users"
+  | "permissions"
+  | "audit"
+  | "settings";
 export type Template = Record<ModuleKey, string>;
 
 export type PersonStatus = "active" | "invited" | "disabled";
@@ -71,12 +83,43 @@ export interface Guard {
 }
 
 export interface OrgSettings {
-  org: { nameAr: string; nameEn: string; cr: string; cityAr: string; cityEn: string; lang: Lang; tz: string };
+  org: {
+    nameAr: string;
+    nameEn: string;
+    cr: string;
+    cityAr: string;
+    cityEn: string;
+    lang: Lang;
+    tz: string;
+  };
   scoring: { high: number; mid: number; naExcluded: boolean; criticalFail: boolean };
-  insp: { latestOnStart: boolean; publishNeedsApproval: boolean; ncNote: boolean; ncEvidence: boolean; lockAfterSubmit: boolean; overdueHours: number };
-  attach: { photo: number; video: number; doc: number; types: string; videoProtected: boolean; linkMinutes: number; retention: number; compress: boolean };
+  insp: {
+    latestOnStart: boolean;
+    publishNeedsApproval: boolean;
+    ncNote: boolean;
+    ncEvidence: boolean;
+    lockAfterSubmit: boolean;
+    overdueHours: number;
+  };
+  attach: {
+    photo: number;
+    video: number;
+    doc: number;
+    types: string;
+    videoProtected: boolean;
+    linkMinutes: number;
+    retention: number;
+    compress: boolean;
+  };
   notif: Record<string, [number, number]>;
-  report: { lang: "both" | Lang; branding: boolean; evidence: boolean; signatures: boolean; history: boolean; watermark: boolean };
+  report: {
+    lang: "both" | Lang;
+    branding: boolean;
+    evidence: boolean;
+    signatures: boolean;
+    history: boolean;
+    watermark: boolean;
+  };
   security: { session: number; mfa: string; pwLen: number; pwRotate: number; lockout: number };
   audit: { retention: number; exportRoles: string };
 }
@@ -94,6 +137,14 @@ export interface TemplateChange {
   actions: string;
 }
 
+/** `/raqib/account/security` — the signed-in person's second factor, password age and the organization's session rule. */
+export interface SecurityStatus {
+  mfa: { enabled: boolean; pending: boolean; required: boolean; recoveryLeft: number };
+  password: { changedAt: string | null; expired: boolean; minLength: number; rotateDays: number };
+  sessionMinutes: number;
+  setupRequired: Array<"mfa" | "password">;
+}
+
 export interface LoginResponse {
   user: { id: string; email: string };
   tokens: { accessToken: string; refreshToken: string };
@@ -102,7 +153,15 @@ export interface LoginResponse {
 export type VisitType = "routine" | "surprise" | "follow" | "night";
 export type Shift = "morning" | "evening" | "night";
 export type VisitStatus =
-  | "scheduled" | "assigned" | "in_progress" | "pending_review" | "pending_approval" | "returned" | "approved" | "rejected" | "cancelled";
+  | "scheduled"
+  | "assigned"
+  | "in_progress"
+  | "pending_review"
+  | "pending_approval"
+  | "returned"
+  | "approved"
+  | "rejected"
+  | "cancelled";
 /** `overdue` is derived by the backend from the schedule; it is never a stored status. */
 export type DisplayStatus = VisitStatus | "overdue";
 
@@ -250,7 +309,13 @@ export interface GuardEvaluation {
   answered: number;
 }
 export interface InspectionIssue {
-  code: "unanswered" | "note_required" | "evidence_required" | "evidence_pending" | "flag_untouched" | "guard_incomplete";
+  code:
+    | "unanswered"
+    | "note_required"
+    | "evidence_required"
+    | "evidence_pending"
+    | "flag_untouched"
+    | "guard_incomplete";
   at: string;
   step: number;
 }
@@ -265,7 +330,15 @@ export interface Inspection {
   guardCriteria: Array<{ id: string; key: string; text: L10n }>;
   guards: GuardEvaluation[];
   previous: Array<{ round: number; itemIds: string[] }>;
-  score: { pct: number | null; answered: number; total: number; compliant: number; nonCompliant: number; na: number; evidence: number };
+  score: {
+    pct: number | null;
+    answered: number;
+    total: number;
+    compliant: number;
+    nonCompliant: number;
+    na: number;
+    evidence: number;
+  };
   issues: InspectionIssue[];
   editable: boolean;
   submittedAt: string | null;
@@ -287,10 +360,31 @@ export interface ReportSnapshot {
   inspector: L10n | null;
   form: { code: string; version: string; name: L10n };
   round: number;
-  score: { pct: number | null; compliant: number; nonCompliant: number; na: number; evidence: number };
-  sections: Array<{ title: L10n; items: Array<{ num: string; text: L10n; weight: number; answer: string | null; note: string; evidence: Array<{ id: string; name: string; kind: string; mime: string }> }> }>;
+  score: {
+    pct: number | null;
+    compliant: number;
+    nonCompliant: number;
+    na: number;
+    evidence: number;
+  };
+  sections: Array<{
+    title: L10n;
+    items: Array<{
+      num: string;
+      text: L10n;
+      weight: number;
+      answer: string | null;
+      note: string;
+      evidence: Array<{ id: string; name: string; kind: string; mime: string }>;
+    }>;
+  }>;
   guards: Array<{ employeeNo: string; name: L10n; pct: number | null; note: string }>;
-  decisions: Array<{ action: string; at: string; reason: string | null; actor: { name: L10n; title: L10n; role: string | null } }>;
+  decisions: Array<{
+    action: string;
+    at: string;
+    reason: string | null;
+    actor: { name: L10n; title: L10n; role: string | null };
+  }>;
   approvedBy: { name: L10n; title: L10n };
 }
 
@@ -323,7 +417,14 @@ export interface Observation {
   itemKey: string | null;
   reportedBy: L10n;
   createdAt: string;
-  action: { id: string; ref: string; status: ActionDisplayStatus; dueDate: string; priority: Severity; responsible: L10n } | null;
+  action: {
+    id: string;
+    ref: string;
+    status: ActionDisplayStatus;
+    dueDate: string;
+    priority: Severity;
+    responsible: L10n;
+  } | null;
 }
 
 export interface ActionLogEntry {
@@ -348,7 +449,15 @@ export interface CorrectiveAction {
   round: number;
   project: { id: string; code: string; name: L10n };
   responsible: { id: string; name: L10n };
-  observation: { id: string; ref: string; kind: string; severity: Severity; repeatCount: number; itemNum: string | null; site: L10n };
+  observation: {
+    id: string;
+    ref: string;
+    kind: string;
+    severity: Severity;
+    repeatCount: number;
+    itemNum: string | null;
+    site: L10n;
+  };
   visit: { id: string; ref: string } | null;
   createdAt: string;
   closedAt: string | null;
@@ -362,8 +471,10 @@ export interface ResponsibleOption {
   title: L10n;
 }
 
-export type TrainingStatus = "pending_pm" | "returned" | "rejected" | "approved" | "scheduled" | "completed";
-export type TrainingReason = "low_score" | "repeat_issue" | "incident" | "refresher" | "new_assignment";
+export type TrainingStatus =
+  "pending_pm" | "returned" | "rejected" | "approved" | "scheduled" | "completed";
+export type TrainingReason =
+  "low_score" | "repeat_issue" | "incident" | "refresher" | "new_assignment";
 export type TrainingResult = "passed" | "attended" | "failed";
 
 export interface TrainingRequest {
@@ -387,20 +498,52 @@ export interface TrainingRequest {
   result: TrainingResult | null;
   resultNote: string | null;
   createdAt: string;
-  log?: Array<{ id: string; kind: string; to: string; text: string | null; at: string; actor: { id: string | null; name: L10n; role: string | null; title: L10n } }>;
+  log?: Array<{
+    id: string;
+    kind: string;
+    to: string;
+    text: string | null;
+    at: string;
+    actor: { id: string | null; name: L10n; role: string | null; title: L10n };
+  }>;
 }
 
 export interface GuardHistory {
   guard: { id: string; employeeNo: string; name: L10n; post: L10n };
-  evaluations: Array<{ reportId: string; reportRef: string; visitId: string; visitRef: string; date: string; pct: number | null; note: string; site: L10n }>;
+  evaluations: Array<{
+    reportId: string;
+    reportRef: string;
+    visitId: string;
+    visitRef: string;
+    date: string;
+    pct: number | null;
+    note: string;
+    site: L10n;
+  }>;
   average: number | null;
   training: TrainingRequest[];
 }
 
-export type GuardSummaries = Record<string, { average: number | null; evaluations: number; lastPct: number | null }>;
+export type GuardSummaries = Record<
+  string,
+  { average: number | null; evaluations: number; lastPct: number | null }
+>;
 
-export interface AnalyticsContributor { kind: "report" | "visit" | "observation" | "action"; id: string; ref: string; title: L10n | string; sub: string; value: string }
-export interface AnalyticsKpi { key: string; value: number | null; unit: "pct" | "count"; of?: number; contributors: AnalyticsContributor[] }
+export interface AnalyticsContributor {
+  kind: "report" | "visit" | "observation" | "action";
+  id: string;
+  ref: string;
+  title: L10n | string;
+  sub: string;
+  value: string;
+}
+export interface AnalyticsKpi {
+  key: string;
+  value: number | null;
+  unit: "pct" | "count";
+  of?: number;
+  contributors: AnalyticsContributor[];
+}
 export interface AnalyticsResult {
   range: { from: string; to: string; bucket: "day" | "week" | "month" };
   kpis: AnalyticsKpi[];
@@ -409,17 +552,42 @@ export interface AnalyticsResult {
   sites: Array<{ project: L10n; site: L10n; avg: number | null; n: number }>;
   actionStages: Array<{ stage: string; n: number }>;
   guardBuckets: Array<{ bucket: "low" | "mid" | "high"; n: number }>;
-  inspectors: Array<{ id: string; name: L10n; done: number; missed: number; avg: number | null; returned: number }>;
+  inspectors: Array<{
+    id: string;
+    name: L10n;
+    done: number;
+    missed: number;
+    avg: number | null;
+    returned: number;
+  }>;
   repeated: Array<{ ref: string; id: string; title: L10n; site: L10n; times: number }>;
 }
-export interface AnalyticsQueryParams { period: string; from: string; to: string; projectId: string; siteId: string }
-export interface SearchHit { kind: "project" | "visit" | "report" | "observation" | "action" | "training" | "guard" | "user"; id: string; ref: string; title: L10n | string; sub: string; go: [string, string] }
+export interface AnalyticsQueryParams {
+  period: string;
+  from: string;
+  to: string;
+  projectId: string;
+  siteId: string;
+}
+export interface SearchHit {
+  kind: "project" | "visit" | "report" | "observation" | "action" | "training" | "guard" | "user";
+  id: string;
+  ref: string;
+  title: L10n | string;
+  sub: string;
+  go: [string, string];
+}
 
 export type ConfKind = "misconduct" | "violation" | "safety";
 export type ConfStatus = "new" | "under_review" | "closed";
 export interface ConfAccess {
   isGM: boolean;
-  grant: { id: string; level: "view" | "respond"; scope: "all" | "standard"; expiresAt: string } | null;
+  grant: {
+    id: string;
+    level: "view" | "respond";
+    scope: "all" | "standard";
+    expiresAt: string;
+  } | null;
   sessionUntil: string | null;
   reasons: string[];
 }
@@ -435,10 +603,22 @@ export interface ConfReport {
   body?: string;
   files?: Array<{ id: string; name: string; mime: string; sizeBytes: number }>;
   response?: string | null;
-  identity?: { mode: "named" | "confidential" | "anonymous"; revealed: boolean; name?: L10n; employeeNo?: string };
+  identity?: {
+    mode: "named" | "confidential" | "anonymous";
+    revealed: boolean;
+    name?: L10n;
+    employeeNo?: string;
+  };
   canRespond?: boolean;
 }
-export interface ConfMine { ref: string; kind: ConfKind; subject: string; status: ConfStatus; at: string; response: string | null }
+export interface ConfMine {
+  ref: string;
+  kind: ConfKind;
+  subject: string;
+  status: ConfStatus;
+  at: string;
+  response: string | null;
+}
 export interface ConfGrant {
   id: string;
   user: { id: string; name: L10n; role: string };
@@ -452,8 +632,20 @@ export interface ConfGrant {
   revokedBy: L10n | null;
   revokeReason: string | null;
 }
-export interface ConfLogEntry { id: string; action: string; actor: L10n; reportRef: string | null; reason: string | null; device: string | null; at: string }
-export interface ConfGrantee { id: string; name: L10n; role: string }
+export interface ConfLogEntry {
+  id: string;
+  action: string;
+  actor: L10n;
+  reportRef: string | null;
+  reason: string | null;
+  device: string | null;
+  at: string;
+}
+export interface ConfGrantee {
+  id: string;
+  name: L10n;
+  role: string;
+}
 
 export interface AuditEntry {
   id: string;
@@ -467,8 +659,19 @@ export interface AuditEntry {
   reason: string | null;
   correlationId: string | null;
 }
-export interface AuditResult { items: AuditEntry[]; entities: string[]; actors: Array<{ id: string; name: L10n }>; truncated: boolean }
-export interface AuditQueryParams { q: string; entity: string; actor: string; from: string; to: string }
+export interface AuditResult {
+  items: AuditEntry[];
+  entities: string[];
+  actors: Array<{ id: string; name: L10n }>;
+  truncated: boolean;
+}
+export interface AuditQueryParams {
+  q: string;
+  entity: string;
+  actor: string;
+  from: string;
+  to: string;
+}
 
 export interface AccountRequest {
   id: string;
@@ -491,4 +694,9 @@ export interface AccountRequest {
   assignedProjectIds: string[];
   createdAt: string;
 }
-export interface PublicOnboardingInfo { organization: { name: string }; projects: Array<{ id: string; name: L10n }>; roles: string[]; declarationVersion: string }
+export interface PublicOnboardingInfo {
+  organization: { name: string };
+  projects: Array<{ id: string; name: L10n }>;
+  roles: string[];
+  declarationVersion: string;
+}

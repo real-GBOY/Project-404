@@ -24,8 +24,7 @@ export interface Access {
   today: IsoDate;
 }
 
-export const can = (a: Access, module: ModuleKey, letter: string): boolean =>
-  a.template[module].includes(letter);
+export const can = (a: Access, module: ModuleKey, letter: string): boolean => a.template[module].includes(letter);
 
 export function requireCan(a: Access, module: ModuleKey, letter: string): void {
   if (!can(a, module, letter)) {
@@ -33,8 +32,7 @@ export function requireCan(a: Access, module: ModuleKey, letter: string): void {
   }
 }
 
-export const inScope = (a: Access, projectId: string): boolean =>
-  a.allProjects || a.projectIds.has(projectId);
+export const inScope = (a: Access, projectId: string): boolean => a.allProjects || a.projectIds.has(projectId);
 
 /** Object-level project check. The response never says whether the project exists. */
 export function requireProject(a: Access, projectId: string, ref?: string): void {

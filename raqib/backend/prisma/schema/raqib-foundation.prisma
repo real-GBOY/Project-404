@@ -139,3 +139,26 @@ model raqib_guards {
   @@unique([organization_id, employee_no], map: "raqib_guards_employee_uq")
   @@map("raqib_guards")
 }
+
+model raqib_account_security {
+  user_id             String    @id
+  password_changed_at DateTime? @db.Timestamptz(6)
+  mfa_secret          String?
+  mfa_enabled_at      DateTime? @db.Timestamptz(6)
+  mfa_last_step       BigInt?
+  /// @kyselyType(Json<string[]>)
+  mfa_recovery        Json      @default("[]")
+  updated_at          DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@map("raqib_account_security")
+}
+
+model raqib_auth_throttle {
+  email_normalized String    @id
+  failures         Int       @default(0)
+  first_failure_at DateTime  @db.Timestamptz(6)
+  locked_until     DateTime? @db.Timestamptz(6)
+  updated_at       DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@map("raqib_auth_throttle")
+}

@@ -75,7 +75,13 @@ export class AccessService {
       const [profiles, overrides, assignments] = await Promise.all([this.repo.allProfiles(), this.repo.allOverrides(), this.repo.activeAssignments(today)]);
       const tpl = new Map<RoleKey, Template>();
       for (const role of Object.keys(DEFAULT_TEMPLATES) as RoleKey[]) {
-        tpl.set(role, effectiveTemplate(role, overrides.filter((o) => o.role_key === role)));
+        tpl.set(
+          role,
+          effectiveTemplate(
+            role,
+            overrides.filter((o) => o.role_key === role),
+          ),
+        );
       }
       return profiles
         .filter((p) => p.status === "active" && p.userId !== exclude && tpl.get(p.roleKey)![module].includes(letter))

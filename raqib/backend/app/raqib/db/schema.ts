@@ -41,6 +41,19 @@ export type raqib_account_requests = {
   assigned_project_ids: Json<string[]> | null;
   user_id: string | null;
   created_at: Generated<Timestamp>;
+  erased_at: Timestamp | null;
+};
+export type raqib_account_security = {
+  user_id: string;
+  password_changed_at: Timestamp | null;
+  mfa_secret: string | null;
+  mfa_enabled_at: Timestamp | null;
+  mfa_last_step: string | null;
+  /**
+   * @kyselyType(Json<string[]>)
+   */
+  mfa_recovery: Generated<Json<string[]>>;
+  updated_at: Generated<Timestamp>;
 };
 export type raqib_action_events = {
   id: string;
@@ -89,6 +102,13 @@ export type raqib_areas = {
   sort_order: Generated<number>;
   archived_at: Timestamp | null;
   created_at: Generated<Timestamp>;
+  updated_at: Generated<Timestamp>;
+};
+export type raqib_auth_throttle = {
+  email_normalized: string;
+  failures: Generated<number>;
+  first_failure_at: Timestamp;
+  locked_until: Timestamp | null;
   updated_at: Generated<Timestamp>;
 };
 export type raqib_conf_access_log = {
@@ -244,6 +264,7 @@ export type raqib_evidence = {
   uploaded_by: string | null;
   uploaded_at: Generated<Timestamp>;
   removed_at: Timestamp | null;
+  purged_at: Timestamp | null;
 };
 export type raqib_form_versions = {
   id: string;
@@ -638,9 +659,11 @@ export type raqib_visits = {
 };
 export type RaqibTables = {
   raqib_account_requests: raqib_account_requests;
+  raqib_account_security: raqib_account_security;
   raqib_action_events: raqib_action_events;
   raqib_answers: raqib_answers;
   raqib_areas: raqib_areas;
+  raqib_auth_throttle: raqib_auth_throttle;
   raqib_conf_access_log: raqib_conf_access_log;
   raqib_conf_files: raqib_conf_files;
   raqib_conf_grants: raqib_conf_grants;

@@ -10,7 +10,10 @@ import { RbacRepository } from "@core/rbac/infrastructure/rbac-repository.js";
 import { RAQIB_ROLES } from "@raqib/raqib/shared/roles.js";
 import { TemplateRepository } from "@core/notifications/infrastructure/template-repository.js";
 import { RAQIB_TEMPLATES } from "@raqib/raqib/notifications/templates.js";
+import { LifecycleService } from "@raqib/raqib/lifecycle/lifecycle-service.js";
+import { assertDataKeyConfigured } from "@raqib/raqib/shared/data-key.js";
 import { DemoSeeder } from "@raqib/raqib/demo/demo-seeder.js";
+import { getConfig } from "@core/kernel/config.js";
 import { readRaqibConfig } from "./config.js";
 
 const log = moduleLogger("raqib-app-seed");
@@ -27,18 +30,25 @@ export class AppSeedService {
     private readonly coreSeed: SeedService,
     private readonly rbac: RbacRepository,
     private readonly demo: DemoSeeder,
+    private readonly lifecycle: LifecycleService,
     private readonly templates: TemplateRepository,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
 
   async seed(): Promise<void> {
+    assertDataKeyConfigured();
+    if (readRaqibConfig().seedDemo && getConfig().nodeEnv === "production") {
+      throw new Error("RAQIB_SEED_DEMO=true is refused in production: the demo organization must never be created next to real data.");
+    }
     await this.coreSeed.seed();
 
     await runAsSystem(() => seedRbacDefinitions(this.rbac, this.uow, { permissions: [], roles: RAQIB_ROLES }));
     log.info({ roles: RAQIB_ROLES.map((r) => r.key) }, "raqib roles seeded");
 
     await runAsSystem(() => this.uow.transaction(() => this.templates.upsertMany(RAQIB_TEMPLATES)));
+
+    await this.lifecycle.sealLegacy();
 
     if (readRaqibConfig().seedDemo) {
       await this.demo.seed(this.clock);

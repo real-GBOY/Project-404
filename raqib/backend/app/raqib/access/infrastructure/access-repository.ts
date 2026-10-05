@@ -51,12 +51,15 @@ export class AccessRepository {
   }
 
   async allProfiles(): Promise<ProfileRow[]> {
-    const rows = await raqibDb()
-      .selectFrom("raqib_profiles")
-      .select(["user_id", "role_key", "name_ar", "name_en", "title_ar", "title_en", "status"])
-      .execute();
+    const rows = await raqibDb().selectFrom("raqib_profiles").select(["user_id", "role_key", "name_ar", "name_en", "title_ar", "title_en", "status"]).execute();
     return rows.map((r) => ({
-      userId: r.user_id, roleKey: r.role_key, nameAr: r.name_ar, nameEn: r.name_en, titleAr: r.title_ar, titleEn: r.title_en, status: r.status,
+      userId: r.user_id,
+      roleKey: r.role_key,
+      nameAr: r.name_ar,
+      nameEn: r.name_en,
+      titleAr: r.title_ar,
+      titleEn: r.title_en,
+      status: r.status,
     }));
   }
 

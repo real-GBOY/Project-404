@@ -3,7 +3,20 @@
  * segments are functions. (Backend: raqib/backend/app/raqib/*.)
  */
 export const ENDPOINTS = {
-  auth: { login: "/auth/login", refresh: "/auth/refresh", logout: "/auth/logout" },
+  auth: {
+    login: "/auth/login",
+    refresh: "/auth/refresh",
+    logout: "/auth/logout",
+    forgot: "/auth/password/forgot",
+  },
+  account: {
+    security: "/raqib/account/security",
+    mfaSetup: "/raqib/account/mfa/setup",
+    mfaEnable: "/raqib/account/mfa/enable",
+    mfaDisable: "/raqib/account/mfa/disable",
+    password: "/raqib/account/password",
+    revoke: "/raqib/account/sessions/revoke",
+  },
   me: "/raqib/me",
   settings: "/raqib/settings",
   permissions: "/raqib/permissions",
@@ -19,7 +32,10 @@ export const ENDPOINTS = {
     byId: (id: string) => `/raqib/projects/${id}`,
     sites: (id: string) => `/raqib/projects/${id}/sites`,
   },
-  sites: { byId: (id: string) => `/raqib/sites/${id}`, areas: (id: string) => `/raqib/sites/${id}/areas` },
+  sites: {
+    byId: (id: string) => `/raqib/sites/${id}`,
+    areas: (id: string) => `/raqib/sites/${id}/areas`,
+  },
   areas: { byId: (id: string) => `/raqib/areas/${id}` },
   visits: {
     list: "/raqib/visits",
@@ -45,18 +61,28 @@ export const ENDPOINTS = {
   inspection: {
     base: (visitId: string) => `/raqib/visits/${visitId}/inspection`,
     start: (visitId: string) => `/raqib/visits/${visitId}/inspection/start`,
-    answer: (visitId: string, itemId: string) => `/raqib/visits/${visitId}/inspection/answers/${itemId}`,
-    guardScore: (visitId: string, guardId: string, itemId: string) => `/raqib/visits/${visitId}/inspection/guards/${guardId}/scores/${itemId}`,
-    guardNote: (visitId: string, guardId: string) => `/raqib/visits/${visitId}/inspection/guards/${guardId}/note`,
+    answer: (visitId: string, itemId: string) =>
+      `/raqib/visits/${visitId}/inspection/answers/${itemId}`,
+    guardScore: (visitId: string, guardId: string, itemId: string) =>
+      `/raqib/visits/${visitId}/inspection/guards/${guardId}/scores/${itemId}`,
+    guardNote: (visitId: string, guardId: string) =>
+      `/raqib/visits/${visitId}/inspection/guards/${guardId}/note`,
     submit: (visitId: string) => `/raqib/visits/${visitId}/inspection/submit`,
   },
-  review: (visitId: string, action: "forward" | "return" | "reject" | "approve") => `/raqib/visits/${visitId}/review/${action}`,
-  observations: { list: "/raqib/observations", create: "/raqib/observations", action: (id: string) => `/raqib/observations/${id}/action` },
+  review: (visitId: string, action: "forward" | "return" | "reject" | "approve") =>
+    `/raqib/visits/${visitId}/review/${action}`,
+  observations: {
+    list: "/raqib/observations",
+    create: "/raqib/observations",
+    action: (id: string) => `/raqib/observations/${id}/action`,
+  },
   actions: {
     list: "/raqib/actions",
     byId: (id: string) => `/raqib/actions/${id}`,
-    responsible: (projectId: string) => `/raqib/actions/responsible?projectId=${encodeURIComponent(projectId)}`,
-    step: (id: string, step: "start" | "submit" | "return" | "close") => `/raqib/actions/${id}/${step}`,
+    responsible: (projectId: string) =>
+      `/raqib/actions/responsible?projectId=${encodeURIComponent(projectId)}`,
+    step: (id: string, step: "start" | "submit" | "return" | "close") =>
+      `/raqib/actions/${id}/${step}`,
     comments: (id: string) => `/raqib/actions/${id}/comments`,
   },
   training: {
@@ -77,10 +103,18 @@ export const ENDPOINTS = {
   accountRequests: {
     list: "/raqib/account-requests",
     byId: (id: string) => `/raqib/account-requests/${id}`,
-    step: (id: string, step: "approve" | "reject" | "resend") => `/raqib/account-requests/${id}/${step}`,
+    step: (id: string, step: "approve" | "reject" | "resend") =>
+      `/raqib/account-requests/${id}/${step}`,
   },
-  reports: { list: "/raqib/reports", pdf: (id: string, lang: string) => `/raqib/reports/${id}/pdf?lang=${lang}` },
-  evidence: { attach: "/raqib/evidence", byId: (id: string) => `/raqib/evidence/${id}`, content: (id: string) => `/raqib/evidence/${id}/content` },
+  reports: {
+    list: "/raqib/reports",
+    pdf: (id: string, lang: string) => `/raqib/reports/${id}/pdf?lang=${lang}`,
+  },
+  evidence: {
+    attach: "/raqib/evidence",
+    byId: (id: string) => `/raqib/evidence/${id}`,
+    content: (id: string) => `/raqib/evidence/${id}/content`,
+  },
   files: { presign: "/files/uploads", confirm: (id: string) => `/files/${id}/confirm` },
   guards: { list: "/raqib/guards", byId: (id: string) => `/raqib/guards/${id}` },
 } as const;
