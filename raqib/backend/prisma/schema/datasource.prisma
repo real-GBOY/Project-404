@@ -1,0 +1,27 @@
+// Raqib — Prisma datasource & generators.
+//
+// Same split as Mizan and Atlas: Prisma owns schema definition + migration
+// history; its generated types feed Kysely. Prisma Client is NOT used for
+// runtime queries. Raqib models live in the sibling raqib-*.prisma files, split
+// by feature module, and mirror hand-written SQL migrations in ../migrations
+// (Prisma cannot express the exclusion constraints, composite FKs, CHECKs and
+// RLS policies this schema relies on). Applied with `prisma migrate deploy`
+// (see ../../scripts/migrate.ts).
+//
+// This schema/migration project is Raqib's OWN — it never touches the root
+// repo's `prisma/` (Mizan's) or atlas/backend/prisma. Core's platform tables
+// (users/organizations/roles/…) are created here by copied Core migrations,
+// not Prisma models — only Raqib's own tables get a model.
+
+datasource db {
+  provider = "postgresql"
+}
+
+generator kysely {
+  provider        = "prisma-kysely"
+  output          = "../../app/raqib/db"
+  fileName        = "schema.ts"
+  importExtension = ".js"
+  dbTypeName      = "RaqibTables"
+  banner          = "import type { Json } from \"../../../../../core/kernel/db/json.js\";"
+}

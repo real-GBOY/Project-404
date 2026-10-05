@@ -1,0 +1,16 @@
+import { Module } from "@nestjs/common";
+import { RbacModule } from "@core/index.js";
+import { PeopleModule } from "@raqib/raqib/people/people.module.js";
+import { ProjectsModule } from "@raqib/raqib/projects/projects.module.js";
+import { AccessModule } from "@raqib/raqib/access/access.module.js";
+import { VisitsModule } from "@raqib/raqib/visits/visits.module.js";
+import { SettingsModule } from "@raqib/raqib/settings/settings.module.js";
+import { SettingsRepository } from "@raqib/raqib/settings/infrastructure/settings-repository.js";
+import { DemoSeeder } from "./demo-seeder.js";
+
+@Module({
+  imports: [RbacModule, PeopleModule, ProjectsModule, SettingsModule, AccessModule, VisitsModule],
+  providers: [DemoSeeder, SettingsRepository],
+  exports: [DemoSeeder],
+})
+export class DemoModule {}
