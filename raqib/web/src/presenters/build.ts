@@ -12,12 +12,13 @@ import { visitDetail, visitsList } from "./screens/visits";
 import { formBuilder, formsList } from "./screens/forms";
 import { inspectionWorkspace } from "./screens/inspection";
 import { reviewQueue } from "./screens/queue";
+import { reviewDetail } from "./screens/review";
 
 export type Denial = { k: "module" | "scope" | "forbidden"; res?: string };
 
 /** Which `vm.is.*` flag drives which approved screen. */
 const FLAG: Record<string, string> = {
-  projects: "projects", project: "project", visits: "visits", visit: "visit", forms: "forms", form: "form", inspect: "inspect", inspections: "reviews", guards: "guards", users: "users", user: "user", permissions: "perms", settings: "settings",
+  projects: "projects", project: "project", visits: "visits", visit: "visit", forms: "forms", form: "form", inspect: "inspect", inspections: "reviews", reviews: "reviews", review: "review", guards: "guards", users: "users", user: "user", permissions: "perms", settings: "settings",
 };
 
 /** The denied screen (design: vmDenied). The backend produced the refusal; this only explains it. */
@@ -60,6 +61,10 @@ export function buildVM(c: Ctx, opts: { pending: boolean; denial: Denial | null 
   }
 
   const is: Record<string, boolean> = {};
+  if (n === "inspect") {
+    const v = (c.data.visits ?? []).find((x) => x.id === route.id);
+    if (v && ["pending_review", "pending_approval", "approved", "rejected", "cancelled"].includes(v.storedStatus)) c.go("review", route.id);
+  }
   let body: VM = {};
   if (denial) {
     scr = "denied";
@@ -91,6 +96,11 @@ export function buildVM(c: Ctx, opts: { pending: boolean; denial: Denial | null 
       const v = (c.data.visits ?? []).find((x) => x.id === route.id);
       if (c.data.inspection) { body = inspectionWorkspace(c, c.data.inspection, v); title = i.S("inspection"); }
     } else if (n === "inspections") body = reviewQueue(c, true);
+    else if (n === "reviews") body = reviewQueue(c, false);
+    else if (n === "review") {
+      const v = (c.data.visits ?? []).find((x) => x.id === route.id);
+      if (c.data.inspection && v) { body = reviewDetail(c, c.data.inspection, v); title = v.ref; }
+    }
     else if (n === "guards") { body = guardsList(c); is.showGuardTable = true; }
     else if (n === "users") body = usersList(c);
     else if (n === "user") {

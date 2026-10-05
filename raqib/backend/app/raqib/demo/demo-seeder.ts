@@ -20,6 +20,7 @@ import { runAsOf } from "@raqib/raqib/shared/business-date.js";
 import { addDays } from "@raqib/raqib/shared/dates.js";
 import { DEMO_VISITS } from "./demo-visits.js";
 import { DEMO_FORMS } from "./demo-forms.js";
+import { ReviewService } from "@raqib/raqib/review/application/review-service.js";
 import { FormsRepository } from "@raqib/raqib/forms/infrastructure/forms-repository.js";
 import { InspectionsService } from "@raqib/raqib/inspections/application/inspections-service.js";
 import { EvidenceService } from "@raqib/raqib/evidence/application/evidence-service.js";
@@ -47,6 +48,7 @@ export class DemoSeeder {
     private readonly access: AccessService,
     private readonly visits: VisitsService,
     private readonly forms: FormsRepository,
+    private readonly review: ReviewService,
     private readonly inspections: InspectionsService,
     private readonly evidence: EvidenceService,
     @Inject(FILE_STORAGE) private readonly files: IFileStorage,
@@ -54,6 +56,41 @@ export class DemoSeeder {
   ) {}
 
   private ids!: { projectIds: Map<string, string>; siteIds: Map<string, string>; areaIds: Map<string, string>; guardIds: Map<string, string> };
+
+  /** Complete an inspection as its inspector, submit it, then apply the reviewers' decisions - all through the real services. */
+  private async runWorkflow(orgId: string, userIds: Map<string, string>, visitId: string, v: (typeof DEMO_VISITS)[number]): Promise<void> {
+    const wf = v.workflow!;
+    const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
+    const resolve = (key: string) => this.access.resolve({ userId: userIds.get(key)!, email: "", organizationId: orgId, permissions: [] });
+    const asUser = <T,>(key: string, fn: (who: Awaited<ReturnType<typeof resolve>>) => Promise<T>) =>
+      withContext({ userId: userIds.get(key)!, organizationId: orgId }, async () => fn(await resolve(key)));
+
+    await asUser(v.inspector!, async (who) => {
+      let view = await this.inspections.start(visitId, who);
+      for (const it of view.sections.flatMap((s) => s.items)) {
+        const nc = wf.nonCompliant[it.key];
+        view = await this.inspections.saveAnswer(visitId, it.id, nc ? { value: "n", note: nc } : { value: "c" }, who);
+        if (nc) {
+          const ref = await this.files.upload({ content: png, originalName: `IMG_${it.key}.png`, contentType: "image/png", ownerId: who.userId, visibility: "private" });
+          await this.evidence.attach({ fileId: ref.id, inspectionId: view.id, itemId: it.id }, who);
+        }
+      }
+      const guards = await this.projects.guards();
+      for (const g of view.guards) {
+        const emp = guards.find((x) => x.id === g.guardId)?.employeeNo ?? "";
+        const scores = wf.guardScores?.[emp] ?? [4, 4, 5, 4, 4];
+        for (const [idx, c] of view.guardCriteria.entries()) await this.inspections.setGuardScore(visitId, g.guardId, c.id, scores[idx] ?? 4, who);
+      }
+      await this.inspections.submit(visitId, who);
+    });
+    for (const step of wf.steps) {
+      await asUser(step.by, async (who) => {
+        const view = await this.inspections.get(visitId, who);
+        const itemIds = (step.itemKeys ?? []).map((k) => view.sections.flatMap((s) => s.items).find((x) => x.key === k)!.id);
+        await this.review.decide(visitId, step.action, { reason: step.reason, comment: step.reason, itemIds }, who);
+      });
+    }
+  }
 
   /** Visits are scheduled by the people who would schedule them, on the date they would have, via the real service. */
   private async seedVisits(orgId: string, userIds: Map<string, string>, today: string): Promise<void> {
@@ -94,6 +131,7 @@ export class DemoSeeder {
           }
         });
       }
+      if (v.workflow) await this.runWorkflow(orgId, userIds, visitId, v);
       if (v.reschedule) {
         const r = v.reschedule;
         await as(r.by, 2, (who) => this.visits.reschedule(visitId, { date: addDays(today, r.day), time: r.time, reason: r.reason }, who));

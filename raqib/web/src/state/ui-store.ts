@@ -21,6 +21,18 @@ export interface UploadEntry {
   file?: File;
 }
 
+export interface ViewerFile {
+  id: string;
+  name: string;
+  kind: "photo" | "video" | "doc";
+  mime: string;
+  sizeBytes: number;
+  at: string;
+  by: string | null;
+  /** What the evidence supports (the visit and item). */
+  link: string;
+}
+
 export interface UiState {
   lang: "ar" | "en";
   w: number;
@@ -51,6 +63,12 @@ export interface UiState {
   decl: boolean;
   uploads: Record<string, UploadEntry[]>;
   itab: string;
+  /** Review: items the reviewer has marked for return (keyed visitId:itemId). */
+  rflags: Record<string, boolean>;
+  /** Evidence viewer: the file being shown, its (blob) URL once loaded, and whether the person asked to load it. */
+  viewer: ViewerFile | null;
+  viewerUrl: string | null;
+  viewerReq: boolean;
   rtab: string;
   fb: { ver?: string; sec?: number };
   /** Unsaved edits to a form draft (shown immediately, sent after a pause). */
@@ -98,6 +116,10 @@ const initial = (): UiState => ({
   decl: false,
   uploads: {},
   itab: "active",
+  rflags: {},
+  viewer: null,
+  viewerUrl: null,
+  viewerReq: false,
   rtab: "pending_review",
   fb: {},
   fbDraft: null,

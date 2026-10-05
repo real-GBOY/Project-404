@@ -12,18 +12,18 @@ import type { Denial } from "@/presenters/build";
  * asks the backend for something it would refuse.
  */
 function needs(route: Route, me: Me) {
-  const visitScreens = ["overview", "visits", "visit", "project", "inspect", "inspections"];
+  const visitScreens = ["overview", "visits", "visit", "project", "inspect", "inspections", "reviews", "review"];
   const p = me.permissions;
   const n = route.n;
   const want = {
     projects: p.projects.includes("V") && ["overview", "projects", "project", "users", "user", "permissions", "settings"].includes(n),
     visits: p.visits.includes("V") && visitScreens.includes(n),
-    guards: (p.guardEval.includes("V") || p.training.includes("V")) && ["guards", "visit", "inspect"].includes(n) || (n === "overview" && me.role === "gs"),
+    guards: (p.guardEval.includes("V") || p.training.includes("V")) && ["guards", "visit", "inspect", "review"].includes(n) || (n === "overview" && me.role === "gs"),
     users: p.users.includes("V") && ["users", "user", "permissions"].includes(n),
     permissions: p.permissions.includes("V") && ["user", "permissions"].includes(n),
     settings: p.settings.includes("V") && n === "settings",
     forms: p.forms.includes("V") && ["forms", "form"].includes(n),
-    inspection: n === "inspect" && !!route.id,
+    inspection: ["inspect", "review"].includes(n) && !!route.id,
   };
   // the shell labels a person's scope with project names whenever the template allows reading projects
   if (p.projects.includes("V")) want.projects = true;
@@ -65,6 +65,7 @@ export function useScreenData(route: Route, me: Me, ui: UiState): { data: Data; 
   // A detail route whose record is not in the (scope-filtered) list is outside the caller's scope or gone.
   if (!denial && !pending && !err) {
     if (route.n === "project" && data.projects && !data.projects.some((x) => x.id === route.id)) denial = { k: "scope", res: route.id ?? "" };
+    if ((route.n === "visit" || route.n === "review" || route.n === "inspect") && data.visits && !data.visits.some((x) => x.id === route.id)) denial = { k: "scope", res: route.id ?? "" };
     if (route.n === "visit" && data.visits && !data.visits.some((x) => x.id === route.id)) denial = { k: "scope", res: route.id ?? "" };
     if (route.n === "user" && data.users && !data.users.some((x) => x.id === route.id)) denial = { k: "scope", res: route.id ?? "" };
   }

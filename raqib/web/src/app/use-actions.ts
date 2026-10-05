@@ -113,6 +113,10 @@ export function useActions(): Actions {
         await api.evidence.remove(evidenceId);
         put(visitId, await api.inspection.get(visitId));
       },
+      async decideReview(visitId, action, body) {
+        put(visitId, await api.review.decide(visitId, action, body));
+        await qc.invalidateQueries({ queryKey: ["visits"] });
+      },
       async createForm(input) {
         const f = await api.forms.create(input);
         await qc.invalidateQueries({ queryKey: ["forms"] });

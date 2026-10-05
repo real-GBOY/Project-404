@@ -17,4 +17,8 @@ export const RAQIB_TEMPLATES: TemplateSeed[] = [
   ...t("raqib.visit_overdue", ["زيارة متأخرة: {{ref}}", "{{site}} — كانت مجدولة {{when}}"], ["Visit overdue: {{ref}}", "{{site}} — was scheduled {{when}}"]),
   ...t("raqib.inspection_submitted", ["{{ref}} بانتظار المراجعة", "{{site}} — بواسطة {{actor}}"], ["{{ref}} submitted for review", "{{site}} — by {{actor}}"]),
   ...t("raqib.inspection_resubmitted", ["أُعيد إرسال {{ref}} للمراجعة", "{{site}} — بواسطة {{actor}}"], ["{{ref}} resubmitted for review", "{{site}} — by {{actor}}"]),
+  ...t("raqib.inspection_forwarded", ["{{ref}} بانتظار اعتمادك", "{{site}} — روجع بواسطة {{actor}}"], ["{{ref}} awaiting your approval", "{{site}} — reviewed by {{actor}}"]),
+  ...t("raqib.inspection_returned", ["أُعيد التفتيش {{ref}} للاستكمال", "{{reason}}"], ["{{ref}} returned for completion", "{{reason}}"]),
+  ...t("raqib.inspection_rejected", ["رُفض التفتيش {{ref}}", "{{reason}}"], ["{{ref}} rejected", "{{reason}}"]),
+  ...t("raqib.inspection_approved", ["اعتُمد التفتيش {{ref}}", "{{site}} — اعتمده {{actor}}"], ["{{ref}} approved", "{{site}} — approved by {{actor}}"]),
 ];

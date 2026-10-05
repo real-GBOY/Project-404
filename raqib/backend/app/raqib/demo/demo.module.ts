@@ -7,12 +7,13 @@ import { VisitsModule } from "@raqib/raqib/visits/visits.module.js";
 import { FormsModule } from "@raqib/raqib/forms/forms.module.js";
 import { InspectionsModule } from "@raqib/raqib/inspections/inspections.module.js";
 import { EvidenceModule } from "@raqib/raqib/evidence/evidence.module.js";
+import { ReviewModule } from "@raqib/raqib/review/review.module.js";
 import { SettingsModule } from "@raqib/raqib/settings/settings.module.js";
 import { SettingsRepository } from "@raqib/raqib/settings/infrastructure/settings-repository.js";
 import { DemoSeeder } from "./demo-seeder.js";
 
 @Module({
-  imports: [RbacModule, PeopleModule, ProjectsModule, SettingsModule, AccessModule, VisitsModule, FormsModule, InspectionsModule, EvidenceModule, FilesModule],
+  imports: [RbacModule, PeopleModule, ProjectsModule, SettingsModule, AccessModule, VisitsModule, FormsModule, InspectionsModule, EvidenceModule, ReviewModule, FilesModule],
   providers: [DemoSeeder, SettingsRepository],
   exports: [DemoSeeder],
 })

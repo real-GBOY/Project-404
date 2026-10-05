@@ -14,6 +14,32 @@ export type DisplayStatus = VisitStatus | "overdue";
 
 export type VisitAction = "schedule" | "assign" | "reschedule" | "cancel" | "start";
 
+/** The review workflow's decisions (Phase 4). Review and approval are separate stages with separate permissions. */
+export type ReviewAction = "forward" | "return" | "reject" | "approve";
+
+/**
+ * The status a review decision leads to, or null when it is not allowed from `from`:
+ *   pending_review   --forward--> pending_approval
+ *   pending_approval --approve--> approved
+ *   pending_review | pending_approval --return--> returned   (back to the inspector, reason required)
+ *   pending_review | pending_approval --reject--> rejected   (final, reason required)
+ */
+export function reviewNext(from: VisitStatus, action: ReviewAction): VisitStatus | null {
+  switch (action) {
+    case "forward": return from === "pending_review" ? "pending_approval" : null;
+    case "approve": return from === "pending_approval" ? "approved" : null;
+    case "return": return from === "pending_review" || from === "pending_approval" ? "returned" : null;
+    case "reject": return from === "pending_review" || from === "pending_approval" ? "rejected" : null;
+  }
+}
+
+/** The permission letter a decision needs at a given stage: reviewing at the review stage, approving at the approval stage. */
+export function letterFor(from: VisitStatus, action: ReviewAction): "R" | "P" {
+  if (action === "approve") return "P";
+  if (action === "forward") return "R";
+  return from === "pending_approval" ? "P" : "R";
+}
+
 /** Statuses from which the visit can still be moved or called off (not under review, not decided). */
 const CHANGEABLE: readonly VisitStatus[] = ["scheduled", "assigned", "in_progress", "returned"];
 
