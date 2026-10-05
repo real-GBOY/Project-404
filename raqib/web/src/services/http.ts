@@ -1,9 +1,9 @@
 import { createHttpClient, ApiError } from "@auric/web";
-import { API_BASE_URL } from "./env";
-import { ENDPOINTS } from "./endpoints";
+import { API_BASE_URL } from "@/config/env";
+import { ENDPOINTS } from "@/config/endpoints";
 import { tokenStore } from "./token-store";
 
-export { ApiError };
+export { ApiError, tokenStore };
 
 /** Set once by `AuthProvider`; called when a request cannot be recovered by refreshing. */
 let onSessionExpired: (() => void) | null = null;

@@ -1,11 +1,11 @@
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { api } from "@/api/raqib";
+import { api } from "@/api";
+import { uploadToStorage } from "@/api/uploads";
 import type { Me } from "@/api/types";
-import { putWithProgress } from "@/lib/upload";
 import { setUi } from "@/state/ui-store";
-import type { Executor } from "./outbox";
-import { offline } from "./session";
+import type { Executor } from "@/services/offline/outbox";
+import { offline } from "@/services/offline/session";
 
 /**
  * Wires the offline session to the application while someone is signed in: the executor that replays queued changes
@@ -25,11 +25,9 @@ export function useOfflineSync(me: Me): void {
         void (await api.inspection.guardNote(op.visitId, op.guardId, op.note)),
       submit: async (op) => void (await api.inspection.submit(op.visitId)),
       evidence: async (op, file) => {
-        const p = await api.evidence.presign({ name: file.name, type: file.type, size: file.size });
-        await putWithProgress(file, p.upload, () => undefined);
-        await api.evidence.confirm(p.fileId);
+        const fileId = await uploadToStorage(file, () => undefined);
         await api.evidence.attach({
-          fileId: p.fileId,
+          fileId,
           inspectionId: op.inspectionId,
           itemId: op.itemId ?? null,
           guardId: op.guardId ?? null,

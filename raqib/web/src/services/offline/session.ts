@@ -1,4 +1,3 @@
-import { useSyncExternalStore } from "react";
 import { API_BASE_URL } from "@/config/env";
 import { createIdb, type Idb } from "./idb";
 import {
@@ -285,7 +284,3 @@ export class OfflineSession {
 }
 
 export const offline = new OfflineSession();
-
-export function useSyncState(): SyncState {
-  return useSyncExternalStore(offline.subscribe, offline.getSnapshot, offline.getSnapshot);
-}

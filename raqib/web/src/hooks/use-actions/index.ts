@@ -1,348 +1,37 @@
 import { useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { api } from "@/api/raqib";
-import { saveBlob } from "@/presenters/screens/reports";
-import type { Inspection } from "@/api/types";
-import { setUi } from "@/state/ui-store";
-import { putWithProgress } from "@/lib/upload";
-import { isNetworkError, QueuedUpload, type Op } from "@/offline/outbox";
-import { offline } from "@/offline/session";
 import type { Actions } from "@/presenters/actions";
+import { adminActions } from "./admin";
+import { confidentialActions } from "./confidential";
+import { documentActions } from "./documents";
+import { formActions } from "./forms";
+import { inspectionActions } from "./inspection";
+import { onboardingActions } from "./onboarding";
+import { qualityActions } from "./quality";
+import { reviewActions } from "./review";
+import { trainingActions } from "./training";
+import { visitActions } from "./visits";
 
 /**
- * The application layer: each command calls the API, then invalidates exactly the server state it can have
- * changed (so every screen re-reads from the backend rather than patching local copies).
+ * The application layer: each command calls the API, then invalidates exactly the server state it can have changed (so every
+ * screen re-reads from the backend rather than patching local copies). Commands live in one file per area of the product;
+ * this hook only assembles them into the `Actions` the presenters call.
  */
 export function useActions(): Actions {
   const qc = useQueryClient();
-  return useMemo<Actions>(() => {
-    const timers = new Map<string, ReturnType<typeof setTimeout>>();
-    const put = (visitId: string, view: Inspection) => {
-      qc.setQueryData(["inspection", visitId], view);
-      void offline.cacheWrite(`inspection:${visitId}`, view); // so the form can be reopened with no connection
-      setUi({ savedAt: new Date().toTimeString().slice(0, 5) });
-    };
-    /**
-     * Send a change now, or keep it on the device when there is no connection (or earlier changes for this visit are still
-     * waiting, so the order is kept). A refusal from the server is still an error; only an unreachable network queues.
-     */
-    const sendOrQueue = async (
-      visitId: string,
-      op: Op,
-      send: () => Promise<void>,
-    ): Promise<"sent" | "queued"> => {
-      if (await offline.shouldQueue(visitId)) {
-        await offline.queue(op);
-        return "queued";
-      }
-      try {
-        await send();
-        return "sent";
-      } catch (err) {
-        if (!isNetworkError(err)) throw err;
-        offline.reportNetworkFailure();
-        await offline.queue(op);
-        return "queued";
-      }
-    };
-    /** Show the text immediately; send it once the person pauses. Everything else is sent at once. */
-    const optimistic = (visitId: string, fn: (v: Inspection) => Inspection) => {
-      const cur = qc.getQueryData<Inspection>(["inspection", visitId]);
-      if (cur) put(visitId, fn(cur));
-    };
-    return {
-      async changeRole(id, role, reason) {
-        await api.users.changeRole(id, role, reason);
-        await qc.invalidateQueries({ queryKey: ["users"] });
-      },
-      async setScope(id, projectIds, reason) {
-        await api.users.setScope(id, projectIds, reason);
-        await qc.invalidateQueries({ queryKey: ["users"] });
-      },
-      async setStatus(id, status, reason) {
-        await api.users.setStatus(id, status, reason);
-        await qc.invalidateQueries({ queryKey: ["users"] });
-      },
-      async applyTemplates(changes, reason) {
-        await api.permissions.apply(changes, reason);
-        await qc.invalidateQueries({ queryKey: ["permissions"] });
-        await qc.invalidateQueries({ queryKey: ["users"] });
-      },
-      async saveSettings(settings, reason) {
-        await api.settings.update(settings, reason);
-        await qc.invalidateQueries({ queryKey: ["settings"] });
-      },
-      async createVisit(input) {
-        const v = await api.visits.create(input);
-        await qc.invalidateQueries({ queryKey: ["visits"] });
-        return { ref: v.ref, id: v.id };
-      },
-      async rescheduleVisit(id, input) {
-        await api.visits.reschedule(id, input);
-        await qc.invalidateQueries({ queryKey: ["visits"] });
-      },
-      async cancelVisit(id, reason) {
-        await api.visits.cancel(id, reason);
-        await qc.invalidateQueries({ queryKey: ["visits"] });
-      },
-      async markNotificationRead(id) {
-        await api.notifications.markRead(id);
-        await qc.invalidateQueries({ queryKey: ["notifications"] });
-      },
-      async markAllNotificationsRead() {
-        await api.notifications.markAllRead();
-        await qc.invalidateQueries({ queryKey: ["notifications"] });
-      },
-      async startInspection(visitId) {
-        if (!offline.isOnline()) throw new Error("offline");
-        const v = await api.inspection.start(visitId);
-        put(visitId, v);
-        await qc.invalidateQueries({ queryKey: ["visits"] });
-        return v;
-      },
-      async saveAnswer(visitId, itemId, patch) {
-        optimistic(visitId, (v) => ({
-          ...v,
-          sections: v.sections.map((s) => ({
-            ...s,
-            items: s.items.map((it) =>
-              it.id === itemId
-                ? {
-                    ...it,
-                    ...(patch.value !== undefined ? { answer: patch.value } : {}),
-                    ...(patch.note !== undefined ? { note: patch.note ?? "" } : {}),
-                    ...(patch.severity !== undefined ? { severity: patch.severity } : {}),
-                  }
-                : it,
-            ),
-          })),
-        }));
-        const send = async (): Promise<void> => {
-          await sendOrQueue(visitId, { kind: "answer", visitId, itemId, patch }, async () =>
-            put(visitId, await api.inspection.answer(visitId, itemId, patch)),
-          );
-        };
-        if (patch.note === undefined) return send();
-        const key = `a:${itemId}`;
-        clearTimeout(timers.get(key));
-        await new Promise<void>((resolve, reject) =>
-          timers.set(
-            key,
-            setTimeout(() => send().then(() => resolve(), reject), 600),
-          ),
-        );
-      },
-      async setGuardScore(visitId, guardId, itemId, score) {
-        optimistic(visitId, (v) => ({
-          ...v,
-          guards: v.guards.map((g) =>
-            g.guardId === guardId ? { ...g, scores: { ...g.scores, [itemId]: score } } : g,
-          ),
-        }));
-        await sendOrQueue(
-          visitId,
-          { kind: "guardScore", visitId, guardId, itemId, score },
-          async () =>
-            put(visitId, await api.inspection.guardScore(visitId, guardId, itemId, score)),
-        );
-      },
-      async setGuardNote(visitId, guardId, note) {
-        optimistic(visitId, (v) => ({
-          ...v,
-          guards: v.guards.map((g) => (g.guardId === guardId ? { ...g, note } : g)),
-        }));
-        const key = `g:${guardId}`;
-        clearTimeout(timers.get(key));
-        await new Promise<void>((resolve, reject) =>
-          timers.set(
-            key,
-            setTimeout(
-              () =>
-                sendOrQueue(visitId, { kind: "guardNote", visitId, guardId, note }, async () =>
-                  put(visitId, await api.inspection.guardNote(visitId, guardId, note)),
-                ).then(() => resolve(), reject),
-              600,
-            ),
-          ),
-        );
-      },
-      async submitInspection(visitId) {
-        // flush any pending text first so the backend checks what the person sees
-        for (const t of timers.values()) clearTimeout(t);
-        const how = await sendOrQueue(visitId, { kind: "submit", visitId }, async () => {
-          put(visitId, await api.inspection.submit(visitId));
-          await qc.invalidateQueries({ queryKey: ["visits"] });
-        });
-        return { queued: how === "queued" };
-      },
-      async uploadEvidence(file, target, onProgress) {
-        // no connection: keep the file on the device; it uploads and attaches itself when the connection returns
-        const keep = async (): Promise<never> => {
-          const meta = {
-            visitId: target.visitId,
-            inspectionId: target.inspectionId,
-            itemId: target.itemId ?? null,
-            guardId: target.guardId ?? null,
-          };
-          const q = await offline.queueFile(file, meta, file.name, file.type);
-          throw new QueuedUpload((q as Extract<Op, { kind: "evidence" }>).blobKey);
-        };
-        if (await offline.shouldQueue(target.visitId)) return keep();
-        try {
-          const p = await api.evidence.presign({
-            name: file.name,
-            type: file.type,
-            size: file.size,
-          });
-          await putWithProgress(file, p.upload, onProgress);
-          await api.evidence.confirm(p.fileId);
-          await api.evidence.attach({
-            fileId: p.fileId,
-            inspectionId: target.inspectionId,
-            itemId: target.itemId ?? null,
-            guardId: target.guardId ?? null,
-          });
-        } catch (err) {
-          if (!isNetworkError(err)) throw err;
-          offline.reportNetworkFailure();
-          return keep();
-        }
-        put(target.visitId, await api.inspection.get(target.visitId));
-      },
-      async removeEvidence(visitId, evidenceId) {
-        await api.evidence.remove(evidenceId);
-        put(visitId, await api.inspection.get(visitId));
-      },
-      async assignAction(observationId, input) {
-        const a = await api.actions.create(observationId, input);
-        await Promise.all([
-          qc.invalidateQueries({ queryKey: ["observations"] }),
-          qc.invalidateQueries({ queryKey: ["actions"] }),
-        ]);
-        return a;
-      },
-      async actionStep(id, step, body) {
-        qc.setQueryData(["action", id], await api.actions.step(id, step, body ?? {}));
-        await Promise.all([
-          qc.invalidateQueries({ queryKey: ["observations"] }),
-          qc.invalidateQueries({ queryKey: ["actions"] }),
-        ]);
-      },
-      async commentAction(id, text) {
-        qc.setQueryData(["action", id], await api.actions.comment(id, text));
-      },
-      async uploadActionEvidence(file, actionId, onProgress) {
-        const p = await api.evidence.presign({ name: file.name, type: file.type, size: file.size });
-        await putWithProgress(file, p.upload, onProgress);
-        await api.evidence.confirm(p.fileId);
-        await api.evidence.attach({ fileId: p.fileId, actionId });
-        qc.setQueryData(["action", actionId], await api.actions.get(actionId));
-      },
-      async removeActionEvidence(actionId, evidenceId) {
-        await api.evidence.remove(evidenceId);
-        qc.setQueryData(["action", actionId], await api.actions.get(actionId));
-      },
-      async requestTraining(input) {
-        const t = await api.training.create(input);
-        await qc.invalidateQueries({ queryKey: ["training"] });
-        await qc.invalidateQueries({ queryKey: ["guardHistory"] });
-        return t;
-      },
-      async trainingStep(id, step, body) {
-        qc.setQueryData(["trainingOne", id], await api.training.step(id, step, body ?? {}));
-        await qc.invalidateQueries({ queryKey: ["training"] });
-        await qc.invalidateQueries({ queryKey: ["guardHistory"] });
-      },
-      async exportAnalytics(q) {
-        saveBlob(await api.analytics.exportCsv(q), "raqib-analytics.csv");
-      },
-      async confSubmit(input) {
-        const r = await api.conf.submit(input);
-        await qc.invalidateQueries({ queryKey: ["confMine"] });
-        return r;
-      },
-      async confUpload(file, onProgress) {
-        const p = await api.evidence.presign({ name: file.name, type: file.type, size: file.size });
-        await putWithProgress(file, p.upload, onProgress);
-        await api.evidence.confirm(p.fileId);
-        return p.fileId;
-      },
-      async confEnter(reason, ack) {
-        await api.conf.enter(reason, ack);
-        await qc.invalidateQueries({ queryKey: ["confAccess"] });
-      },
-      async confExit() {
-        await api.conf.exit();
-        qc.removeQueries({ queryKey: ["confList"] });
-        qc.removeQueries({ queryKey: ["confDetail"] });
-        qc.removeQueries({ queryKey: ["confGrants"] });
-        qc.removeQueries({ queryKey: ["confLog"] });
-        await qc.invalidateQueries({ queryKey: ["confAccess"] });
-      },
-      async confRespond(id, text) {
-        qc.setQueryData(["confDetail", id], await api.conf.respond(id, text));
-        await qc.invalidateQueries({ queryKey: ["confList"] });
-      },
-      async confReveal(id, reason) {
-        qc.setQueryData(["confDetail", id], await api.conf.reveal(id, reason));
-        await qc.invalidateQueries({ queryKey: ["confLog"] });
-      },
-      async confIssueGrant(input) {
-        qc.setQueryData(["confGrants"], (await api.conf.issue(input)).items);
-        await qc.invalidateQueries({ queryKey: ["confLog"] });
-      },
-      async confRevoke(id, reason) {
-        qc.setQueryData(["confGrants"], (await api.conf.revoke(id, reason)).items);
-        await qc.invalidateQueries({ queryKey: ["confLog"] });
-      },
-      async exportAudit(q) {
-        saveBlob(await api.audit.exportCsv(q), "raqib-audit.csv");
-      },
-      async approveRequest(id, input) {
-        qc.setQueryData(["accountRequest", id], await api.accountRequests.approve(id, input));
-        await Promise.all([
-          qc.invalidateQueries({ queryKey: ["accountRequests"] }),
-          qc.invalidateQueries({ queryKey: ["users"] }),
-        ]);
-      },
-      async rejectRequest(id, reason) {
-        qc.setQueryData(["accountRequest", id], await api.accountRequests.reject(id, reason));
-        await qc.invalidateQueries({ queryKey: ["accountRequests"] });
-      },
-      async resendRequest(id) {
-        await api.accountRequests.resend(id);
-      },
-      reportPdf: (id, lang) => api.reports.pdf(id, lang),
-      evidenceBlob: (id) => api.evidence.blob(id),
-      async decideReview(visitId, action, body) {
-        put(visitId, await api.review.decide(visitId, action, body));
-        await qc.invalidateQueries({ queryKey: ["visits"] });
-      },
-      async createForm(input) {
-        const f = await api.forms.create(input);
-        await qc.invalidateQueries({ queryKey: ["forms"] });
-        return { id: f.id };
-      },
-      async createDraft(formId) {
-        await api.forms.createDraft(formId);
-        await qc.invalidateQueries({ queryKey: ["forms"] });
-      },
-      async saveDraft(formId, sections) {
-        await api.forms.saveDraft(formId, sections);
-        await qc.invalidateQueries({ queryKey: ["forms"] });
-      },
-      async discardDraft(formId) {
-        await api.forms.discardDraft(formId);
-        await qc.invalidateQueries({ queryKey: ["forms"] });
-      },
-      async publishForm(formId, reason) {
-        await api.forms.publish(formId, reason);
-        await qc.invalidateQueries({ queryKey: ["forms"] });
-      },
-      async setFormActive(formId, active, reason) {
-        await api.forms.setActive(formId, active, reason);
-        await qc.invalidateQueries({ queryKey: ["forms"] });
-      },
-    };
-  }, [qc]);
+  return useMemo<Actions>(
+    () => ({
+      ...adminActions(qc),
+      ...visitActions(qc),
+      ...inspectionActions(qc),
+      ...reviewActions(qc),
+      ...qualityActions(qc),
+      ...trainingActions(qc),
+      ...confidentialActions(qc),
+      ...onboardingActions(qc),
+      ...formActions(qc),
+      ...documentActions(),
+    }),
+    [qc],
+  );
 }
