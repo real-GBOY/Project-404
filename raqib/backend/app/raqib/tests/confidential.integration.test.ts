@@ -29,8 +29,17 @@ describe.skipIf(!hasTestDb)("Raqib confidential area", () => {
   let http: NestFastifyApplication;
   const tokens: Record<string, string> = {};
   const call = async (who: string, method: "GET" | "POST", url: string, payload?: unknown) => {
-    const res = await http.inject({ method, url: `/api/raqib/confidential${url}`, headers: { authorization: `Bearer ${tokens[who]}` }, payload: payload as never });
-    return { status: res.statusCode, body: (res.body && String(res.headers["content-type"]).includes("json") ? JSON.parse(res.body) : {}) as Json, headers: res.headers };
+    const res = await http.inject({
+      method,
+      url: `/api/raqib/confidential${url}`,
+      headers: { authorization: `Bearer ${tokens[who]}` },
+      payload: payload as never,
+    });
+    return {
+      status: res.statusCode,
+      body: (res.body && String(res.headers["content-type"]).includes("json") ? JSON.parse(res.body) : {}) as Json,
+      headers: res.headers,
+    };
   };
   const enter = (who: string, reason = "investigation") => call(who, "POST", "/session", { reason, ack: true });
   const code = (r: { body: Json }) => r.body.error?.code;
@@ -154,7 +163,8 @@ describe.skipIf(!hasTestDb)("Raqib confidential area", () => {
   it("the protected log records entries, reads, responses and reveals — and never names a reporter", async () => {
     const log = (await call("gm", "GET", "/log")).body.items as Json[];
     const actions = new Set(log.map((e) => e.action));
-    for (const a of ["enter", "view_list", "view_report", "respond", "reveal_identity", "grant_issued", "grant_revoked", "submit"]) expect(actions.has(a)).toBe(true);
+    for (const a of ["enter", "view_list", "view_report", "respond", "reveal_identity", "grant_issued", "grant_revoked", "submit"])
+      expect(actions.has(a)).toBe(true);
     expect(log.filter((e) => e.action === "submit").every((e) => e.actor.en === "Reporter")).toBe(true);
     expect(log.some((e) => e.actor.en.includes("Mutairi") || e.actor.en.includes("Anazi"))).toBe(false);
     expect(code(await call("qm", "GET", "/log"))).toBe("raqib.conf_gm_only");

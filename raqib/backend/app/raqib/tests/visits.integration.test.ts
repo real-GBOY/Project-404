@@ -112,8 +112,15 @@ describe.skipIf(!hasTestDb)("Raqib visits & scheduling", () => {
 
   describe("create", () => {
     const body = (over: Json = {}) => ({
-      projectId: ids["PRJ-RYD-014"], siteId: ids["PRJ-RYD-014:site0"], inspectorId: ids.insA, type: "routine", shift: "morning",
-      date: "2026-10-12", time: "09:00", reason: "Routine round", ...over,
+      projectId: ids["PRJ-RYD-014"],
+      siteId: ids["PRJ-RYD-014:site0"],
+      inspectorId: ids.insA,
+      type: "routine",
+      shift: "morning",
+      date: "2026-10-12",
+      time: "09:00",
+      reason: "Routine round",
+      ...over,
     });
 
     it("lets scheduling roles create and assign, writes history, and references are sequential", async () => {
@@ -172,7 +179,12 @@ describe.skipIf(!hasTestDb)("Raqib visits & scheduling", () => {
     it("reassigns to another eligible inspector and requires a reason", async () => {
       const v = byRef(await visits("qm"), (x) => x.time === "13:00" && x.inspector === null);
       expect((await call("qe", "POST", `/raqib/visits/${v.id}/reschedule`, { date: "2026-10-12", time: "13:00" })).status).toBe(400);
-      const ok = await call("qe", "POST", `/raqib/visits/${v.id}/reschedule`, { date: "2026-10-12", time: "13:00", inspectorId: ids.insA, reason: "Assigning an inspector" });
+      const ok = await call("qe", "POST", `/raqib/visits/${v.id}/reschedule`, {
+        date: "2026-10-12",
+        time: "13:00",
+        inspectorId: ids.insA,
+        reason: "Assigning an inspector",
+      });
       expect(ok.status).toBe(200);
       expect(ok.body.status).toBe("assigned");
     });
@@ -211,7 +223,9 @@ describe.skipIf(!hasTestDb)("Raqib visits & scheduling", () => {
     });
 
     it("tells the previous inspector when a visit is reassigned away, and the inspector when it is cancelled", async () => {
-      expect(((await notifications("insA")).notifications as Json[]).some((x) => x.type === "raqib.visit_rescheduled" || x.type === "raqib.visit_assigned")).toBe(true);
+      expect(
+        ((await notifications("insA")).notifications as Json[]).some((x) => x.type === "raqib.visit_rescheduled" || x.type === "raqib.visit_assigned"),
+      ).toBe(true);
       const cancelled = ((await notifications("insA")).notifications as Json[]).find((x) => x.type === "raqib.visit_cancelled");
       expect(cancelled?.body).toMatch(/Site closed|إغلاق|Site closed/);
     });

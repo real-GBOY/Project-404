@@ -38,7 +38,10 @@ export class AuditService {
     private readonly access: AccessRepository,
   ) {}
 
-  async list(q: AuditQueryInput, who: Access): Promise<{ items: AuditEntryView[]; entities: string[]; actors: Array<{ id: string; name: L10n }>; truncated: boolean }> {
+  async list(
+    q: AuditQueryInput,
+    who: Access,
+  ): Promise<{ items: AuditEntryView[]; entities: string[]; actors: Array<{ id: string; name: L10n }>; truncated: boolean }> {
     requireCan(who, "audit", "V");
     return readInTenant(async () => {
       const profiles = new Map((await this.access.allProfiles()).map((p) => [p.userId, p]));
@@ -66,10 +69,26 @@ export class AuditService {
       };
       const items = out
         .map((r): AuditEntryView => ({
-          id: r.id, at: r.createdAt.toISOString(), actor: { id: r.actorId, name: name(r.actorId), role: r.actorId ? (profiles.get(r.actorId)?.roleKey ?? null) : null, system: !r.actorId },
-          action: r.action, entity: r.resourceType, ref: r.resourceId, before: r.before, after: r.after, reason: typeof r.metadata?.reason === "string" ? (r.metadata.reason as string) : null, correlationId: r.correlationId,
+          id: r.id,
+          at: r.createdAt.toISOString(),
+          actor: { id: r.actorId, name: name(r.actorId), role: r.actorId ? (profiles.get(r.actorId)?.roleKey ?? null) : null, system: !r.actorId },
+          action: r.action,
+          entity: r.resourceType,
+          ref: r.resourceId,
+          before: r.before,
+          after: r.after,
+          reason: typeof r.metadata?.reason === "string" ? (r.metadata.reason as string) : null,
+          correlationId: r.correlationId,
         }))
-        .filter((e) => !needle || [e.action, e.entity, e.ref, e.reason, e.actor.name.en, e.actor.name.ar].some((x) => String(x ?? "").toLowerCase().includes(needle)));
+        .filter(
+          (e) =>
+            !needle ||
+            [e.action, e.entity, e.ref, e.reason, e.actor.name.en, e.actor.name.ar].some((x) =>
+              String(x ?? "")
+                .toLowerCase()
+                .includes(needle),
+            ),
+        );
       return {
         items,
         entities: [...new Set(out.map((r) => r.resourceType))].sort(),
@@ -82,7 +101,10 @@ export class AuditService {
   async csv(q: AuditQueryInput, who: Access): Promise<string> {
     requireCan(who, "audit", "X");
     const { items } = await this.list(q, who);
-    const rows = [["When (UTC)", "Who", "Action", "Entity", "Reference", "Reason"], ...items.map((e) => [e.at, e.actor.name.en, e.action, e.entity, e.ref ?? "", e.reason ?? ""])];
+    const rows = [
+      ["When (UTC)", "Who", "Action", "Entity", "Reference", "Reason"],
+      ...items.map((e) => [e.at, e.actor.name.en, e.action, e.entity, e.ref ?? "", e.reason ?? ""]),
+    ];
     return `${String.fromCharCode(0xfeff)}${rows.map((r) => r.map(csvField).join(",")).join("\r\n")}\r\n`;
   }
 }

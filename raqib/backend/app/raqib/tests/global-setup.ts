@@ -12,17 +12,14 @@ export default async function setup(): Promise<void> {
 
   const target = new URL(url);
   const dbName = decodeURIComponent(target.pathname.replace(/^\//, ""));
-  if (!/^[a-z0-9_]+$/i.test(dbName))
-    throw new Error(`Refusing unusual test database name "${dbName}"`);
+  if (!/^[a-z0-9_]+$/i.test(dbName)) throw new Error(`Refusing unusual test database name "${dbName}"`);
 
   const admin = new URL(url);
   admin.pathname = "/postgres";
   const client = new pg.Client({ connectionString: admin.toString() });
   await client.connect();
   try {
-    const { rowCount } = await client.query("SELECT 1 FROM pg_database WHERE datname = $1", [
-      dbName,
-    ]);
+    const { rowCount } = await client.query("SELECT 1 FROM pg_database WHERE datname = $1", [dbName]);
     if (!rowCount) await client.query(`CREATE DATABASE "${dbName}"`);
   } finally {
     await client.end();

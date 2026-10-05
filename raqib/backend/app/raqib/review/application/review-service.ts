@@ -23,7 +23,10 @@ export interface DecisionInput {
 }
 
 const EVENT_ACTION: Record<ReviewAction, "reviewed" | "returned" | "rejected" | "approved"> = {
-  forward: "reviewed", return: "returned", reject: "rejected", approve: "approved",
+  forward: "reviewed",
+  return: "returned",
+  reject: "rejected",
+  approve: "approved",
 };
 
 /**
@@ -48,7 +51,10 @@ export class ReviewService {
   async decide(visitId: string, action: ReviewAction, input: DecisionInput, who: Access): Promise<InspectionView> {
     const reason = (input.reason ?? "").trim();
     if ((action === "return" || action === "reject") && reason.length < 3) {
-      throw ValidationError("raqib.reason_required", action === "return" ? "A reason is required to return an inspection." : "A reason is required to reject an inspection.");
+      throw ValidationError(
+        "raqib.reason_required",
+        action === "return" ? "A reason is required to return an inspection." : "A reason is required to reject an inspection.",
+      );
     }
     await this.uow.transaction(async () => {
       const v = await this.visits.find(visitId, true);
@@ -72,12 +78,22 @@ export class ReviewService {
       await this.visits.update(visitId, { status: to });
       const note = action === "return" || action === "reject" ? reason : (input.comment ?? "").trim() || null;
       await this.visits.appendEvent({
-        visitId, ...actorOf(who), action: EVENT_ACTION[action], fromStatus: v.status, toStatus: to, reason: note,
+        visitId,
+        ...actorOf(who),
+        action: EVENT_ACTION[action],
+        fromStatus: v.status,
+        toStatus: to,
+        reason: note,
         detail: { action, round: v.round, ...(action === "return" ? { itemIds } : {}) },
       });
       await this.audit.record({
-        actorId: who.userId, action: `raqib.inspection.${action === "forward" ? "forwarded" : action === "return" ? "returned" : action === "reject" ? "rejected" : "approved"}`,
-        resourceType: "raqib_inspection", resourceId: inspection.id, before: { status: v.status }, after: { status: to }, metadata: { reason: note, round: v.round, flagged: itemIds.length },
+        actorId: who.userId,
+        action: `raqib.inspection.${action === "forward" ? "forwarded" : action === "return" ? "returned" : action === "reject" ? "rejected" : "approved"}`,
+        resourceType: "raqib_inspection",
+        resourceId: inspection.id,
+        before: { status: v.status },
+        after: { status: to },
+        metadata: { reason: note, round: v.round, flagged: itemIds.length },
       });
       const base = { visitId, actorId: who.userId };
       if (action === "forward") await this.events.publish(inspectionForwarded(base));

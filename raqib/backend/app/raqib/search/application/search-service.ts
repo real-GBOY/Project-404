@@ -42,9 +42,10 @@ export class SearchService {
   async run(q: string, who: Access): Promise<SearchHit[]> {
     const needle = norm(q.trim());
     if (needle.length < 2) return [];
-    const match = (...fields: unknown[]): boolean => fields.some((f) => (typeof f === "object" && f ? Object.values(f as object) : [f]).some((x) => norm(x).includes(needle)));
+    const match = (...fields: unknown[]): boolean =>
+      fields.some((f) => (typeof f === "object" && f ? Object.values(f as object) : [f]).some((x) => norm(x).includes(needle)));
     // each source silently contributes nothing when the person lacks the permission for it
-    const safe = async <T,>(fn: () => Promise<T[]>): Promise<T[]> => fn().catch(() => []);
+    const safe = async <T>(fn: () => Promise<T[]>): Promise<T[]> => fn().catch(() => []);
     const [projects, guards, visits, reports, observations, actions, training, users] = await Promise.all([
       safe(() => this.projects.list(who)),
       safe(() => this.projects.guards(who)),
@@ -55,16 +56,72 @@ export class SearchService {
       safe(() => this.training.list(who)),
       safe(() => this.people.list(who)),
     ]);
-    const top = <T,>(xs: T[], pred: (x: T) => boolean): T[] => xs.filter(pred).slice(0, MAX_PER_KIND);
+    const top = <T>(xs: T[], pred: (x: T) => boolean): T[] => xs.filter(pred).slice(0, MAX_PER_KIND);
     const hits: SearchHit[] = [
-      ...top(projects, (p) => match(p.code, p.name, p.city)).map((p) => ({ kind: "project" as const, id: p.id, ref: p.code, title: p.name, sub: "", go: ["project", p.id] as [string, string] })),
-      ...top(visits, (v) => match(v.ref, v.project.name, v.site.name)).map((v) => ({ kind: "visit" as const, id: v.id, ref: v.ref, title: v.site.name, sub: v.project.code, go: ["visit", v.id] as [string, string] })),
-      ...top(reports, (r) => match(r.ref, r.snapshot.visitRef, r.snapshot.project.name, r.snapshot.site)).map((r) => ({ kind: "report" as const, id: r.id, ref: r.ref, title: r.snapshot.site, sub: r.snapshot.project.code, go: ["report", r.visitId] as [string, string] })),
-      ...top(observations, (o) => match(o.ref, o.title, o.site)).map((o) => ({ kind: "observation" as const, id: o.id, ref: o.ref, title: o.title, sub: o.project.code, go: ["observations", ""] as [string, string] })),
-      ...top(actions, (a) => match(a.ref, a.title, a.description)).map((a) => ({ kind: "action" as const, id: a.id, ref: a.ref, title: a.title, sub: a.project.code, go: ["action", a.id] as [string, string] })),
-      ...top(training, (t) => match(t.ref, t.course, t.guard.name, t.guard.employeeNo)).map((t) => ({ kind: "training" as const, id: t.id, ref: t.ref, title: t.course, sub: t.guard.employeeNo, go: ["trainingD", t.id] as [string, string] })),
-      ...top(guards, (g) => match(g.employeeNo, g.name)).map((g) => ({ kind: "guard" as const, id: g.id, ref: g.employeeNo, title: g.name, sub: "", go: ["guard", g.id] as [string, string] })),
-      ...top(users, (u) => match(u.name, u.email)).map((u) => ({ kind: "user" as const, id: u.id, ref: "", title: u.name, sub: u.role, go: ["user", u.id] as [string, string] })),
+      ...top(projects, (p) => match(p.code, p.name, p.city)).map((p) => ({
+        kind: "project" as const,
+        id: p.id,
+        ref: p.code,
+        title: p.name,
+        sub: "",
+        go: ["project", p.id] as [string, string],
+      })),
+      ...top(visits, (v) => match(v.ref, v.project.name, v.site.name)).map((v) => ({
+        kind: "visit" as const,
+        id: v.id,
+        ref: v.ref,
+        title: v.site.name,
+        sub: v.project.code,
+        go: ["visit", v.id] as [string, string],
+      })),
+      ...top(reports, (r) => match(r.ref, r.snapshot.visitRef, r.snapshot.project.name, r.snapshot.site)).map((r) => ({
+        kind: "report" as const,
+        id: r.id,
+        ref: r.ref,
+        title: r.snapshot.site,
+        sub: r.snapshot.project.code,
+        go: ["report", r.visitId] as [string, string],
+      })),
+      ...top(observations, (o) => match(o.ref, o.title, o.site)).map((o) => ({
+        kind: "observation" as const,
+        id: o.id,
+        ref: o.ref,
+        title: o.title,
+        sub: o.project.code,
+        go: ["observations", ""] as [string, string],
+      })),
+      ...top(actions, (a) => match(a.ref, a.title, a.description)).map((a) => ({
+        kind: "action" as const,
+        id: a.id,
+        ref: a.ref,
+        title: a.title,
+        sub: a.project.code,
+        go: ["action", a.id] as [string, string],
+      })),
+      ...top(training, (t) => match(t.ref, t.course, t.guard.name, t.guard.employeeNo)).map((t) => ({
+        kind: "training" as const,
+        id: t.id,
+        ref: t.ref,
+        title: t.course,
+        sub: t.guard.employeeNo,
+        go: ["trainingD", t.id] as [string, string],
+      })),
+      ...top(guards, (g) => match(g.employeeNo, g.name)).map((g) => ({
+        kind: "guard" as const,
+        id: g.id,
+        ref: g.employeeNo,
+        title: g.name,
+        sub: "",
+        go: ["guard", g.id] as [string, string],
+      })),
+      ...top(users, (u) => match(u.name, u.email)).map((u) => ({
+        kind: "user" as const,
+        id: u.id,
+        ref: "",
+        title: u.name,
+        sub: u.role,
+        go: ["user", u.id] as [string, string],
+      })),
     ];
     return hits;
   }

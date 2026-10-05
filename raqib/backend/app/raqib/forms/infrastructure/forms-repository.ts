@@ -42,20 +42,57 @@ const org = (): string => {
 };
 
 type FormRow = {
-  id: string; code: string; category: FormCategory; name_ar: string; name_en: string; description_ar: string; description_en: string;
-  active: boolean; is_default: boolean; created_by: string | null; created_at: Date; updated_at: Date;
+  id: string;
+  code: string;
+  category: FormCategory;
+  name_ar: string;
+  name_en: string;
+  description_ar: string;
+  description_en: string;
+  active: boolean;
+  is_default: boolean;
+  created_by: string | null;
+  created_at: Date;
+  updated_at: Date;
 };
 const toForm = (r: FormRow): FormRecord => ({
-  id: r.id, code: r.code, category: r.category, name: { ar: r.name_ar, en: r.name_en }, description: { ar: r.description_ar, en: r.description_en },
-  active: r.active, isDefault: r.is_default, createdBy: r.created_by, createdAt: r.created_at, updatedAt: r.updated_at,
+  id: r.id,
+  code: r.code,
+  category: r.category,
+  name: { ar: r.name_ar, en: r.name_en },
+  description: { ar: r.description_ar, en: r.description_en },
+  active: r.active,
+  isDefault: r.is_default,
+  createdBy: r.created_by,
+  createdAt: r.created_at,
+  updatedAt: r.updated_at,
 });
 type VerRow = {
-  id: string; form_id: string; version: string; status: VersionStatus; sections: unknown; note_ar: string; note_en: string;
-  created_by: string | null; created_at: Date; published_by: string | null; published_at: Date | null; superseded_at: Date | null;
+  id: string;
+  form_id: string;
+  version: string;
+  status: VersionStatus;
+  sections: unknown;
+  note_ar: string;
+  note_en: string;
+  created_by: string | null;
+  created_at: Date;
+  published_by: string | null;
+  published_at: Date | null;
+  superseded_at: Date | null;
 };
 const toVersion = (r: VerRow): VersionRecord => ({
-  id: r.id, formId: r.form_id, version: r.version, status: r.status, sections: r.sections as FormSection[], note: { ar: r.note_ar, en: r.note_en },
-  createdBy: r.created_by, createdAt: r.created_at, publishedBy: r.published_by, publishedAt: r.published_at, supersededAt: r.superseded_at,
+  id: r.id,
+  formId: r.form_id,
+  version: r.version,
+  status: r.status,
+  sections: r.sections as FormSection[],
+  note: { ar: r.note_ar, en: r.note_en },
+  createdBy: r.created_by,
+  createdAt: r.created_at,
+  publishedBy: r.published_by,
+  publishedAt: r.published_at,
+  supersededAt: r.superseded_at,
 });
 
 @Injectable()
@@ -71,13 +108,30 @@ export class FormsRepository {
     return r ? toForm(r) : null;
   }
 
-  async insertForm(f: { code: string; category: FormCategory; name: L10n; description: L10n; active: boolean; isDefault: boolean; createdBy: string | null }): Promise<string> {
+  async insertForm(f: {
+    code: string;
+    category: FormCategory;
+    name: L10n;
+    description: L10n;
+    active: boolean;
+    isDefault: boolean;
+    createdBy: string | null;
+  }): Promise<string> {
     const id = raqibId("frm");
     await raqibDb()
       .insertInto("raqib_forms")
       .values({
-        id, organization_id: org(), code: f.code, category: f.category, name_ar: f.name.ar, name_en: f.name.en,
-        description_ar: f.description.ar, description_en: f.description.en, active: f.active, is_default: f.isDefault, created_by: f.createdBy,
+        id,
+        organization_id: org(),
+        code: f.code,
+        category: f.category,
+        name_ar: f.name.ar,
+        name_en: f.name.en,
+        description_ar: f.description.ar,
+        description_en: f.description.en,
+        active: f.active,
+        is_default: f.isDefault,
+        created_by: f.createdBy,
       })
       .execute();
     return id;
@@ -85,11 +139,21 @@ export class FormsRepository {
 
   async updateForm(id: string, patch: Partial<{ name: L10n; description: L10n; active: boolean; isDefault: boolean }>): Promise<void> {
     const set: Record<string, unknown> = { updated_at: sql`now()` };
-    if (patch.name) { set.name_ar = patch.name.ar; set.name_en = patch.name.en; }
-    if (patch.description) { set.description_ar = patch.description.ar; set.description_en = patch.description.en; }
+    if (patch.name) {
+      set.name_ar = patch.name.ar;
+      set.name_en = patch.name.en;
+    }
+    if (patch.description) {
+      set.description_ar = patch.description.ar;
+      set.description_en = patch.description.en;
+    }
     if (patch.active !== undefined) set.active = patch.active;
     if (patch.isDefault !== undefined) set.is_default = patch.isDefault;
-    await raqibDb().updateTable("raqib_forms").set(set as never).where("id", "=", id).execute();
+    await raqibDb()
+      .updateTable("raqib_forms")
+      .set(set as never)
+      .where("id", "=", id)
+      .execute();
   }
 
   /** Clear the category's default so another form can take it (the unique index allows only one). */
@@ -98,7 +162,13 @@ export class FormsRepository {
   }
 
   async defaultForm(category: FormCategory): Promise<FormRecord | null> {
-    const r = await raqibDb().selectFrom("raqib_forms").selectAll().where("category", "=", category).where("is_default", "=", true).where("active", "=", true).executeTakeFirst();
+    const r = await raqibDb()
+      .selectFrom("raqib_forms")
+      .selectAll()
+      .where("category", "=", category)
+      .where("is_default", "=", true)
+      .where("active", "=", true)
+      .executeTakeFirst();
     return r ? toForm(r) : null;
   }
 
@@ -127,13 +197,29 @@ export class FormsRepository {
     return r ? toVersion(r) : null;
   }
 
-  async insertVersion(v: { formId: string; version: string; status: VersionStatus; sections: FormSection[]; note?: L10n; createdBy: string | null; publishedAt?: Date | null }): Promise<string> {
+  async insertVersion(v: {
+    formId: string;
+    version: string;
+    status: VersionStatus;
+    sections: FormSection[];
+    note?: L10n;
+    createdBy: string | null;
+    publishedAt?: Date | null;
+  }): Promise<string> {
     const id = raqibId("fvr");
     await raqibDb()
       .insertInto("raqib_form_versions")
       .values({
-        id, organization_id: org(), form_id: v.formId, version: v.version, status: v.status, sections: JSON.stringify(v.sections) as never,
-        note_ar: v.note?.ar ?? "", note_en: v.note?.en ?? "", created_by: v.createdBy, published_by: v.status === "published" ? v.createdBy : null,
+        id,
+        organization_id: org(),
+        form_id: v.formId,
+        version: v.version,
+        status: v.status,
+        sections: JSON.stringify(v.sections) as never,
+        note_ar: v.note?.ar ?? "",
+        note_en: v.note?.en ?? "",
+        created_by: v.createdBy,
+        published_by: v.status === "published" ? v.createdBy : null,
         published_at: v.status === "published" ? (v.publishedAt ?? new Date()) : null,
       })
       .execute();
@@ -142,12 +228,23 @@ export class FormsRepository {
 
   async updateDraft(id: string, sections: FormSection[], note?: L10n): Promise<void> {
     const set: Record<string, unknown> = { sections: JSON.stringify(sections) };
-    if (note) { set.note_ar = note.ar; set.note_en = note.en; }
-    await raqibDb().updateTable("raqib_form_versions").set(set as never).where("id", "=", id).execute();
+    if (note) {
+      set.note_ar = note.ar;
+      set.note_en = note.en;
+    }
+    await raqibDb()
+      .updateTable("raqib_form_versions")
+      .set(set as never)
+      .where("id", "=", id)
+      .execute();
   }
 
   async publish(id: string, by: string, note: L10n, at: Date): Promise<void> {
-    await raqibDb().updateTable("raqib_form_versions").set({ status: "published", published_by: by, published_at: at, note_ar: note.ar, note_en: note.en }).where("id", "=", id).execute();
+    await raqibDb()
+      .updateTable("raqib_form_versions")
+      .set({ status: "published", published_by: by, published_at: at, note_ar: note.ar, note_en: note.en })
+      .where("id", "=", id)
+      .execute();
   }
 
   async archive(id: string, at: Date): Promise<void> {

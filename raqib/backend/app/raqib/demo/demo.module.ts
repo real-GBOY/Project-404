@@ -18,7 +18,24 @@ import { SettingsRepository } from "@raqib/raqib/settings/infrastructure/setting
 import { DemoSeeder } from "./demo-seeder.js";
 
 @Module({
-  imports: [RbacModule, PeopleModule, ProjectsModule, SettingsModule, AccessModule, VisitsModule, FormsModule, InspectionsModule, EvidenceModule, ReviewModule, ObservationsModule, ActionsModule, TrainingModule, ConfidentialModule, OnboardingModule, FilesModule],
+  imports: [
+    RbacModule,
+    PeopleModule,
+    ProjectsModule,
+    SettingsModule,
+    AccessModule,
+    VisitsModule,
+    FormsModule,
+    InspectionsModule,
+    EvidenceModule,
+    ReviewModule,
+    ObservationsModule,
+    ActionsModule,
+    TrainingModule,
+    ConfidentialModule,
+    OnboardingModule,
+    FilesModule,
+  ],
   providers: [DemoSeeder, SettingsRepository],
   exports: [DemoSeeder],
 })

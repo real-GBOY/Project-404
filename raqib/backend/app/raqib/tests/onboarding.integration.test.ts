@@ -13,8 +13,18 @@ const email = (key: string) => DEMO_PEOPLE.find((p) => p.key === key)!.email;
 type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 const form = (over: Json = {}) => ({
-  name: "Faisal Al-Otaibi", email: "f.alotaibi@example.com", phone: "0551234567", nationalId: "1098765432", employeeNo: "E-5521", department: "Operations", role: "ins", projects: "Jeddah hub",
-  justification: "I will be inspecting the Jeddah sites from next month.", signature: "Faisal Al-Otaibi", agree: true, ...over,
+  name: "Faisal Al-Otaibi",
+  email: "f.alotaibi@example.com",
+  phone: "0551234567",
+  nationalId: "1098765432",
+  employeeNo: "E-5521",
+  department: "Operations",
+  role: "ins",
+  projects: "Jeddah hub",
+  justification: "I will be inspecting the Jeddah sites from next month.",
+  signature: "Faisal Al-Otaibi",
+  agree: true,
+  ...over,
 });
 
 describe.skipIf(!hasTestDb)("Raqib account onboarding", () => {
@@ -85,13 +95,19 @@ describe.skipIf(!hasTestDb)("Raqib account onboarding", () => {
     const jed = projects.find((p) => p.code === "PRJ-JED-007")!;
     expect((await call("pm", "POST", `/raqib/account-requests/${r.id}/approve`, { role: "ins", projectIds: [jed.id] })).status).toBe(403);
     expect((await call("qm", "POST", `/raqib/account-requests/${r.id}/approve`, { role: "qm", projectIds: [] })).status).toBe(400);
-    expect((await call("qm", "POST", `/raqib/account-requests/${r.id}/approve`, { role: "ins", projectIds: [] })).body.error.code).toBe("raqib.projects_required");
-    expect((await call("qm", "POST", `/raqib/account-requests/${r.id}/approve`, { role: "ins", projectIds: ["prj_missing"] })).body.error.code).toBe("raqib.project_not_found");
+    expect((await call("qm", "POST", `/raqib/account-requests/${r.id}/approve`, { role: "ins", projectIds: [] })).body.error.code).toBe(
+      "raqib.projects_required",
+    );
+    expect((await call("qm", "POST", `/raqib/account-requests/${r.id}/approve`, { role: "ins", projectIds: ["prj_missing"] })).body.error.code).toBe(
+      "raqib.project_not_found",
+    );
     const ok = await call("qm", "POST", `/raqib/account-requests/${r.id}/approve`, { role: "ins", projectIds: [jed.id], comment: "Welcome." });
     expect(ok.status).toBe(200);
     expect(ok.body).toMatchObject({ status: "approved", assignedRole: "ins" });
     expect(ok.body.decidedBy.en).toContain("Saud");
-    expect((await call("qm", "POST", `/raqib/account-requests/${r.id}/approve`, { role: "ins", projectIds: [jed.id] })).body.error.code).toBe("raqib.request_decided");
+    expect((await call("qm", "POST", `/raqib/account-requests/${r.id}/approve`, { role: "ins", projectIds: [jed.id] })).body.error.code).toBe(
+      "raqib.request_decided",
+    );
 
     // the account cannot be entered with a guessed password, only through the emailed link
     const bad = await http.inject({ method: "POST", url: "/api/auth/login", payload: { email: "f.alotaibi@example.com", password: "demo-password-2026" } });
@@ -100,13 +116,16 @@ describe.skipIf(!hasTestDb)("Raqib account onboarding", () => {
     expect(link.token.length).toBeGreaterThan(20);
     const set = await http.inject({ method: "POST", url: "/api/auth/password/reset", payload: { token: link.token, password: "Applicant-chosen-2026" } });
     expect(set.statusCode).toBeLessThan(300);
-    expect((await http.inject({ method: "POST", url: "/api/auth/password/reset", payload: { token: link.token, password: "Another-attempt-2026" } })).statusCode).toBe(400); // single use
+    expect(
+      (await http.inject({ method: "POST", url: "/api/auth/password/reset", payload: { token: link.token, password: "Another-attempt-2026" } })).statusCode,
+    ).toBe(400); // single use
     const newTokens = await loginWith("f.alotaibi@example.com", "Applicant-chosen-2026");
     const me = await http.inject({ method: "GET", url: "/api/raqib/me", headers: { authorization: `Bearer ${newTokens}` } });
     const body = JSON.parse(me.body);
     expect(body.role).toBe("ins");
     expect(body.scope.length).toBe(1);
-    const visits = JSON.parse((await http.inject({ method: "GET", url: "/api/raqib/visits", headers: { authorization: `Bearer ${newTokens}` } })).body).items as Json[];
+    const visits = JSON.parse((await http.inject({ method: "GET", url: "/api/raqib/visits", headers: { authorization: `Bearer ${newTokens}` } })).body)
+      .items as Json[];
     expect(visits.every((v) => v.project.code === "PRJ-JED-007")).toBe(true);
   });
 
@@ -115,7 +134,9 @@ describe.skipIf(!hasTestDb)("Raqib account onboarding", () => {
     expect(dup.status).toBe(201);
     const r = (await requests()).find((x) => x.email === email("insB"))!;
     const projects = (await call("qm", "GET", "/raqib/projects")).body.items as Json[];
-    expect((await call("qm", "POST", `/raqib/account-requests/${r.id}/approve`, { role: "ins", projectIds: [projects[0]!.id] })).body.error.code).toBe("raqib.email_taken");
+    expect((await call("qm", "POST", `/raqib/account-requests/${r.id}/approve`, { role: "ins", projectIds: [projects[0]!.id] })).body.error.code).toBe(
+      "raqib.email_taken",
+    );
     expect((await requests()).find((x) => x.id === r.id)!.status).toBe("pending");
   });
 
@@ -125,7 +146,9 @@ describe.skipIf(!hasTestDb)("Raqib account onboarding", () => {
     expect((await call("qm", "POST", `/raqib/account-requests/${r.id}/reject`, { reason: "x" })).status).toBe(400);
     const done = await call("qm", "POST", `/raqib/account-requests/${r.id}/reject`, { reason: "No post is open in that project." });
     expect(done.body).toMatchObject({ status: "rejected", decisionReason: "No post is open in that project." });
-    expect((await call("qm", "POST", `/raqib/account-requests/${r.id}/approve`, { role: "ins", projectIds: ["x"] })).body.error.code).toBe("raqib.request_decided");
+    expect((await call("qm", "POST", `/raqib/account-requests/${r.id}/approve`, { role: "ins", projectIds: ["x"] })).body.error.code).toBe(
+      "raqib.request_decided",
+    );
     expect((await call("qm", "POST", `/raqib/account-requests/${r.id}/resend`)).body.error.code).toBe("raqib.request_not_approved");
   });
 
@@ -136,7 +159,13 @@ describe.skipIf(!hasTestDb)("Raqib account onboarding", () => {
     expect(resetTokens.length).toBe(before + 1);
     const audit = (await call("qm", "GET", "/raqib/audit?entity=raqib_account_request")).body.items as Json[];
     const actions = new Set(audit.map((a) => a.action));
-    for (const a of ["raqib.account_request.submitted", "raqib.account_request.approved", "raqib.account_request.rejected", "raqib.account_request.link_resent"]) expect(actions.has(a), a).toBe(true);
+    for (const a of [
+      "raqib.account_request.submitted",
+      "raqib.account_request.approved",
+      "raqib.account_request.rejected",
+      "raqib.account_request.link_resent",
+    ])
+      expect(actions.has(a), a).toBe(true);
   });
 
   async function loginWith(mail: string, password: string): Promise<string> {

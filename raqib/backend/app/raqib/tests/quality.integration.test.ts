@@ -40,7 +40,12 @@ describe.skipIf(!hasTestDb)("Raqib observations and corrective actions", () => {
   const byStatus = async (status: string, who = "qm") => (await actions(who)).filter((a) => a.status === status);
   const upload = async (who: string): Promise<string> => {
     const p = await call(who, "POST", "/files/uploads", { originalName: "closure.png", contentType: "image/png", byteSize: PNG.length });
-    await http.inject({ method: "PUT", url: `/api${p.body.upload.url}`, headers: { authorization: `Bearer ${tokens[who]}`, "content-type": "application/octet-stream" }, payload: PNG });
+    await http.inject({
+      method: "PUT",
+      url: `/api${p.body.upload.url}`,
+      headers: { authorization: `Bearer ${tokens[who]}`, "content-type": "application/octet-stream" },
+      payload: PNG,
+    });
     await call(who, "POST", `/files/${p.body.fileId}/confirm`);
     return p.body.fileId as string;
   };
@@ -71,12 +76,20 @@ describe.skipIf(!hasTestDb)("Raqib observations and corrective actions", () => {
       expect((await observations("pm")).every((o) => o.project.code === "PRJ-RYD-014")).toBe(true);
       expect((await call("insA", "GET", "/raqib/observations")).status).toBe(403);
       const site = (await call("qm", "GET", "/raqib/projects")).body.items.find((p: Json) => p.code === "PRJ-RYD-014");
-      const created = await call("insA", "POST", "/raqib/observations", { projectId: site.id, siteId: site.sites[0].id, text: "Radio left unattended at the gate", severity: "low" });
+      const created = await call("insA", "POST", "/raqib/observations", {
+        projectId: site.id,
+        siteId: site.sites[0].id,
+        text: "Radio left unattended at the gate",
+        severity: "low",
+      });
       expect(created.status).toBe(201);
       expect(created.body.kind).toBe("observation");
       // the inspector's scope is p1 only
       const other = (await call("qm", "GET", "/raqib/projects")).body.items.find((p: Json) => p.code === "PRJ-JED-007");
-      expect((await call("insA", "POST", "/raqib/observations", { projectId: other.id, siteId: other.sites[0].id, text: "Out of scope finding", severity: "low" })).status).toBe(403);
+      expect(
+        (await call("insA", "POST", "/raqib/observations", { projectId: other.id, siteId: other.sites[0].id, text: "Out of scope finding", severity: "low" }))
+          .status,
+      ).toBe(403);
     });
 
     it("counts repeats of the same form item at the same site, once, at the moment the finding is recorded", async () => {
@@ -136,7 +149,9 @@ describe.skipIf(!hasTestDb)("Raqib observations and corrective actions", () => {
       expect((await call("pm", "POST", `/raqib/observations/${open.id}/action`, base)).status).toBe(403); // pm cannot assign
       expect((await call("qm", "POST", `/raqib/observations/${open.id}/action`, { ...base, dueDate: "2026-09-01" })).status).toBe(400);
       const inspectorId = (await call("qm", "GET", "/raqib/users")).body.items.find((u: Json) => u.role === "ins").id;
-      expect((await call("qm", "POST", `/raqib/observations/${open.id}/action`, { ...base, responsibleId: inspectorId })).body.error.code).toBe("raqib.invalid_responsible");
+      expect((await call("qm", "POST", `/raqib/observations/${open.id}/action`, { ...base, responsibleId: inspectorId })).body.error.code).toBe(
+        "raqib.invalid_responsible",
+      );
       const ok = await call("qm", "POST", `/raqib/observations/${open.id}/action`, base);
       expect(ok.status).toBe(201);
       expect(ok.body.ref).toMatch(/^CA-26-\d{4}$/);
@@ -162,7 +177,11 @@ describe.skipIf(!hasTestDb)("Raqib observations and corrective actions", () => {
       expect((await call("pm", "DELETE" as never, `/raqib/evidence/${ev.body.id}`)).status).toBe(409);
       const raw = await http.inject({ method: "GET", url: `/api/raqib/evidence/${ev.body.id}/content`, headers: { authorization: `Bearer ${tokens.qe}` } });
       expect(raw.statusCode).toBe(200);
-      const denied = await http.inject({ method: "GET", url: `/api/raqib/evidence/${ev.body.id}/content`, headers: { authorization: `Bearer ${tokens.sultan}` } });
+      const denied = await http.inject({
+        method: "GET",
+        url: `/api/raqib/evidence/${ev.body.id}/content`,
+        headers: { authorization: `Bearer ${tokens.sultan}` },
+      });
       expect(denied.statusCode).toBe(403);
       // review
       expect((await call("pm", "POST", `/raqib/actions/${a.id}/close`, {})).status).toBe(403); // no P

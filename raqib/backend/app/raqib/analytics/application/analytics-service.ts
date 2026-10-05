@@ -12,7 +12,13 @@ import type { L10n } from "@raqib/raqib/shared/l10n.js";
 import { addDaysIso, computeAnalytics, type AnalyticsResult } from "../domain/analytics.js";
 
 export type Period = "week" | "month" | "quarter" | "year" | "custom";
-export interface AnalyticsQuery { period: Period; from?: string; to?: string; projectId?: string; siteId?: string }
+export interface AnalyticsQuery {
+  period: Period;
+  from?: string;
+  to?: string;
+  projectId?: string;
+  siteId?: string;
+}
 
 const SPAN: Record<Exclude<Period, "custom">, number> = { week: 7, month: 30, quarter: 90, year: 365 };
 
@@ -63,12 +69,22 @@ export class AnalyticsService {
       const sites = new Map(allSites.map((s) => [s.id, s.name]));
       const names = new Map<string, L10n>(profiles.map((p) => [p.userId, { ar: p.nameAr, en: p.nameEn }]));
       return computeAnalytics({
-        from, to, today: who.today,
+        from,
+        to,
+        today: who.today,
         reports: reports
           .filter((r) => !siteName || r.snapshot.site.en === siteName.en)
           .map((r) => ({
-            id: r.id, ref: r.ref, visitId: r.visitId, projectId: r.projectId, scorePct: r.scorePct, date: r.snapshot.date, site: r.snapshot.site, project: r.snapshot.project.name,
-            inspector: r.snapshot.inspector, formCode: r.snapshot.form.code,
+            id: r.id,
+            ref: r.ref,
+            visitId: r.visitId,
+            projectId: r.projectId,
+            scorePct: r.scorePct,
+            date: r.snapshot.date,
+            site: r.snapshot.site,
+            project: r.snapshot.project.name,
+            inspector: r.snapshot.inspector,
+            formCode: r.snapshot.form.code,
             sections: r.snapshot.sections.map((s) => ({
               title: s.title,
               answered: s.items.filter((it) => it.answer === "c" || it.answer === "n").length,
@@ -77,10 +93,20 @@ export class AnalyticsService {
             guards: r.snapshot.guards.map((g) => ({ employeeNo: g.employeeNo, pct: g.pct })),
             returns: r.snapshot.decisions.filter((d) => d.action === "returned").length,
           })),
-        visits: visits.filter((v) => !q.siteId || v.siteId === q.siteId).map((v) => ({ id: v.id, ref: v.ref, projectId: v.projectId, inspectorId: v.inspectorId, date: v.date, status: v.status })),
+        visits: visits
+          .filter((v) => !q.siteId || v.siteId === q.siteId)
+          .map((v) => ({ id: v.id, ref: v.ref, projectId: v.projectId, inspectorId: v.inspectorId, date: v.date, status: v.status })),
         observations: observations
           .filter((o) => !q.siteId || o.siteId === q.siteId)
-          .map((o) => ({ id: o.id, ref: o.ref, projectId: o.projectId, title: o.title, site: sites.get(o.siteId) ?? { ar: "—", en: "—" }, repeatCount: o.repeatCount, createdDate: o.createdAt.toISOString().slice(0, 10) })),
+          .map((o) => ({
+            id: o.id,
+            ref: o.ref,
+            projectId: o.projectId,
+            title: o.title,
+            site: sites.get(o.siteId) ?? { ar: "—", en: "—" },
+            repeatCount: o.repeatCount,
+            createdDate: o.createdAt.toISOString().slice(0, 10),
+          })),
         actions: actions.map((a) => ({ id: a.id, ref: a.ref, projectId: a.projectId, title: a.title, status: a.status, dueDate: a.dueDate })),
         inspectors: names,
       });

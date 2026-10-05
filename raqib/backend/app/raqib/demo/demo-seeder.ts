@@ -72,7 +72,7 @@ export class DemoSeeder {
     const wf = v.workflow!;
     const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
     const resolve = (key: string) => this.access.resolve({ userId: userIds.get(key)!, email: "", organizationId: orgId, permissions: [] });
-    const asUser = <T,>(key: string, fn: (who: Awaited<ReturnType<typeof resolve>>) => Promise<T>) =>
+    const asUser = <T>(key: string, fn: (who: Awaited<ReturnType<typeof resolve>>) => Promise<T>) =>
       withContext({ userId: userIds.get(key)!, organizationId: orgId }, async () => fn(await resolve(key)));
 
     await asUser(v.inspector!, async (who) => {
@@ -81,7 +81,13 @@ export class DemoSeeder {
         const nc = wf.nonCompliant[it.key];
         view = await this.inspections.saveAnswer(visitId, it.id, nc ? { value: "n", note: nc } : { value: "c" }, who);
         if (nc) {
-          const ref = await this.files.upload({ content: png, originalName: `IMG_${it.key}.png`, contentType: "image/png", ownerId: who.userId, visibility: "private" });
+          const ref = await this.files.upload({
+            content: png,
+            originalName: `IMG_${it.key}.png`,
+            contentType: "image/png",
+            ownerId: who.userId,
+            visibility: "private",
+          });
           await this.evidence.attach({ fileId: ref.id, inspectionId: view.id, itemId: it.id }, who);
         }
       }
@@ -116,10 +122,17 @@ export class DemoSeeder {
       await as(v.by, v.scheduledAgo, async (who) => {
         const created = await this.visits.create(
           {
-            projectId: this.ids.projectIds.get(v.project)!, siteId: this.ids.siteIds.get(v.site)!,
-            areaId: v.area !== undefined ? this.ids.areaIds.get(`${v.site}:${v.area}`) : null, areaText: v.areaText,
-            inspectorId: v.inspector ? userIds.get(v.inspector)! : null, type: v.type, shift: v.shift,
-            date: addDays(today, v.day), time: v.time, guardIds: v.guards.map((g) => this.ids.guardIds.get(g)!), reason: v.reason,
+            projectId: this.ids.projectIds.get(v.project)!,
+            siteId: this.ids.siteIds.get(v.site)!,
+            areaId: v.area !== undefined ? this.ids.areaIds.get(`${v.site}:${v.area}`) : null,
+            areaText: v.areaText,
+            inspectorId: v.inspector ? userIds.get(v.inspector)! : null,
+            type: v.type,
+            shift: v.shift,
+            date: addDays(today, v.day),
+            time: v.time,
+            guardIds: v.guards.map((g) => this.ids.guardIds.get(g)!),
+            reason: v.reason,
           },
           who,
         );
@@ -136,7 +149,13 @@ export class DemoSeeder {
             view = await this.inspections.saveAnswer(visitId, itemByKey(key).id, { value, ...(ins.notes[key] ? { note: ins.notes[key] } : {}) }, who);
           }
           for (const key of ins.evidenceFor) {
-            const ref = await this.files.upload({ content: png, originalName: `IMG_2112.png`, contentType: "image/png", ownerId: who.userId, visibility: "private" });
+            const ref = await this.files.upload({
+              content: png,
+              originalName: `IMG_2112.png`,
+              contentType: "image/png",
+              ownerId: who.userId,
+              visibility: "private",
+            });
             await this.evidence.attach({ fileId: ref.id, inspectionId: view.id, itemId: itemByKey(key).id }, who);
           }
         });
@@ -160,9 +179,11 @@ export class DemoSeeder {
    */
   private async seedQuality(orgId: string, userIds: Map<string, string>, today: string): Promise<void> {
     const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
-    const as = async <T,>(key: string, agoDays: number, fn: (who: Awaited<ReturnType<AccessService["resolve"]>>) => Promise<T>): Promise<T> =>
+    const as = async <T>(key: string, agoDays: number, fn: (who: Awaited<ReturnType<AccessService["resolve"]>>) => Promise<T>): Promise<T> =>
       withContext({ userId: userIds.get(key)!, organizationId: orgId }, () =>
-        runAsOf(addDays(today, -agoDays), async () => fn(await this.access.resolve({ userId: userIds.get(key)!, email: "", organizationId: orgId, permissions: [] }))),
+        runAsOf(addDays(today, -agoDays), async () =>
+          fn(await this.access.resolve({ userId: userIds.get(key)!, email: "", organizationId: orgId, permissions: [] })),
+        ),
       );
     const violations = await as("qm", 0, (who) => this.observations.list(who));
     const find = (site: string, key: string) => violations.find((o) => o.kind === "violation" && o.site.en === site && o.itemKey === key)!;
@@ -170,23 +191,52 @@ export class DemoSeeder {
       as(by, ago, (who) => this.actions.create(obs, { responsibleId: userIds.get(to)!, dueDate: addDays(today, dueDay), priority, description }, who));
     const evidenceFor = (key: string, actionId: string) =>
       as(key, 0, async (who) => {
-        const ref = await this.files.upload({ content: png, originalName: "closure.png", contentType: "image/png", ownerId: who.userId, visibility: "private" });
+        const ref = await this.files.upload({
+          content: png,
+          originalName: "closure.png",
+          contentType: "image/png",
+          ownerId: who.userId,
+          visibility: "private",
+        });
         await this.evidence.attachToAction({ fileId: ref.id, actionId }, who);
       });
-    const step = (key: string, id: string, s: "start" | "submit" | "return" | "close", text?: string) => as(key, 0, (who) => this.actions.step(id, s, { text }, who));
+    const step = (key: string, id: string, s: "start" | "submit" | "return" | "close", text?: string) =>
+      as(key, 0, (who) => this.actions.step(id, s, { text }, who));
 
     // two observations reported directly
     await as("insA", 6, (who) =>
-      this.observations.create({ projectId: this.ids.projectIds.get("p1")!, siteId: this.ids.siteIds.get("s1")!, text: "Visitor turnstile left unlocked at the pedestrian gate", note: "Seen at the shift change.", severity: "medium" }, who));
+      this.observations.create(
+        {
+          projectId: this.ids.projectIds.get("p1")!,
+          siteId: this.ids.siteIds.get("s1")!,
+          text: "Visitor turnstile left unlocked at the pedestrian gate",
+          note: "Seen at the shift change.",
+          severity: "medium",
+        },
+        who,
+      ),
+    );
     await as("insB", 4, (who) =>
-      this.observations.create({ projectId: this.ids.projectIds.get("p2")!, siteId: this.ids.siteIds.get("s8")!, text: "Floodlight out on the north fence", note: "Dark stretch of about 30 m.", severity: "high" }, who));
+      this.observations.create(
+        {
+          projectId: this.ids.projectIds.get("p2")!,
+          siteId: this.ids.siteIds.get("s8")!,
+          text: "Floodlight out on the north fence",
+          note: "Dark stretch of about 30 m.",
+          severity: "high",
+        },
+        who,
+      ),
+    );
 
     // assigned and not yet started (on time)
     await assign(find("Control room", "q5").id, "qm", "pm", 5, "high", "Restore the two offline cameras and confirm recording.", 6);
     // overdue: created long ago, due date passed, never started
     await assign(find("Control room", "q15").id, "qm", "pm", -3, "medium", "Complete the shift handover log for the last two weeks.", 12);
     // in progress
-    await assign(find("Main entrance", "q13").id, "qm", "buqami", 7, "low", "Post the evacuation plan on every floor.", 5).then((a) => step("buqami", a.id, "start"));
+    await assign(find("Main entrance", "q13").id, "qm", "buqami", 7, "low", "Post the evacuation plan on every floor.", 5).then((a) =>
+      step("buqami", a.id, "start"),
+    );
     // waiting for quality review
     const waiting = await assign(find("Truck gate", "q3").id, "qe", "sultan", 4, "high", "Vehicle search for every truck, logged at the gate.", 9);
     await step("sultan", waiting.id, "start");
@@ -208,22 +258,60 @@ export class DemoSeeder {
 
   /** Training requests in every state, produced by the real service: supervisor asks, manager decides, quality runs it. */
   private async seedTraining(orgId: string, userIds: Map<string, string>, today: string): Promise<void> {
-    const as = async <T,>(key: string, agoDays: number, fn: (who: Awaited<ReturnType<AccessService["resolve"]>>) => Promise<T>): Promise<T> =>
+    const as = async <T>(key: string, agoDays: number, fn: (who: Awaited<ReturnType<AccessService["resolve"]>>) => Promise<T>): Promise<T> =>
       withContext({ userId: userIds.get(key)!, organizationId: orgId }, () =>
-        runAsOf(addDays(today, -agoDays), async () => fn(await this.access.resolve({ userId: userIds.get(key)!, email: "", organizationId: orgId, permissions: [] }))),
+        runAsOf(addDays(today, -agoDays), async () =>
+          fn(await this.access.resolve({ userId: userIds.get(key)!, email: "", organizationId: orgId, permissions: [] })),
+        ),
       );
     const guard = (no: string) => this.ids.guardIds.get(no)!;
-    const ask = (g: string, course: string, reason: "low_score" | "repeat_issue" | "incident" | "refresher" | "new_assignment", priority: "low" | "medium" | "high", related: string, notes: string, ago: number) =>
-      as("gs", ago, (who) => this.training.create({ guardId: guard(g), course, reason, priority, related, notes }, who));
-    const step = (key: string, id: string, s: "approve" | "return" | "reject" | "resubmit" | "schedule" | "complete", input: Parameters<TrainingService["step"]>[2], ago = 0) =>
-      as(key, ago, (who) => this.training.step(id, s, input, who));
+    const ask = (
+      g: string,
+      course: string,
+      reason: "low_score" | "repeat_issue" | "incident" | "refresher" | "new_assignment",
+      priority: "low" | "medium" | "high",
+      related: string,
+      notes: string,
+      ago: number,
+    ) => as("gs", ago, (who) => this.training.create({ guardId: guard(g), course, reason, priority, related, notes }, who));
+    const step = (
+      key: string,
+      id: string,
+      s: "approve" | "return" | "reject" | "resubmit" | "schedule" | "complete",
+      input: Parameters<TrainingService["step"]>[2],
+      ago = 0,
+    ) => as(key, ago, (who) => this.training.step(id, s, input, who));
 
-    await ask("G-10251", "Access control and visitor screening", "low_score", "high", "VIS pending review - Tower A", "Scored 55% on visitor screening in the last inspection.", 2);
-    const returned = await ask("G-10288", "Control room operations", "repeat_issue", "medium", "Shift handover log", "Handover log incomplete twice this month.", 6);
+    await ask(
+      "G-10251",
+      "Access control and visitor screening",
+      "low_score",
+      "high",
+      "VIS pending review - Tower A",
+      "Scored 55% on visitor screening in the last inspection.",
+      2,
+    );
+    const returned = await ask(
+      "G-10288",
+      "Control room operations",
+      "repeat_issue",
+      "medium",
+      "Shift handover log",
+      "Handover log incomplete twice this month.",
+      6,
+    );
     await step("pm", returned.id, "return", { text: "Attach the two inspection findings this is based on." }, 5);
     const approved = await ask("G-10234", "Emergency evacuation drills", "refresher", "low", "", "Annual refresher.", 7);
     await step("pm", approved.id, "approve", {}, 6);
-    const scheduled = await ask("G-10302", "Fire safety awareness", "incident", "high", "OBS-26 extinguishers expired", "Missed expired extinguishers during a round.", 9);
+    const scheduled = await ask(
+      "G-10302",
+      "Fire safety awareness",
+      "incident",
+      "high",
+      "OBS-26 extinguishers expired",
+      "Missed expired extinguishers during a round.",
+      9,
+    );
     await step("pm", scheduled.id, "approve", {}, 8);
     await step("qm", scheduled.id, "schedule", { date: addDays(today, 5), provider: "academy" }, 7);
     const done = await ask("G-10234", "Customer-facing conduct", "new_assignment", "medium", "", "New post at the main gate.", 20);
@@ -239,25 +327,55 @@ export class DemoSeeder {
    * guards in each identity mode, and the quality manager working them. Everything goes through the real service.
    */
   private async seedConfidential(orgId: string, userIds: Map<string, string>, today: string): Promise<void> {
-    const as = async <T,>(key: string, fn: (who: Awaited<ReturnType<AccessService["resolve"]>>) => Promise<T>): Promise<T> =>
+    const as = async <T>(key: string, fn: (who: Awaited<ReturnType<AccessService["resolve"]>>) => Promise<T>): Promise<T> =>
       withContext({ userId: userIds.get(key)!, organizationId: orgId }, () =>
         runAsOf(today, async () => fn(await this.access.resolve({ userId: userIds.get(key)!, email: "", organizationId: orgId, permissions: [] }))),
       );
     const inDays = (n: number) => new Date(Date.parse(`${today}T12:00:00Z`) + n * 86_400_000).toISOString();
     await as("gm", async (who) => {
       await this.confidential.enter("grant_review", true, null, who);
-      await this.confidential.issueGrant({ userId: userIds.get("qm")!, level: "respond", scope: "all", reason: "Director of Quality investigates reports", expiresAt: inDays(120) }, who);
-      await this.confidential.issueGrant({ userId: userIds.get("legal")!, level: "view", scope: "standard", reason: "Legal counsel review of the October reports", expiresAt: inDays(30) }, who);
-      await this.confidential.issueGrant({ userId: userIds.get("bandar")!, level: "view", scope: "standard", reason: "Temporary site review", expiresAt: inDays(14) }, who);
+      await this.confidential.issueGrant(
+        { userId: userIds.get("qm")!, level: "respond", scope: "all", reason: "Director of Quality investigates reports", expiresAt: inDays(120) },
+        who,
+      );
+      await this.confidential.issueGrant(
+        { userId: userIds.get("legal")!, level: "view", scope: "standard", reason: "Legal counsel review of the October reports", expiresAt: inDays(30) },
+        who,
+      );
+      await this.confidential.issueGrant(
+        { userId: userIds.get("bandar")!, level: "view", scope: "standard", reason: "Temporary site review", expiresAt: inDays(14) },
+        who,
+      );
       const grants = await this.confidential.grants(who);
       const temp = grants.find((g) => g.user.id === userIds.get("bandar"))!;
       await this.confidential.revokeGrant(temp.id, "Site review finished early.", who);
       await this.confidential.exit(null, who);
     });
     const submit = (key: string, input: Parameters<ConfidentialService["submit"]>[0]) => as(key, (who) => this.confidential.submit(input, who));
-    const a = await submit("guard", { kind: "safety", subject: "Broken lock on the parking attendants room", body: "The lock on the attendants room at level P1 has been broken for two weeks and equipment is exposed.", place: "Parking P1", identity: "named", fileIds: [] });
-    const b = await submit("turki", { kind: "misconduct", subject: "A supervisor asked for payment to arrange shifts", body: "A site supervisor asked me for money in exchange for better shifts. This happened twice this month in front of the main gate.", place: "Main gate", identity: "confidential", fileIds: [] });
-    await submit("guard", { kind: "violation", subject: "Visitors admitted without ID at night", body: "On two nights this week visitors were allowed in through the vehicle gate without any ID check.", place: "Vehicle gate", identity: "anonymous", fileIds: [] });
+    const a = await submit("guard", {
+      kind: "safety",
+      subject: "Broken lock on the parking attendants room",
+      body: "The lock on the attendants room at level P1 has been broken for two weeks and equipment is exposed.",
+      place: "Parking P1",
+      identity: "named",
+      fileIds: [],
+    });
+    const b = await submit("turki", {
+      kind: "misconduct",
+      subject: "A supervisor asked for payment to arrange shifts",
+      body: "A site supervisor asked me for money in exchange for better shifts. This happened twice this month in front of the main gate.",
+      place: "Main gate",
+      identity: "confidential",
+      fileIds: [],
+    });
+    await submit("guard", {
+      kind: "violation",
+      subject: "Visitors admitted without ID at night",
+      body: "On two nights this week visitors were allowed in through the vehicle gate without any ID check.",
+      place: "Vehicle gate",
+      identity: "anonymous",
+      fileIds: [],
+    });
     await as("qm", async (who) => {
       await this.confidential.enter("investigation", true, null, who);
       const list = await this.confidential.list(null, who);
@@ -272,11 +390,37 @@ export class DemoSeeder {
   /** Two people waiting for an account and one already turned down, through the real public path and the reviewer's decision. */
   private async seedRequests(orgId: string, userIds: Map<string, string>, today: string): Promise<void> {
     const form = (name: string, email: string, nid: string, role: "qe" | "pm" | "ins" | "gs" | "guard", projects: string, just: string) => ({
-      name, email, phone: "0550000000", nationalId: nid, employeeNo: "", department: "Operations", role, projects, justification: just, signature: name, agree: true,
+      name,
+      email,
+      phone: "0550000000",
+      nationalId: nid,
+      employeeNo: "",
+      department: "Operations",
+      role,
+      projects,
+      justification: just,
+      signature: name,
+      agree: true,
     });
-    const a = await this.onboarding.submitPublic(DEMO_ORG.slug, form("Hamad Al-Dossary", "h.aldossary@example.com", "1011223344", "ins", "Al-Waha Business Park", "Joining the Riyadh inspection team next month."));
-    await this.onboarding.submitPublic(DEMO_ORG.slug, form("Layan Al-Harbi", "l.alharbi@example.com", "1022334455", "gs", "Eastern Specialist Hospital", "Covering the guards supervisor post at the hospital."));
-    const c = await this.onboarding.submitPublic(DEMO_ORG.slug, form("Nasser Al-Qahtani", "n.alqahtani2@example.com", "1033445566", "pm", "Jeddah Logistics Hub", "Requesting manager access to the Jeddah project."));
+    const a = await this.onboarding.submitPublic(
+      DEMO_ORG.slug,
+      form("Hamad Al-Dossary", "h.aldossary@example.com", "1011223344", "ins", "Al-Waha Business Park", "Joining the Riyadh inspection team next month."),
+    );
+    await this.onboarding.submitPublic(
+      DEMO_ORG.slug,
+      form(
+        "Layan Al-Harbi",
+        "l.alharbi@example.com",
+        "1022334455",
+        "gs",
+        "Eastern Specialist Hospital",
+        "Covering the guards supervisor post at the hospital.",
+      ),
+    );
+    const c = await this.onboarding.submitPublic(
+      DEMO_ORG.slug,
+      form("Nasser Al-Qahtani", "n.alqahtani2@example.com", "1033445566", "pm", "Jeddah Logistics Hub", "Requesting manager access to the Jeddah project."),
+    );
     void a;
     await withContext({ userId: userIds.get("qm")!, organizationId: orgId }, () =>
       runAsOf(today, async () => {
@@ -289,9 +433,7 @@ export class DemoSeeder {
   }
 
   async seed(clock: Clock): Promise<void> {
-    const already = await runAsSystem(() =>
-      currentExecutor().selectFrom("organizations").select("id").where("slug", "=", DEMO_ORG.slug).executeTakeFirst(),
-    );
+    const already = await runAsSystem(() => currentExecutor().selectFrom("organizations").select("id").where("slug", "=", DEMO_ORG.slug).executeTakeFirst());
     if (already) {
       log.info("demo organization already present — skipping");
       return;
@@ -344,9 +486,24 @@ export class DemoSeeder {
         await this.settings.save(DEFAULT_SETTINGS, ownerId);
 
         for (const f of DEMO_FORMS) {
-          const fid = await this.forms.insertForm({ code: f.code, category: f.category, name: f.name, description: f.description, active: f.active, isDefault: f.isDefault, createdBy: ownerId });
+          const fid = await this.forms.insertForm({
+            code: f.code,
+            category: f.category,
+            name: f.name,
+            description: f.description,
+            active: f.active,
+            isDefault: f.isDefault,
+            createdBy: ownerId,
+          });
           for (const v of f.versions) {
-            const vid = await this.forms.insertVersion({ formId: fid, version: v.version, status: v.status === "archived" ? "published" : v.status, sections: v.sections, note: v.note, createdBy: ownerId });
+            const vid = await this.forms.insertVersion({
+              formId: fid,
+              version: v.version,
+              status: v.status === "archived" ? "published" : v.status,
+              sections: v.sections,
+              note: v.note,
+              createdBy: ownerId,
+            });
             if (v.status === "archived") await this.forms.archive(vid, new Date());
           }
         }

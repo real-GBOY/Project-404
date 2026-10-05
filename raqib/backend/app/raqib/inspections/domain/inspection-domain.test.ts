@@ -3,29 +3,57 @@ import { guardScore, WeightedComplianceV1 } from "./scoring.js";
 import { submissionIssues, type ItemFacts } from "./submission.js";
 
 const facts = (over: Partial<ItemFacts> = {}): ItemFacts => ({
-  num: "1.1", step: 0, required: true, evidenceOnNc: true, answer: "c", note: "", storedEvidence: 0, pendingEvidence: 0, flagged: false, touchedSinceFlag: false, ...over,
+  num: "1.1",
+  step: 0,
+  required: true,
+  evidenceOnNc: true,
+  answer: "c",
+  note: "",
+  storedEvidence: 0,
+  pendingEvidence: 0,
+  flagged: false,
+  touchedSinceFlag: false,
+  ...over,
 });
 
 describe("WeightedComplianceV1", () => {
   it("is compliant weight over applicable weight", () => {
     const r = WeightedComplianceV1.score([
-      { weight: 3, answer: "c" }, { weight: 2, answer: "n" }, { weight: 5, answer: "c" },
+      { weight: 3, answer: "c" },
+      { weight: 2, answer: "n" },
+      { weight: 5, answer: "c" },
     ]);
     expect(r.pct).toBe(80);
     expect(r).toMatchObject({ compliant: 2, nonCompliant: 1, na: 0, answered: 3, total: 3 });
   });
 
   it("excludes N/A and unanswered items from the denominator", () => {
-    expect(WeightedComplianceV1.score([{ weight: 3, answer: "c" }, { weight: 9, answer: "x" }, { weight: 9, answer: null }]).pct).toBe(100);
+    expect(
+      WeightedComplianceV1.score([
+        { weight: 3, answer: "c" },
+        { weight: 9, answer: "x" },
+        { weight: 9, answer: null },
+      ]).pct,
+    ).toBe(100);
   });
 
   it("is not scoreable (null, not zero) when nothing applicable was answered", () => {
-    expect(WeightedComplianceV1.score([{ weight: 3, answer: "x" }, { weight: 2, answer: null }]).pct).toBeNull();
+    expect(
+      WeightedComplianceV1.score([
+        { weight: 3, answer: "x" },
+        { weight: 2, answer: null },
+      ]).pct,
+    ).toBeNull();
     expect(WeightedComplianceV1.score([]).pct).toBeNull();
   });
 
   it("a zero-weight non-compliance does not move the score", () => {
-    expect(WeightedComplianceV1.score([{ weight: 0, answer: "n" }, { weight: 4, answer: "c" }]).pct).toBe(100);
+    expect(
+      WeightedComplianceV1.score([
+        { weight: 0, answer: "n" },
+        { weight: 4, answer: "c" },
+      ]).pct,
+    ).toBe(100);
   });
 });
 

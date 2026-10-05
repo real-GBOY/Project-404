@@ -31,7 +31,12 @@ describe.skipIf(!hasTestDb)("Raqib reports", () => {
   const tokens: Record<string, string> = {};
   const call = async (who: string, method: "GET" | "POST", url: string, payload?: unknown) => {
     const res = await http.inject({ method, url: `/api${url}`, headers: { authorization: `Bearer ${tokens[who]}` }, payload: payload as never });
-    return { status: res.statusCode, body: (res.body && res.headers["content-type"]?.toString().includes("json") ? JSON.parse(res.body) : {}) as Json, raw: res.rawPayload, headers: res.headers };
+    return {
+      status: res.statusCode,
+      body: (res.body && res.headers["content-type"]?.toString().includes("json") ? JSON.parse(res.body) : {}) as Json,
+      raw: res.rawPayload,
+      headers: res.headers,
+    };
   };
 
   beforeAll(async () => {

@@ -5,10 +5,7 @@ import { ZodBody } from "@core/http/zod.pipe.js";
 import { Allow, AccessGuard, Caller } from "@raqib/raqib/access/access.guard.js";
 import type { Access } from "@raqib/raqib/access/access.js";
 import { InspectionsService } from "../application/inspections-service.js";
-import {
-  answerSchema, guardNoteSchema, guardScoreSchema,
-  type AnswerBody, type GuardNoteBody, type GuardScoreBody,
-} from "../validation/inspections.schema.js";
+import { answerSchema, guardNoteSchema, guardScoreSchema, type AnswerBody, type GuardNoteBody, type GuardScoreBody } from "../validation/inspections.schema.js";
 
 @ApiTags("raqib · inspections")
 @ApiBearerAuth("access-token")
@@ -38,7 +35,13 @@ export class InspectionsController {
 
   @Put("guards/:guardId/scores/:itemId")
   @Allow("guardEval", "S")
-  guardScore(@Param("visitId") visitId: string, @Param("guardId") guardId: string, @Param("itemId") itemId: string, @Body(ZodBody(guardScoreSchema)) b: GuardScoreBody, @Caller() who: Access) {
+  guardScore(
+    @Param("visitId") visitId: string,
+    @Param("guardId") guardId: string,
+    @Param("itemId") itemId: string,
+    @Body(ZodBody(guardScoreSchema)) b: GuardScoreBody,
+    @Caller() who: Access,
+  ) {
     return this.service.setGuardScore(visitId, guardId, itemId, b.score, who);
   }
 

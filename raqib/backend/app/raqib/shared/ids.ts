@@ -36,5 +36,4 @@ export type RaqibIdPrefix =
 
 export const raqibId = (prefix: RaqibIdPrefix): string => createPrefixedId(prefix);
 
-export const hasRaqibPrefix = (id: string, prefix: RaqibIdPrefix): boolean =>
-  hasIdPrefix(id, prefix);
+export const hasRaqibPrefix = (id: string, prefix: RaqibIdPrefix): boolean => hasIdPrefix(id, prefix);

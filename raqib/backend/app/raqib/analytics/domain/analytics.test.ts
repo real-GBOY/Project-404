@@ -3,17 +3,38 @@ import { bucketFor, computeAnalytics, type AReport, type AnalyticsInput } from "
 
 const L = (s: string) => ({ ar: s, en: s });
 const report = (id: string, date: string, pct: number | null, site = "Gate", guards: Array<number | null> = []): AReport => ({
-  id, ref: `RPT-${id}`, visitId: `v${id}`, projectId: "p1", scorePct: pct, date, site: L(site), project: L("Park"), inspector: L("Ins"), formCode: "F",
-  sections: [{ title: L("Access"), answered: 4, nonCompliant: pct == null ? 0 : pct < 80 ? 2 : 0 }], guards: guards.map((p, n) => ({ employeeNo: `G${n}`, pct: p })), returns: 0,
+  id,
+  ref: `RPT-${id}`,
+  visitId: `v${id}`,
+  projectId: "p1",
+  scorePct: pct,
+  date,
+  site: L(site),
+  project: L("Park"),
+  inspector: L("Ins"),
+  formCode: "F",
+  sections: [{ title: L("Access"), answered: 4, nonCompliant: pct == null ? 0 : pct < 80 ? 2 : 0 }],
+  guards: guards.map((p, n) => ({ employeeNo: `G${n}`, pct: p })),
+  returns: 0,
 });
 
 const base = (over: Partial<AnalyticsInput> = {}): AnalyticsInput => ({
-  from: "2026-09-01", to: "2026-09-30", today: "2026-10-04", reports: [], visits: [], observations: [], actions: [], inspectors: new Map(), ...over,
+  from: "2026-09-01",
+  to: "2026-09-30",
+  today: "2026-10-04",
+  reports: [],
+  visits: [],
+  observations: [],
+  actions: [],
+  inspectors: new Map(),
+  ...over,
 });
 
 describe("analytics", () => {
   it("averages only issued, scored reports inside the range", () => {
-    const r = computeAnalytics(base({ reports: [report("1", "2026-09-05", 90), report("2", "2026-09-10", 70), report("3", "2026-08-01", 10), report("4", "2026-09-12", null)] }));
+    const r = computeAnalytics(
+      base({ reports: [report("1", "2026-09-05", 90), report("2", "2026-09-10", 70), report("3", "2026-08-01", 10), report("4", "2026-09-12", null)] }),
+    );
     const k = Object.fromEntries(r.kpis.map((x) => [x.key, x]));
     expect(k.compliance!.value).toBe(80);
     expect(k.inspections!.value).toBe(3);
@@ -50,15 +71,21 @@ describe("analytics", () => {
   });
 
   it("buckets guard scores and stages actions, with overdue derived from the due date", () => {
-    const r = computeAnalytics(base({
-      reports: [report("1", "2026-09-05", 90, "Gate", [50, 70, 95, null])],
-      actions: [
-        { id: "x", ref: "CA-1", projectId: "p1", title: L("t"), status: "in_progress", dueDate: "2026-10-01" },
-        { id: "y", ref: "CA-2", projectId: "p1", title: L("t"), status: "closed", dueDate: "2026-09-01" },
-        { id: "z", ref: "CA-3", projectId: "p1", title: L("t"), status: "quality_review", dueDate: "2026-09-01" },
-      ],
-    }));
-    expect(r.guardBuckets).toEqual([{ bucket: "low", n: 1 }, { bucket: "mid", n: 1 }, { bucket: "high", n: 1 }]);
+    const r = computeAnalytics(
+      base({
+        reports: [report("1", "2026-09-05", 90, "Gate", [50, 70, 95, null])],
+        actions: [
+          { id: "x", ref: "CA-1", projectId: "p1", title: L("t"), status: "in_progress", dueDate: "2026-10-01" },
+          { id: "y", ref: "CA-2", projectId: "p1", title: L("t"), status: "closed", dueDate: "2026-09-01" },
+          { id: "z", ref: "CA-3", projectId: "p1", title: L("t"), status: "quality_review", dueDate: "2026-09-01" },
+        ],
+      }),
+    );
+    expect(r.guardBuckets).toEqual([
+      { bucket: "low", n: 1 },
+      { bucket: "mid", n: 1 },
+      { bucket: "high", n: 1 },
+    ]);
     const stage = (s: string) => r.actionStages.find((x) => x.stage === s)!.n;
     expect(stage("overdue")).toBe(1);
     expect(stage("in_progress")).toBe(0);

@@ -14,13 +14,28 @@ export interface OrgSettings {
 }
 
 export const DEFAULT_SETTINGS: OrgSettings = {
-  org: { nameAr: "شركة رقيب للخدمات الأمنية", nameEn: "Raqib Security Services Co.", cr: "1010 482 991", cityAr: "الرياض", cityEn: "Riyadh", lang: "ar", tz: "Asia/Riyadh" },
+  org: {
+    nameAr: "شركة رقيب للخدمات الأمنية",
+    nameEn: "Raqib Security Services Co.",
+    cr: "1010 482 991",
+    cityAr: "الرياض",
+    cityEn: "Riyadh",
+    lang: "ar",
+    tz: "Asia/Riyadh",
+  },
   scoring: { high: 85, mid: 75, naExcluded: true, criticalFail: false },
   insp: { latestOnStart: true, publishNeedsApproval: true, ncNote: true, ncEvidence: true, lockAfterSubmit: true, overdueHours: 24 },
   attach: { photo: 25, video: 500, doc: 20, types: "JPG, PNG, HEIC, MP4, MOV, PDF", videoProtected: true, linkMinutes: 5, retention: 7, compress: true },
   notif: {
-    assigned: [1, 1], changed: [1, 1], overdue: [1, 1], returned: [1, 1], decision: [1, 0],
-    caAssigned: [1, 1], caOverdue: [1, 1], training: [1, 0], account: [1, 1],
+    assigned: [1, 1],
+    changed: [1, 1],
+    overdue: [1, 1],
+    returned: [1, 1],
+    decision: [1, 0],
+    caAssigned: [1, 1],
+    caOverdue: [1, 1],
+    training: [1, 0],
+    account: [1, 1],
   },
   report: { lang: "both", branding: true, evidence: true, signatures: true, history: true, watermark: true },
   security: { session: 30, mfa: "qm,qe,pm,gm", pwLen: 12, pwRotate: 90, lockout: 5 },

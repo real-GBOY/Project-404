@@ -87,7 +87,14 @@ describe.skipIf(!hasTestDb)("Raqib review workflow", () => {
 
     it("blocks anyone from deciding on their own inspection, even if a template grants the right", async () => {
       const mine = await find((v) => v.status === "pending_review" && v.project.code === "PRJ-RYD-014");
-      expect((await call("qm", "PUT", "/raqib/permissions", { changes: [{ role: "ins", module: "inspections", actions: "VAESR" }], reason: "Test self-review guard" })).status).toBe(200);
+      expect(
+        (
+          await call("qm", "PUT", "/raqib/permissions", {
+            changes: [{ role: "ins", module: "inspections", actions: "VAESR" }],
+            reason: "Test self-review guard",
+          })
+        ).status,
+      ).toBe(200);
       const res = await decide("insA", mine.id, "forward");
       expect(res.status).toBe(403);
       expect(res.body.error.code).toBe("raqib.self_review");
@@ -97,7 +104,10 @@ describe.skipIf(!hasTestDb)("Raqib review workflow", () => {
     it("keeps decisions inside the caller's project scope", async () => {
       const jeddah = await find((v) => v.status === "pending_approval");
       // pm (Riyadh only) cannot decide on Jeddah even though... they have no right at all; use a template to prove scope
-      expect((await call("qm", "PUT", "/raqib/permissions", { changes: [{ role: "pm", module: "inspections", actions: "VDRP" }], reason: "Test scope guard" })).status).toBe(200);
+      expect(
+        (await call("qm", "PUT", "/raqib/permissions", { changes: [{ role: "pm", module: "inspections", actions: "VDRP" }], reason: "Test scope guard" }))
+          .status,
+      ).toBe(200);
       expect((await decide("pm", jeddah.id, "reject", { reason: "outside scope" })).status).toBe(403);
       await call("qm", "PUT", "/raqib/permissions", { changes: [{ role: "pm", module: "inspections", actions: "VD" }], reason: "Restore" });
     });
@@ -116,7 +126,10 @@ describe.skipIf(!hasTestDb)("Raqib review workflow", () => {
       expect(appr.status).toBe(200);
       expect(appr.body.status).toBe("approved");
       const after = (await call("qm", "GET", `/raqib/visits/${v.id}`)).body;
-      expect(after.history.slice(-2).map((h: Json) => [h.action, h.from, h.to, h.actor.role])).toEqual([["reviewed", "pending_review", "pending_approval", "qe"], ["approved", "pending_approval", "approved", "qm"]]);
+      expect(after.history.slice(-2).map((h: Json) => [h.action, h.from, h.to, h.actor.role])).toEqual([
+        ["reviewed", "pending_review", "pending_approval", "qe"],
+        ["approved", "pending_approval", "approved", "qm"],
+      ]);
       expect(after.history.at(-2).reason).toBe("Consistent with the evidence.");
       expect((await notifications("insA")).some((n) => n.type === "raqib.inspection_approved")).toBe(true);
       expect((await notifications("pm")).some((n) => n.type === "raqib.inspection_approved")).toBe(true);
@@ -183,7 +196,9 @@ describe.skipIf(!hasTestDb)("Raqib review workflow", () => {
       const early = await call("insB", "POST", `/raqib/visits/${id}/inspection/submit`);
       expect(early.status).toBe(409);
       expect((early.body.error.details.issues as Json[]).map((i) => i.code)).toContain("flag_untouched");
-      const edit = await call("insB", "PUT", `/raqib/visits/${id}/inspection/answers/${flagged}`, { note: "Evacuation plan not posted on floor 2 of the ambulance wing." });
+      const edit = await call("insB", "PUT", `/raqib/visits/${id}/inspection/answers/${flagged}`, {
+        note: "Evacuation plan not posted on floor 2 of the ambulance wing.",
+      });
       expect(edit.status).toBe(200);
       expect(edit.body.sections.flatMap((s: Json) => s.items).find((i: Json) => i.id === flagged)).toMatchObject({ fixed: true, flagged: false });
       const sub = await call("insB", "POST", `/raqib/visits/${id}/inspection/submit`);
@@ -199,7 +214,9 @@ describe.skipIf(!hasTestDb)("Raqib review workflow", () => {
 
   describe("the decision history cannot be rewritten", () => {
     it("is immutable in the database", async () => {
-      await expect(ownerQuery(`UPDATE raqib_visit_events SET reason = 'tampered' WHERE action IN ('returned', 'approved', 'rejected')`)).rejects.toThrow(/immutable/);
+      await expect(ownerQuery(`UPDATE raqib_visit_events SET reason = 'tampered' WHERE action IN ('returned', 'approved', 'rejected')`)).rejects.toThrow(
+        /immutable/,
+      );
     });
   });
 });

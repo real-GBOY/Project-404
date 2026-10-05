@@ -87,10 +87,14 @@ describe.skipIf(!hasTestDb)("Raqib training requests", () => {
     expect((await call("qe", "POST", `/raqib/training/${id}/complete`, { date: "2026-10-20", result: "passed" })).status).toBe(400); // future
     const done = await call("qe", "POST", `/raqib/training/${id}/complete`, { date: "2026-10-03", result: "attended", note: "Present throughout." });
     expect(done.body.status).toBe("completed");
-    expect((await call("qe", "POST", `/raqib/training/${id}/complete`, { date: "2026-10-03", result: "passed" })).body.error.code).toBe("raqib.invalid_transition");
+    expect((await call("qe", "POST", `/raqib/training/${id}/complete`, { date: "2026-10-03", result: "passed" })).body.error.code).toBe(
+      "raqib.invalid_transition",
+    );
     // notifications
     const n = (await call("gs", "GET", "/notifications")).body.notifications as Json[];
-    expect(n.map((x) => x.type)).toEqual(expect.arrayContaining(["raqib.training_returned", "raqib.training_approved", "raqib.training_scheduled", "raqib.training_completed"]));
+    expect(n.map((x) => x.type)).toEqual(
+      expect.arrayContaining(["raqib.training_returned", "raqib.training_approved", "raqib.training_scheduled", "raqib.training_completed"]),
+    );
     expect(((await call("pm", "GET", "/notifications")).body.notifications as Json[]).some((x) => x.type === "raqib.training_requested")).toBe(true);
   });
 

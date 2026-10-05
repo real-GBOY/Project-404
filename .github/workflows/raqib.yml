@@ -1,0 +1,128 @@
+name: Raqib
+
+# Unlike the older product workflows (manual only), Raqib's checks run on every push and pull request that
+# touches Raqib or the Core source it compiles. Nothing here deploys.
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths: ["raqib/**", "core/**", "packages/**", "package-lock.json", ".github/workflows/raqib.yml"]
+  pull_request:
+    paths: ["raqib/**", "core/**", "packages/**", "package-lock.json", ".github/workflows/raqib.yml"]
+
+concurrency:
+  group: raqib-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: raqib/backend
+    runs-on: ubuntu-latest
+
+    # PostgreSQL 12 on purpose: it is the production major version.
+    services:
+      postgres:
+        image: postgres:12-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+
+    env:
+      AURIC_TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/raqib_test
+      NODE_OPTIONS: --max-old-space-size=4096
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      # Dependencies live at the repo root (see raqib/backend/package.json); puppeteer-core only when needed.
+      - run: npm ci
+      - name: typecheck · lint · format · test · build
+        working-directory: raqib/backend
+        run: npm run ci
+
+  web:
+    name: raqib/web
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: raqib/web
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: raqib/web/package-lock.json
+
+      - run: npm ci
+      - name: lint
+        run: npm run lint
+      - name: typecheck
+        run: npm run typecheck
+      - name: test
+        run: npm test
+      - name: build
+        run: npm run build
+
+  e2e:
+    name: raqib/e2e (real browser, real backend)
+    runs-on: ubuntu-latest
+    needs: [backend, web]
+
+    services:
+      postgres:
+        image: postgres:12-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+
+    env:
+      CI: "true"
+      NODE_OPTIONS: --max-old-space-size=4096
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            raqib/web/package-lock.json
+      - name: install (root — the backend runs from it)
+        run: npm ci
+      - name: install (web)
+        working-directory: raqib/web
+        run: npm ci
+      - name: Chrome
+        uses: browser-actions/setup-chrome@v1
+      - name: e2e
+        working-directory: raqib/web
+        run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: raqib-e2e-report
+          path: |
+            raqib/web/playwright-report
+            raqib/web/test-results

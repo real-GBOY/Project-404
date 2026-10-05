@@ -9,12 +9,7 @@ import { isUniqueViolation } from "@raqib/raqib/shared/pg-errors.js";
 import type { L10n } from "@raqib/raqib/shared/l10n.js";
 import { PeopleRepository } from "@raqib/raqib/people/infrastructure/people-repository.js";
 import { maskNationalId, type GuardView, type ProjectView, type SiteView } from "../domain/project.js";
-import {
-  ProjectsRepository,
-  type GuardRecord,
-  type ProjectInput,
-  type ProjectRecord,
-} from "../infrastructure/projects-repository.js";
+import { ProjectsRepository, type GuardRecord, type ProjectInput, type ProjectRecord } from "../infrastructure/projects-repository.js";
 
 @Injectable()
 export class ProjectsService {
@@ -115,7 +110,14 @@ export class ProjectsService {
       if (!site) throw NotFound("raqib.site_not_found", "Site not found.");
       requireProject(who, site.projectId);
       await this.repo.updateSite(siteId, name);
-      await this.audit.record({ actorId: who.userId, action: "raqib.site.updated", resourceType: "raqib_site", resourceId: siteId, before: site.name, after: name });
+      await this.audit.record({
+        actorId: who.userId,
+        action: "raqib.site.updated",
+        resourceType: "raqib_site",
+        resourceId: siteId,
+        before: site.name,
+        after: name,
+      });
       return (await this.assemble([(await this.repo.find(site.projectId))!]))[0]!;
     });
   }

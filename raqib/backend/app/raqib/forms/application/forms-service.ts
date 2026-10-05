@@ -58,15 +58,29 @@ export class FormsService {
       const view = (v: VersionRecord): VersionView => {
         const a = byId.get(v.publishedBy ?? v.createdBy ?? "");
         return {
-          id: v.id, version: v.version, status: v.status, note: v.note, at: (v.publishedAt ?? v.createdAt).toISOString(),
-          by: a ? { id: a.userId, name: { ar: a.nameAr, en: a.nameEn } } : null, uses: uses.get(v.id) ?? 0, sections: v.sections,
+          id: v.id,
+          version: v.version,
+          status: v.status,
+          note: v.note,
+          at: (v.publishedAt ?? v.createdAt).toISOString(),
+          by: a ? { id: a.userId, name: { ar: a.nameAr, en: a.nameEn } } : null,
+          uses: uses.get(v.id) ?? 0,
+          sections: v.sections,
         };
       };
       const draft = mine.find((v) => v.status === "draft");
       const pub = mine.find((v) => v.status === "published");
       return {
-        id: f.id, code: f.code, category: f.category, name: f.name, description: f.description, active: f.active, isDefault: f.isDefault,
-        updatedAt: f.updatedAt.toISOString(), versions: mine.map(view).reverse(), diff: draft ? diffVersions(pub?.sections ?? null, draft.sections) : [],
+        id: f.id,
+        code: f.code,
+        category: f.category,
+        name: f.name,
+        description: f.description,
+        active: f.active,
+        isDefault: f.isDefault,
+        updatedAt: f.updatedAt.toISOString(),
+        versions: mine.map(view).reverse(),
+        diff: draft ? diffVersions(pub?.sections ?? null, draft.sections) : [],
       };
     });
   }
@@ -90,7 +104,13 @@ export class FormsService {
     try {
       return await this.uow.transaction(async () => {
         const id = await this.repo.insertForm({ ...input, active: false, isDefault: false, createdBy: who.userId });
-        await this.repo.insertVersion({ formId: id, version: "0.1", status: "draft", sections: [{ key: "s1", title: { ar: "القسم 1", en: "Section 1" }, items: [] }], createdBy: who.userId });
+        await this.repo.insertVersion({
+          formId: id,
+          version: "0.1",
+          status: "draft",
+          sections: [{ key: "s1", title: { ar: "القسم 1", en: "Section 1" }, items: [] }],
+          createdBy: who.userId,
+        });
         await this.audit.record({ actorId: who.userId, action: "raqib.form.created", resourceType: "raqib_form", resourceId: id, after: input });
         return (await this.assemble([(await this.repo.form(id))!]))[0]!;
       });
@@ -106,7 +126,14 @@ export class FormsService {
       const f = await this.repo.form(id, true);
       if (!f) throw NotFound("raqib.form_not_found", "Form not found.");
       await this.repo.updateForm(id, patch);
-      await this.audit.record({ actorId: who.userId, action: "raqib.form.updated", resourceType: "raqib_form", resourceId: id, before: { name: f.name }, after: patch });
+      await this.audit.record({
+        actorId: who.userId,
+        action: "raqib.form.updated",
+        resourceType: "raqib_form",
+        resourceId: id,
+        before: { name: f.name },
+        after: patch,
+      });
       return (await this.assemble([(await this.repo.form(id))!]))[0]!;
     });
   }
@@ -123,7 +150,13 @@ export class FormsService {
       const base = all.find((v) => v.status === "published") ?? all[all.length - 1];
       const label = nextVersionLabel(all.map((v) => v.version));
       await this.repo.insertVersion({ formId: id, version: label, status: "draft", sections: base?.sections ?? [], createdBy: who.userId });
-      await this.audit.record({ actorId: who.userId, action: "raqib.form.version_created", resourceType: "raqib_form", resourceId: id, after: { version: label, from: base?.version ?? null } });
+      await this.audit.record({
+        actorId: who.userId,
+        action: "raqib.form.version_created",
+        resourceType: "raqib_form",
+        resourceId: id,
+        after: { version: label, from: base?.version ?? null },
+      });
       return (await this.assemble([f]))[0]!;
     });
   }
@@ -138,7 +171,13 @@ export class FormsService {
       const draft = await this.repo.draftVersion(id);
       if (!draft) throw Conflict("raqib.version_locked", "Only a draft can be edited. Create a new version first.");
       await this.repo.updateDraft(draft.id, sections, note);
-      await this.audit.record({ actorId: who.userId, action: "raqib.form.draft_saved", resourceType: "raqib_form", resourceId: id, metadata: { version: draft.version } });
+      await this.audit.record({
+        actorId: who.userId,
+        action: "raqib.form.draft_saved",
+        resourceType: "raqib_form",
+        resourceId: id,
+        metadata: { version: draft.version },
+      });
       return (await this.assemble([f]))[0]!;
     });
   }
@@ -151,7 +190,13 @@ export class FormsService {
       const draft = await this.repo.draftVersion(id);
       if (!draft) throw Conflict("raqib.no_draft", "There is no draft to discard.");
       await this.repo.deleteDraft(draft.id);
-      await this.audit.record({ actorId: who.userId, action: "raqib.form.draft_discarded", resourceType: "raqib_form", resourceId: id, before: { version: draft.version } });
+      await this.audit.record({
+        actorId: who.userId,
+        action: "raqib.form.draft_discarded",
+        resourceType: "raqib_form",
+        resourceId: id,
+        before: { version: draft.version },
+      });
       return (await this.assemble([f]))[0]!;
     });
   }
@@ -183,8 +228,13 @@ export class FormsService {
         await this.repo.updateForm(id, { isDefault: true });
       }
       await this.audit.record({
-        actorId: who.userId, action: "raqib.form.published", resourceType: "raqib_form", resourceId: id,
-        before: { version: current?.version ?? null }, after: { version: draft.version }, metadata: { reason },
+        actorId: who.userId,
+        action: "raqib.form.published",
+        resourceType: "raqib_form",
+        resourceId: id,
+        before: { version: current?.version ?? null },
+        after: { version: draft.version },
+        metadata: { reason },
       });
       return (await this.assemble([(await this.repo.form(id))!]))[0]!;
     });
@@ -197,7 +247,13 @@ export class FormsService {
       if (!f) throw NotFound("raqib.form_not_found", "Form not found.");
       if (active && !(await this.repo.publishedVersion(id))) throw Conflict("raqib.no_published_version", "Publish a version before activating this form.");
       await this.repo.updateForm(id, { active, ...(active ? {} : { isDefault: false }) });
-      await this.audit.record({ actorId: who.userId, action: active ? "raqib.form.activated" : "raqib.form.deactivated", resourceType: "raqib_form", resourceId: id, metadata: { reason } });
+      await this.audit.record({
+        actorId: who.userId,
+        action: active ? "raqib.form.activated" : "raqib.form.deactivated",
+        resourceType: "raqib_form",
+        resourceId: id,
+        metadata: { reason },
+      });
       return (await this.assemble([(await this.repo.form(id))!]))[0]!;
     });
   }
@@ -207,10 +263,17 @@ export class FormsService {
     return this.uow.transaction(async () => {
       const f = await this.repo.form(id, true);
       if (!f) throw NotFound("raqib.form_not_found", "Form not found.");
-      if (!f.active || !(await this.repo.publishedVersion(id))) throw Conflict("raqib.form_not_usable", "Only an active form with a published version can be the default.");
+      if (!f.active || !(await this.repo.publishedVersion(id)))
+        throw Conflict("raqib.form_not_usable", "Only an active form with a published version can be the default.");
       await this.repo.clearDefault(f.category);
       await this.repo.updateForm(id, { isDefault: true });
-      await this.audit.record({ actorId: who.userId, action: "raqib.form.default_set", resourceType: "raqib_form", resourceId: id, metadata: { category: f.category } });
+      await this.audit.record({
+        actorId: who.userId,
+        action: "raqib.form.default_set",
+        resourceType: "raqib_form",
+        resourceId: id,
+        metadata: { category: f.category },
+      });
       return (await this.assemble([(await this.repo.form(id))!]))[0]!;
     });
   }

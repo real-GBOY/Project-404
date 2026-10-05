@@ -7,7 +7,11 @@ const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
 export const createProjectSchema = z
   .object({
-    code: z.string().trim().toUpperCase().regex(/^[A-Z0-9-]{3,24}$/, "3–24 letters, digits or dashes"),
+    code: z
+      .string()
+      .trim()
+      .toUpperCase()
+      .regex(/^[A-Z0-9-]{3,24}$/, "3–24 letters, digits or dashes"),
     name: l10n(120),
     city: optL10n(60).default({ ar: "", en: "" }),
     region: optL10n(60).default({ ar: "", en: "" }),

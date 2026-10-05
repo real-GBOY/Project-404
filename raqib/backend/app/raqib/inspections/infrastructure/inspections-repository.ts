@@ -53,12 +53,28 @@ const org = (): string => {
 @Injectable()
 export class InspectionsRepository {
   private toInspection(r: {
-    id: string; visit_id: string; form_version_id: string; guard_form_version_id: string | null; scoring_policy: string;
-    started_by: string | null; started_at: Date; submitted_at: Date | null; score_pct: number | null; counts: unknown;
+    id: string;
+    visit_id: string;
+    form_version_id: string;
+    guard_form_version_id: string | null;
+    scoring_policy: string;
+    started_by: string | null;
+    started_at: Date;
+    submitted_at: Date | null;
+    score_pct: number | null;
+    counts: unknown;
   }): InspectionRecord {
     return {
-      id: r.id, visitId: r.visit_id, formVersionId: r.form_version_id, guardFormVersionId: r.guard_form_version_id, scoringPolicy: r.scoring_policy,
-      startedBy: r.started_by, startedAt: r.started_at, submittedAt: r.submitted_at, scorePct: r.score_pct, counts: (r.counts as Record<string, number> | null) ?? null,
+      id: r.id,
+      visitId: r.visit_id,
+      formVersionId: r.form_version_id,
+      guardFormVersionId: r.guard_form_version_id,
+      scoringPolicy: r.scoring_policy,
+      startedBy: r.started_by,
+      startedAt: r.started_at,
+      submittedAt: r.submitted_at,
+      scorePct: r.score_pct,
+      counts: (r.counts as Record<string, number> | null) ?? null,
     };
   }
 
@@ -83,7 +99,15 @@ export class InspectionsRepository {
     const id = raqibId("ins");
     await raqibDb()
       .insertInto("raqib_inspections")
-      .values({ id, organization_id: org(), visit_id: i.visitId, form_version_id: i.formVersionId, guard_form_version_id: i.guardFormVersionId, scoring_policy: i.scoringPolicy, started_by: i.startedBy })
+      .values({
+        id,
+        organization_id: org(),
+        visit_id: i.visitId,
+        form_version_id: i.formVersionId,
+        guard_form_version_id: i.guardFormVersionId,
+        scoring_policy: i.scoringPolicy,
+        started_by: i.startedBy,
+      })
       .execute();
     return id;
   }
@@ -94,43 +118,94 @@ export class InspectionsRepository {
       .insertInto("raqib_inspection_items")
       .values(
         items.map((it) => ({
-          id: raqibId("iit"), organization_id: org(), inspection_id: inspectionId, kind: it.kind, section_pos: it.sectionPos, section_key: it.sectionKey,
-          section_title_ar: it.sectionTitle.ar, section_title_en: it.sectionTitle.en, position: it.position, item_key: it.key, text_ar: it.text.ar, text_en: it.text.en,
-          weight: it.weight, answer_type: it.answerType, required: it.required, na_allowed: it.na, evidence_on_nc: it.evidenceOnNc,
+          id: raqibId("iit"),
+          organization_id: org(),
+          inspection_id: inspectionId,
+          kind: it.kind,
+          section_pos: it.sectionPos,
+          section_key: it.sectionKey,
+          section_title_ar: it.sectionTitle.ar,
+          section_title_en: it.sectionTitle.en,
+          position: it.position,
+          item_key: it.key,
+          text_ar: it.text.ar,
+          text_en: it.text.en,
+          weight: it.weight,
+          answer_type: it.answerType,
+          required: it.required,
+          na_allowed: it.na,
+          evidence_on_nc: it.evidenceOnNc,
         })),
       )
       .execute();
   }
 
   async items(inspectionId: string): Promise<ItemRecord[]> {
-    const rows = await raqibDb().selectFrom("raqib_inspection_items").selectAll().where("inspection_id", "=", inspectionId).orderBy("kind").orderBy("section_pos").orderBy("position").execute();
+    const rows = await raqibDb()
+      .selectFrom("raqib_inspection_items")
+      .selectAll()
+      .where("inspection_id", "=", inspectionId)
+      .orderBy("kind")
+      .orderBy("section_pos")
+      .orderBy("position")
+      .execute();
     return rows.map((r) => ({
-      id: r.id, inspectionId: r.inspection_id, kind: r.kind, sectionPos: r.section_pos, sectionKey: r.section_key,
-      sectionTitle: { ar: r.section_title_ar, en: r.section_title_en }, position: r.position, key: r.item_key, text: { ar: r.text_ar, en: r.text_en },
-      weight: r.weight, answerType: r.answer_type, required: r.required, na: r.na_allowed, evidenceOnNc: r.evidence_on_nc,
+      id: r.id,
+      inspectionId: r.inspection_id,
+      kind: r.kind,
+      sectionPos: r.section_pos,
+      sectionKey: r.section_key,
+      sectionTitle: { ar: r.section_title_ar, en: r.section_title_en },
+      position: r.position,
+      key: r.item_key,
+      text: { ar: r.text_ar, en: r.text_en },
+      weight: r.weight,
+      answerType: r.answer_type,
+      required: r.required,
+      na: r.na_allowed,
+      evidenceOnNc: r.evidence_on_nc,
     }));
   }
 
   async answers(inspectionId: string): Promise<Map<string, AnswerRecord>> {
     const rows = await raqibDb().selectFrom("raqib_answers").selectAll().where("inspection_id", "=", inspectionId).execute();
-    return new Map(rows.map((r) => [r.item_id, { id: r.id, itemId: r.item_id, value: r.value, note: r.note, severity: r.severity, editedRound: r.edited_round }]));
+    return new Map(
+      rows.map((r) => [r.item_id, { id: r.id, itemId: r.item_id, value: r.value, note: r.note, severity: r.severity, editedRound: r.edited_round }]),
+    );
   }
 
-  async upsertAnswer(inspectionId: string, itemId: string, patch: { value?: Answer; note?: string | null; severity?: "low" | "medium" | "high" | null }, round: number, userId: string): Promise<void> {
+  async upsertAnswer(
+    inspectionId: string,
+    itemId: string,
+    patch: { value?: Answer; note?: string | null; severity?: "low" | "medium" | "high" | null },
+    round: number,
+    userId: string,
+  ): Promise<void> {
     const existing = await raqibDb().selectFrom("raqib_answers").select("id").where("item_id", "=", itemId).executeTakeFirst();
     const set: Record<string, unknown> = { edited_round: round, updated_by: userId, updated_at: sql`now()` };
     if (patch.value !== undefined) set.value = patch.value;
     if (patch.note !== undefined) set.note = patch.note;
     if (patch.severity !== undefined) set.severity = patch.severity;
     if (existing) {
-      await raqibDb().updateTable("raqib_answers").set(set as never).where("item_id", "=", itemId).execute();
+      await raqibDb()
+        .updateTable("raqib_answers")
+        .set(set as never)
+        .where("item_id", "=", itemId)
+        .execute();
       return;
     }
     await raqibDb()
       .insertInto("raqib_answers")
       .values({
-        id: raqibId("ans"), organization_id: org(), inspection_id: inspectionId, item_id: itemId, value: patch.value ?? null, note: patch.note ?? null,
-        severity: patch.severity ?? null, edited_round: round, updated_by: userId,
+        id: raqibId("ans"),
+        organization_id: org(),
+        inspection_id: inspectionId,
+        item_id: itemId,
+        value: patch.value ?? null,
+        note: patch.note ?? null,
+        severity: patch.severity ?? null,
+        edited_round: round,
+        updated_by: userId,
       })
       .execute();
   }
@@ -180,6 +255,10 @@ export class InspectionsRepository {
   }
 
   async markSubmitted(inspectionId: string, scorePct: number | null, counts: Record<string, number>, at: Date): Promise<void> {
-    await raqibDb().updateTable("raqib_inspections").set({ submitted_at: at, score_pct: scorePct, counts: JSON.stringify(counts) as never }).where("id", "=", inspectionId).execute();
+    await raqibDb()
+      .updateTable("raqib_inspections")
+      .set({ submitted_at: at, score_pct: scorePct, counts: JSON.stringify(counts) as never })
+      .where("id", "=", inspectionId)
+      .execute();
   }
 }

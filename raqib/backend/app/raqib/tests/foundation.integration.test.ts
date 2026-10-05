@@ -56,7 +56,10 @@ describe.skipIf(!hasTestDb)("Raqib foundation", () => {
 
   describe("database", () => {
     it("applies every migration from an empty schema, none failed or rolled back", async () => {
-      const dirs = (await readdir(MIGRATIONS_DIR, { withFileTypes: true })).filter((d) => d.isDirectory()).map((d) => d.name).sort();
+      const dirs = (await readdir(MIGRATIONS_DIR, { withFileTypes: true }))
+        .filter((d) => d.isDirectory())
+        .map((d) => d.name)
+        .sort();
       const applied = await ownerQuery<{ migration_name: string }>(
         `SELECT migration_name FROM _prisma_migrations WHERE finished_at IS NOT NULL AND rolled_back_at IS NULL ORDER BY migration_name`,
       );
@@ -83,7 +86,9 @@ describe.skipIf(!hasTestDb)("Raqib foundation", () => {
       try {
         await client.query("BEGIN");
         await client.query("SELECT set_config('app.organization_id', 'org_someone_else', true)");
-        const r = await client.query("SELECT (SELECT count(*) FROM raqib_projects) AS p, (SELECT count(*) FROM raqib_profiles) AS u, (SELECT count(*) FROM raqib_guards) AS g");
+        const r = await client.query(
+          "SELECT (SELECT count(*) FROM raqib_projects) AS p, (SELECT count(*) FROM raqib_profiles) AS u, (SELECT count(*) FROM raqib_guards) AS g",
+        );
         await client.query("ROLLBACK");
         // The owner role may bypass RLS in local test setups; when the app role is configured it must be zero.
         if (process.env.AURIC_APP_DATABASE_URL) expect(r.rows[0]).toEqual({ p: "0", u: "0", g: "0" });
@@ -166,7 +171,10 @@ describe.skipIf(!hasTestDb)("Raqib foundation", () => {
     });
 
     it("lets Quality Management edit a template, audits it, and applies it immediately", async () => {
-      const edit = await call("qm", "PUT", "/raqib/permissions", { changes: [{ role: "ins", module: "projects", actions: "V" }], reason: "Inspectors need to see their project" });
+      const edit = await call("qm", "PUT", "/raqib/permissions", {
+        changes: [{ role: "ins", module: "projects", actions: "V" }],
+        reason: "Inspectors need to see their project",
+      });
       expect(edit.status).toBe(200);
       expect(edit.body.roles.ins.projects).toBe("V");
       const mine = await call("insA", "GET", "/raqib/projects");
@@ -210,7 +218,10 @@ describe.skipIf(!hasTestDb)("Raqib foundation", () => {
       const drop = await call("qm", "PUT", `/raqib/users/${pmId}/scope`, { projectIds: [ryd.id], reason: "Leave ended" });
       expect(drop.status).toBe(200);
       expect((await call("pm", "GET", `/raqib/projects/${jed.id}`)).status).toBe(403);
-      const rows = await ownerQuery<{ valid_to: string | null }>(`SELECT valid_to::text FROM raqib_project_assignments WHERE user_id = $1 AND project_id = $2`, [pmId, jed.id]);
+      const rows = await ownerQuery<{ valid_to: string | null }>(
+        `SELECT valid_to::text FROM raqib_project_assignments WHERE user_id = $1 AND project_id = $2`,
+        [pmId, jed.id],
+      );
       expect(rows).toHaveLength(1); // history kept, not deleted
       expect(rows[0]!.valid_to).not.toBeNull();
     });
@@ -227,8 +238,7 @@ describe.skipIf(!hasTestDb)("Raqib foundation", () => {
       const res = await call("qm", "PUT", `/raqib/users/${gsId}/role`, { role: "qe", reason: "Promotion to quality" });
       expect(res.status).toBe(200);
       expect(res.body.role).toBe("qe");
-      const core = await ownerQuery<{ key: string }>(
-        `SELECT r.key FROM user_roles ur JOIN roles r ON r.id = ur.role_id WHERE ur.user_id = $1`, [gsId]);
+      const core = await ownerQuery<{ key: string }>(`SELECT r.key FROM user_roles ur JOIN roles r ON r.id = ur.role_id WHERE ur.user_id = $1`, [gsId]);
       expect(core.map((r) => r.key)).toEqual(["raqib_qe"]);
       await call("qm", "PUT", `/raqib/users/${gsId}/role`, { role: "gs", reason: "Revert for the demo" });
     });

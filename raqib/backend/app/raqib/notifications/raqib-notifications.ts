@@ -15,7 +15,9 @@ type Payload = Record<string, unknown>;
 
 /** "5 Oct · 14:00" / Arabic month name — Western digits in both languages. */
 function when(date: string, time: string, lang: Lang): string {
-  const d = new Intl.DateTimeFormat(lang === "ar" ? "ar-SA-u-ca-gregory-nu-latn" : "en-GB", { day: "numeric", month: "short" }).format(new Date(`${date}T00:00`));
+  const d = new Intl.DateTimeFormat(lang === "ar" ? "ar-SA-u-ca-gregory-nu-latn" : "en-GB", { day: "numeric", month: "short" }).format(
+    new Date(`${date}T00:00`),
+  );
   return `${d} · ${time}`;
 }
 
@@ -58,12 +60,25 @@ export class RaqibNotifications implements OnModuleInit {
     on("raqib.inspection_rejected", (p) => this.toInspector(p, "raqib.inspection_rejected", ["visit", String(p.visitId)]));
     on("raqib.inspection_approved", (p) => this.approved(p));
     on("raqib.action_assigned", (p) => this.action(p, "raqib.action_assigned", async () => []));
-    on("raqib.action_submitted", (p) => this.action(p, "raqib.action_submitted", (a, today) => this.access.holders("actions", "R", a.projectId, today, String(p.actorId)), false));
+    on("raqib.action_submitted", (p) =>
+      this.action(p, "raqib.action_submitted", (a, today) => this.access.holders("actions", "R", a.projectId, today, String(p.actorId)), false),
+    );
     on("raqib.action_returned", (p) => this.action(p, "raqib.action_returned", async () => []));
     on("raqib.action_closed", (p) => this.action(p, "raqib.action_closed", async (a) => (a.createdBy ? [a.createdBy] : [])));
-    on("raqib.training_requested", (p) => this.trainingTo(p, "raqib.training_requested", (t, today) => this.access.holders("training", "P", t.projectId, today, String(p.actorId))));
-    on("raqib.training_approved", (p) => this.trainingTo(p, "raqib.training_approved", async (t, today) => [...(t.requestedBy ? [t.requestedBy] : []), ...(await this.access.holders("training", "R", t.projectId, today, String(p.actorId)))]));
-    on("raqib.training_decided", (p) => this.trainingTo(p, p.decision === "rejected" ? "raqib.training_rejected" : "raqib.training_returned", async (t) => (t.requestedBy ? [t.requestedBy] : [])));
+    on("raqib.training_requested", (p) =>
+      this.trainingTo(p, "raqib.training_requested", (t, today) => this.access.holders("training", "P", t.projectId, today, String(p.actorId))),
+    );
+    on("raqib.training_approved", (p) =>
+      this.trainingTo(p, "raqib.training_approved", async (t, today) => [
+        ...(t.requestedBy ? [t.requestedBy] : []),
+        ...(await this.access.holders("training", "R", t.projectId, today, String(p.actorId))),
+      ]),
+    );
+    on("raqib.training_decided", (p) =>
+      this.trainingTo(p, p.decision === "rejected" ? "raqib.training_rejected" : "raqib.training_returned", async (t) =>
+        t.requestedBy ? [t.requestedBy] : [],
+      ),
+    );
     on("raqib.training_scheduled", (p) => this.trainingTo(p, "raqib.training_scheduled", async (t) => (t.requestedBy ? [t.requestedBy] : [])));
     on("raqib.training_completed", (p) => this.trainingTo(p, "raqib.training_completed", async (t) => (t.requestedBy ? [t.requestedBy] : [])));
     on("raqib.action_overdue", (p) => this.action(p, "raqib.action_overdue", (a, today) => this.access.holders("actions", "R", a.projectId, today), true));
@@ -119,7 +134,14 @@ export class RaqibNotifications implements OnModuleInit {
     const today = await this.settings.today();
     const to = new Set<string>(await this.access.holders("reports", "V", v.projectId, today, String(p.actorId)));
     if (v.inspectorId && v.inspectorId !== p.actorId) to.add(v.inspectorId);
-    for (const r of to) await this.send(r, "raqib.inspection_approved", v, { actor: await this.actorName(p, await this.lang(r)) }, r === v.inspectorId ? ["visit", v.id] : ["visit", v.id]);
+    for (const r of to)
+      await this.send(
+        r,
+        "raqib.inspection_approved",
+        v,
+        { actor: await this.actorName(p, await this.lang(r)) },
+        r === v.inspectorId ? ["visit", v.id] : ["visit", v.id],
+      );
   }
 
   /** A submitted inspection goes to everyone who can review in that project (never the submitter). */
@@ -128,10 +150,16 @@ export class RaqibNotifications implements OnModuleInit {
     if (!v) return;
     const today = await this.settings.today();
     const reviewers = await this.access.holders("inspections", "R", v.projectId, today, String(p.actorId));
-    const actor = (await this.access.profileOf(String(p.actorId)));
+    const actor = await this.access.profileOf(String(p.actorId));
     for (const r of reviewers) {
       const lang = await this.lang(r);
-      await this.send(r, p.resubmission ? "raqib.inspection_resubmitted" : "raqib.inspection_submitted", v, { actor: actor ? (lang === "ar" ? actor.nameAr : actor.nameEn) : "" }, ["review", v.id]);
+      await this.send(
+        r,
+        p.resubmission ? "raqib.inspection_resubmitted" : "raqib.inspection_submitted",
+        v,
+        { actor: actor ? (lang === "ar" ? actor.nameAr : actor.nameEn) : "" },
+        ["review", v.id],
+      );
     }
   }
 
@@ -162,7 +190,14 @@ export class RaqibNotifications implements OnModuleInit {
         templateKey: key,
         type: key,
         locale: lang,
-        data: { ref: a.ref, title: a.title[lang], due: a.dueDate, reason: String(p.reason ?? ""), actor: p.actorId ? await this.actorName(p, lang) : "", go: ["action", a.id] },
+        data: {
+          ref: a.ref,
+          title: a.title[lang],
+          due: a.dueDate,
+          reason: String(p.reason ?? ""),
+          actor: p.actorId ? await this.actorName(p, lang) : "",
+          go: ["action", a.id],
+        },
       });
     }
   }
@@ -176,8 +211,18 @@ export class RaqibNotifications implements OnModuleInit {
     for (const r of to) {
       const lang = await this.lang(r);
       await this.notify.send({
-        userId: r, templateKey: key, type: key, locale: lang,
-        data: { ref: t.ref, course: t.course, guard: guard ? guard.name[lang] : "", reason: String(p.reason ?? ""), date: t.scheduledDate ?? "", go: ["trainingD", t.id] },
+        userId: r,
+        templateKey: key,
+        type: key,
+        locale: lang,
+        data: {
+          ref: t.ref,
+          course: t.course,
+          guard: guard ? guard.name[lang] : "",
+          reason: String(p.reason ?? ""),
+          date: t.scheduledDate ?? "",
+          go: ["trainingD", t.id],
+        },
       });
     }
   }

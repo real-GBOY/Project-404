@@ -116,14 +116,27 @@ export class InspectionsService {
 
   private async assemble(i: InspectionRecord, v: VisitRecord, who: Access): Promise<InspectionView> {
     const [items, answers, flags, ev, scores, notes] = await Promise.all([
-      this.repo.items(i.id), this.repo.answers(i.id), this.repo.flags(i.id), this.evidence.forInspection(i.id), this.repo.guardScores(i.id), this.repo.guardNotes(i.id),
+      this.repo.items(i.id),
+      this.repo.answers(i.id),
+      this.repo.flags(i.id),
+      this.evidence.forInspection(i.id),
+      this.repo.guardScores(i.id),
+      this.repo.guardNotes(i.id),
     ]);
     const version = await this.forms.version(i.formVersionId);
     const form = version ? await this.forms.form(version.formId) : null;
     const s = await this.settings.current();
     const uploaders = await this.people.findMany([...new Set(ev.map((e) => e.uploadedBy).filter((x): x is string => !!x))]);
     const byName = new Map(uploaders.map((p) => [p.userId, p.nameEn]));
-    const evView = (e: EvidenceRecord): EvidenceView => ({ id: e.id, name: e.name, kind: e.kind, mime: e.mime, sizeBytes: e.sizeBytes, at: e.uploadedAt.toISOString(), by: e.uploadedBy ? (byName.get(e.uploadedBy) ?? null) : null });
+    const evView = (e: EvidenceRecord): EvidenceView => ({
+      id: e.id,
+      name: e.name,
+      kind: e.kind,
+      mime: e.mime,
+      sizeBytes: e.sizeBytes,
+      at: e.uploadedAt.toISOString(),
+      by: e.uploadedBy ? (byName.get(e.uploadedBy) ?? null) : null,
+    });
     const returned = v.status === "returned";
     const flagged = new Set(flags.filter((f) => f.round === v.round).map((f) => f.itemId));
     const editableState = v.status === "in_progress" || returned;
@@ -139,16 +152,36 @@ export class InspectionsService {
       const fixed = isFlagged && !!a && a.editedRound > v.round;
       const num = `${it.sectionPos + 1}.${it.position + 1}`;
       const view: ItemView = {
-        id: it.id, key: it.key, num, text: it.text, weight: it.weight, required: it.required, na: it.na, evidenceOnNc: it.evidenceOnNc,
-        answer: a?.value ?? null, note: a?.note ?? "", severity: a?.severity ?? null, evidence: itemEvidence.map(evView),
-        flagged: isFlagged && !fixed, fixed, locked: !editableState || (returned && !isFlagged),
+        id: it.id,
+        key: it.key,
+        num,
+        text: it.text,
+        weight: it.weight,
+        required: it.required,
+        na: it.na,
+        evidenceOnNc: it.evidenceOnNc,
+        answer: a?.value ?? null,
+        note: a?.note ?? "",
+        severity: a?.severity ?? null,
+        evidence: itemEvidence.map(evView),
+        flagged: isFlagged && !fixed,
+        fixed,
+        locked: !editableState || (returned && !isFlagged),
       };
       const sec = sections.get(it.sectionPos) ?? { key: it.sectionKey, title: it.sectionTitle, items: [] };
       sec.items.push(view);
       sections.set(it.sectionPos, sec);
       facts.push({
-        num, step: it.sectionPos, required: it.required, evidenceOnNc: it.evidenceOnNc, answer: view.answer, note: view.note,
-        storedEvidence: itemEvidence.length, pendingEvidence: 0, flagged: isFlagged, touchedSinceFlag: fixed,
+        num,
+        step: it.sectionPos,
+        required: it.required,
+        evidenceOnNc: it.evidenceOnNc,
+        answer: view.answer,
+        note: view.note,
+        storedEvidence: itemEvidence.length,
+        pendingEvidence: 0,
+        flagged: isFlagged,
+        touchedSinceFlag: fixed,
       });
     });
 
@@ -157,22 +190,50 @@ export class InspectionsService {
     const guards: GuardEvalView[] = guardIds.map((gid) => {
       const mineScores = scores.filter((x) => x.guardId === gid);
       const byItem = Object.fromEntries(mineScores.map((x) => [x.itemId, x.score]));
-      const g = guardScore(criteria.map((c) => byItem[c.id] ?? null), criteria.length);
-      return { guardId: gid, scores: byItem, note: notes.get(gid) ?? "", evidence: ev.filter((e) => e.guardId === gid && e.context === "guard_eval").map(evView), pct: g.pct, done: g.done, answered: g.n };
+      const g = guardScore(
+        criteria.map((c) => byItem[c.id] ?? null),
+        criteria.length,
+      );
+      return {
+        guardId: gid,
+        scores: byItem,
+        note: notes.get(gid) ?? "",
+        evidence: ev.filter((e) => e.guardId === gid && e.context === "guard_eval").map(evView),
+        pct: g.pct,
+        done: g.done,
+        answered: g.n,
+      };
     });
     const guardNames = new Map((await this.projects.guards([v.projectId])).map((g) => [g.id, g.name.en]));
-    const issues = submissionIssues(facts, guards.map((g) => ({ name: guardNames.get(g.guardId) ?? g.guardId, done: g.done || criteria.length === 0 })), { ncNote: s.insp.ncNote, ncEvidence: s.insp.ncEvidence });
+    const issues = submissionIssues(
+      facts,
+      guards.map((g) => ({ name: guardNames.get(g.guardId) ?? g.guardId, done: g.done || criteria.length === 0 })),
+      { ncNote: s.insp.ncNote, ncEvidence: s.insp.ncEvidence },
+    );
     const result = policyFor(i.scoringPolicy).score(siteItems.map((it) => ({ weight: it.weight, answer: answers.get(it.id)?.value ?? null })));
 
     return {
-      id: i.id, visitId: v.id, ref: v.ref, status: v.status, round: v.round,
+      id: i.id,
+      visitId: v.id,
+      ref: v.ref,
+      status: v.status,
+      round: v.round,
       form: { versionId: i.formVersionId, code: form?.code ?? "", version: version?.version ?? "", name: form?.name ?? { ar: "", en: "" } },
       sections: [...sections.entries()].sort((a, b) => a[0] - b[0]).map(([, x]) => x),
       guardCriteria: criteria.map((c) => ({ id: c.id, key: c.key, text: c.text })),
       guards,
-      score: { ...result, pct: i.submittedAt && returned === false ? (i.scorePct ?? result.pct) : result.pct, evidence: ev.filter((e) => e.context === "answer").length },
-      previous: [...new Set(flags.filter((f) => f.round < v.round).map((f) => f.round))].sort().map((round) => ({ round, itemIds: flags.filter((f) => f.round === round).map((f) => f.itemId) })),
-      issues, editable: mine && editableState, submittedAt: i.submittedAt?.toISOString() ?? null, startedAt: i.startedAt.toISOString(),
+      score: {
+        ...result,
+        pct: i.submittedAt && returned === false ? (i.scorePct ?? result.pct) : result.pct,
+        evidence: ev.filter((e) => e.context === "answer").length,
+      },
+      previous: [...new Set(flags.filter((f) => f.round < v.round).map((f) => f.round))]
+        .sort()
+        .map((round) => ({ round, itemIds: flags.filter((f) => f.round === round).map((f) => f.itemId) })),
+      issues,
+      editable: mine && editableState,
+      submittedAt: i.submittedAt?.toISOString() ?? null,
+      startedAt: i.startedAt.toISOString(),
     };
   }
 
@@ -206,22 +267,67 @@ export class InspectionsService {
         if (!siteForm || !siteVersion) throw Conflict("raqib.no_form", "No inspection form is published. Ask Quality Management to publish one.");
         const guardForm = await this.forms.defaultForm("guard");
         const guardVersion = guardForm ? await this.forms.publishedVersion(guardForm.id) : null;
-        const id = await this.repo.insert({ visitId, formVersionId: siteVersion.id, guardFormVersionId: guardVersion?.id ?? null, scoringPolicy: DEFAULT_POLICY, startedBy: who.userId });
+        const id = await this.repo.insert({
+          visitId,
+          formVersionId: siteVersion.id,
+          guardFormVersionId: guardVersion?.id ?? null,
+          scoringPolicy: DEFAULT_POLICY,
+          startedBy: who.userId,
+        });
         const snapshot: NewItem[] = [];
         siteVersion.sections.forEach((sec, si) =>
           sec.items.forEach((it, ii) =>
-            snapshot.push({ kind: "site", sectionPos: si, sectionKey: sec.key, sectionTitle: sec.title, position: ii, key: it.key, text: it.text, weight: it.weight, answerType: it.type, required: it.required, na: it.na, evidenceOnNc: it.evidenceOnNc }),
+            snapshot.push({
+              kind: "site",
+              sectionPos: si,
+              sectionKey: sec.key,
+              sectionTitle: sec.title,
+              position: ii,
+              key: it.key,
+              text: it.text,
+              weight: it.weight,
+              answerType: it.type,
+              required: it.required,
+              na: it.na,
+              evidenceOnNc: it.evidenceOnNc,
+            }),
           ),
         );
         guardVersion?.sections.forEach((sec, si) =>
           sec.items.forEach((it, ii) =>
-            snapshot.push({ kind: "guard", sectionPos: si, sectionKey: sec.key, sectionTitle: sec.title, position: ii, key: it.key, text: it.text, weight: it.weight, answerType: it.type, required: it.required, na: false, evidenceOnNc: false }),
+            snapshot.push({
+              kind: "guard",
+              sectionPos: si,
+              sectionKey: sec.key,
+              sectionTitle: sec.title,
+              position: ii,
+              key: it.key,
+              text: it.text,
+              weight: it.weight,
+              answerType: it.type,
+              required: it.required,
+              na: false,
+              evidenceOnNc: false,
+            }),
           ),
         );
         await this.repo.insertItems(id, snapshot);
         await this.visits.update(visitId, { status: to });
-        await this.visits.appendEvent({ visitId, ...actorOf(who), action: "started", fromStatus: v.status, toStatus: to, detail: { formVersionId: siteVersion.id, form: `${siteForm.code} v${siteVersion.version}` } });
-        await this.audit.record({ actorId: who.userId, action: "raqib.inspection.started", resourceType: "raqib_inspection", resourceId: id, after: { visitId, form: `${siteForm.code} v${siteVersion.version}` } });
+        await this.visits.appendEvent({
+          visitId,
+          ...actorOf(who),
+          action: "started",
+          fromStatus: v.status,
+          toStatus: to,
+          detail: { formVersionId: siteVersion.id, form: `${siteForm.code} v${siteVersion.version}` },
+        });
+        await this.audit.record({
+          actorId: who.userId,
+          action: "raqib.inspection.started",
+          resourceType: "raqib_inspection",
+          resourceId: id,
+          after: { visitId, form: `${siteForm.code} v${siteVersion.version}` },
+        });
         i = (await this.repo.findByVisit(visitId))!;
       } else if (v.status !== "in_progress" && v.status !== "returned") {
         throw Conflict("raqib.cannot_start", "This inspection can no longer be edited.");
@@ -241,7 +347,12 @@ export class InspectionsService {
     return { v, i };
   }
 
-  async saveAnswer(visitId: string, itemId: string, patch: { value?: Answer; note?: string | null; severity?: "low" | "medium" | "high" | null }, who: Access): Promise<InspectionView> {
+  async saveAnswer(
+    visitId: string,
+    itemId: string,
+    patch: { value?: Answer; note?: string | null; severity?: "low" | "medium" | "high" | null },
+    who: Access,
+  ): Promise<InspectionView> {
     requireCan(who, "inspections", "S");
     return this.uow.transaction(async () => {
       const { v, i } = await this.editable(visitId, who);
@@ -280,7 +391,8 @@ export class InspectionsService {
   }
 
   private async requireGuardOnVisit(v: VisitRecord, guardId: string): Promise<void> {
-    if (!((await this.visits.guardIds([v.id])).get(v.id) ?? []).includes(guardId)) throw ValidationError("raqib.guard_not_on_visit", "This guard is not on this visit.");
+    if (!((await this.visits.guardIds([v.id])).get(v.id) ?? []).includes(guardId))
+      throw ValidationError("raqib.guard_not_on_visit", "This guard is not on this visit.");
   }
 
   // ── submit ──────────────────────────────────────────────────────────────
@@ -297,10 +409,28 @@ export class InspectionsService {
       const siteItems = (await this.repo.items(i.id)).filter((x) => x.kind === "site");
       const answers = await this.repo.answers(i.id);
       const result = policyFor(i.scoringPolicy).score(siteItems.map((it) => ({ weight: it.weight, answer: answers.get(it.id)?.value ?? null })));
-      await this.repo.markSubmitted(i.id, result.pct, { compliant: result.compliant, nonCompliant: result.nonCompliant, na: result.na, total: result.total }, now);
+      await this.repo.markSubmitted(
+        i.id,
+        result.pct,
+        { compliant: result.compliant, nonCompliant: result.nonCompliant, na: result.na, total: result.total },
+        now,
+      );
       await this.visits.update(visitId, { status: "pending_review", ...(resubmission ? { round: v.round + 1 } : {}) });
-      await this.visits.appendEvent({ visitId, ...actorOf(who), action: resubmission ? "resubmitted" : "submitted", fromStatus: v.status, toStatus: "pending_review", detail: { scorePct: result.pct } });
-      await this.audit.record({ actorId: who.userId, action: resubmission ? "raqib.inspection.resubmitted" : "raqib.inspection.submitted", resourceType: "raqib_inspection", resourceId: i.id, after: { scorePct: result.pct, ...result } });
+      await this.visits.appendEvent({
+        visitId,
+        ...actorOf(who),
+        action: resubmission ? "resubmitted" : "submitted",
+        fromStatus: v.status,
+        toStatus: "pending_review",
+        detail: { scorePct: result.pct },
+      });
+      await this.audit.record({
+        actorId: who.userId,
+        action: resubmission ? "raqib.inspection.resubmitted" : "raqib.inspection.submitted",
+        resourceType: "raqib_inspection",
+        resourceId: i.id,
+        after: { scorePct: result.pct, ...result },
+      });
       await this.events.publish(inspectionSubmitted({ visitId, actorId: who.userId, resubmission }));
       return this.assemble((await this.repo.findByVisit(visitId))!, (await this.visits.find(visitId))!, who);
     });

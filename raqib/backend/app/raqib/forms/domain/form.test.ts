@@ -2,7 +2,14 @@ import { describe, expect, it } from "vitest";
 import { diffVersions, nextVersionLabel, publishIssues, type FormSection } from "./form.js";
 
 const item = (key: string, weight = 1, over: Partial<FormSection["items"][number]> = {}) => ({
-  key, text: { ar: `س ${key}`, en: `Q ${key}` }, weight, type: "cnx" as const, required: true, na: true, evidenceOnNc: true, ...over,
+  key,
+  text: { ar: `س ${key}`, en: `Q ${key}` },
+  weight,
+  type: "cnx" as const,
+  required: true,
+  na: true,
+  evidenceOnNc: true,
+  ...over,
 });
 const sec = (key: string, ...items: FormSection["items"]): FormSection => ({ key, title: { ar: key, en: key }, items });
 

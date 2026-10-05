@@ -33,17 +33,26 @@ describe.skipIf(!hasTestDb)("Raqib forms & inspections", () => {
 
   const call = async (who: string, method: "GET" | "POST" | "PUT" | "DELETE", url: string, payload?: unknown) => {
     const res = await http.inject({ method, url: `/api${url}`, headers: { authorization: `Bearer ${tokens[who]}` }, payload: payload as never });
-    return { status: res.statusCode, body: (res.body && res.headers["content-type"]?.toString().includes("json") ? JSON.parse(res.body) : {}) as Json, raw: res };
+    return {
+      status: res.statusCode,
+      body: (res.body && res.headers["content-type"]?.toString().includes("json") ? JSON.parse(res.body) : {}) as Json,
+      raw: res,
+    };
   };
   const visitBy = async (pred: (v: Json) => boolean) => ((await call("qm", "GET", "/raqib/visits")).body.items as Json[]).find(pred)!;
-  const forms = async () => ((await call("qm", "GET", "/raqib/forms")).body.items as Json[]);
+  const forms = async () => (await call("qm", "GET", "/raqib/forms")).body.items as Json[];
   const formBy = async (code: string) => (await forms()).find((f) => f.code === code)!;
 
   /** The real upload path: presign → PUT to the returned URL → confirm. Returns the Core file id. */
   async function upload(who: string, name = "photo.png", type = "image/png", bytes: Buffer = PNG): Promise<string> {
     const p = await call(who, "POST", "/files/uploads", { originalName: name, contentType: type, byteSize: bytes.length });
     expect(p.status).toBe(201);
-    const put = await http.inject({ method: "PUT", url: `/api${p.body.upload.url}`, headers: { authorization: `Bearer ${tokens[who]}`, "content-type": "application/octet-stream" }, payload: bytes });
+    const put = await http.inject({
+      method: "PUT",
+      url: `/api${p.body.upload.url}`,
+      headers: { authorization: `Bearer ${tokens[who]}`, "content-type": "application/octet-stream" },
+      payload: bytes,
+    });
     expect(put.statusCode).toBe(204);
     expect((await call(who, "POST", `/files/${p.body.fileId}/confirm`)).status).toBe(200);
     return p.body.fileId as string;
@@ -220,7 +229,9 @@ describe.skipIf(!hasTestDb)("Raqib forms & inspections", () => {
       for (const c of cur.guardCriteria as Json[]) {
         expect((await call("insA", "PUT", `/raqib/visits/${visitId}/inspection/guards/${g.guardId}/scores/${c.id}`, { score: 4 })).status).toBe(200);
       }
-      expect((await call("insA", "PUT", `/raqib/visits/${visitId}/inspection/guards/${g.guardId}/scores/${cur.guardCriteria[0].id}`, { score: 6 })).status).toBe(400);
+      expect(
+        (await call("insA", "PUT", `/raqib/visits/${visitId}/inspection/guards/${g.guardId}/scores/${cur.guardCriteria[0].id}`, { score: 6 })).status,
+      ).toBe(400);
       cur = (await call("insA", "GET", `/raqib/visits/${visitId}/inspection`)).body;
       expect(cur.issues).toEqual([]);
       expect(cur.guards[0]).toMatchObject({ done: true, pct: 80 });

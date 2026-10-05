@@ -4,10 +4,46 @@ import type { L10n } from "@raqib/raqib/shared/l10n.js";
  * Analytics computed from persisted data — issued report snapshots, visits, observations and corrective actions —
  * by pure functions, so every number can be explained, drilled into and tested. Nothing here reads a database.
  */
-export interface AReport { id: string; ref: string; visitId: string; projectId: string; scorePct: number | null; date: string; site: L10n; project: L10n; inspector: L10n | null; formCode: string; sections: Array<{ title: L10n; answered: number; nonCompliant: number }>; guards: Array<{ employeeNo: string; pct: number | null }>; returns: number }
-export interface AVisit { id: string; ref: string; projectId: string; inspectorId: string | null; date: string; status: string }
-export interface AObservation { id: string; ref: string; projectId: string; title: L10n; site: L10n; repeatCount: number; createdDate: string }
-export interface AAction { id: string; ref: string; projectId: string; title: L10n; status: string; dueDate: string }
+export interface AReport {
+  id: string;
+  ref: string;
+  visitId: string;
+  projectId: string;
+  scorePct: number | null;
+  date: string;
+  site: L10n;
+  project: L10n;
+  inspector: L10n | null;
+  formCode: string;
+  sections: Array<{ title: L10n; answered: number; nonCompliant: number }>;
+  guards: Array<{ employeeNo: string; pct: number | null }>;
+  returns: number;
+}
+export interface AVisit {
+  id: string;
+  ref: string;
+  projectId: string;
+  inspectorId: string | null;
+  date: string;
+  status: string;
+}
+export interface AObservation {
+  id: string;
+  ref: string;
+  projectId: string;
+  title: L10n;
+  site: L10n;
+  repeatCount: number;
+  createdDate: string;
+}
+export interface AAction {
+  id: string;
+  ref: string;
+  projectId: string;
+  title: L10n;
+  status: string;
+  dueDate: string;
+}
 
 export interface AnalyticsInput {
   from: string;
@@ -22,8 +58,21 @@ export interface AnalyticsInput {
   /** Visit id -> report, to join visits with their outcome. */
 }
 
-export interface Contributor { kind: "report" | "visit" | "observation" | "action"; id: string; ref: string; title: L10n | string; sub: string; value: string }
-export interface Kpi { key: string; value: number | null; unit: "pct" | "count"; of?: number; contributors: Contributor[] }
+export interface Contributor {
+  kind: "report" | "visit" | "observation" | "action";
+  id: string;
+  ref: string;
+  title: L10n | string;
+  sub: string;
+  value: string;
+}
+export interface Kpi {
+  key: string;
+  value: number | null;
+  unit: "pct" | "count";
+  of?: number;
+  contributors: Contributor[];
+}
 
 export interface AnalyticsResult {
   range: { from: string; to: string; bucket: "day" | "week" | "month" };
@@ -78,17 +127,43 @@ export function computeAnalytics(i: AnalyticsInput): AnalyticsResult {
   const overdueActions = openActions.filter((a) => ["assigned", "in_progress", "returned"].includes(a.status) && a.dueDate < i.today);
   const guardPcts = reports.flatMap((r) => r.guards.map((g) => g.pct).filter((p): p is number => p != null));
 
-  const contributorOfReport = (r: AReport): Contributor => ({ kind: "report", id: r.visitId, ref: r.ref, title: r.site, sub: `${r.date}`, value: r.scorePct == null ? "—" : `${r.scorePct}%` });
+  const contributorOfReport = (r: AReport): Contributor => ({
+    kind: "report",
+    id: r.visitId,
+    ref: r.ref,
+    title: r.site,
+    sub: `${r.date}`,
+    value: r.scorePct == null ? "—" : `${r.scorePct}%`,
+  });
   const kpis: Kpi[] = [
     { key: "compliance", value: mean(scored.map((r) => r.scorePct!)), unit: "pct", contributors: scored.map(contributorOfReport) },
     { key: "inspections", value: reports.length, unit: "count", contributors: reports.map(contributorOfReport) },
     {
-      key: "execution", value: visits.length ? Math.round((executed.length / visits.length) * 100) : null, unit: "pct", of: visits.length,
+      key: "execution",
+      value: visits.length ? Math.round((executed.length / visits.length) * 100) : null,
+      unit: "pct",
+      of: visits.length,
       contributors: visits.map((v) => ({ kind: "visit", id: v.id, ref: v.ref, title: v.ref, sub: v.date, value: v.status })),
     },
-    { key: "missed", value: missed.length, unit: "count", contributors: missed.map((v) => ({ kind: "visit", id: v.id, ref: v.ref, title: v.ref, sub: v.date, value: v.status })) },
-    { key: "repeats", value: repeats.length, unit: "count", contributors: repeats.map((o) => ({ kind: "observation", id: o.id, ref: o.ref, title: o.title, sub: o.site.en, value: `×${o.repeatCount + 1}` })) },
-    { key: "overdueActions", value: overdueActions.length, unit: "count", of: openActions.length, contributors: overdueActions.map((a) => ({ kind: "action", id: a.id, ref: a.ref, title: a.title, sub: a.dueDate, value: a.status })) },
+    {
+      key: "missed",
+      value: missed.length,
+      unit: "count",
+      contributors: missed.map((v) => ({ kind: "visit", id: v.id, ref: v.ref, title: v.ref, sub: v.date, value: v.status })),
+    },
+    {
+      key: "repeats",
+      value: repeats.length,
+      unit: "count",
+      contributors: repeats.map((o) => ({ kind: "observation", id: o.id, ref: o.ref, title: o.title, sub: o.site.en, value: `×${o.repeatCount + 1}` })),
+    },
+    {
+      key: "overdueActions",
+      value: overdueActions.length,
+      unit: "count",
+      of: openActions.length,
+      contributors: overdueActions.map((a) => ({ kind: "action", id: a.id, ref: a.ref, title: a.title, sub: a.dueDate, value: a.status })),
+    },
     { key: "guardAvg", value: mean(guardPcts), unit: "pct", contributors: [] },
   ];
 
@@ -100,13 +175,16 @@ export function computeAnalytics(i: AnalyticsInput): AnalyticsResult {
   const trend = [...buckets.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([label, xs]) => ({ label, avg: mean(xs), n: xs.length }));
 
   const secMap = new Map<string, { title: L10n; answered: number; nc: number }>();
-  for (const r of reports) for (const s of r.sections) {
-    const cur = secMap.get(s.title.en) ?? { title: s.title, answered: 0, nc: 0 };
-    cur.answered += s.answered;
-    cur.nc += s.nonCompliant;
-    secMap.set(s.title.en, cur);
-  }
-  const sections = [...secMap.values()].map((s) => ({ title: s.title, rate: s.answered ? Math.round((s.nc / s.answered) * 100) : 0, nonCompliant: s.nc, answered: s.answered })).sort((a, b) => b.rate - a.rate);
+  for (const r of reports)
+    for (const s of r.sections) {
+      const cur = secMap.get(s.title.en) ?? { title: s.title, answered: 0, nc: 0 };
+      cur.answered += s.answered;
+      cur.nc += s.nonCompliant;
+      secMap.set(s.title.en, cur);
+    }
+  const sections = [...secMap.values()]
+    .map((s) => ({ title: s.title, rate: s.answered ? Math.round((s.nc / s.answered) * 100) : 0, nonCompliant: s.nc, answered: s.answered }))
+    .sort((a, b) => b.rate - a.rate);
 
   const siteMap = new Map<string, { project: L10n; site: L10n; xs: number[]; n: number }>();
   for (const r of reports) {
@@ -116,7 +194,9 @@ export function computeAnalytics(i: AnalyticsInput): AnalyticsResult {
     if (r.scorePct != null) cur.xs.push(r.scorePct);
     siteMap.set(k, cur);
   }
-  const sites = [...siteMap.values()].map((s) => ({ project: s.project, site: s.site, avg: mean(s.xs), n: s.n })).sort((a, b) => (a.avg ?? 101) - (b.avg ?? 101));
+  const sites = [...siteMap.values()]
+    .map((s) => ({ project: s.project, site: s.site, avg: mean(s.xs), n: s.n }))
+    .sort((a, b) => (a.avg ?? 101) - (b.avg ?? 101));
 
   const stageOf = (a: AAction): string => (["assigned", "in_progress", "returned"].includes(a.status) && a.dueDate < i.today ? "overdue" : a.status);
   const stages = ["assigned", "in_progress", "quality_review", "returned", "closed", "overdue"];
@@ -129,16 +209,26 @@ export function computeAnalytics(i: AnalyticsInput): AnalyticsResult {
   ];
 
   const byVisit = new Map(reports.map((r) => [r.visitId, r]));
-  const inspectors = [...new Set(visits.map((v) => v.inspectorId).filter((x): x is string => !!x))].map((id) => {
-    const mine = visits.filter((v) => v.inspectorId === id);
-    const done = mine.map((v) => byVisit.get(v.id)).filter((r): r is AReport => !!r);
-    return {
-      id, name: i.inspectors.get(id) ?? { ar: "—", en: "—" }, done: done.length, missed: mine.filter((v) => isMissed(v, i.today)).length,
-      avg: mean(done.filter((r) => r.scorePct != null).map((r) => r.scorePct!)), returned: done.reduce((s, r) => s + r.returns, 0),
-    };
-  }).sort((a, b) => b.done - a.done);
+  const inspectors = [...new Set(visits.map((v) => v.inspectorId).filter((x): x is string => !!x))]
+    .map((id) => {
+      const mine = visits.filter((v) => v.inspectorId === id);
+      const done = mine.map((v) => byVisit.get(v.id)).filter((r): r is AReport => !!r);
+      return {
+        id,
+        name: i.inspectors.get(id) ?? { ar: "—", en: "—" },
+        done: done.length,
+        missed: mine.filter((v) => isMissed(v, i.today)).length,
+        avg: mean(done.filter((r) => r.scorePct != null).map((r) => r.scorePct!)),
+        returned: done.reduce((s, r) => s + r.returns, 0),
+      };
+    })
+    .sort((a, b) => b.done - a.done);
 
-  const repeated = repeats.slice().sort((a, b) => b.repeatCount - a.repeatCount).slice(0, 8).map((o) => ({ ref: o.ref, id: o.id, title: o.title, site: o.site, times: o.repeatCount + 1 }));
+  const repeated = repeats
+    .slice()
+    .sort((a, b) => b.repeatCount - a.repeatCount)
+    .slice(0, 8)
+    .map((o) => ({ ref: o.ref, id: o.id, title: o.title, site: o.site, times: o.repeatCount + 1 }));
 
   return { range: { from: i.from, to: i.to, bucket }, kpis, trend, sections, sites, actionStages, guardBuckets, inspectors, repeated };
 }
