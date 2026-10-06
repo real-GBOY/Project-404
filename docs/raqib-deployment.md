@@ -84,7 +84,7 @@ host ever changes, update `connect-src` there**, or the app will stop reaching i
 
 The browser suite can run against production: `E2E_WEB=https://raqib-web.vercel.app E2E_API=https://raqib.100-26-109-162.sslip.io npx playwright test`
 with the specs that are safe on shared demo data (`01` to `08`). **Never run `09-auth`** there: it locks accounts and changes
-passwords. The create-data specs leave test records behind; take a backup first and restore it afterwards if you want the demo exactly as seeded.
+passwords. The confidential-report workflow is rate limited on purpose (5 submissions and 20 entries per person per hour), so run it about once an hour against the demo guard. The create-data specs leave test records behind; take a backup first and restore it afterwards if you want the demo exactly as seeded.
 
 ## Report PDFs
 

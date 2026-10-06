@@ -260,8 +260,12 @@ test.describe("work passing between roles", () => {
     // everyone enters the area the same way: a reason from the list, an acknowledgement, and the entry is logged
     const enter = async (page: Page) => {
       await page.goto("/confidential");
-      // not the first dropdown on the page: that is the demo bar's account switcher
-      await page.getByLabel(/Reason for access/).selectOption({ index: 1 });
+      // a session the person opened a few minutes ago (an earlier run) is still open on the server
+      const reason = page.getByLabel(/Reason for access/);
+      const open = page.getByRole("button", { name: "Exit area" });
+      await expect(reason.or(open)).toBeVisible();
+      if (await open.isVisible()) await open.click(); // leave it and enter afresh, as this run would
+      await reason.selectOption({ index: 1 });
       await page.getByRole("checkbox").check();
       await page.getByRole("button", { name: "Enter and log" }).click();
     };
