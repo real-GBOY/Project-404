@@ -162,11 +162,14 @@ re-rendered on demand.
 Evidence photos, videos, PDFs and confidential attachments use the presigned-upload flow: the browser asks the API for a URL
 (`POST /files/uploads`), PUTs the bytes straight to storage, then confirms (`POST /files/:id/confirm`); the API only
 touches the bytes afterwards (content sniffing, image sanitising, optional ClamAV). With `AURIC_FILE_STORAGE_DRIVER=r2` the URL
-points at `https://<account>.r2.cloudflarestorage.com/<bucket>/...`. Keys are namespaced `<organization>/<yyyy>/<mm>/<file>`, so
-products can share a bucket. Set `AURIC_R2_ACCOUNT_ID`, `AURIC_R2_BUCKET`, `AURIC_R2_ACCESS_KEY_ID`, `AURIC_R2_SECRET_ACCESS_KEY`.
+points at `https://<account>.r2.cloudflarestorage.com/<bucket>/...`. Keys are namespaced `<organization>/<yyyy>/<mm>/<file>`, and `AURIC_R2_KEY_PREFIX=raqib` puts everything in a `raqib/` folder of the
+bucket, so products can share one. Changing the prefix later orphans existing objects: copy them first. Set `AURIC_R2_ACCOUNT_ID`, `AURIC_R2_BUCKET`, `AURIC_R2_ACCESS_KEY_ID`, `AURIC_R2_SECRET_ACCESS_KEY`.
 
 The bucket needs a CORS rule for every web origin that uploads (GET, PUT, HEAD, DELETE; headers `*`; expose `ETag`). Add the
 production web origin there before deploying; local dev uses `http://localhost:4500` (and `:4599` for the e2e preview).
 
 Report PDFs are rendered by a Chromium on the server: set `RAQIB_CHROMIUM_PATH`. Without it the PDF button says rendering is
 unavailable. Analytics and audit exports (CSV and Excel) need nothing extra.
+
+Uploads nobody attached are cleaned up by the nightly job: a file (or a started upload) older than 48 hours that is not referenced by
+evidence, a confidential attachment or a message is deleted from the database and from R2 (audited as `raqib.retention.uploads_purged`).

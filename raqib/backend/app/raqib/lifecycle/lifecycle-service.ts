@@ -16,10 +16,13 @@ import { readRaqibConfig } from "@raqib/config.js";
 const log = moduleLogger("raqib-lifecycle");
 const DAY = 86_400_000;
 const PURGE_BATCH = 200;
+/** An upload nobody attached within this long is abandoned. */
+const ABANDONED_AFTER_HOURS = 48;
 
 export interface RetentionReport {
   requestsErased: number;
   evidencePurged: number;
+  uploadsPurged: number;
 }
 
 /**
@@ -71,7 +74,7 @@ export class LifecycleService {
   async retention(): Promise<RetentionReport> {
     const now = this.clock.now();
     const s = await this.settings.current();
-    const report: RetentionReport = { requestsErased: 0, evidencePurged: 0 };
+    const report: RetentionReport = { requestsErased: 0, evidencePurged: 0, uploadsPurged: 0 };
 
     const cutoff = new Date(now.getTime() - readRaqibConfig().accountRequestRetentionDays * DAY);
     report.requestsErased = await this.uow.transaction(async () => {
@@ -140,7 +143,52 @@ export class LifecycleService {
           }),
         );
     }
+    report.uploadsPurged = await this.purgeAbandonedUploads(now);
     return report;
+  }
+
+  /**
+   * Files that were uploaded (or only started) but never attached to anything: a photo picked and then dropped, a tab closed
+   * mid-upload. They are not reachable from the product, and on object storage they cost money for ever, so they are deleted
+   * (row and object) once they are older than {@link ABANDONED_AFTER_HOURS}. Anything referenced by evidence, a confidential
+   * attachment or a message is kept.
+   */
+  private async purgeAbandonedUploads(now: Date): Promise<number> {
+    const cutoff = new Date(now.getTime() - ABANDONED_AFTER_HOURS * 3_600_000);
+    const stale = await this.uow.transaction(
+      async () =>
+        (
+          await sql<{ id: string }>`
+          SELECT f.id FROM files f
+           WHERE f.deleted_at IS NULL AND f.created_at < ${cutoff}
+             AND NOT EXISTS (SELECT 1 FROM raqib_evidence e WHERE e.file_id = f.id)
+             AND NOT EXISTS (SELECT 1 FROM raqib_conf_files c WHERE c.file_id = f.id)
+             AND NOT EXISTS (SELECT 1 FROM messaging_message_attachments m WHERE m.file_id = f.id)
+           ORDER BY f.created_at
+           LIMIT ${PURGE_BATCH}`.execute(currentExecutor())
+        ).rows,
+    );
+    let purged = 0;
+    for (const f of stale) {
+      try {
+        await this.files.delete({ id: f.id });
+        purged += 1;
+      } catch (err) {
+        if ((err as { code?: string })?.code === "files.not_found") purged += 1;
+        else log.error({ err, fileId: f.id }, "abandoned upload cleanup failed");
+      }
+    }
+    if (purged)
+      await this.uow.transaction(() =>
+        this.audit.record({
+          actorId: null,
+          actorType: "system",
+          action: "raqib.retention.uploads_purged",
+          resourceType: "file",
+          metadata: { count: purged, olderThanHours: ABANDONED_AFTER_HOURS },
+        }),
+      );
+    return purged;
   }
 
   /**

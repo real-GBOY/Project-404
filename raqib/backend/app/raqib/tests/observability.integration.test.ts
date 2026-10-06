@@ -95,7 +95,7 @@ describe.skipIf(!hasTestDb)("Raqib observability", () => {
       runner.running = true;
       runner.lastRun = {
         at: new Date(Date.now() - 3 * 3600_000),
-        report: { organizations: 0, visitsMarkedOverdue: 0, actionsMarkedOverdue: 0, requestsErased: 0, evidencePurged: 0 },
+        report: { organizations: 0, visitsMarkedOverdue: 0, actionsMarkedOverdue: 0, requestsErased: 0, evidencePurged: 0, uploadsPurged: 0 },
       };
       try {
         const res = await app.inject({ method: "GET", url: "/api/health/raqib" });

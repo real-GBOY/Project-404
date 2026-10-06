@@ -57,7 +57,10 @@ export class JobsRunner implements OnApplicationBootstrap, OnApplicationShutdown
       const report = await this.withLeaderLock(() => this.jobs.runAll());
       if (!report) {
         this.skipped += 1;
-        this.lastRun = { at: new Date(), report: { organizations: 0, visitsMarkedOverdue: 0, actionsMarkedOverdue: 0, requestsErased: 0, evidencePurged: 0 } }; // alive, just not the leader
+        this.lastRun = {
+          at: new Date(),
+          report: { organizations: 0, visitsMarkedOverdue: 0, actionsMarkedOverdue: 0, requestsErased: 0, evidencePurged: 0, uploadsPurged: 0 },
+        }; // alive, just not the leader
         return undefined;
       }
       this.runs += 1;

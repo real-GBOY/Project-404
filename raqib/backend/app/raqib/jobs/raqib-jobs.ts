@@ -22,6 +22,7 @@ export interface JobsReport {
   actionsMarkedOverdue: number;
   requestsErased: number;
   evidencePurged: number;
+  uploadsPurged: number;
 }
 
 /**
@@ -42,7 +43,14 @@ export class RaqibJobs {
 
   async runAll(): Promise<JobsReport> {
     const orgs = await runAsSystem(() => currentExecutor().selectFrom("organizations").select("id").execute());
-    const report: JobsReport = { organizations: orgs.length, visitsMarkedOverdue: 0, actionsMarkedOverdue: 0, requestsErased: 0, evidencePurged: 0 };
+    const report: JobsReport = {
+      organizations: orgs.length,
+      visitsMarkedOverdue: 0,
+      actionsMarkedOverdue: 0,
+      requestsErased: 0,
+      evidencePurged: 0,
+      uploadsPurged: 0,
+    };
     for (const org of orgs) {
       try {
         await withContext({ userId: undefined, organizationId: org.id }, async () => {
@@ -51,6 +59,7 @@ export class RaqibJobs {
           const kept = await this.lifecycle.retention();
           report.requestsErased += kept.requestsErased;
           report.evidencePurged += kept.evidencePurged;
+          report.uploadsPurged += kept.uploadsPurged;
         });
       } catch (err) {
         log.error({ err, organizationId: org.id }, "raqib jobs failed for organization");

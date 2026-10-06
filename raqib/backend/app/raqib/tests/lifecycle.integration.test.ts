@@ -16,6 +16,8 @@ import { createDemoHttpApp, get, hasTestDb, loginAs } from "./helpers.js";
 type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 const email = (key: string) => DEMO_PEOPLE.find((p) => p.key === key)!.email;
 
+const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
+
 describe.skipIf(!hasTestDb)("Raqib data lifecycle", () => {
   let app: NestFastifyApplication;
   let runner: JobsRunner;
@@ -70,6 +72,46 @@ describe.skipIf(!hasTestDb)("Raqib data lifecycle", () => {
       const row = (await sql<{ national_id: string }>("SELECT national_id FROM raqib_guards WHERE national_id LIKE 'v1:%' ORDER BY id LIMIT 1"))[0]!;
       expect(row.national_id).toMatch(/^v1:/);
       expect(await lifecycle.sealLegacy()).toEqual({ guards: 0, requests: 0 });
+    });
+  });
+
+  describe("abandoned uploads", () => {
+    it("deletes files nobody attached after two days, keeps attached ones and recent ones, and says so in the audit trail", async () => {
+      const mk = async (name: string, status: "pending" | "stored") => {
+        const auth = { authorization: `Bearer ${tokens.insA}` };
+        const res = await app.inject({
+          method: "POST",
+          url: "/api/files/uploads",
+          headers: auth,
+          payload: { originalName: name, contentType: "image/png", byteSize: PNG.length },
+        });
+        const p = res.json() as { fileId: string; upload: { url: string } };
+        if (status === "stored") {
+          await app.inject({ method: "PUT", url: `/api${p.upload.url}`, headers: { ...auth, "content-type": "application/octet-stream" }, payload: PNG });
+          await app.inject({ method: "POST", url: `/api/files/${p.fileId}/confirm`, headers: auth });
+        }
+        return p.fileId;
+      };
+      const pendingId = await mk("never-finished.png", "pending");
+      const unattachedId = await mk("never-attached.png", "stored");
+      const attached = await sql<{ file_id: string }>("SELECT file_id FROM raqib_evidence LIMIT 1");
+      const alive = async (id: string) => (await sql("SELECT 1 FROM files WHERE id = $1 AND deleted_at IS NULL", [id])).length > 0;
+
+      // a day on: too soon to call them abandoned
+      nowMs += 24 * 3_600_000;
+      expect((await runner.tick())?.uploadsPurged).toBe(0);
+      expect(await alive(pendingId)).toBe(true);
+
+      // days on: the two unattached files go, the evidence stays
+      nowMs += 9 * 24 * 3_600_000; // the files were stamped by the database's real clock, so go well past two days
+      const report = await runner.tick();
+      expect(report?.uploadsPurged).toBeGreaterThanOrEqual(2);
+      expect(await alive(pendingId)).toBe(false);
+      expect(await alive(unattachedId)).toBe(false);
+      expect(await alive(attached[0]!.file_id)).toBe(true);
+      expect(await sql("SELECT 1 FROM audit_logs WHERE action = 'raqib.retention.uploads_purged'")).not.toHaveLength(0);
+      expect((await runner.tick())?.uploadsPurged).toBe(0); // idempotent
+      nowMs = Date.parse("2026-10-04T08:00:00.000Z");
     });
   });
 
