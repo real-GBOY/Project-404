@@ -1,7 +1,7 @@
 # Mizan: law-firm management
 
-| [Overview](../../README.md) | **Mizan** | [Atlas](atlas.md) | [HotelOS](hotelos.md) | [Security](../../SECURITY.md) |
-|:---:|:---:|:---:|:---:|:---:|
+| [Overview](../../README.md) | **Mizan** | [Atlas](atlas.md) | [HotelOS](hotelos.md) | [Raqib](raqib.md) | [Security](../../SECURITY.md) |
+|:---:|:---:|:---:|:---:|:---:|:---:|
 
 Mizan is the first product built on Project-404 Core. It runs a law firm's matters, clients, hearings,
 deadlines, documents, time and billing in one workspace. It's bilingual: English by default, and Arabic
