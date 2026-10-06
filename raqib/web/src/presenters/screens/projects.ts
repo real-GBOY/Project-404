@@ -1,6 +1,9 @@
 import type { Guard, Project } from "@/api/types";
 import { pBadge, scoreColor, seg } from "../common";
 import type { Ctx } from "../context";
+import { actionRow, observationRow } from "./actions";
+import { mean, nextVisitDate } from "./overview-figures";
+import { projectFigures } from "./project-figures";
 import { visitRow } from "./visits";
 import { C } from "@/styles/colors";
 
@@ -24,24 +27,27 @@ export function projectsList(c: Ctx) {
             p.manager?.name.en ?? "",
           ].some((x) => x.toLowerCase().includes(q))),
     )
-    .map((p) => ({
-      name: i.L(p.name),
-      code: p.code,
-      st: pBadge(i, p.status),
-      mgr: p.manager ? i.L(p.manager.name) : "—",
-      city: i.L(p.city) + " · " + i.L(p.region),
-      sites: String(p.sites.length),
-      scoreTxt: "—",
-      scoreC: scoreColor(null),
-      scoreW: "0%",
-      obs: "0",
-      ca: "0",
-      od: "0",
-      odC: C.text.muted,
-      last: "—",
-      next: i.fd(p.firstVisitDate, "d"),
-      go: () => c.go("project", p.id),
-    }));
+    .map((p) => {
+      const f = projectFigures(c, p);
+      return {
+        name: i.L(p.name),
+        code: p.code,
+        st: pBadge(i, p.status),
+        mgr: p.manager ? i.L(p.manager.name) : "—",
+        city: i.L(p.city) + " · " + i.L(p.region),
+        sites: String(p.sites.length),
+        scoreTxt: f.score == null ? "—" : `${f.score}%`,
+        scoreC: f.scoreColor,
+        scoreW: `${f.score ?? 0}%`,
+        obs: String(f.openObservations.length),
+        ca: String(f.openActions.length),
+        od: String(f.overdue.length),
+        odC: f.overdue.length ? C.status.danger.fg : C.text.muted,
+        last: f.last ? i.fd(f.last, "d") : "—",
+        next: i.fd(nextVisitDate(f.visits, p.id, c.me.today) ?? p.firstVisitDate, "d"),
+        go: () => c.go("project", p.id),
+      };
+    });
   return {
     pl: {
       rows,
@@ -72,10 +78,16 @@ export function projectDetail(c: Ctx, p: Project) {
     fw: ui.ptab === k ? "600" : "500",
   }));
   const pt = ui.ptab;
-  const dataTab = pt === "sites" || pt === "visits";
+  const f = projectFigures(c, p);
+  const dataTab =
+    pt === "sites" ||
+    pt === "visits" ||
+    (pt === "overview" && (f.hasResults || f.openActions.length > 0)) ||
+    (pt === "observations" && f.observations.length > 0) ||
+    (pt === "actions" && f.actions.length > 0) ||
+    (pt === "analytics" && f.hasResults);
   const vs = (c.data.visits ?? []).filter((v) => v.project.id === p.id);
   const overdue = vs.filter((v) => v.status === "overdue");
-  const planned = vs.filter((v) => v.storedStatus !== "cancelled");
   return {
     pd: {
       name: i.L(p.name),
@@ -92,11 +104,17 @@ export function projectDetail(c: Ctx, p: Project) {
       emptyTxt: p.firstVisitDate
         ? i.S("projEmpty", { d: i.fd(p.firstVisitDate, "full") })
         : i.S("projEmptyTitle"),
-      scoreTxt: "—",
-      scoreC: scoreColor(null),
-      delta: "",
-      deltaC: C.text.secondary,
-      weeks: [],
+      scoreTxt: f.score == null ? "—" : `${f.score}%`,
+      scoreC: f.scoreColor,
+      delta:
+        f.delta == null ? "" : i.S("vsPrev", { d: f.delta > 0 ? `+${f.delta}` : String(f.delta) }),
+      deltaC:
+        f.delta == null || f.delta === 0
+          ? C.text.secondary
+          : f.delta > 0
+            ? C.status.success.fg
+            : C.status.danger.fg,
+      weeks: f.weeks.map((w) => ({ ...w, lbl: i.fd(w.from, "d") })),
       canEdit,
       edit: () =>
         c.openModal(
@@ -128,20 +146,21 @@ export function projectDetail(c: Ctx, p: Project) {
         })),
         n: i.L(s.name),
         areas: s.areas.map((a) => i.L(a.name)).join(i.lang === "ar" ? "، " : ", ") || "—",
-        scoreTxt: "—",
-        scoreW: "0%",
-        scoreC: scoreColor(null),
+        ...siteFigures(c, f, s),
         vis: String(vs.filter((v) => v.site.id === s.id).length),
-        obs: "0",
       })),
-      recent: [],
+      recent: f.visits
+        .filter((v) => v.status === "approved")
+        .sort((a, b) => b.date.localeCompare(a.date))
+        .slice(0, 5)
+        .map((v) => visitRow(c, v)),
       visits: vs
         .slice()
         .sort((a, b) => b.date.localeCompare(a.date))
         .map((v) => visitRow(c, v)),
-      cas: [],
-      openCas: [],
-      obs: [],
+      cas: f.actions.map((a) => actionRow(c, a)),
+      openCas: f.openActions.slice(0, 6).map((a) => actionRow(c, a)),
+      obs: f.observations.map((o) => observationRow(c, o)),
       attn: overdue.map((v) => ({
         t: i.S("attn_vOver", { r: v.ref }),
         sub: i.L(v.site.name),
@@ -150,8 +169,8 @@ export function projectDetail(c: Ctx, p: Project) {
       })),
       hasAttn: overdue.length > 0,
       noAttn: overdue.length === 0,
-      completion: i.S("completion", { a: 0, b: planned.length }),
-      compW: "0%",
+      completion: i.S("completion", { a: f.done, b: f.planned }),
+      compW: `${f.planned ? Math.round((f.done / f.planned) * 100) : 0}%`,
       canSchedule: c.me.permissions.visits.includes("A") && p.status !== "closed",
       schedule: () =>
         c.openModal("create", undefined, {
@@ -161,7 +180,7 @@ export function projectDetail(c: Ctx, p: Project) {
           type: "routine",
           shift: "morning",
         }),
-      openAnalytics: () => undefined,
+      openAnalytics: () => c.go("analytics", null, { anP: p.id }),
       back: () => c.go("projects"),
     },
     pt: {
@@ -172,6 +191,25 @@ export function projectDetail(c: Ctx, p: Project) {
       actions: pt === "actions",
       analytics: pt === "analytics",
     },
+  };
+}
+
+/** A site's average score over its approved visits, and how many observations at it are still open. */
+function siteFigures(c: Ctx, f: ReturnType<typeof projectFigures>, s: Project["sites"][number]) {
+  const scores = f.visits
+    .filter((v) => v.site.id === s.id && v.status === "approved" && v.scorePct != null)
+    .map((v) => v.scorePct as number);
+  const avg = mean(scores);
+  const open = f.openObservations.filter((o) => o.site.en === s.name.en || o.site.ar === s.name.ar);
+  return {
+    scoreTxt: avg == null ? "—" : `${avg}%`,
+    scoreW: `${avg ?? 0}%`,
+    scoreC: scoreColor(
+      avg,
+      c.data.settings?.scoring.high ?? 85,
+      c.data.settings?.scoring.mid ?? 75,
+    ),
+    obs: String(open.length),
   };
 }
 

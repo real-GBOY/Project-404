@@ -3,6 +3,7 @@ import type { Route } from "@/presenters/context";
 
 const VISIT_SCREENS = [
   "overview",
+  "projects",
   "visits",
   "visit",
   "project",
@@ -23,6 +24,8 @@ export function screenNeeds(route: Route, me: Me) {
   const n = route.n;
   // the quality / executive overview is computed from approved reports, observations and corrective actions
   const management = n === "overview" && ["qm", "qe", "gm"].includes(me.role);
+  // the project list and page show scores, open issues and late actions
+  const projectFigures = ["projects", "project"].includes(n);
   const guardRecords = p.guardEval.includes("V") || p.training.includes("V");
   const want = {
     // the shell labels a person's scope with project names whenever the template allows reading projects
@@ -34,12 +37,13 @@ export function screenNeeds(route: Route, me: Me) {
       p.users.includes("V") &&
       ["users", "user", "permissions", "projects", "project", "guards"].includes(n),
     permissions: p.permissions.includes("V") && ["user", "permissions"].includes(n),
-    settings: p.settings.includes("V") && (n === "settings" || management),
+    settings: p.settings.includes("V") && (n === "settings" || management || projectFigures),
     forms: p.forms.includes("V") && ["forms", "form"].includes(n),
     inspection: ["inspect", "review"].includes(n) && !!route.id,
     observations:
-      p.observations.includes("V") && (["observations", "review"].includes(n) || management),
-    actions: p.actions.includes("V") && (n === "actions" || management),
+      p.observations.includes("V") &&
+      (["observations", "review"].includes(n) || management || projectFigures),
+    actions: p.actions.includes("V") && (n === "actions" || management || projectFigures),
     action: p.actions.includes("V") && n === "action" && !!route.id,
     training: p.training.includes("V") && n === "training",
     trainingOne: p.training.includes("V") && n === "trainingD" && !!route.id,
@@ -51,7 +55,7 @@ export function screenNeeds(route: Route, me: Me) {
     accountRequest: p.users.includes("V") && n === "request" && !!route.id,
     reports:
       p.reports.includes("V") &&
-      (["reports", "report", "visit", "review"].includes(n) || management),
+      (["reports", "report", "visit", "review"].includes(n) || management || projectFigures),
   };
   return want;
 }

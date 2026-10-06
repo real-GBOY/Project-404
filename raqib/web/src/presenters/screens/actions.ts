@@ -71,36 +71,38 @@ function obsFilter(o: Observation, f: string): boolean {
   return true;
 }
 
+/** One observation as a list row (the observations screen and the project page share it). */
+export function observationRow(c: Ctx, o: Observation) {
+  const { i } = c;
+  const canAssign = c.me.permissions.actions.includes("A");
+  const a = o.action;
+  return {
+    ref: o.ref,
+    kind: badge(
+      i.S(o.kind === "violation" ? "obs_violation" : "obs_observation"),
+      o.kind === "violation" ? "bad" : "info",
+    ),
+    t: i.L(o.title),
+    proj: i.L(o.project.name),
+    site: i.L(o.site),
+    visit: o.visit?.ref ?? "—",
+    item: o.itemNum ?? "—",
+    resp: a ? i.L(a.responsible) : i.S("noActionYet"),
+    hasRep: o.repeatCount > 0,
+    rep: i.S("repeatN", { n: o.repeatCount }),
+    sev: sevBadge(c, o.severity),
+    due: a ? i.fd(a.dueDate, "d") : "—",
+    ca: a?.ref ?? "",
+    st: a ? statusBadge(c, a.status) : badge(i.S("obs_open"), "warn"),
+    go: () => (a ? c.go("action", a.id) : canAssign ? openAssign(c, o) : undefined),
+  };
+}
+
 export function observationsList(c: Ctx) {
   const { i, ui, set, me } = c;
   const all = c.data.observations ?? [];
   const f = (OBS_FILTERS as readonly string[]).includes(ui.ofilter) ? ui.ofilter : "all";
-  const canAssign = me.permissions.actions.includes("A");
-  const rows = all
-    .filter((o) => obsFilter(o, f))
-    .map((o) => {
-      const a = o.action;
-      return {
-        ref: o.ref,
-        kind: badge(
-          i.S(o.kind === "violation" ? "obs_violation" : "obs_observation"),
-          o.kind === "violation" ? "bad" : "info",
-        ),
-        t: i.L(o.title),
-        proj: i.L(o.project.name),
-        site: i.L(o.site),
-        visit: o.visit?.ref ?? "—",
-        item: o.itemNum ?? "—",
-        resp: a ? i.L(a.responsible) : i.S("noActionYet"),
-        hasRep: o.repeatCount > 0,
-        rep: i.S("repeatN", { n: o.repeatCount }),
-        sev: sevBadge(c, o.severity),
-        due: a ? i.fd(a.dueDate, "d") : "—",
-        ca: a?.ref ?? "",
-        st: a ? statusBadge(c, a.status) : badge(i.S("obs_open"), "warn"),
-        go: () => (a ? c.go("action", a.id) : canAssign ? openAssign(c, o) : undefined),
-      };
-    });
+  const rows = all.filter((o) => obsFilter(o, f)).map((o) => observationRow(c, o));
   return {
     ol: {
       chips: OBS_FILTERS.map((k) =>
@@ -142,6 +144,26 @@ function actFilter(a: CorrectiveAction, f: string, me: string): boolean {
   return true;
 }
 
+/** One corrective action as a list row (the actions screen and the project page share it). */
+export function actionRow(c: Ctx, a: CorrectiveAction) {
+  const { i } = c;
+  const sub = dueSub(c, a);
+  return {
+    ref: a.ref,
+    t: i.L(a.title),
+    proj: i.L(a.project.name),
+    resp: i.L(a.responsible.name),
+    hasRep: a.observation.repeatCount > 0,
+    rep: i.S("repeatN", { n: a.observation.repeatCount }),
+    pri: badge(i.S(`pri_${a.priority}`), SEV_TONE[a.priority]),
+    due: i.fd(a.dueDate, "d"),
+    dueSub: sub.text,
+    dueC: sub.color,
+    st: statusBadge(c, a.status),
+    go: () => c.go("action", a.id),
+  };
+}
+
 export function actionsList(c: Ctx) {
   const { i, ui, set, me } = c;
   const all = c.data.actions ?? [];
@@ -154,23 +176,7 @@ export function actionsList(c: Ctx) {
     .filter((a) => actFilter(a, f, me.id))
     .slice()
     .sort((x, y) => rank(x) - rank(y) || x.dueDate.localeCompare(y.dueDate))
-    .map((a) => {
-      const sub = dueSub(c, a);
-      return {
-        ref: a.ref,
-        t: i.L(a.title),
-        proj: i.L(a.project.name),
-        resp: i.L(a.responsible.name),
-        hasRep: a.observation.repeatCount > 0,
-        rep: i.S("repeatN", { n: a.observation.repeatCount }),
-        pri: badge(i.S(`pri_${a.priority}`), SEV_TONE[a.priority]),
-        due: i.fd(a.dueDate, "d"),
-        dueSub: sub.text,
-        dueC: sub.color,
-        st: statusBadge(c, a.status),
-        go: () => c.go("action", a.id),
-      };
-    });
+    .map((a) => actionRow(c, a));
   return {
     cl: {
       chips: ACT_FILTERS.map((k) =>
