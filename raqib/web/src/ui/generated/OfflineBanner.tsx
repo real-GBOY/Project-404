@@ -5,9 +5,20 @@ import { C } from "@/styles/colors";
 
 export function OfflineBanner({ vm }: { vm: VM }) {
   const { hpad, t } = vm;
-  return (<>
-<div style={{ flexShrink: "0", background: C.status.warning.bg, color: C.status.warning.strong, fontSize: "13px", padding: `8px ${hpad}`, borderBottom: `1px solid ${C.status.warning.border}` }}>
-{t.offlineBanner}
-</div>
-</>);
+  return (
+    <>
+      <div
+        style={{
+          flexShrink: "0",
+          background: C.status.warning.bg,
+          color: C.status.warning.strong,
+          fontSize: "13px",
+          padding: `8px ${hpad}`,
+          borderBottom: `1px solid ${C.status.warning.border}`,
+        }}
+      >
+        {t.offlineBanner}
+      </div>
+    </>
+  );
 }
