@@ -7,22 +7,46 @@ export const PERIODS = ["week", "month", "quarter", "year", "custom"] as const;
 export type Period = (typeof PERIODS)[number];
 
 /** Filters the analytics screen is currently showing (UI state → backend query). */
-export function analyticsQuery(c: Ctx): { period: Period; from: string; to: string; projectId: string; siteId: string } {
+export function analyticsQuery(c: Ctx): {
+  period: Period;
+  from: string;
+  to: string;
+  projectId: string;
+  siteId: string;
+} {
   const { ui } = c;
   return {
-    period: (PERIODS as readonly string[]).includes(ui.anPeriod) ? (ui.anPeriod as Period) : "month",
-    from: ui.anFrom, to: ui.anTo, projectId: ui.anP, siteId: ui.anS,
+    period: (PERIODS as readonly string[]).includes(ui.anPeriod)
+      ? (ui.anPeriod as Period)
+      : "month",
+    from: ui.anFrom,
+    to: ui.anTo,
+    projectId: ui.anP,
+    siteId: ui.anS,
   };
 }
 
-const KPI_ORDER = ["compliance", "inspections", "execution", "missed", "repeats", "overdueActions", "guardAvg"] as const;
+const KPI_ORDER = [
+  "compliance",
+  "inspections",
+  "execution",
+  "missed",
+  "repeats",
+  "overdueActions",
+  "guardAvg",
+] as const;
 
 const pct = (n: number | null): string => (n == null ? "—" : `${n}%`);
 
 function kpiColor(k: AnalyticsKpi): string {
   if (k.value == null) return C.text.muted;
-  if (k.key === "compliance" || k.key === "guardAvg" || k.key === "execution") return scoreColor(k.value);
-  return k.key === "inspections" ? C.text.ink : k.value > 0 ? C.status.danger.fg : C.status.success.fg;
+  if (k.key === "compliance" || k.key === "guardAvg" || k.key === "execution")
+    return scoreColor(k.value);
+  return k.key === "inspections"
+    ? C.text.ink
+    : k.value > 0
+      ? C.status.danger.fg
+      : C.status.success.fg;
 }
 
 export function analytics(c: Ctx, result: AnalyticsResult | undefined) {
@@ -30,20 +54,55 @@ export function analytics(c: Ctx, result: AnalyticsResult | undefined) {
   const q = analyticsQuery(c);
   const projects = c.data.projects ?? [];
   const project = projects.find((p) => p.id === q.projectId);
-  const kpis = result ? KPI_ORDER.map((key) => result.kpis.find((k) => k.key === key)).filter((k): k is AnalyticsKpi => !!k) : [];
+  const kpis = result
+    ? KPI_ORDER.map((key) => result.kpis.find((k) => k.key === key)).filter(
+        (k): k is AnalyticsKpi => !!k,
+      )
+    : [];
   const dd = kpis.find((k) => k.key === ui.anDd);
   const toRow = (x: AnalyticsContributor) => ({
-    ref: x.ref, t: typeof x.title === "string" ? x.title : i.L(x.title), sub: x.sub, val: x.value,
-    go: () => c.go(x.kind === "report" ? "report" : x.kind === "visit" ? "visit" : x.kind === "action" ? "action" : "observations", x.kind === "observation" ? null : x.id),
+    ref: x.ref,
+    t: typeof x.title === "string" ? x.title : i.L(x.title),
+    sub: x.sub,
+    val: x.value,
+    go: () =>
+      c.go(
+        x.kind === "report"
+          ? "report"
+          : x.kind === "visit"
+            ? "visit"
+            : x.kind === "action"
+              ? "action"
+              : "observations",
+        x.kind === "observation" ? null : x.id,
+      ),
   });
   const w = (n: number, max: number) => `${Math.max(2, Math.round((n / (max || 1)) * 100))}%`;
   const maxSec = Math.max(1, ...(result?.sections ?? []).map((s) => s.rate));
   const maxStage = Math.max(1, ...(result?.actionStages ?? []).map((s) => s.n));
   const maxGuard = Math.max(1, ...(result?.guardBuckets ?? []).map((s) => s.n));
-  const trendLabel = (l: string) => (result?.range.bucket === "month" ? i.fd(`${l}-01`, "my") : i.fd(l, "d"));
-  const stageColor: Record<string, string> = { assigned: C.status.info.fg, in_progress: C.status.info.fg, quality_review: C.status.review.fg, returned: C.status.warning.mark, closed: C.status.success.fg, overdue: C.status.danger.fg };
-  const stageKey: Record<string, string> = { assigned: "cs_assigned", in_progress: "cs_in_progress", quality_review: "cs_under_review", returned: "cs_returned", closed: "cs_closed", overdue: "overdue" };
-  const field = (k: "anFrom" | "anTo") => ({ value: ui[k], onChange: (e: { target: { value: string } }) => set({ [k]: e.target.value } as never) });
+  const trendLabel = (l: string) =>
+    result?.range.bucket === "month" ? i.fd(`${l}-01`, "my") : i.fd(l, "d");
+  const stageColor: Record<string, string> = {
+    assigned: C.status.info.fg,
+    in_progress: C.status.info.fg,
+    quality_review: C.status.review.fg,
+    returned: C.status.warning.mark,
+    closed: C.status.success.fg,
+    overdue: C.status.danger.fg,
+  };
+  const stageKey: Record<string, string> = {
+    assigned: "cs_assigned",
+    in_progress: "cs_in_progress",
+    quality_review: "cs_under_review",
+    returned: "cs_returned",
+    closed: "cs_closed",
+    overdue: "overdue",
+  };
+  const field = (k: "anFrom" | "anTo") => ({
+    value: ui[k],
+    onChange: (e: { target: { value: string } }) => set({ [k]: e.target.value } as never),
+  });
 
   return {
     an: {
@@ -53,38 +112,105 @@ export function analytics(c: Ctx, result: AnalyticsResult | undefined) {
       exportCsv: () => void c.actions.exportAnalytics(q).catch(() => c.toast(i.S("actionFailed"))),
       range: result ? `${i.fd(result.range.from, "d")} – ${i.fd(result.range.to, "full")}` : "",
       pers: PERIODS.map((k) => ({
-        label: i.S(k === "custom" ? "per_custom" : `per_${k === "year" ? "year" : k}`), set: () => set({ anPeriod: k }),
-        bg: q.period === k ? C.text.ink : C.surface.white, fg: q.period === k ? C.surface.white : C.text.body,
+        label: i.S(k === "custom" ? "per_custom" : `per_${k === "year" ? "year" : k}`),
+        set: () => set({ anPeriod: k }),
+        bg: q.period === k ? C.text.ink : C.surface.white,
+        fg: q.period === k ? C.surface.white : C.text.body,
       })),
       isCustom: q.period === "custom",
-      from: ui.anFrom, to: ui.anTo, onFrom: field("anFrom").onChange, onTo: field("anTo").onChange,
+      from: ui.anFrom,
+      to: ui.anTo,
+      onFrom: field("anFrom").onChange,
+      onTo: field("anTo").onChange,
       showProj: projects.length > 1,
-      p: q.projectId, onP: (e: { target: { value: string } }) => set({ anP: e.target.value, anS: "" }),
-      pOpts: [{ v: "", l: i.S("allProjects") }].concat(projects.map((p) => ({ v: p.id, l: i.L(p.name) }))),
+      p: q.projectId,
+      onP: (e: { target: { value: string } }) => set({ anP: e.target.value, anS: "" }),
+      pOpts: [{ v: "", l: i.S("allProjects") }].concat(
+        projects.map((p) => ({ v: p.id, l: i.L(p.name) })),
+      ),
       showSite: !!project,
-      s: q.siteId, onS: (e: { target: { value: string } }) => set({ anS: e.target.value }),
-      sOpts: [{ v: "", l: i.S("allSites") }].concat((project?.sites ?? []).map((s) => ({ v: s.id, l: i.L(s.name) }))),
+      s: q.siteId,
+      onS: (e: { target: { value: string } }) => set({ anS: e.target.value }),
+      sOpts: [{ v: "", l: i.S("allSites") }].concat(
+        (project?.sites ?? []).map((s) => ({ v: s.id, l: i.L(s.name) })),
+      ),
       kpis: kpis.map((k) => ({
-        label: i.S(`kpi_${k.key}`), val: k.unit === "pct" ? pct(k.value) : String(k.value ?? 0), c: kpiColor(k),
-        sub: k.of != null ? i.S("kpi_of", { n: k.of }) : i.S(`kpi_${k.key}_sub`), bd: ui.anDd === k.key ? C.brand.primary : C.border.hairline,
+        label: i.S(`kpi_${k.key}`),
+        val: k.unit === "pct" ? pct(k.value) : String(k.value ?? 0),
+        c: kpiColor(k),
+        sub: k.of != null ? i.S("kpi_of", { n: k.of }) : i.S(`kpi_${k.key}_sub`),
+        bd: ui.anDd === k.key ? C.brand.primary : C.border.hairline,
         go: () => set({ anDd: ui.anDd === k.key ? "" : k.key }),
       })),
       hasDd: !!dd,
       dd: dd
         ? {
-            title: i.S(`kpi_${dd.key}`), def: i.S(`kpi_${dd.key}_def`), formula: i.S(`kpi_${dd.key}_f`), count: i.S("kpi_records", { n: dd.contributors.length }),
-            period: `${i.fd(result!.range.from, "d")} – ${i.fd(result!.range.to, "d")}`, scope: project ? i.L(project.name) : i.S("allProjects"),
-            hasVers: false, vers: [], list: dd.contributors.slice(0, 50).map(toRow), close: () => set({ anDd: "" }),
+            title: i.S(`kpi_${dd.key}`),
+            def: i.S(`kpi_${dd.key}_def`),
+            formula: i.S(`kpi_${dd.key}_f`),
+            count: i.S("kpi_records", { n: dd.contributors.length }),
+            period: `${i.fd(result!.range.from, "d")} – ${i.fd(result!.range.to, "d")}`,
+            scope: project ? i.L(project.name) : i.S("allProjects"),
+            hasVers: false,
+            vers: [],
+            list: dd.contributors.slice(0, 50).map(toRow),
+            close: () => set({ anDd: "" }),
           }
         : { list: [], vers: [], close: () => undefined },
-      trend: (result?.trend ?? []).map((b) => ({ l: trendLabel(b.label), v: b.avg == null ? "—" : String(b.avg), h: `${b.avg ?? 0}%`, c: b.avg == null ? C.border.strong : scoreColor(b.avg), n: b.n, miss: b.avg == null, go: () => set({ anDd: "compliance" }) })),
-      secs: (result?.sections ?? []).map((s) => ({ l: i.L(s.title), w: w(s.rate, maxSec), n: `${s.rate}%` })),
-      siteRows: (result?.sites ?? []).map((s) => ({ l: i.L(s.site), p: i.L(s.project), n: s.n, w: `${s.avg ?? 0}%`, c: scoreColor(s.avg), v: pct(s.avg) })),
-      caStages: (result?.actionStages ?? []).map((s) => ({ l: i.S(stageKey[s.stage]!), w: w(s.n, maxStage), c: stageColor[s.stage]!, n: s.n })),
-      gb: (result?.guardBuckets ?? []).map((b) => ({ l: i.S(`gb_${b.bucket}`), w: w(b.n, maxGuard), c: b.bucket === "low" ? C.status.danger.fg : b.bucket === "mid" ? C.status.warning.mark : C.status.success.fg, n: b.n })),
+      trend: (result?.trend ?? []).map((b) => ({
+        l: trendLabel(b.label),
+        v: b.avg == null ? "—" : String(b.avg),
+        h: `${b.avg ?? 0}%`,
+        c: b.avg == null ? C.border.strong : scoreColor(b.avg),
+        n: b.n,
+        miss: b.avg == null,
+        go: () => set({ anDd: "compliance" }),
+      })),
+      secs: (result?.sections ?? []).map((s) => ({
+        l: i.L(s.title),
+        w: w(s.rate, maxSec),
+        n: `${s.rate}%`,
+      })),
+      siteRows: (result?.sites ?? []).map((s) => ({
+        l: i.L(s.site),
+        p: i.L(s.project),
+        n: s.n,
+        w: `${s.avg ?? 0}%`,
+        c: scoreColor(s.avg),
+        v: pct(s.avg),
+      })),
+      caStages: (result?.actionStages ?? []).map((s) => ({
+        l: i.S(stageKey[s.stage]!),
+        w: w(s.n, maxStage),
+        c: stageColor[s.stage]!,
+        n: s.n,
+      })),
+      gb: (result?.guardBuckets ?? []).map((b) => ({
+        l: i.S(`gb_${b.bucket}`),
+        w: w(b.n, maxGuard),
+        c:
+          b.bucket === "low"
+            ? C.status.danger.fg
+            : b.bucket === "mid"
+              ? C.status.warning.mark
+              : C.status.success.fg,
+        n: b.n,
+      })),
       hasIns: me.permissions.analytics.includes("V") && (result?.inspectors.length ?? 0) > 0,
-      insRows: (result?.inspectors ?? []).map((x) => ({ name: i.L(x.name), n: x.done, miss: x.missed, avg: pct(x.avg), ret: x.returned })),
-      rep: (result?.repeated ?? []).map((r) => ({ ref: r.ref, t: i.L(r.title), sub: i.L(r.site), val: `×${r.times}`, go: () => c.go("observations") })),
+      insRows: (result?.inspectors ?? []).map((x) => ({
+        name: i.L(x.name),
+        n: x.done,
+        miss: x.missed,
+        avg: pct(x.avg),
+        ret: x.returned,
+      })),
+      rep: (result?.repeated ?? []).map((r) => ({
+        ref: r.ref,
+        t: i.L(r.title),
+        sub: i.L(r.site),
+        val: `×${r.times}`,
+        go: () => c.go("observations"),
+      })),
     },
   };
 }

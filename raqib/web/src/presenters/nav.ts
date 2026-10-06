@@ -36,8 +36,40 @@ export const NAV_GROUPS: Record<string, L10n> = {
 
 /** Display order per role. */
 export const ROLE_NAV: Record<RoleKey, string[]> = {
-  qm: ["overview", "projects", "visits", "reviews", "observations", "actions", "training", "analytics", "audit", "guards", "training", "reports", "analytics", "forms", "users", "permissions", "audit", "settings", "confidential"],
-  qe: ["overview", "projects", "visits", "reviews", "observations", "actions", "guards", "training", "reports", "analytics", "forms"],
+  qm: [
+    "overview",
+    "projects",
+    "visits",
+    "reviews",
+    "observations",
+    "actions",
+    "training",
+    "analytics",
+    "audit",
+    "guards",
+    "training",
+    "reports",
+    "analytics",
+    "forms",
+    "users",
+    "permissions",
+    "audit",
+    "settings",
+    "confidential",
+  ],
+  qe: [
+    "overview",
+    "projects",
+    "visits",
+    "reviews",
+    "observations",
+    "actions",
+    "guards",
+    "training",
+    "reports",
+    "analytics",
+    "forms",
+  ],
   pm: ["overview", "projects", "observations", "actions", "training", "reports", "analytics"],
   ins: ["overview", "visits", "inspections"],
   gs: ["overview", "guards", "observations", "training"],
@@ -47,13 +79,39 @@ export const ROLE_NAV: Record<RoleKey, string[]> = {
 
 /** Nav entry → the template module that must grant View. */
 const MODULE_OF_NAV: Record<string, ModuleKey> = {
-  projects: "projects", visits: "visits", reviews: "inspections", inspections: "inspections", observations: "observations",
-  actions: "actions", guards: "guardEval", training: "training", reports: "reports", analytics: "analytics",
-  forms: "forms", users: "users", permissions: "permissions", audit: "audit", settings: "settings",
+  projects: "projects",
+  visits: "visits",
+  reviews: "inspections",
+  inspections: "inspections",
+  observations: "observations",
+  actions: "actions",
+  guards: "guardEval",
+  training: "training",
+  reports: "reports",
+  analytics: "analytics",
+  forms: "forms",
+  users: "users",
+  permissions: "permissions",
+  audit: "audit",
+  settings: "settings",
 };
 
 /** Entries whose backend exists in this build. Grows phase by phase (see raqib/docs/architecture.md §9). */
-export const ENABLED_NAV: ReadonlySet<string> = new Set(["overview", "projects", "visits", "reviews", "inspections", "forms", "reports", "observations", "actions", "guards", "users", "permissions", "settings"]);
+export const ENABLED_NAV: ReadonlySet<string> = new Set([
+  "overview",
+  "projects",
+  "visits",
+  "reviews",
+  "inspections",
+  "forms",
+  "reports",
+  "observations",
+  "actions",
+  "guards",
+  "users",
+  "permissions",
+  "settings",
+]);
 
 export function visibleNav(me: Me): string[] {
   const t = me.permissions;
@@ -69,5 +127,22 @@ export function visibleNav(me: Me): string[] {
 
 /** Route name → the nav entry that highlights for it. */
 export function navKeyOf(n: string): string {
-  return ({ project: "projects", visit: "visits", inspect: "visits", review: "reviews", report: "reports", action: "actions", guard: "guards", user: "users", request: "users", form: "forms", trainingD: "training", rpt: "reports" } as Record<string, string>)[n] ?? n;
+  return (
+    (
+      {
+        project: "projects",
+        visit: "visits",
+        inspect: "visits",
+        review: "reviews",
+        report: "reports",
+        action: "actions",
+        guard: "guards",
+        user: "users",
+        request: "users",
+        form: "forms",
+        trainingD: "training",
+        rpt: "reports",
+      } as Record<string, string>
+    )[n] ?? n
+  );
 }

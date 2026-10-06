@@ -15,7 +15,10 @@ export const STRINGS_OFFLINE: Record<string, readonly [string, string]> = {
     "حُفظ إرسال {r} على هذا الجهاز وسيُرسل عند عودة الاتصال.",
     "Submission of {r} is saved on this device and will be sent when the connection returns.",
   ],
-  off_signInNeedsConnection: ['أنت غير متصل. يلزم الاتصال بالإنترنت لتسجيل الدخول.', 'You are offline. Signing in needs a connection.'],
+  off_signInNeedsConnection: [
+    "أنت غير متصل. يلزم الاتصال بالإنترنت لتسجيل الدخول.",
+    "You are offline. Signing in needs a connection.",
+  ],
   off_needsConnection: [
     "بدء التفتيش يتطلب اتصالًا بالإنترنت.",
     "Starting an inspection needs a connection.",

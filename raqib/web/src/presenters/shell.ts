@@ -30,7 +30,17 @@ export function shellVM(c: Ctx, scr: string, pageTitle: string) {
       mbar: on ? C.brand.primary : "transparent",
     };
   };
-  const scopeText = me.scope === "all" ? i.S("allProjects") : String((c.data.projects ?? []).length ? (c.data.projects ?? []).filter((p) => (me.scope as string[]).includes(p.id)).map((p) => i.L(p.name)).join(ar ? "، " : ", ") : "") || i.S("scope");
+  const scopeText =
+    me.scope === "all"
+      ? i.S("allProjects")
+      : String(
+          (c.data.projects ?? []).length
+            ? (c.data.projects ?? [])
+                .filter((p) => (me.scope as string[]).includes(p.id))
+                .map((p) => i.L(p.name))
+                .join(ar ? "، " : ", ")
+            : "",
+        ) || i.S("scope");
   const roleLabel = i.L(ROLE_LABEL[me.role]);
   const notifs = c.data.notifications?.items ?? [];
   return {
@@ -46,7 +56,11 @@ export function shellVM(c: Ctx, scr: string, pageTitle: string) {
     mainCols: ui.w < 1080 ? "minmax(0,1fr)" : "minmax(0,1.85fr) minmax(320px,1fr)",
     sideW: ui.w < 1180 ? "216px" : "244px",
     navGroups: ["ops", "people", "insight", "admin", "restricted"]
-      .map((g) => ({ label: i.L(NAV_GROUPS[g]), restricted: g === "restricted", items: nav.filter((k) => NAV_META[k]?.g === g).map(item) }))
+      .map((g) => ({
+        label: i.L(NAV_GROUPS[g]),
+        restricted: g === "restricted",
+        items: nav.filter((k) => NAV_META[k]?.g === g).map(item),
+      }))
       .filter((g) => g.items.length),
     meName: i.L(me.name),
     meIni: i.L(me.ini),

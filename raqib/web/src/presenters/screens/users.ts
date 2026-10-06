@@ -47,8 +47,18 @@ export function usersList(c: Ctx) {
   }));
   const pending = (data.accountRequests ?? []).filter((r) => r.status === "pending").length;
   const onReqs = ui.utab === "requests";
-  const tab = (key: string, label: string, n: number, on: boolean) => ({ label, n: String(n), go: () => set({ utab: key }), fg: on ? C.text.ink : C.text.secondary, bd: on ? C.brand.primary : "transparent", fw: on ? "600" : "500" });
-  const tabs = [tab("users", i.S("ut_users"), (data.users ?? []).length, !onReqs), tab("requests", i.S("ut_requests"), pending, onReqs)];
+  const tab = (key: string, label: string, n: number, on: boolean) => ({
+    label,
+    n: String(n),
+    go: () => set({ utab: key }),
+    fg: on ? C.text.ink : C.text.secondary,
+    bd: on ? C.brand.primary : "transparent",
+    fw: on ? "600" : "500",
+  });
+  const tabs = [
+    tab("users", i.S("ut_users"), (data.users ?? []).length, !onReqs),
+    tab("requests", i.S("ut_requests"), pending, onReqs),
+  ];
   return {
     ul: {
       tabs,
@@ -57,10 +67,14 @@ export function usersList(c: Ctx) {
       rows,
       reqs: requestRows(c),
       q: ui.ufilter.q,
-      onQ: (e: { target: { value: string } }) => set((s) => ({ ufilter: { ...s.ufilter, q: e.target.value } })),
+      onQ: (e: { target: { value: string } }) =>
+        set((s) => ({ ufilter: { ...s.ufilter, q: e.target.value } })),
       role: ui.ufilter.role,
-      onRole: (e: { target: { value: string } }) => set((s) => ({ ufilter: { ...s.ufilter, role: e.target.value } })),
-      roleOpts: [{ v: "all", l: i.S("allRoles") }].concat(ROLES.map((k) => ({ v: k, l: i.L(ROLE_LABEL[k]) }))),
+      onRole: (e: { target: { value: string } }) =>
+        set((s) => ({ ufilter: { ...s.ufilter, role: e.target.value } })),
+      roleOpts: [{ v: "all", l: i.S("allRoles") }].concat(
+        ROLES.map((k) => ({ v: k, l: i.L(ROLE_LABEL[k]) })),
+      ),
       none: !rows.length,
     },
   };
@@ -76,7 +90,9 @@ export function userDetail(c: Ctx, u: Person) {
   const scope =
     u.scope === "all"
       ? [`${i.S("allProjects")} — ${i.S("roleRule")}`]
-      : u.scope.map((id) => (byId.get(id) ? `${i.L(byId.get(id)!.name)} · ${byId.get(id)!.code}` : id));
+      : u.scope.map((id) =>
+          byId.get(id) ? `${i.L(byId.get(id)!.name)} · ${byId.get(id)!.code}` : id,
+        );
   return {
     ud: {
       name: i.L(u.name),
@@ -90,7 +106,12 @@ export function userDetail(c: Ctx, u: Person) {
       noScope: u.scope !== "all" && !u.scope.length,
       scopeRule: "",
       perms: tpl
-        ? moduleOrder.filter((m) => tpl[m]).map((m) => ({ mod: i.S(`pm_${m}`), acts: [...tpl[m]].map((a) => i.S(`pa_${a}`)).join(" · ") }))
+        ? moduleOrder
+            .filter((m) => tpl[m])
+            .map((m) => ({
+              mod: i.S(`pm_${m}`),
+              acts: [...tpl[m]].map((a) => i.S(`pa_${a}`)).join(" · "),
+            }))
         : [],
       conf: i.S("confNone"),
       acts: [],
@@ -99,14 +120,31 @@ export function userDetail(c: Ctx, u: Person) {
       canEdit,
       isInvited: u.status === "invited",
       invitedTxt: i.S("invitedTxt", { e: u.email }),
-      changeRole: () => c.openModal("roleChange", { uid: u.id, ref: i.L(u.name) }, { role: u.role }),
-      editScope: () => c.openModal("userScope", { uid: u.id, ref: i.L(u.name) }, { projects: u.scope === "all" ? [] : [...u.scope] }),
-      toggleStatus: () => c.openModal(u.status === "disabled" ? "userEnable" : "userDisable", { uid: u.id, ref: i.L(u.name) }),
+      changeRole: () =>
+        c.openModal("roleChange", { uid: u.id, ref: i.L(u.name) }, { role: u.role }),
+      editScope: () =>
+        c.openModal(
+          "userScope",
+          { uid: u.id, ref: i.L(u.name) },
+          { projects: u.scope === "all" ? [] : [...u.scope] },
+        ),
+      toggleStatus: () =>
+        c.openModal(u.status === "disabled" ? "userEnable" : "userDisable", {
+          uid: u.id,
+          ref: i.L(u.name),
+        }),
       editProfile: () =>
         c.openModal(
           "userEdit",
           { uid: u.id },
-          { nameAr: u.name.ar, nameEn: u.name.en, titleAr: u.title.ar, titleEn: u.title.en, phone: "", empNo: u.employeeNo ?? "" },
+          {
+            nameAr: u.name.ar,
+            nameEn: u.name.en,
+            titleAr: u.title.ar,
+            titleEn: u.title.en,
+            phone: "",
+            empNo: u.employeeNo ?? "",
+          },
         ),
       canMfaReset: u.status !== "invited",
       resetMfa: () => c.openModal("userMfaReset", { uid: u.id, ref: i.L(u.name) }),

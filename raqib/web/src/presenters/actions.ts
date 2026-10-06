@@ -33,8 +33,17 @@ export interface Actions {
   createGuard(input: GuardInput): Promise<void>;
   updateGuard(id: string, patch: Partial<Omit<GuardInput, "employeeNo">>): Promise<void>;
   setGuardStatus(id: string, status: Guard["status"]): Promise<void>;
-  reassignAction(id: string, input: { responsibleId?: string; dueDate?: string; reason: string }): Promise<void>;
-  raiseObservation(input: { projectId: string; siteId: string; text: string; note?: string; severity: Severity }): Promise<void>;
+  reassignAction(
+    id: string,
+    input: { responsibleId?: string; dueDate?: string; reason: string },
+  ): Promise<void>;
+  raiseObservation(input: {
+    projectId: string;
+    siteId: string;
+    text: string;
+    note?: string;
+    severity: Severity;
+  }): Promise<void>;
   updateProfile(
     id: string,
     patch: { name?: L10n; title?: L10n; phone?: string | null; employeeNo?: string | null },

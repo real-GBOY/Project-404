@@ -40,7 +40,9 @@ export function permissionTemplates(c: Ctx) {
           if (!ui.permEdit || !app || !ui.permDraft) return;
           const d: Matrix = JSON.parse(JSON.stringify(ui.permDraft));
           const cur = d[role]![m] ?? "";
-          d[role]![m] = cur.includes(a) ? cur.replace(a, "") : actions.filter((x) => (cur + a).includes(x)).join("");
+          d[role]![m] = cur.includes(a)
+            ? cur.replace(a, "")
+            : actions.filter((x) => (cur + a).includes(x)).join("");
           set({ permDraft: d });
         },
       };
@@ -61,7 +63,13 @@ export function permissionTemplates(c: Ctx) {
           const now = after.includes(a);
           if (was !== now) {
             const ref = `${i.L(ROLE_LABEL[r])} · ${i.S(`pm_${m}`)} · ${i.S(`pa_${a}`)}`;
-            diff.push({ t: `${ref}: ${now ? i.S("on") : i.S("off")}`, ref, prev: was ? i.S("on") : i.S("off"), next: now ? i.S("on") : i.S("off"), c: now ? C.status.success.fg : C.status.danger.fg });
+            diff.push({
+              t: `${ref}: ${now ? i.S("on") : i.S("off")}`,
+              ref,
+              prev: was ? i.S("on") : i.S("off"),
+              next: now ? i.S("on") : i.S("off"),
+              c: now ? C.status.success.fg : C.status.danger.fg,
+            });
           }
         }
       }
@@ -69,7 +77,9 @@ export function permissionTemplates(c: Ctx) {
   }
 
   // project scope matrix (people whose scope is by assignment)
-  const staff = (data.users ?? []).filter((u) => !["guard", "qm", "gm"].includes(u.role) && u.status !== "disabled");
+  const staff = (data.users ?? []).filter(
+    (u) => !["guard", "qm", "gm"].includes(u.role) && u.status !== "disabled",
+  );
   const sd = ui.scopeEdit ? ui.scopeDraft : null;
   const projects = data.projects ?? [];
   const scopeOf = (u: (typeof staff)[number]): string[] => (u.scope === "all" ? [] : u.scope);
@@ -103,7 +113,10 @@ export function permissionTemplates(c: Ctx) {
       for (const p of projects) {
         if (a.includes(p.id) !== b.includes(p.id)) {
           changed = true;
-          sdiff.push({ t: `${i.L(u.name)} · ${p.code}: ${b.includes(p.id) ? i.S("added") : i.S("removed")}`, c: b.includes(p.id) ? C.status.success.fg : C.status.danger.fg });
+          sdiff.push({
+            t: `${i.L(u.name)} · ${p.code}: ${b.includes(p.id) ? i.S("added") : i.S("removed")}`,
+            c: b.includes(p.id) ? C.status.success.fg : C.status.danger.fg,
+          });
         }
       }
       if (changed) scopeChanges.push({ userId: u.id, projectIds: b });

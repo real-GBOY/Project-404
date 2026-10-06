@@ -222,7 +222,11 @@ export function inspectionWorkspace(c: Ctx, insp: Inspection, visit: Visit | und
             lockTxt: i.S("lockedItem"),
             text: i.L(q.text),
             wTxt: i.S("weight", { w: q.weight }),
-            border: q.flagged ? C.status.warning.borderStrong : nc ? C.status.danger.border : C.border.hairline,
+            border: q.flagged
+              ? C.status.warning.borderStrong
+              : nc
+                ? C.status.danger.border
+                : C.border.hairline,
             opts,
             flagged: q.flagged,
             flagMsg: "",

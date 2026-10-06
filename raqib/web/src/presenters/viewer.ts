@@ -2,9 +2,22 @@ import type { EvidenceItem } from "@/api/types";
 import type { Ctx } from "./context";
 
 /** Open the protected viewer for a stored evidence file. Bytes are only fetched through the authorized endpoint. */
-export function openEvidence(c: Ctx, e: Pick<EvidenceItem, "id" | "name" | "kind" | "mime" | "sizeBytes" | "at" | "by">, supports: string): void {
+export function openEvidence(
+  c: Ctx,
+  e: Pick<EvidenceItem, "id" | "name" | "kind" | "mime" | "sizeBytes" | "at" | "by">,
+  supports: string,
+): void {
   c.set({
-    viewer: { id: e.id, name: e.name, kind: e.kind, mime: e.mime, sizeBytes: e.sizeBytes, at: e.at, by: e.by, link: supports },
+    viewer: {
+      id: e.id,
+      name: e.name,
+      kind: e.kind,
+      mime: e.mime,
+      sizeBytes: e.sizeBytes,
+      at: e.at,
+      by: e.by,
+      link: supports,
+    },
     viewerUrl: null,
     viewerReq: e.kind !== "video",
     viewerErr: false,
@@ -31,7 +44,11 @@ export function viewerVM(c: Ctx, onDownload: (id: string, name: string) => void)
     videoUrl: v.kind === "video" ? ui.viewerUrl : null,
     linked: !!ui.viewerUrl && v.kind === "video",
     linkTxt: i.S("vw_loaded"),
-    protectedTxt: ui.viewerErr ? i.S("vw_failed") : loading ? i.S("vw_loading") : i.S("vw_protectedNote"),
+    protectedTxt: ui.viewerErr
+      ? i.S("vw_failed")
+      : loading
+        ? i.S("vw_loading")
+        : i.S("vw_protectedNote"),
     reqLink: () => set({ viewerReq: true, viewerErr: false }),
     meta: [
       { k: i.S("vw_type"), v: v.mime },
@@ -40,7 +57,9 @@ export function viewerVM(c: Ctx, onDownload: (id: string, name: string) => void)
       ...(v.by ? [{ k: i.S("vw_by"), v: v.by }] : []),
       { k: i.S("vw_for"), v: v.link },
     ],
-    canDownload: ["inspections", "reports"].some((m) => me.permissions[m as "inspections" | "reports"].includes("D")),
+    canDownload: ["inspections", "reports"].some((m) =>
+      me.permissions[m as "inspections" | "reports"].includes("D"),
+    ),
     download: () => onDownload(v.id, v.name),
   };
 }
