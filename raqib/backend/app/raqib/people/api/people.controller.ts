@@ -1,11 +1,20 @@
-import { Body, Controller, Get, HttpCode, Param, Post, Put, UseGuards, Query } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Param, Patch, Post, Put, UseGuards, Query } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
 import { ZodBody } from "@core/http/zod.pipe.js";
 import { Allow, AccessGuard, Caller, SetupRoute } from "@raqib/raqib/access/access.guard.js";
 import type { Access } from "@raqib/raqib/access/access.js";
 import { PeopleService } from "../application/people-service.js";
-import { changeRoleSchema, setScopeSchema, setStatusSchema, type ChangeRoleBody, type SetScopeBody, type SetStatusBody } from "../validation/people.schema.js";
+import {
+  changeRoleSchema,
+  setScopeSchema,
+  setStatusSchema,
+  updateProfileSchema,
+  type ChangeRoleBody,
+  type SetScopeBody,
+  type SetStatusBody,
+  type UpdateProfileBody,
+} from "../validation/people.schema.js";
 import { parsePage, toPage } from "@raqib/raqib/shared/paging.js";
 
 @ApiTags("raqib · people")
@@ -34,6 +43,14 @@ export class PeopleController {
   @Allow("users", "V")
   get(@Param("id") id: string, @Caller() who: Access) {
     return this.service.get(id, who);
+  }
+
+  /** Correct how a person is named, titled and reached. Role, scope and status have their own routes. */
+  @Patch("users/:id")
+  @Allow("users", "E")
+  updateProfile(@Param("id") id: string, @Body(ZodBody(updateProfileSchema)) b: UpdateProfileBody, @Caller() who: Access) {
+    const { reason, ...patch } = b;
+    return this.service.updateProfile(id, patch, reason, who);
   }
 
   @Put("users/:id/role")

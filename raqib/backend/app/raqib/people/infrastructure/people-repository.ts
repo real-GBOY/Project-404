@@ -116,6 +116,23 @@ export class PeopleRepository {
     await raqibDb().updateTable("raqib_profiles").set({ role_key: role, title_ar: titleAr, title_en: titleEn }).where("user_id", "=", userId).execute();
   }
 
+  async updateProfile(
+    userId: string,
+    patch: { name?: { ar: string; en: string }; title?: { ar: string; en: string }; phone?: string | null; employeeNo?: string | null },
+  ): Promise<void> {
+    const set: Record<string, unknown> = {};
+    if (patch.name) Object.assign(set, { name_ar: patch.name.ar, name_en: patch.name.en });
+    if (patch.title) Object.assign(set, { title_ar: patch.title.ar, title_en: patch.title.en });
+    if (patch.phone !== undefined) set.phone = patch.phone || null;
+    if (patch.employeeNo !== undefined) set.employee_no = patch.employeeNo || null;
+    if (!Object.keys(set).length) return;
+    await raqibDb()
+      .updateTable("raqib_profiles")
+      .set(set as never)
+      .where("user_id", "=", userId)
+      .execute();
+  }
+
   async setStatus(userId: string, status: PersonStatus): Promise<void> {
     await raqibDb().updateTable("raqib_profiles").set({ status }).where("user_id", "=", userId).execute();
   }

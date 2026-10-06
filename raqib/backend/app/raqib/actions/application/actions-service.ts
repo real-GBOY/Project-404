@@ -188,6 +188,43 @@ export class ActionsService {
     return this.get(id, who);
   }
 
+  /**
+   * Hand an open action to someone else and/or move its due date. A closed action is history and cannot change. The new
+   * person is told, and an overdue warning can fire again for the new date. The reason is part of the action's trail.
+   */
+  async reassign(id: string, input: { responsibleId?: string; dueDate?: string; reason: string }, who: Access): Promise<ActionView> {
+    requireCan(who, "actions", "A");
+    await this.uow.transaction(async () => {
+      const a = await this.repo.find(id, true);
+      if (!a) throw NotFound("raqib.action_not_found", "Action not found.");
+      requireProject(who, a.projectId);
+      if (a.status === "closed") throw Conflict("raqib.invalid_transition", "A closed action cannot be changed.");
+      const responsibleId = input.responsibleId ?? a.responsibleId;
+      const dueDate = input.dueDate ?? a.dueDate;
+      if (responsibleId === a.responsibleId && dueDate === a.dueDate) throw ValidationError("raqib.nothing_to_change", "Nothing was changed.");
+      if (dueDate !== a.dueDate && dueDate < who.today) throw ValidationError("raqib.due_in_past", "The due date cannot be in the past.");
+      if (responsibleId !== a.responsibleId) {
+        const eligible = await this.access.holders("actions", "S", a.projectId, who.today);
+        if (!eligible.includes(responsibleId)) throw ValidationError("raqib.invalid_responsible", "This person cannot be given actions on this project.");
+        if (responsibleId === who.userId && a.status === "quality_review")
+          throw Forbidden("raqib.self_review", "You cannot take over an action you would review.");
+      }
+      await this.repo.update(a.id, { responsibleId, dueDate, overdueNotifiedAt: null });
+      await this.repo.appendEvent({ actionId: a.id, kind: "reassigned", fromStatus: a.status, toStatus: a.status, text: input.reason, ...actorOf(who) });
+      await this.audit.record({
+        actorId: who.userId,
+        action: "raqib.action.reassigned",
+        resourceType: "raqib_action",
+        resourceId: a.id,
+        before: { responsibleId: a.responsibleId, dueDate: a.dueDate },
+        after: { responsibleId, dueDate },
+        metadata: { reason: input.reason },
+      });
+      if (responsibleId !== a.responsibleId) await this.events.publish(actionAssigned({ actionId: a.id, actorId: who.userId }));
+    });
+    return this.get(id, who);
+  }
+
   async comment(id: string, text: string, who: Access): Promise<ActionView> {
     await this.uow.transaction(async () => {
       const a = await this.readable(id, who);

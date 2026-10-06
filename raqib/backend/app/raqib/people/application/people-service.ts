@@ -12,6 +12,8 @@ import { requireCan, type Access } from "@raqib/raqib/access/access.js";
 import { ALL_PROJECT_ROLES, ROLE_KEYS, type RoleKey } from "@raqib/raqib/shared/modules.js";
 import { initials } from "@raqib/raqib/shared/l10n.js";
 import { coreRoleKey } from "@raqib/raqib/shared/roles.js";
+import { isUniqueViolation } from "@raqib/raqib/shared/pg-errors.js";
+import type { UpdateProfileBody } from "../validation/people.schema.js";
 import type { PersonView } from "../domain/person.js";
 import { PeopleRepository, type ProfileRecord } from "../infrastructure/people-repository.js";
 import type { Page } from "@raqib/raqib/shared/paging.js";
@@ -161,6 +163,32 @@ export class PeopleService {
         metadata: { reason },
       });
       return this.view(target, await this.repo.activeProjectIds(id, who.today));
+    });
+  }
+
+  async updateProfile(id: string, patch: Omit<UpdateProfileBody, "reason">, reason: string | undefined, who: Access): Promise<PersonView> {
+    requireCan(who, "users", "E");
+    return this.uow.transaction(async () => {
+      const target = await this.repo.find(id);
+      if (!target) throw NotFound("raqib.user_not_found", "User not found.");
+      if (target.roleKey === "qm" && who.role !== "qm") throw Forbidden("raqib.role_escalation", "Only Quality Management can change this account.");
+      try {
+        await this.repo.updateProfile(id, patch);
+      } catch (err) {
+        if (isUniqueViolation(err, "raqib_profiles_employee_uq")) throw Conflict("raqib.employee_taken", "Another person already has this employee number.");
+        throw err;
+      }
+      const next = (await this.repo.find(id))!;
+      await this.audit.record({
+        actorId: who.userId,
+        action: "raqib.user.profile_updated",
+        resourceType: "raqib_user",
+        resourceId: id,
+        before: { nameEn: target.nameEn, titleEn: target.titleEn, employeeNo: target.employeeNo },
+        after: { nameEn: next.nameEn, titleEn: next.titleEn, employeeNo: next.employeeNo },
+        metadata: { reason: reason ?? null, phoneChanged: patch.phone !== undefined },
+      });
+      return this.view(next, this.scopeOf(next.roleKey, await this.repo.activeProjectIds(id, who.today)));
     });
   }
 

@@ -171,7 +171,16 @@ export class ActionsRepository {
 
   async update(
     id: string,
-    patch: Partial<{ status: ActionStatus; round: number; startedAt: Date; submittedAt: Date; closedAt: Date; overdueNotifiedAt: Date }>,
+    patch: Partial<{
+      status: ActionStatus;
+      round: number;
+      startedAt: Date;
+      submittedAt: Date;
+      closedAt: Date;
+      overdueNotifiedAt: Date | null;
+      responsibleId: string;
+      dueDate: string;
+    }>,
   ): Promise<void> {
     const set: Record<string, unknown> = {};
     if (patch.status) set.status = patch.status;
@@ -179,7 +188,9 @@ export class ActionsRepository {
     if (patch.startedAt) set.started_at = patch.startedAt;
     if (patch.submittedAt) set.submitted_at = patch.submittedAt;
     if (patch.closedAt) set.closed_at = patch.closedAt;
-    if (patch.overdueNotifiedAt) set.overdue_notified_at = patch.overdueNotifiedAt;
+    if (patch.overdueNotifiedAt !== undefined) set.overdue_notified_at = patch.overdueNotifiedAt;
+    if (patch.responsibleId) set.responsible_id = patch.responsibleId;
+    if (patch.dueDate) set.due_date = patch.dueDate;
     await raqibDb()
       .updateTable("raqib_corrective_actions")
       .set(set as never)

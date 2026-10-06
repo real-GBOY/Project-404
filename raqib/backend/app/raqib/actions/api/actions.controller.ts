@@ -19,6 +19,9 @@ const createSchema = z
   .strict();
 const commentSchema = z.object({ text: z.string().trim().min(1).max(1000) }).strict();
 const returnSchema = z.object({ reason: z.string().trim().min(3).max(1000) }).strict();
+const reassignSchema = z
+  .object({ responsibleId: z.string().min(1).max(60).optional(), dueDate: date.optional(), reason: z.string().trim().min(3).max(1000) })
+  .strict();
 const closeSchema = z.object({ comment: z.string().trim().max(1000).optional() }).strict();
 
 @ApiTags("raqib · corrective actions")
@@ -83,6 +86,14 @@ export class ActionsController {
   @Allow("actions", "P")
   close(@Param("id") id: string, @Body(ZodBody(closeSchema)) b: z.infer<typeof closeSchema>, @Caller() who: Access) {
     return this.service.step(id, "close", { text: b.comment }, who);
+  }
+
+  /** Move an open action to another responsible person and/or a new due date, with a reason. */
+  @Post("actions/:id/reassign")
+  @HttpCode(200)
+  @Allow("actions", "A")
+  reassign(@Param("id") id: string, @Body(ZodBody(reassignSchema)) b: z.infer<typeof reassignSchema>, @Caller() who: Access) {
+    return this.service.reassign(id, b, who);
   }
 
   @Post("actions/:id/comments")
