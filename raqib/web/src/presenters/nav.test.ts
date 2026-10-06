@@ -54,12 +54,13 @@ describe("visibleNav (UX only — the backend enforces every route)", () => {
       "permissions",
       "settings",
       "confidential",
+      "account",
     ]);
-    expect(visibleNav(me("pm", { projects: "VD" }))).toEqual(["overview", "projects"]);
+    expect(visibleNav(me("pm", { projects: "VD" }))).toEqual(["overview", "projects", "account"]);
   });
 
   it("follows an edited template, not the role name", () => {
-    expect(visibleNav(me("ins", {}))).toEqual(["overview"]);
-    expect(visibleNav(me("ins", { projects: "V" }))).toEqual(["overview"]); // inspectors' nav never includes projects
+    expect(visibleNav(me("ins", {}))).toEqual(["overview", "account"]);
+    expect(visibleNav(me("ins", { projects: "V" }))).toEqual(["overview", "account"]); // inspectors' nav never includes projects
   });
 });

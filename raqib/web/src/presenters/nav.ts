@@ -24,6 +24,7 @@ export const NAV_META: Record<string, { g: string; l: L10n }> = {
   audit: { g: "admin", l: { ar: "سجل التدقيق", en: "Audit log" } },
   settings: { g: "admin", l: { ar: "الإعدادات", en: "Settings" } },
   confidential: { g: "restricted", l: { ar: "البلاغات السرية", en: "Confidential reports" } },
+  account: { g: "me", l: { ar: "إعداداتي", en: "My settings" } },
 };
 
 export const NAV_GROUPS: Record<string, L10n> = {
@@ -32,6 +33,7 @@ export const NAV_GROUPS: Record<string, L10n> = {
   insight: { ar: "التقارير والتحليل", en: "Insight" },
   admin: { ar: "الإدارة", en: "Administration" },
   restricted: { ar: "منطقة مقيدة", en: "Restricted" },
+  me: { ar: "حسابي", en: "My account" },
 };
 
 /** Display order per role. */
@@ -53,6 +55,7 @@ export const ROLE_NAV: Record<RoleKey, string[]> = {
     "audit",
     "settings",
     "confidential",
+    "account",
   ],
   qe: [
     "overview",
@@ -66,12 +69,22 @@ export const ROLE_NAV: Record<RoleKey, string[]> = {
     "reports",
     "analytics",
     "forms",
+    "account",
   ],
-  pm: ["overview", "projects", "observations", "actions", "training", "reports", "analytics"],
-  ins: ["overview", "visits", "inspections"],
-  gs: ["overview", "guards", "observations", "training"],
-  guard: ["overview", "confidential"],
-  gm: ["overview", "analytics", "reports", "audit", "confidential"],
+  pm: [
+    "overview",
+    "projects",
+    "observations",
+    "actions",
+    "training",
+    "reports",
+    "analytics",
+    "account",
+  ],
+  ins: ["overview", "visits", "inspections", "account"],
+  gs: ["overview", "guards", "observations", "training", "account"],
+  guard: ["overview", "confidential", "account"],
+  gm: ["overview", "analytics", "reports", "audit", "confidential", "account"],
 };
 
 /** Nav entry → the template module that must grant View. */
@@ -112,13 +125,14 @@ export const ENABLED_NAV: ReadonlySet<string> = new Set([
   "users",
   "permissions",
   "settings",
+  "account",
 ]);
 
 export function visibleNav(me: Me): string[] {
   const t = me.permissions;
   return ROLE_NAV[me.role].filter((k) => {
     if (!ENABLED_NAV.has(k)) return false;
-    if (k === "overview" || k === "confidential") return true;
+    if (k === "overview" || k === "confidential" || k === "account") return true;
     if (k === "reviews") return t.inspections.includes("R") || t.inspections.includes("P");
     if (k === "inspections") return t.inspections.includes("S");
     const m = MODULE_OF_NAV[k];

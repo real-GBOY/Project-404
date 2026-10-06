@@ -30,10 +30,10 @@ export function AccountBar({ me }: { me: Me }) {
         {me.email}
       </span>
       <button
-        onClick={() => navigate("/account/security")}
+        onClick={() => navigate("/account")}
         style={{ ...FORM.barButton, marginInlineStart: "auto" }}
       >
-        {i.S("acct_title")}
+        {i.S("acct_settingsTitle")}
       </button>
       <button onClick={() => auth.logout()} style={FORM.barButton}>
         {i.S("acct_signOut")}

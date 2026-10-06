@@ -98,4 +98,28 @@ export const STRINGS_ACCOUNT: Record<string, readonly [string, string]> = {
     "تسجيل الخروج التلقائي بعد {n} دقيقة من عدم النشاط.",
     "You are signed out automatically after {n} minutes of inactivity.",
   ],
+  acct_settingsTitle: ["إعداداتي", "My settings"],
+  acct_settingsSub: [
+    "ملفك الشخصي وتفضيلاتك وأمان حسابك.",
+    "Your profile, your preferences and the security of your account.",
+  ],
+  acct_profile: ["الملف الشخصي", "Profile"],
+  acct_pName: ["الاسم", "Name"],
+  acct_pTitle: ["المسمى الوظيفي", "Job title"],
+  acct_pRole: ["الدور", "Role"],
+  acct_pEmail: ["البريد الإلكتروني", "Email"],
+  acct_pEmployee: ["الرقم الوظيفي", "Employee number"],
+  acct_pScope: ["نطاق العمل", "Work scope"],
+  acct_pLast: ["آخر نشاط", "Last active"],
+  acct_profileNote: [
+    "يديرها مدير الجودة. للتعديل تواصل معه.",
+    "Managed by the quality manager. Ask them to change anything here.",
+  ],
+  acct_prefs: ["التفضيلات", "Preferences"],
+  acct_language: ["لغة الواجهة", "Interface language"],
+  acct_languageBody: [
+    "تُحفظ اللغة على هذا الجهاز وتُطبّق فورًا.",
+    "The language is remembered on this device and applies straight away.",
+  ],
+  acct_signOutBody: ["أنهِ جلستك على هذا الجهاز.", "End your session on this device."],
 };

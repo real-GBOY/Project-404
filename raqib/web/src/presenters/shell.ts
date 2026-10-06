@@ -55,7 +55,7 @@ export function shellVM(c: Ctx, scr: string, pageTitle: string) {
     hpad: mob ? "16px" : "24px",
     mainCols: ui.w < 1080 ? "minmax(0,1fr)" : "minmax(0,1.85fr) minmax(320px,1fr)",
     sideW: ui.w < 1180 ? "216px" : "244px",
-    navGroups: ["ops", "people", "insight", "admin", "restricted"]
+    navGroups: ["ops", "people", "insight", "admin", "restricted", "me"]
       .map((g) => ({
         label: i.L(NAV_GROUPS[g]),
         restricted: g === "restricted",

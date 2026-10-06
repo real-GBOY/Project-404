@@ -7,6 +7,7 @@ import { Modal } from "@/components/Modal";
 import { Toast } from "@/components/Toast";
 import { DEMO_MODE } from "@/config";
 import { AccountBar } from "@/features/account/AccountBar";
+import { AccountScreen } from "@/features/account/AccountScreen";
 import { DemoBar } from "@/features/demo/DemoBar";
 import { useSyncState } from "@/hooks/use-sync-state";
 import { SyncStatus } from "@/components/SyncStatus";
@@ -134,6 +135,8 @@ export function Workspace({ me }: { me: Me }) {
                 <DataError i={i} error={error} onRetry={retry} pad={vm.pad} />
               ) : vm.loading ? (
                 <LoadingSkeleton vm={vm} />
+              ) : vm.is.account ? (
+                <AccountScreen me={me} pad={vm.pad} title={vm.pageTitle} />
               ) : (
                 SCREENS.filter(([k]) => vm.is[k]).map(([k, Screen]) => <Screen key={k} vm={vm} />)
               )}

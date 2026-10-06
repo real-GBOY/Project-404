@@ -91,10 +91,10 @@ export function DemoBar({ me, lang }: { me: Me; lang: Lang }) {
       </label>
       <LanguageSegments lang={lang} />
       <button
-        onClick={() => navigate("/account/security")}
+        onClick={() => navigate("/account")}
         style={{ ...FORM.barButton, height: 26, marginInlineStart: "auto" }}
       >
-        Account
+        Settings
       </button>
       <button onClick={() => auth.logout()} style={{ ...FORM.barButton, height: 26 }}>
         Sign out

@@ -59,6 +59,7 @@ const FLAG: Record<string, string> = {
   user: "user",
   permissions: "perms",
   settings: "settings",
+  account: "account",
 };
 
 /** The denied screen (design: vmDenied). The backend produced the refusal; this only explains it. */
