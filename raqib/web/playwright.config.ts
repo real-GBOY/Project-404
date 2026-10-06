@@ -9,8 +9,11 @@ import { defineConfig } from "@playwright/test";
  * Needs PostgreSQL on localhost (override with RAQIB_E2E_PG_ADMIN) and Google Chrome (or set PLAYWRIGHT_CHANNEL / install
  * Playwright's own browser and drop the channel). The backend runs on :3399, the web app on :4599.
  */
-const API = "http://localhost:3399";
-const WEB = "http://localhost:4599";
+// E2E_WEB + E2E_API aim the suite at an already running deployment (for example production) instead of starting local servers.
+// Only run the specs that are safe against shared demo data there (see docs/raqib-deployment.md); never the sign-in lockout specs.
+const REMOTE = !!process.env.E2E_WEB;
+const API = process.env.E2E_API ?? "http://localhost:3399";
+const WEB = process.env.E2E_WEB ?? "http://localhost:4599";
 const DB = process.env.RAQIB_E2E_DB ?? "raqib_e2e";
 const DB_URL = (
   process.env.RAQIB_E2E_PG_ADMIN ?? "postgres://postgres:postgres@localhost:5432/postgres"
@@ -32,34 +35,37 @@ export default defineConfig({
     locale: "en-US",
     serviceWorkers: "allow",
   },
-  webServer: [
-    {
-      command: "node scripts/e2e-db.mjs && node --import @swc-node/register/esm-register main.ts",
-      cwd: "../backend",
-      url: `${API}/api/health/ready`,
-      timeout: 240_000,
-      reuseExistingServer: !!process.env.RAQIB_E2E_REUSE,
-      env: {
-        NODE_ENV: "development",
-        AURIC_PORT: "3399",
-        AURIC_DATABASE_URL: DB_URL,
-        AURIC_JWT_SECRET: "e2e-secret-e2e-secret-e2e-secret-123456",
-        AURIC_APP_URL: WEB,
-        AURIC_FILE_STORAGE_DRIVER: "local",
-        AURIC_FILE_STORAGE_PATH: "./storage/e2e",
-        AURIC_LOG_LEVEL: "warn",
-        RAQIB_SEED_DEMO: "true",
-        RAQIB_DEMO_HISTORY_DAYS: "14",
-        RAQIB_ENFORCE_ACCOUNT_POLICY: "false",
-        RAQIB_TRUSTED_PROXY_HOPS: "1",
-      },
-    },
-    {
-      command: "npm run build && npx vite preview",
-      url: WEB,
-      timeout: 240_000,
-      reuseExistingServer: !!process.env.RAQIB_E2E_REUSE,
-      env: { VITE_DEMO: "true", RAQIB_API_PROXY_TARGET: API },
-    },
-  ],
+  webServer: REMOTE
+    ? []
+    : [
+        {
+          command:
+            "node scripts/e2e-db.mjs && node --import @swc-node/register/esm-register main.ts",
+          cwd: "../backend",
+          url: `${API}/api/health/ready`,
+          timeout: 240_000,
+          reuseExistingServer: !!process.env.RAQIB_E2E_REUSE,
+          env: {
+            NODE_ENV: "development",
+            AURIC_PORT: "3399",
+            AURIC_DATABASE_URL: DB_URL,
+            AURIC_JWT_SECRET: "e2e-secret-e2e-secret-e2e-secret-123456",
+            AURIC_APP_URL: WEB,
+            AURIC_FILE_STORAGE_DRIVER: "local",
+            AURIC_FILE_STORAGE_PATH: "./storage/e2e",
+            AURIC_LOG_LEVEL: "warn",
+            RAQIB_SEED_DEMO: "true",
+            RAQIB_DEMO_HISTORY_DAYS: "14",
+            RAQIB_ENFORCE_ACCOUNT_POLICY: "false",
+            RAQIB_TRUSTED_PROXY_HOPS: "1",
+          },
+        },
+        {
+          command: "npm run build && npx vite preview",
+          url: WEB,
+          timeout: 240_000,
+          reuseExistingServer: !!process.env.RAQIB_E2E_REUSE,
+          env: { VITE_DEMO: "true", RAQIB_API_PROXY_TARGET: API },
+        },
+      ],
 });

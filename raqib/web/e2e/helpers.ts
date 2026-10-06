@@ -1,6 +1,8 @@
 import { createHmac } from "node:crypto";
 import { expect, type APIRequestContext, type Page } from "@playwright/test";
 
+/** The API the specs set up and check state through (a local throw-away backend unless E2E_API says otherwise). */
+export const API_ORIGIN = process.env.E2E_API ?? "http://localhost:3399";
 export const PASSWORD = "demo-password-2026";
 export const ACCOUNTS = {
   qm: "s.alotaibi@raqib.sa",
@@ -24,7 +26,7 @@ export async function apiLogin(
   password = PASSWORD,
   otp?: string,
 ): Promise<{ token: string; refresh: string }> {
-  const res = await request.post("http://localhost:3399/api/auth/login", {
+  const res = await request.post(`${API_ORIGIN}/api/auth/login`, {
     data: { email, password, ...(otp ? { otp } : {}) },
     headers: { "x-forwarded-for": nextIp() },
   });
@@ -40,7 +42,7 @@ export async function api<T = unknown>(
   path: string,
   data?: unknown,
 ): Promise<T> {
-  const res = await request.fetch(`http://localhost:3399/api${path}`, {
+  const res = await request.fetch(`${API_ORIGIN}/api${path}`, {
     method,
     data,
     headers: { authorization: `Bearer ${token}` },
@@ -58,6 +60,17 @@ export async function useEnglish(page: Page): Promise<void> {
   await page.route("**/api/**", (route) =>
     route.continue({ headers: { ...route.request().headers(), "x-forwarded-for": ip } }),
   );
+  // E2E_CSP: send this Content-Security-Policy with every page, to prove the app works under a policy before it is shipped
+  const csp = process.env.E2E_CSP;
+  if (csp)
+    await page.route("**/*", async (route) => {
+      if (route.request().resourceType() !== "document") return route.fallback();
+      const res = await route.fetch();
+      await route.fulfill({
+        response: res,
+        headers: { ...res.headers(), "content-security-policy": csp },
+      });
+    });
   await page.addInitScript(() => {
     for (const k of Object.keys(localStorage)) if (/lang/i.test(k)) localStorage.removeItem(k);
     localStorage.setItem("raqib.lang", "en");
