@@ -31,7 +31,7 @@ fi
 
 echo "→ shipping to $SSH_USER@$SSH_HOST"
 tar -czf - -C raqib/backend/dist . | "${SSH[@]}" "cat > /tmp/raqib-backend.tgz"
-"${SCP[@]}" package.json package-lock.json raqib/backend/deploy-vps.sh "$SSH_USER@$SSH_HOST:/tmp/"
+"${SCP[@]}" package.json package-lock.json raqib/backend/deploy-vps.sh scripts/raqib-backup.sh raqib/backend/scripts/offsite-backup.mjs "$SSH_USER@$SSH_HOST:/tmp/"
 printf 'SERVICE=%s
 PORT=%s
 ' "$SERVICE" "$PORT" | "${SSH[@]}" "cat > /tmp/raqib-deploy.env"
@@ -42,8 +42,10 @@ echo "→ releasing on the box"
   sudo find '$BACKEND_DIR/dist' -mindepth 1 -delete
   sudo tar --no-same-owner -xzf /tmp/raqib-backend.tgz -C '$BACKEND_DIR/dist'
   sudo cp /tmp/package.json /tmp/package-lock.json /tmp/deploy-vps.sh '$BACKEND_DIR/'
+  sudo cp /tmp/raqib-backup.sh '$BACKEND_DIR/raqib-backup.sh'
+  sudo cp /tmp/offsite-backup.mjs '$BACKEND_DIR/offsite-backup.mjs'
   sudo cp /tmp/raqib-deploy.env '$BACKEND_DIR/deploy.env'
-  rm -f /tmp/raqib-backend.tgz /tmp/package.json /tmp/package-lock.json /tmp/deploy-vps.sh /tmp/raqib-deploy.env
+  rm -f /tmp/raqib-backend.tgz /tmp/package.json /tmp/package-lock.json /tmp/deploy-vps.sh /tmp/raqib-backup.sh /tmp/offsite-backup.mjs /tmp/raqib-deploy.env
   sudo env BACKEND_DIR='$BACKEND_DIR' SERVICE='$SERVICE' PORT='$PORT' bash '$BACKEND_DIR/deploy-vps.sh'
 "
 echo "✓ deployed raqib $REV — https://raqib.100-26-109-162.sslip.io/api/health"
