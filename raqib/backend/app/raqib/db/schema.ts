@@ -462,9 +462,9 @@ export type raqib_projects = {
   region_en: Generated<string>;
   manager_user_id: string | null;
   /**
-   * @kyselyType('active' | 'attention' | 'mobilizing')
+   * @kyselyType('active' | 'attention' | 'mobilizing' | 'closed')
    */
-  status: Generated<"active" | "attention" | "mobilizing">;
+  status: Generated<"active" | "attention" | "mobilizing" | "closed">;
   first_visit_date: Timestamp | null;
   archived_at: Timestamp | null;
   created_at: Generated<Timestamp>;

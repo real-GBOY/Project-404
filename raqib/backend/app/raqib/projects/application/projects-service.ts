@@ -1,7 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
 import type { UnitOfWork } from "@core/kernel/db/db.js";
 import { readInTenant } from "@core/kernel/db/db.js";
-import { Conflict, Forbidden, NotFound } from "@core/kernel/errors.js";
+import { Conflict, Forbidden, NotFound, ValidationError } from "@core/kernel/errors.js";
 import { AUDIT_LOGGER, UNIT_OF_WORK } from "@core/kernel/tokens.js";
 import type { IAuditLogger } from "@core/contracts/index.js";
 import { can, inScope, requireCan, requireProject, type Access } from "@raqib/raqib/access/access.js";
@@ -9,7 +9,7 @@ import { isUniqueViolation } from "@raqib/raqib/shared/pg-errors.js";
 import type { L10n } from "@raqib/raqib/shared/l10n.js";
 import { PeopleRepository } from "@raqib/raqib/people/infrastructure/people-repository.js";
 import { maskNationalId, type GuardView, type ProjectView, type SiteView } from "../domain/project.js";
-import { ProjectsRepository, type GuardRecord, type ProjectInput, type ProjectRecord } from "../infrastructure/projects-repository.js";
+import { ProjectsRepository, type GuardInput, type GuardRecord, type ProjectInput, type ProjectRecord } from "../infrastructure/projects-repository.js";
 
 @Injectable()
 export class ProjectsService {
@@ -179,6 +179,96 @@ export class ProjectsService {
     if (!can(who, "guardEval", "V") && !can(who, "training", "V")) {
       throw Forbidden("raqib.forbidden", "Your role is not permitted to view guards.");
     }
+  }
+
+  /** Everything a guard record may carry, for the audit trail. The national ID is never written there. */
+  private guardAudit(g: Partial<GuardRecord>) {
+    const { nationalId: _hidden, ...rest } = g;
+    return rest;
+  }
+
+  private async requireGuardAccount(userId: string | null | undefined): Promise<void> {
+    if (!userId) return;
+    const profile = await this.people.find(userId);
+    if (!profile || profile.roleKey !== "guard")
+      throw ValidationError("raqib.invalid_account", "The linked account must belong to a person with the guard role.");
+  }
+
+  private async guardWrite<T>(fn: () => Promise<T>): Promise<T> {
+    try {
+      return await fn();
+    } catch (err) {
+      if (isUniqueViolation(err, "raqib_guards_employee_uq")) throw Conflict("raqib.employee_taken", "A guard with this employee number already exists.");
+      if (isUniqueViolation(err, "raqib_guards_user_uq")) throw Conflict("raqib.account_already_linked", "That account is already linked to another guard.");
+      throw err;
+    }
+  }
+
+  async createGuard(input: GuardInput, who: Access): Promise<GuardView> {
+    requireCan(who, "projects", "E");
+    return this.guardWrite(() =>
+      this.uow.transaction(async () => {
+        if (!(await this.repo.find(input.projectId))) throw NotFound("raqib.project_not_found", "Project not found.");
+        requireProject(who, input.projectId);
+        await this.requireGuardAccount(input.userId);
+        const id = await this.repo.createGuard(input);
+        await this.audit.record({
+          actorId: who.userId,
+          action: "raqib.guard.created",
+          resourceType: "raqib_guard",
+          resourceId: id,
+          after: this.guardAudit({ ...input, id } as Partial<GuardRecord>),
+        });
+        return this.guardView((await this.repo.findGuard(id))!);
+      }),
+    );
+  }
+
+  async updateGuard(id: string, patch: Partial<Omit<GuardInput, "employeeNo">>, who: Access): Promise<GuardView> {
+    requireCan(who, "projects", "E");
+    return this.guardWrite(() =>
+      this.uow.transaction(async () => {
+        const before = await this.repo.findGuard(id);
+        if (!before) throw NotFound("raqib.guard_not_found", "Guard not found.");
+        requireProject(who, before.projectId);
+        if (patch.projectId && patch.projectId !== before.projectId) {
+          if (!(await this.repo.find(patch.projectId))) throw NotFound("raqib.project_not_found", "Project not found.");
+          requireProject(who, patch.projectId);
+        }
+        if (patch.userId !== undefined) await this.requireGuardAccount(patch.userId);
+        await this.repo.updateGuard(id, patch);
+        await this.audit.record({
+          actorId: who.userId,
+          action: "raqib.guard.updated",
+          resourceType: "raqib_guard",
+          resourceId: id,
+          before: this.guardAudit(before),
+          after: this.guardAudit({ ...patch, nationalId: undefined } as Partial<GuardRecord>),
+          metadata: patch.nationalId ? { nationalIdChanged: true } : {},
+        });
+        return this.guardView((await this.repo.findGuard(id))!);
+      }),
+    );
+  }
+
+  /** Take a guard off (or back onto) the roster. Their history stays; they just cannot be put on new visits. */
+  async setGuardStatus(id: string, status: "active" | "inactive", who: Access): Promise<GuardView> {
+    requireCan(who, "projects", "E");
+    return this.uow.transaction(async () => {
+      const g = await this.repo.findGuard(id);
+      if (!g) throw NotFound("raqib.guard_not_found", "Guard not found.");
+      requireProject(who, g.projectId);
+      await this.repo.setGuardStatus(id, status);
+      await this.audit.record({
+        actorId: who.userId,
+        action: "raqib.guard.status_changed",
+        resourceType: "raqib_guard",
+        resourceId: id,
+        before: { status: g.status },
+        after: { status },
+      });
+      return this.guardView((await this.repo.findGuard(id))!);
+    });
   }
 
   async guards(who: Access): Promise<GuardView[]> {

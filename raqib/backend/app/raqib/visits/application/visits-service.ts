@@ -193,6 +193,7 @@ export class VisitsService {
       return await this.uow.transaction(async () => {
         const project = await this.projects.find(input.projectId);
         if (!project) throw NotFound("raqib.project_not_found", "Project not found.");
+        if (project.status === "closed") throw Conflict("raqib.project_closed", "This project is closed and takes no new visits.");
         const site = await this.projects.findSite(input.siteId);
         if (!site || site.projectId !== input.projectId) throw ValidationError("raqib.site_mismatch", "The site does not belong to this project.");
         if (input.areaId) {

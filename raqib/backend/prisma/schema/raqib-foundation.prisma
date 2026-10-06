@@ -60,7 +60,7 @@ model raqib_projects {
   region_ar        String    @default("")
   region_en        String    @default("")
   manager_user_id  String?
-  /// @kyselyType('active' | 'attention' | 'mobilizing')
+  /// @kyselyType('active' | 'attention' | 'mobilizing' | 'closed')
   status           String    @default("active")
   first_visit_date DateTime? @db.Date
   archived_at      DateTime? @db.Timestamptz(6)

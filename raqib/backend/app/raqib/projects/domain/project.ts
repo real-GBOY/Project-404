@@ -1,6 +1,6 @@
 import type { L10n } from "@raqib/raqib/shared/l10n.js";
 
-export type ProjectStatus = "active" | "attention" | "mobilizing";
+export type ProjectStatus = "active" | "attention" | "mobilizing" | "closed";
 
 export interface AreaView {
   id: string;

@@ -6,11 +6,17 @@ import { Allow, AccessGuard, Caller } from "@raqib/raqib/access/access.guard.js"
 import type { Access } from "@raqib/raqib/access/access.js";
 import { ProjectsService } from "../application/projects-service.js";
 import {
+  createGuardSchema,
   createProjectSchema,
+  guardStatusSchema,
   nameSchema,
+  updateGuardSchema,
   updateProjectSchema,
+  type CreateGuardBody,
   type CreateProjectBody,
+  type GuardStatusBody,
   type NameBody,
+  type UpdateGuardBody,
   type UpdateProjectBody,
 } from "../validation/projects.schema.js";
 
@@ -76,6 +82,27 @@ export class ProjectsController {
   @Allow("projects", "E")
   archiveArea(@Param("id") id: string, @Caller() who: Access) {
     return this.service.archiveArea(id, who);
+  }
+
+  // Guards are managed with the project's edit right, and read through the same scope model (no template module of their own).
+  @Post("guards")
+  @HttpCode(201)
+  @Allow("projects", "E")
+  createGuard(@Body(ZodBody(createGuardSchema)) b: CreateGuardBody, @Caller() who: Access) {
+    return this.service.createGuard(b, who);
+  }
+
+  @Patch("guards/:id")
+  @Allow("projects", "E")
+  updateGuard(@Param("id") id: string, @Body(ZodBody(updateGuardSchema)) b: UpdateGuardBody, @Caller() who: Access) {
+    return this.service.updateGuard(id, b, who);
+  }
+
+  @Post("guards/:id/status")
+  @HttpCode(200)
+  @Allow("projects", "E")
+  setGuardStatus(@Param("id") id: string, @Body(ZodBody(guardStatusSchema)) b: GuardStatusBody, @Caller() who: Access) {
+    return this.service.setGuardStatus(id, b.status, who);
   }
 
   // Guards are read through the same scope model (no template module of their own).

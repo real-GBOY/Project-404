@@ -314,6 +314,38 @@ export class ProjectsRepository {
     return new Map(rows.map((r) => [r.project_id, r.n]));
   }
 
+  /** Change a guard's details. The employee number never changes (history and evaluations are keyed on it). */
+  async updateGuard(id: string, patch: Partial<Omit<GuardInput, "employeeNo">>): Promise<void> {
+    const set: Record<string, unknown> = {};
+    if (patch.projectId) set.project_id = patch.projectId;
+    if (patch.nationalId) set.national_id = seal(patch.nationalId);
+    if (patch.name) {
+      set.name_ar = patch.name.ar;
+      set.name_en = patch.name.en;
+    }
+    if (patch.post) {
+      set.post_ar = patch.post.ar;
+      set.post_en = patch.post.en;
+    }
+    if (patch.shift) set.shift = patch.shift;
+    if (patch.userId !== undefined) set.user_id = patch.userId;
+    if (!Object.keys(set).length) return;
+    set.updated_at = sql`now()`;
+    await raqibDb()
+      .updateTable("raqib_guards")
+      .set(set as never)
+      .where("id", "=", id)
+      .execute();
+  }
+
+  async setGuardStatus(id: string, status: "active" | "inactive"): Promise<void> {
+    await raqibDb()
+      .updateTable("raqib_guards")
+      .set({ status, updated_at: sql`now()` as never })
+      .where("id", "=", id)
+      .execute();
+  }
+
   async createGuard(input: GuardInput): Promise<string> {
     const id = raqibId("grd");
     await raqibDb()
