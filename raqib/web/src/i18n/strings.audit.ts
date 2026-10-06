@@ -1,0 +1,21 @@
+/** Translation table [ar, en]. Record types as the audit log names them. */
+export const STRINGS_AUDIT: Record<string, readonly [string, string]> = {
+  aent_file: ["ملف", "File"],
+  aent_raqib_account_request: ["طلب حساب", "Account request"],
+  aent_raqib_action: ["إجراء تصحيحي", "Corrective action"],
+  aent_raqib_area: ["منطقة", "Area"],
+  aent_raqib_evidence: ["دليل", "Evidence"],
+  aent_raqib_form: ["نموذج تفتيش", "Inspection form"],
+  aent_raqib_guard: ["حارس", "Guard"],
+  aent_raqib_inspection: ["تفتيش", "Inspection"],
+  aent_raqib_observation: ["ملاحظة", "Observation"],
+  aent_raqib_project: ["مشروع", "Project"],
+  aent_raqib_report: ["تقرير", "Report"],
+  aent_raqib_role_template: ["قالب صلاحيات", "Permission template"],
+  aent_raqib_settings: ["الإعدادات", "Settings"],
+  aent_raqib_site: ["موقع", "Site"],
+  aent_raqib_training: ["طلب تدريب", "Training request"],
+  aent_raqib_user: ["شخص", "Person"],
+  aent_raqib_visit: ["زيارة", "Visit"],
+  aent_user: ["حساب", "Account"],
+};

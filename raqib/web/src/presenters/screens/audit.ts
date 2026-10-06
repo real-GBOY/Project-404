@@ -1,11 +1,6 @@
 import type { Ctx } from "../context";
+import { actionLabel, changeText, entityLabel } from "./audit-text";
 import { ROLE_LABEL } from "./users";
-
-const short = (v: unknown): string => {
-  if (v == null) return "";
-  const s = typeof v === "string" ? v : JSON.stringify(v);
-  return s.length > 220 ? `${s.slice(0, 217)}…` : s;
-};
 
 /** Filters the audit screen is showing (UI state → backend query). */
 export function auditQuery(c: Ctx): {
@@ -27,9 +22,9 @@ export function auditLog(c: Ctx) {
   const patch = (k: "q" | "ent" | "who" | "from" | "to") => (e: { target: { value: string } }) =>
     set((s) => ({ afilters: { ...s.afilters, [k]: e.target.value } }));
   const rows = (data?.items ?? []).map((e) => ({
-    act: e.action,
+    act: actionLabel(e.action),
     at: i.fd(e.at, "dt"),
-    ent: e.entity,
+    ent: entityLabel(i, e.entity),
     ref: e.ref ?? "",
     who: i.L(e.actor.name),
     role: e.actor.role
@@ -38,8 +33,8 @@ export function auditLog(c: Ctx) {
     dev: e.correlationId ? e.correlationId.slice(0, 8) : "",
     reason: e.reason ?? "",
     hasReason: !!e.reason,
-    prev: short(e.before),
-    next: short(e.after),
+    prev: changeText(e.before),
+    next: changeText(e.after),
     hasChange: e.before != null || e.after != null,
   }));
   const any = !!(f.q || f.ent || f.who || f.from || f.to);
@@ -56,7 +51,7 @@ export function auditLog(c: Ctx) {
       to: f.to,
       onTo: patch("to"),
       entOpts: [{ v: "", l: i.S("allEntities") }].concat(
-        (data?.entities ?? []).map((x) => ({ v: x, l: x })),
+        (data?.entities ?? []).map((x) => ({ v: x, l: entityLabel(i, x) })),
       ),
       whoOpts: [{ v: "", l: i.S("allUsers") }].concat(
         (data?.actors ?? []).map((x) => ({ v: x.id, l: i.L(x.name) })),
