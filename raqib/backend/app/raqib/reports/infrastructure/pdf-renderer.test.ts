@@ -55,9 +55,33 @@ describe("PdfRenderer with Cloudflare Browser Rendering", () => {
     });
   });
 
-  it("turns a rate limit into a retry-later answer, and anything else that is not a pdf into 'unavailable', without leaking the token", async () => {
-    reply(429, "slow down");
+  it("retries a rate limit after the pause Cloudflare asks for, and succeeds when the next try is let through", async () => {
+    let n = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string, init: RequestInit) => {
+        calls.push({ url, init });
+        return Promise.resolve(++n === 1 ? new Response("slow down", { status: 429, headers: { "retry-after": "0" } }) : new Response(PDF, { status: 200 }));
+      }),
+    );
+    const out = await new PdfRenderer().render("<p>x</p>");
+    expect(out.equals(PDF)).toBe(true);
+    expect(calls).toHaveLength(2);
+  });
+
+  it("tells the person to try again when Cloudflare keeps refusing, after a bounded number of tries", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string, init: RequestInit) => {
+        calls.push({ url, init });
+        return Promise.resolve(new Response("slow down", { status: 429, headers: { "retry-after": "0" } }));
+      }),
+    );
     await expect(new PdfRenderer().render("<p>x</p>")).rejects.toMatchObject({ code: "raqib.pdf_busy", kind: "rate_limited" });
+    expect(calls).toHaveLength(3);
+  });
+
+  it("turns anything else that is not a pdf into 'unavailable', without leaking the token", async () => {
     reply(403, JSON.stringify({ errors: [{ message: "bad token tok-secret" }] }));
     const err = await new PdfRenderer().render("<p>x</p>").catch((e) => e as AppError);
     expect(err).toMatchObject({ code: "raqib.pdf_failed", kind: "unavailable" });

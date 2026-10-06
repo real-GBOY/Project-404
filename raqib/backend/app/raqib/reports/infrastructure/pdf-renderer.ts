@@ -8,6 +8,8 @@ import { RenderQueue, type QueueStats } from "./render-queue.js";
 const log = moduleLogger("raqib-pdf");
 /** A browser left idle this long is closed; the next report starts a fresh one. */
 const IDLE_CLOSE_MS = 60_000;
+/** Cloudflare Browser Rendering: tries per report when it answers 429. */
+const CLOUDFLARE_ATTEMPTS = 3;
 
 /**
  * HTML → PDF, by one of two drivers (see `resolvePdfDriver`): headless Chromium on the server (puppeteer-core; the binary is set
@@ -42,7 +44,9 @@ export class PdfRenderer implements OnApplicationShutdown {
   private q(): RenderQueue {
     if (!this.queue) {
       const c = readRaqibConfig();
-      this.queue = new RenderQueue({ concurrency: c.pdfConcurrency, maxQueue: c.pdfQueueMax, timeoutMs: c.pdfTimeoutMs });
+      // the hosted service is the strict one: render one report at a time
+      const concurrency = resolvePdfDriver(c) === "cloudflare" ? 1 : c.pdfConcurrency;
+      this.queue = new RenderQueue({ concurrency, maxQueue: c.pdfQueueMax, timeoutMs: c.pdfTimeoutMs });
     }
     return this.queue;
   }
@@ -103,29 +107,44 @@ export class PdfRenderer implements OnApplicationShutdown {
     );
   }
 
-  /** One REST call: the self-contained report HTML goes up, the PDF bytes come back. Same page options as the Chromium driver. */
+  /**
+   * One REST call: the self-contained report HTML goes up, the PDF bytes come back (same page options as the Chromium driver).
+   * Cloudflare answers a burst with 429 (its free plan is strict), so a refusal is retried a couple of times after the pause it asks
+   * for (`Retry-After`), all inside the render timeout; if it keeps refusing the person is told to try again in a moment.
+   */
   private async renderWithCloudflare(html: string): Promise<Buffer> {
     const cfg = readRaqibConfig();
-    const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(cfg.cfAccountId)}/browser-rendering/pdf`, {
-      method: "POST",
-      headers: { authorization: `Bearer ${cfg.cfApiToken}`, "content-type": "application/json" },
-      body: JSON.stringify({
-        html,
-        setJavaScriptEnabled: false,
-        gotoOptions: { waitUntil: "load" },
-        pdfOptions: { format: "a4", printBackground: true, preferCSSPageSize: true },
-      }),
-      signal: AbortSignal.timeout(cfg.pdfTimeoutMs),
+    const deadline = Date.now() + cfg.pdfTimeoutMs;
+    const url = `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(cfg.cfAccountId)}/browser-rendering/pdf`;
+    const body = JSON.stringify({
+      html,
+      setJavaScriptEnabled: false,
+      gotoOptions: { waitUntil: "load" },
+      pdfOptions: { format: "a4", printBackground: true, preferCSSPageSize: true },
     });
-    if (res.status === 429) {
-      throw new AppError({ code: "raqib.pdf_busy", message: "The PDF service is busy. Try again in a moment.", kind: "rate_limited" });
+    for (let attempt = 1; ; attempt++) {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { authorization: `Bearer ${cfg.cfApiToken}`, "content-type": "application/json" },
+        body,
+        signal: AbortSignal.timeout(Math.max(1_000, deadline - Date.now())),
+      });
+      if (res.status === 429) {
+        const asked = Number(res.headers.get("retry-after"));
+        const pause = Math.min(8_000, Math.max(200, Number.isFinite(asked) && res.headers.has("retry-after") ? asked * 1000 : 1_500 * attempt));
+        if (attempt < CLOUDFLARE_ATTEMPTS && Date.now() + pause < deadline) {
+          await new Promise((r) => setTimeout(r, pause));
+          continue;
+        }
+        throw new AppError({ code: "raqib.pdf_busy", message: "The PDF service is busy. Try again in a moment.", kind: "rate_limited" });
+      }
+      const bytes = Buffer.from(await res.arrayBuffer());
+      if (!res.ok || bytes.subarray(0, 4).toString("latin1") !== "%PDF") {
+        log.error({ status: res.status, body: bytes.subarray(0, 300).toString("utf8") }, "cloudflare browser rendering did not return a pdf");
+        throw new AppError({ code: "raqib.pdf_failed", message: "The PDF could not be generated.", kind: "unavailable" });
+      }
+      return bytes;
     }
-    const bytes = Buffer.from(await res.arrayBuffer());
-    if (!res.ok || bytes.subarray(0, 4).toString("latin1") !== "%PDF") {
-      log.error({ status: res.status, body: bytes.subarray(0, 300).toString("utf8") }, "cloudflare browser rendering did not return a pdf");
-      throw new AppError({ code: "raqib.pdf_failed", message: "The PDF could not be generated.", kind: "unavailable" });
-    }
-    return bytes;
   }
 
   async onApplicationShutdown(): Promise<void> {
