@@ -81,7 +81,7 @@ when and why:
   photos are re-stored without GPS and device metadata, and ClamAV can scan every file. Files go straight to
   **Cloudflare R2** over presigned URLs, and a nightly job removes uploads nobody attached.
 - **Reports that print properly.** Approval freezes an immutable report snapshot. PDFs render in Arabic and
-  English through a bounded queue on headless Chromium. Analytics and the audit log export as CSV and as native
+  English through a bounded queue, on headless Chromium or Cloudflare Browser Rendering. Analytics and the audit log export as CSV and as native
   Excel workbooks written by Raqib's own small xlsx writer, with spreadsheet-formula injection neutralised.
 - **Operable from day one.** Prometheus-style metrics and alert hooks, a health endpoint, scheduled jobs that
   elect a single leader with a Postgres advisory lock, retention and lifecycle jobs, and a provisioning script
@@ -97,7 +97,7 @@ when and why:
 | HTTP routes, all behind a declared permission | **121** |
 | Tenant tables with forced row-level security | **35** `raqib_*` tables, 11 migrations of hand-written SQL |
 | Roles · permission modules · rights | **7 · 14 · 8** |
-| Backend tests (unit, integration over real HTTP, authorization, RLS) | **249** in 31 files |
+| Backend tests (unit, integration over real HTTP, authorization, RLS) | **256** in 32 files |
 | Browser tests (real Chrome, real backend, offline, sign-in, MFA, downloads) | **28** |
 | Web unit tests, including architecture rules that fail the build on a layer violation | **41** |
 | Interface strings, each in Arabic and English | **1,772** |
@@ -153,13 +153,13 @@ The password is `demo-password-2026` for every account.
 
 | Suite | Command | What it covers |
 |---|---|---|
-| Backend | `cd raqib/backend && npm run ci` | typecheck · lint · format · 249 tests (real HTTP, authorization, tenant isolation, security, retention) · build |
+| Backend | `cd raqib/backend && npm run ci` | typecheck · lint · format · 256 tests (real HTTP, authorization, tenant isolation, security, retention) · build |
 | Web | `cd raqib/web && npm run typecheck && npm run lint && npm run format:check && npm test && npm run build` | 41 tests including the architecture rules, then the production build |
 | End to end | `cd raqib/web && npm run e2e` | Playwright in real Chrome against the real backend on a throw-away database: every role opens every screen, offline field work, sign-in lockout, two-step verification, setup and upkeep flows, CSV, Excel and PDF downloads |
 
 ## Known limitations
 
-- **PDFs are off on the shared VPS** (no Chromium that fits the box); CSV and Excel exports work, and PDFs work anywhere `RAQIB_CHROMIUM_PATH` is set.
+- **PDFs on the shared VPS** are rendered by Cloudflare Browser Rendering, because the box cannot run a Chromium. Anywhere with a Chromium, `RAQIB_CHROMIUM_PATH` renders them locally instead.
 - **PDFs need Chromium on the server.** Without it the PDF button says rendering is unavailable.
 - **The rate limiter is in-process memory**, so a multi-process deployment needs a shared store. The scheduled
   jobs are already safe to run in several processes.

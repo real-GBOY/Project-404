@@ -2,7 +2,7 @@ import { Injectable, type OnApplicationShutdown } from "@nestjs/common";
 import type { Browser } from "puppeteer-core";
 import { AppError } from "@core/kernel/errors.js";
 import { moduleLogger } from "@core/kernel/logging/logger.js";
-import { readRaqibConfig } from "@raqib/config.js";
+import { readRaqibConfig, resolvePdfDriver, type PdfDriver } from "@raqib/config.js";
 import { RenderQueue, type QueueStats } from "./render-queue.js";
 
 const log = moduleLogger("raqib-pdf");
@@ -10,7 +10,10 @@ const log = moduleLogger("raqib-pdf");
 const IDLE_CLOSE_MS = 60_000;
 
 /**
- * HTML → PDF through headless Chromium (puppeteer-core; the browser binary is the server's, set by RAQIB_CHROMIUM_PATH).
+ * HTML → PDF, by one of two drivers (see `resolvePdfDriver`): headless Chromium on the server (puppeteer-core; the binary is set
+ * by RAQIB_CHROMIUM_PATH), or Cloudflare Browser Rendering over its REST API, for hosts too small to run a browser.
+ *
+ * The Chromium driver works like this:
  *
  * One browser is kept warm between reports (starting Chromium is the slow part) and closed when idle; each report gets
  * its own page. Renders go through a bounded queue — `RAQIB_PDF_CONCURRENCY` at a time, `RAQIB_PDF_QUEUE_MAX` waiting,
@@ -24,12 +27,16 @@ export class PdfRenderer implements OnApplicationShutdown {
   private idle: NodeJS.Timeout | undefined;
   private queue: RenderQueue | undefined;
 
-  available(): boolean {
-    return readRaqibConfig().chromiumPath.length > 0;
+  driver(): PdfDriver | null {
+    return resolvePdfDriver(readRaqibConfig());
   }
 
-  stats(): QueueStats & { available: boolean } {
-    return { ...this.q().stats(), available: this.available() };
+  available(): boolean {
+    return this.driver() !== null;
+  }
+
+  stats(): QueueStats & { available: boolean; driver: PdfDriver | null } {
+    return { ...this.q().stats(), available: this.available(), driver: this.driver() };
   }
 
   private q(): RenderQueue {
@@ -73,9 +80,11 @@ export class PdfRenderer implements OnApplicationShutdown {
   }
 
   async render(html: string): Promise<Buffer> {
-    if (!this.available()) {
-      throw new AppError({ code: "raqib.pdf_unavailable", message: "PDF generation is not configured on this server.", kind: "internal" });
+    const driver = this.driver();
+    if (!driver) {
+      throw new AppError({ code: "raqib.pdf_unavailable", message: "PDF generation is not configured on this server.", kind: "unavailable" });
     }
+    if (driver === "cloudflare") return this.q().run(() => this.renderWithCloudflare(html));
     return this.q().run(
       async () => {
         const browser = await this.getBrowser();
@@ -92,6 +101,31 @@ export class PdfRenderer implements OnApplicationShutdown {
       // a render that overran may have wedged the browser: drop it so the next report starts clean
       () => void this.closeBrowser(),
     );
+  }
+
+  /** One REST call: the self-contained report HTML goes up, the PDF bytes come back. Same page options as the Chromium driver. */
+  private async renderWithCloudflare(html: string): Promise<Buffer> {
+    const cfg = readRaqibConfig();
+    const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(cfg.cfAccountId)}/browser-rendering/pdf`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${cfg.cfApiToken}`, "content-type": "application/json" },
+      body: JSON.stringify({
+        html,
+        setJavaScriptEnabled: false,
+        gotoOptions: { waitUntil: "load" },
+        pdfOptions: { format: "a4", printBackground: true, preferCSSPageSize: true },
+      }),
+      signal: AbortSignal.timeout(cfg.pdfTimeoutMs),
+    });
+    if (res.status === 429) {
+      throw new AppError({ code: "raqib.pdf_busy", message: "The PDF service is busy. Try again in a moment.", kind: "rate_limited" });
+    }
+    const bytes = Buffer.from(await res.arrayBuffer());
+    if (!res.ok || bytes.subarray(0, 4).toString("latin1") !== "%PDF") {
+      log.error({ status: res.status, body: bytes.subarray(0, 300).toString("utf8") }, "cloudflare browser rendering did not return a pdf");
+      throw new AppError({ code: "raqib.pdf_failed", message: "The PDF could not be generated.", kind: "unavailable" });
+    }
+    return bytes;
   }
 
   async onApplicationShutdown(): Promise<void> {

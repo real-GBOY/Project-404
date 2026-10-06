@@ -52,9 +52,13 @@ because Raqib refuses to seed the demo company in production on its own (so it c
 deployment: set the first two to `false`, set `RAQIB_ENFORCE_ACCOUNT_POLICY=true`, use a fresh database, provision the customer with
 `npm run provision` (see [raqib/docs/operations.md](../raqib/docs/operations.md)), and drop `VITE_DEMO` from Vercel.
 
+## Report PDFs
+
+The box cannot run a headless Chromium (Ubuntu 20.04 on ARM only offers a snap-packaged one, too heavy for 921 MB shared with five services), so
+PDFs are rendered by **Cloudflare Browser Rendering**: `RAQIB_CF_ACCOUNT_ID` and `RAQIB_CF_API_TOKEN` in `/opt/raqib/.env`. The token needs only the
+account permission *Browser Rendering: Edit*. See [raqib/docs/operations.md](../raqib/docs/operations.md).
+
 ## Not on this deployment
 
-- **Report PDFs.** They need a headless Chromium (`RAQIB_CHROMIUM_PATH`), and Ubuntu 20.04 on ARM only offers a snap-packaged one that is
-  too heavy for this box. The PDF button reports that rendering is unavailable; CSV and Excel exports work.
 - **Outgoing e-mail.** No SMTP is configured, so password-setup links are not mailed.
 - **Antivirus scanning** (ClamAV) is off; uploads are still content-checked and stripped of GPS metadata.

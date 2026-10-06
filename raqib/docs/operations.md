@@ -171,8 +171,12 @@ production web origin there before deploying; local dev uses `http://localhost:4
 
 The deployed environment is described in [docs/raqib-deployment.md](../../docs/raqib-deployment.md).
 
-Report PDFs are rendered by a Chromium on the server: set `RAQIB_CHROMIUM_PATH`. Without it the PDF button says rendering is
-unavailable. Analytics and audit exports (CSV and Excel) need nothing extra.
+Report PDFs are rendered by one of two drivers, chosen automatically (`RAQIB_PDF_DRIVER=auto`): a headless Chromium on the server
+(`RAQIB_CHROMIUM_PATH`), or **Cloudflare Browser Rendering** over its REST API (`RAQIB_CF_ACCOUNT_ID` and `RAQIB_CF_API_TOKEN`, a token
+with the account permission *Browser Rendering: Edit*), which suits hosts too small to run a browser. A local Chromium wins when both are set.
+The report HTML is self-contained and is sent to Cloudflare for rendering only; both drivers use the same bounded queue. Without either,
+the PDF button answers 503 `raqib.pdf_unavailable` and says so. The free Cloudflare plan allows 10 browser minutes a day, far more than
+report downloads need.
 
 Uploads nobody attached are cleaned up by the nightly job: a file (or a started upload) older than 48 hours that is not referenced by
 evidence, a confidential attachment or a message is deleted from the database and from R2 (audited as `raqib.retention.uploads_purged`).

@@ -38,7 +38,7 @@ export class ReportsController {
     const parsed = langSchema.safeParse(lang ?? "en");
     if (!parsed.success) throw ValidationError("raqib.invalid_language", "Language must be ar or en.");
     if (!this.service.pdfAvailable()) {
-      throw new AppError({ code: "raqib.pdf_unavailable", message: "PDF generation is not configured on this server.", kind: "internal" });
+      throw new AppError({ code: "raqib.pdf_unavailable", message: "PDF generation is not configured on this server.", kind: "unavailable" });
     }
     const f = await this.service.pdfOf(id, parsed.data, who);
     reply

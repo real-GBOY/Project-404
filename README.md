@@ -54,7 +54,7 @@ four re-implements sign-in, tenancy, permissions, file storage, an audit trail o
 | **`mizan/`** | **Mizan** | Law firms: matters, hearings, clients, documents, billing | web · mobile (Expo) | live · 202 tests | [Mizan tab →](docs/products/mizan.md) |
 | **`atlas/`** | **Atlas** | Property developers: CRM, inventory, sales, installments | web | live · 85 tests | [Atlas tab →](docs/products/atlas.md) |
 | **`hotel-project/`** | **HotelOS** | Hotels: reservations, front desk, housekeeping, finance | staff app · public website | 8 slices done · 197 tests + 54 E2E runs | [HotelOS tab →](docs/products/hotelos.md) |
-| **`raqib/`** | **Raqib** | Security-guarding companies: site inspections, review and approval, corrective actions, guard scoring, training | web (offline-capable PWA) | live · 249 + 41 tests + 28 E2E | [Raqib tab →](docs/products/raqib.md) |
+| **`raqib/`** | **Raqib** | Security-guarding companies: site inspections, review and approval, corrective actions, guard scoring, training | web (offline-capable PWA) | live · 256 + 41 tests + 28 E2E | [Raqib tab →](docs/products/raqib.md) |
 | **`core/`** | **Core** | None: the reusable platform | — | 13 capabilities | [core/README.md](core/README.md) |
 
 Every product is its own deployable, with its own process, PostgreSQL database and seed data. The products
@@ -76,7 +76,7 @@ personal data that must be encrypted at rest, and an approval trail nobody may r
 | **Encryption and abuse controls** | National IDs and two-step secrets sealed with AES-256-GCM and a keyed blind index. Lockout, TOTP with recovery codes, session revocation. Uploads are content-sniffed, stripped of GPS metadata and optionally virus-scanned. |
 | **Real reports and exports** | Arabic and English PDFs through a bounded Chromium queue, plus CSV and native Excel workbooks from a hand-written xlsx writer. Files go to Cloudflare R2 over presigned URLs, with abandoned uploads cleaned up nightly. |
 | **Arabic and right-to-left throughout** | 38 screens and 1,772 interface strings in Arabic and English, mirrored properly rather than translated at the edges. |
-| **The numbers** | 121 routes · 35 forced-RLS tables · 7 roles · 249 backend tests, 41 web tests and 28 browser tests in real Chrome. The demo company is seeded by playing a year of inspections through the real workflows. |
+| **The numbers** | 121 routes · 35 forced-RLS tables · 7 roles · 256 backend tests, 41 web tests and 28 browser tests in real Chrome. The demo company is seeded by playing a year of inspections through the real workflows. |
 
 [Raqib tab →](docs/products/raqib.md)
 
@@ -206,7 +206,7 @@ website both default to port 4500, so run one at a time or change a port.
 | Atlas | Backend + web, plus a live AI-provider suite | 80 + 5 |
 | HotelOS | Backend (including concurrent-booking races) + staff app | 139 + 58 |
 | HotelOS | End to end (Playwright, real backend, desktop and phone) | 27 scenarios × 2 |
-| Raqib | Backend: real HTTP, authorization, RLS on every table, security, retention, jobs | 249 |
+| Raqib | Backend: real HTTP, authorization, RLS on every table, security, retention, jobs | 256 |
 | Raqib | Web unit tests, including architecture rules that fail the build | 41 |
 | Raqib | End to end (Playwright, real Chrome and backend): offline work, MFA, lockout, downloads | 28 |
 

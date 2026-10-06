@@ -56,6 +56,14 @@ const schema = z.object({
   /** How long a locked account stays locked after too many wrong passwords. */
   lockoutMinutes: z.coerce.number().int().min(1).max(1440).default(15),
   /** Report PDFs: renders running at once, renders allowed to wait, and the time one render may take. */
+  /**
+   * Where report PDFs are rendered. `auto` (default): a local Chromium when `RAQIB_CHROMIUM_PATH` is set, otherwise Cloudflare
+   * Browser Rendering when its credentials are set, otherwise PDFs are unavailable. `chromium` / `cloudflare` force one.
+   */
+  pdfDriver: z.enum(["auto", "chromium", "cloudflare"]).default("auto"),
+  /** Cloudflare account and an API token with "Browser Rendering: Edit", for the `cloudflare` PDF driver. */
+  cfAccountId: z.string().trim().default(""),
+  cfApiToken: z.string().trim().default(""),
   pdfConcurrency: z.coerce.number().int().min(1).max(8).default(2),
   pdfQueueMax: z.coerce.number().int().min(0).max(200).default(20),
   pdfTimeoutMs: z.coerce.number().int().min(5_000).max(300_000).default(45_000),
@@ -85,6 +93,9 @@ export function readRaqibConfig(env: NodeJS.ProcessEnv = process.env): RaqibConf
     dataKey: env.RAQIB_DATA_KEY,
     enforceAccountPolicy: env.RAQIB_ENFORCE_ACCOUNT_POLICY,
     lockoutMinutes: env.RAQIB_LOCKOUT_MINUTES,
+    pdfDriver: env.RAQIB_PDF_DRIVER,
+    cfAccountId: env.RAQIB_CF_ACCOUNT_ID,
+    cfApiToken: env.RAQIB_CF_API_TOKEN,
     pdfConcurrency: env.RAQIB_PDF_CONCURRENCY,
     pdfQueueMax: env.RAQIB_PDF_QUEUE_MAX,
     pdfTimeoutMs: env.RAQIB_PDF_TIMEOUT_MS,
@@ -111,4 +122,15 @@ export function accountPolicyEnforced(env: NodeJS.ProcessEnv = process.env): boo
 export function demoSeedRefusal(cfg: Pick<RaqibConfig, "seedDemo" | "allowDemoInProduction">, nodeEnv: string): string | null {
   if (!cfg.seedDemo || nodeEnv !== "production" || cfg.allowDemoInProduction) return null;
   return "RAQIB_SEED_DEMO=true is refused in production: the demo organization must never be created next to real data. A dedicated showcase deployment can opt in with RAQIB_ALLOW_DEMO_IN_PRODUCTION=true.";
+}
+
+export type PdfDriver = "chromium" | "cloudflare";
+
+/** The PDF backend this process will use, or null when none is configured. */
+export function resolvePdfDriver(cfg: Pick<RaqibConfig, "pdfDriver" | "chromiumPath" | "cfAccountId" | "cfApiToken">): PdfDriver | null {
+  const chromium = cfg.chromiumPath.length > 0;
+  const cloudflare = cfg.cfAccountId.length > 0 && cfg.cfApiToken.length > 0;
+  if (cfg.pdfDriver === "chromium") return chromium ? "chromium" : null;
+  if (cfg.pdfDriver === "cloudflare") return cloudflare ? "cloudflare" : null;
+  return chromium ? "chromium" : cloudflare ? "cloudflare" : null;
 }
