@@ -20,10 +20,10 @@ describe("rate limiter", () => {
     expect(l.check("POST", "/raqib/confidential/reports", "9.9.9.9", "u2", 2).allowed).toBe(true);
   });
 
-  it("limits PDF rendering and leaves ordinary reads generous", () => {
+  it("limits report downloads and leaves ordinary reads generous", () => {
     const l = new RateLimiter();
-    for (let n = 0; n < 12; n++) expect(l.check("GET", "/raqib/reports/rep_1/pdf", "i", "u1", 5).allowed).toBe(true);
-    expect(l.check("GET", "/raqib/reports/rep_1/pdf", "i", "u1", 6)).toMatchObject({ allowed: false, rule: "pdf" });
+    for (let n = 0; n < 12; n++) expect(l.check("GET", "/raqib/reports/rep_1/html", "i", "u1", 5).allowed).toBe(true);
+    expect(l.check("GET", "/raqib/reports/rep_1/html", "i", "u1", 6)).toMatchObject({ allowed: false, rule: "pdf" });
     for (let n = 0; n < 500; n++) expect(l.check("GET", "/raqib/visits", "i", "u1", 5).allowed).toBe(true);
   });
 

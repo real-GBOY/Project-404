@@ -54,9 +54,9 @@ deployment: set the first two to `false`, set `RAQIB_ENFORCE_ACCOUNT_POLICY=true
 
 ## Report PDFs
 
-The box cannot run a headless Chromium (Ubuntu 20.04 on ARM only offers a snap-packaged one, too heavy for 921 MB shared with five services), so
-PDFs are rendered by **Cloudflare Browser Rendering**: `RAQIB_CF_ACCOUNT_ID` and `RAQIB_CF_API_TOKEN` in `/opt/raqib/.env`. The token needs only the
-account permission *Browser Rendering: Edit*. See [raqib/docs/operations.md](../raqib/docs/operations.md).
+The server renders no PDFs. `GET /raqib/reports/:id/html?lang=ar|en` returns the report as one print-ready page built from the frozen snapshot
+(authorized by scope and the download right, audited), and the web app prints it in the browser ("Save as PDF"). So the box needs no Chromium and there
+is no rendering service, token or quota to manage.
 
 ## Not on this deployment
 

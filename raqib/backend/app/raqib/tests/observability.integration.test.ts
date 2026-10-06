@@ -68,13 +68,7 @@ describe.skipIf(!hasTestDb)("Raqib observability", () => {
       expect(text).toMatch(/raqib_http_requests_total\{method="GET",status="2xx"\} \d+/);
       expect(text).toMatch(/raqib_http_requests_total\{method="GET",status="4xx"\} \d+/);
       expect(text).toContain('raqib_http_request_duration_seconds_bucket{le="+Inf"}');
-      for (const name of [
-        "raqib_process_uptime_seconds",
-        "raqib_jobs_last_run_timestamp_seconds",
-        "raqib_pdf_renders",
-        "raqib_outbox_pending",
-        "raqib_outbox_dead_lettered",
-      ]) {
+      for (const name of ["raqib_process_uptime_seconds", "raqib_jobs_last_run_timestamp_seconds", "raqib_outbox_pending", "raqib_outbox_dead_lettered"]) {
         expect(text).toContain(name);
       }
       expect(text).not.toContain("/api/"); // never a path or an identity in a label
@@ -87,8 +81,7 @@ describe.skipIf(!hasTestDb)("Raqib observability", () => {
       const body = res.json() as Json;
       expect(res.statusCode).toBe(200);
       expect(body.status).toBe("ready");
-      expect(Object.keys(body.checks).sort()).toEqual(["jobs", "outbox", "pdf", "storage"]);
-      expect(body.checks.pdf.detail).toHaveProperty("available");
+      expect(Object.keys(body.checks).sort()).toEqual(["jobs", "outbox", "storage"]);
     });
 
     it("turns degraded when the armed jobs have gone stale", async () => {

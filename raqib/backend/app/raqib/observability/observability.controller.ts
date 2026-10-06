@@ -11,7 +11,6 @@ import { OutboxRepository } from "@core/events/outbox/outbox-repository.js";
 import { OutboxWorker } from "@core/events/outbox/outbox-worker.js";
 import { readRaqibConfig } from "@raqib/config.js";
 import { JobsRunner } from "@raqib/raqib/jobs/jobs-runner.js";
-import { PdfRenderer } from "@raqib/raqib/reports/infrastructure/pdf-renderer.js";
 import { metrics, type Gauge } from "./metrics.js";
 
 const same = (a: string, b: string): boolean => a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
@@ -26,7 +25,6 @@ export class ObservabilityController {
     private readonly outbox: OutboxRepository,
     private readonly worker: OutboxWorker,
     private readonly jobs: JobsRunner,
-    private readonly pdf: PdfRenderer,
     @Inject("RAQIB_BOOTED_AT") private readonly bootedAt: number,
   ) {}
 
@@ -50,10 +48,6 @@ export class ObservabilityController {
     });
     g.push({ name: "raqib_jobs_runs_total", help: "Completed scheduled job runs.", value: this.jobs.runs });
     g.push({ name: "raqib_jobs_failures_total", help: "Scheduled job runs that failed.", value: this.jobs.failures });
-    const p = this.pdf.stats();
-    for (const k of ["active", "waiting", "completed", "failed", "rejected", "timedOut"] as const) {
-      g.push({ name: "raqib_pdf_renders", help: "PDF renders by state (queue gauges and lifetime counters).", value: p[k], labels: { state: k } });
-    }
     try {
       const s = await runAsSystem(() => unitOfWork.transaction(() => this.outbox.stats()));
       g.push({ name: "raqib_outbox_pending", help: "Outbox messages waiting to be delivered.", value: s.pending });
@@ -96,7 +90,6 @@ export class ObservabilityController {
     } else checks.storage = { ok: true, detail: { driver: storage.fileStorageDriver } };
 
     checks.outbox = { ok: this.worker.health().lastError === null, detail: { running: this.worker.health().running } };
-    checks.pdf = { ok: true, detail: this.pdf.stats() }; // never fails readiness: reports still work without PDFs
 
     const ok = Object.values(checks).every((c) => c.ok);
     return reply.status(ok ? 200 : 503).send({ status: ok ? "ready" : "degraded", checks });

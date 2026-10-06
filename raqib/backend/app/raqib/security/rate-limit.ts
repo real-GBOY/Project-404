@@ -17,7 +17,7 @@ interface Rule {
 /**
  * Per-bucket limits, tightest first. Sign-in and the public account request are limited per client address (they
  * are the guessable doors); confidential submissions per person (to blunt spam without identifying anyone beyond
- * the request itself); PDF rendering and uploads per person; everything else generously.
+ * the request itself); report downloads and uploads per person; everything else generously.
  */
 export const RULES: Rule[] = [
   { name: "auth", match: (m, p) => m === "POST" && /^\/auth\/(login|refresh|password|forgot|reset|register)/.test(p), limit: 20, windowMs: 60_000, by: "ip" },
@@ -30,7 +30,7 @@ export const RULES: Rule[] = [
   },
   { name: "confidential-submit", match: (m, p) => m === "POST" && p === "/raqib/confidential/reports", limit: 5, windowMs: 3_600_000, by: "user" },
   { name: "confidential-session", match: (m, p) => m === "POST" && p === "/raqib/confidential/session", limit: 20, windowMs: 3_600_000, by: "user" },
-  { name: "pdf", match: (m, p) => m === "GET" && /^\/raqib\/reports\/[^/]+\/pdf/.test(p), limit: 12, windowMs: 60_000, by: "user" },
+  { name: "pdf", match: (m, p) => m === "GET" && /^\/raqib\/reports\/[^/]+\/html/.test(p), limit: 12, windowMs: 60_000, by: "user" },
   { name: "uploads", match: (m, p) => m === "POST" && p.startsWith("/files/uploads"), limit: 60, windowMs: 60_000, by: "user" },
   { name: "default", match: () => true, limit: 1200, windowMs: 60_000, by: "user" },
 ];

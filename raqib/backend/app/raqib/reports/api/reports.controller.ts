@@ -3,7 +3,7 @@ import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import type { FastifyReply } from "fastify";
 import { z } from "zod";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
-import { AppError, ValidationError } from "@core/kernel/errors.js";
+import { ValidationError } from "@core/kernel/errors.js";
 import { Allow, AccessGuard, Caller } from "@raqib/raqib/access/access.guard.js";
 import type { Access } from "@raqib/raqib/access/access.js";
 import { ReportsService } from "../application/reports-service.js";
@@ -22,7 +22,7 @@ export class ReportsController {
   @Allow("reports", "V")
   async list(@Query() q: { limit?: string; cursor?: string }, @Caller() who: Access) {
     const page = parsePage(q);
-    return { ...toPage(await this.service.list(who, page), page), pdf: this.service.pdfAvailable() };
+    return toPage(await this.service.list(who, page), page);
   }
 
   @Get(":id")
@@ -31,20 +31,16 @@ export class ReportsController {
     return this.service.get(id, who);
   }
 
-  /** The PDF rendered from the frozen snapshot — scope-checked, audited. `?lang=ar|en`. */
-  @Get(":id/pdf")
+  /**
+   * The report as a print-ready HTML page built from the frozen snapshot: scope-checked and audited. The web app loads it into a hidden
+   * frame and prints it ("Save as PDF"). `?lang=ar|en`.
+   */
+  @Get(":id/html")
   @Allow("reports", "D")
-  async pdf(@Param("id") id: string, @Query("lang") lang: string | undefined, @Caller() who: Access, @Res() reply: FastifyReply) {
+  async html(@Param("id") id: string, @Query("lang") lang: string | undefined, @Caller() who: Access, @Res() reply: FastifyReply) {
     const parsed = langSchema.safeParse(lang ?? "en");
     if (!parsed.success) throw ValidationError("raqib.invalid_language", "Language must be ar or en.");
-    if (!this.service.pdfAvailable()) {
-      throw new AppError({ code: "raqib.pdf_unavailable", message: "PDF generation is not configured on this server.", kind: "unavailable" });
-    }
-    const f = await this.service.pdfOf(id, parsed.data, who);
-    reply
-      .header("Content-Type", "application/pdf")
-      .header("Content-Disposition", `attachment; filename="${encodeURIComponent(f.name)}"`)
-      .header("Cache-Control", "private, no-store")
-      .send(f.content);
+    const f = await this.service.printableOf(id, parsed.data, who);
+    reply.header("Content-Type", "text/html; charset=utf-8").header("Cache-Control", "private, no-store").send(f.html);
   }
 }

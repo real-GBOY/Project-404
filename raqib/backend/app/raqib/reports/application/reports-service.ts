@@ -12,7 +12,6 @@ import { ProjectsRepository } from "@raqib/raqib/projects/infrastructure/project
 import { VisitsService } from "@raqib/raqib/visits/application/visits-service.js";
 import { renderReportHtml, type Lang } from "../domain/report-html.js";
 import { buildSnapshot, type ReportSnapshot } from "../domain/report-snapshot.js";
-import { PdfRenderer } from "../infrastructure/pdf-renderer.js";
 import { ReportsRepository, type ReportRecord } from "../infrastructure/reports-repository.js";
 import type { Page } from "@raqib/raqib/shared/paging.js";
 
@@ -37,8 +36,6 @@ const toView = (r: ReportRecord): ReportView => ({
 });
 
 /** Photos beyond these limits are listed by name in the PDF instead of embedded, so one report never balloons. */
-const PDF_CACHE_ENTRIES = 24;
-const PDF_CACHE_BYTES = 96 * 1_048_576;
 const MAX_IMAGES = 40;
 const MAX_IMAGE_BYTES = 4 * 1_048_576;
 
@@ -51,7 +48,6 @@ export class ReportsService {
     private readonly projects: ProjectsRepository,
     private readonly evidence: EvidenceRepository,
     private readonly observations: ObservationsRepository,
-    private readonly pdf: PdfRenderer,
     @Inject(FILE_STORAGE) private readonly files: IFileStorage,
     @Inject(AUDIT_LOGGER) private readonly audit: IAuditLogger,
     @Inject(CLOCK) private readonly clock: Clock,
@@ -113,31 +109,13 @@ export class ReportsService {
    * Issued reports are immutable, so a rendered PDF never goes stale: the last few are kept in memory (bounded by count
    * and bytes) and served again without rendering. Authorization and the download audit still run on every request.
    */
-  private readonly pdfCache = new Map<string, Buffer>();
-  private cacheBytes = 0;
-  private remember(key: string, content: Buffer): void {
-    if (content.byteLength > PDF_CACHE_BYTES / 2) return;
-    this.pdfCache.set(key, content);
-    this.cacheBytes += content.byteLength;
-    while (this.pdfCache.size > PDF_CACHE_ENTRIES || this.cacheBytes > PDF_CACHE_BYTES) {
-      const [oldest, bytes] = this.pdfCache.entries().next().value as [string, Buffer];
-      this.pdfCache.delete(oldest);
-      this.cacheBytes -= bytes.byteLength;
-    }
-  }
-
-  /** The PDF, rendered from the frozen snapshot, authorized by project scope and the download right, and audited. */
-  async pdfOf(id: string, lang: Lang, who: Access): Promise<{ name: string; content: Buffer }> {
+  /**
+   * The report as one self-contained, print-ready HTML page, built from the frozen snapshot (evidence photos embedded), authorized by
+   * project scope and the download right, and audited. The browser prints it ("Save as PDF"), so the server never renders a PDF.
+   */
+  async printableOf(id: string, lang: Lang, who: Access): Promise<{ name: string; html: string }> {
     requireCan(who, "reports", "D");
     const r = await this.readable(id, who);
-    const key = `${r.id}:${lang}`;
-    const cached = this.pdfCache.get(key);
-    if (cached) {
-      this.pdfCache.delete(key); // refresh recency
-      this.pdfCache.set(key, cached);
-      await this.auditDownload(r.id, who, lang, cached.byteLength, true);
-      return { name: `${r.ref}-${lang}.pdf`, content: cached };
-    }
     const images = new Map<string, string>();
     let n = 0;
     for (const e of r.snapshot.sections.flatMap((s) => s.items.flatMap((it) => it.evidence))) {
@@ -151,10 +129,9 @@ export class ReportsService {
         // an evidence file that cannot be read is simply not embedded
       }
     }
-    const content = await this.pdf.render(renderReportHtml(r.snapshot, lang, images));
-    this.remember(key, content);
-    await this.auditDownload(r.id, who, lang, content.byteLength, false);
-    return { name: `${r.ref}-${lang}.pdf`, content };
+    const html = renderReportHtml(r.snapshot, lang, images);
+    await this.auditDownload(r.id, who, lang, Buffer.byteLength(html), false);
+    return { name: `${r.ref}-${lang}`, html };
   }
 
   private auditDownload(reportId: string, who: Access, lang: Lang, bytes: number, cached: boolean): Promise<void> {
@@ -167,10 +144,6 @@ export class ReportsService {
         metadata: { lang, bytes, cached },
       }),
     );
-  }
-
-  pdfAvailable(): boolean {
-    return this.pdf.available();
   }
 
   private async readable(id: string, who: Access): Promise<ReportRecord> {

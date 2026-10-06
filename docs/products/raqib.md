@@ -80,8 +80,9 @@ when and why:
 - **Uploads are inspected, not trusted.** Content must match the declared type, PDFs with scripts are refused,
   photos are re-stored without GPS and device metadata, and ClamAV can scan every file. Files go straight to
   **Cloudflare R2** over presigned URLs, and a nightly job removes uploads nobody attached.
-- **Reports that print properly.** Approval freezes an immutable report snapshot. PDFs render in Arabic and
-  English through a bounded queue, on headless Chromium or Cloudflare Browser Rendering. Analytics and the audit log export as CSV and as native
+- **Reports that print properly.** Approval freezes an immutable report snapshot. PDFs are made in the browser: the
+  server returns the report as one print-ready page (evidence photos embedded, Arabic and English) and the browser prints it to PDF, so no
+  Chromium or rendering service is needed anywhere. Analytics and the audit log export as CSV and as native
   Excel workbooks written by Raqib's own small xlsx writer, with spreadsheet-formula injection neutralised.
 - **Operable from day one.** Prometheus-style metrics and alert hooks, a health endpoint, scheduled jobs that
   elect a single leader with a Postgres advisory lock, retention and lifecycle jobs, and a provisioning script
@@ -131,9 +132,8 @@ npm run migrate && npm run dev  # migrates, seeds, serves :3300 (docs: /api/docs
 cd ../web && npm install && npm run dev        # http://localhost:4500
 ```
 
-The first boot plays the demo history through the real workflows, which takes about a minute. Report PDFs need a
-Chromium: set `RAQIB_CHROMIUM_PATH`. To use Cloudflare R2 instead of local disk, see the file-storage section of
-[raqib/docs/operations.md](../../raqib/docs/operations.md).
+The first boot plays the demo history through the real workflows, which takes about a minute. To use Cloudflare R2 instead of local disk,
+see the file-storage section of [raqib/docs/operations.md](../../raqib/docs/operations.md).
 
 ## Demo accounts
 
@@ -159,8 +159,7 @@ The password is `demo-password-2026` for every account.
 
 ## Known limitations
 
-- **PDFs on the shared VPS** are rendered by Cloudflare Browser Rendering, because the box cannot run a Chromium. Anywhere with a Chromium, `RAQIB_CHROMIUM_PATH` renders them locally instead.
-- **PDFs need Chromium on the server.** Without it the PDF button says rendering is unavailable.
+- **The PDF is the browser's print dialog.** "PDF" opens it with the report loaded; choose "Save as PDF". The file name is pre-filled, but the server never produces a file.
 - **The rate limiter is in-process memory**, so a multi-process deployment needs a shared store. The scheduled
   jobs are already safe to run in several processes.
 - **Video evidence streams through the API**, not a time-limited storage URL.

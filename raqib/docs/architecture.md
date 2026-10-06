@@ -91,10 +91,10 @@ stored under a protected file purpose and served only through the same checks.
 
 Evidence uses Core files (presign → direct PUT → confirm; Cloudflare R2 in production, local in dev); a Raqib
 `evidence` row links file → visit/inspection/item/observation/CA/guard evaluation. Reads go through an
-authorized endpoint that returns a short-lived signed URL (video: logged request). **PDF:** server-side HTML →
-PDF with headless Chromium (`puppeteer-core`, binary path in config) because correct Arabic shaping/RTL needs a
-real layout engine; the report HTML is rendered from the frozen snapshot, AR or EN. (Open decision: confirm
-Chromium is acceptable on the client VPS; fallback is a bundled-font PDFKit renderer with reduced Arabic fidelity.)
+authorized endpoint that returns a short-lived signed URL (video: logged request). **PDF:** made in the browser. The server builds the report as one self-contained, print-ready HTML page from the frozen snapshot (AR or EN, evidence
+photos inlined) at `GET /reports/:id/html`; the web app loads it into a hidden frame and calls print ("Save as PDF"), where the browser's own layout
+engine gives correct Arabic shaping and RTL. (An earlier design rendered PDFs on the server with headless Chromium; that was dropped: it needs a
+browser on the server, and the client already has the best engine.)
 Background jobs (Core worker lifecycle, like HotelOS `jobs`): overdue visits, overdue CAs, account-link expiry.
 Analytics computes on request in SQL from stored scores (no stored dashboard numbers); demo history is seeded
 through the real repositories with a deterministic RNG.
@@ -130,7 +130,7 @@ using real demo accounts (`demo` password) and real data. Arabic/English and RTL
 | 8 Confidential area | done (#16) |
 | 9 Hardening (rate limits, headers, audit log, authz review test, `docs/security.md`, `docs/operations.md`) | done |
 | Account onboarding (public request + e-signature, review, approval creating the account, emailed password setup) | done |
-| Product readiness: pagination, tenant provisioning CLI, account security (lock-out, TOTP, password policy, enforcement), upload safety, PDF queue, observability, data lifecycle, offline field inspections (PWA + outbox), native Excel export, browser end-to-end tests, CI | done; see `security.md`, `operations.md` and section 11 |
+| Product readiness: pagination, tenant provisioning CLI, account security (lock-out, TOTP, password policy, enforcement), upload safety, observability, data lifecycle, offline field inspections (PWA + outbox), native Excel export, browser end-to-end tests, CI | done; see `security.md`, `operations.md` and section 11 |
 
 ## 10. Decisions log
 
@@ -143,7 +143,7 @@ using real demo accounts (`demo` password) and real data. Arabic/English and RTL
 | 5 | User-entered text stored once (single language); master data (projects, sites, forms) may carry `name_ar`/`name_en` | Never auto-translate or duplicate user content |
 | 6 | No mock adapter in `web/` | A real backend + demo seeder is the demo |
 | 7 | Nothing is committed/pushed unless asked | Standing repo rule |
-| 8 | Reports are frozen JSON snapshots issued inside the approval transaction; PDF is rendered from them on demand | Later edits must never change what was approved |
+| 8 | Reports are frozen JSON snapshots issued inside the approval transaction; the printable page is built from them on demand | Later edits must never change what was approved |
 | 9 | Observations are recorded from approved inspections (violations) or reported directly; one corrective action per observation | Findings and the work to fix them stay separate and auditable |
 | 10 | Analytics are pure functions over persisted data | Every number can be explained, drilled into and tested |
 | 11 | Confidential access = explicit GM grant + logged session; identity stored apart; restrictive RLS | No role can open it; nothing about the reporter leaks through ordinary tables |

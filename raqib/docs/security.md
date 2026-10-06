@@ -48,7 +48,7 @@ notifications carry references only; the area is excluded from search, analytics
 ## 6. Abuse controls
 
 - **Rate limiting** (per client address for sign-in and the public account request, per verified person for confidential
-  submissions, PDF rendering and uploads, generous otherwise); 429 with `Retry-After` detail. Client address honours
+  submissions, report downloads and uploads, generous otherwise); 429 with `Retry-After` detail. Client address honours
   `RAQIB_TRUSTED_PROXY_HOPS`.
 - **Response headers**: `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, a `default-src 'none'` CSP,
   HSTS, restrictive `Permissions-Policy`.
@@ -92,7 +92,7 @@ server-side (they need native image libraries); the web app previews photos loca
 
 - The rate limiter is in-process memory (one API process per deployment); a multi-process deployment needs a shared store. The
   scheduled jobs are already safe to run in several processes (a Postgres advisory lock elects one).
-- PDFs need Chromium on the server; without it the endpoint answers `raqib.pdf_unavailable`. Renders are queued and bounded.
+- The printable report is built from the frozen snapshot with the evidence photos inlined as data URIs (up to 40 photos of 4 MB each) and contains no scripts; the PDF is made by the person's own browser.
 - Video evidence is streamed through the authenticated API (blob), not a time-limited signed storage URL.
 - Audit entries are append-only at the database level and are never deleted by the application; the audit retention setting is the
   minimum the organization commits to keep (archival happens outside the app).

@@ -2,7 +2,7 @@
   "name": "@raqib/backend",
   "version": "0.1.0",
   "private": true,
-  "description": "Raqib backend — security quality and field inspection management, powered by AURIC Core (a separate deployment/database from Mizan, Atlas and HotelOS: see app/app.module.ts).",
+  "description": "Raqib backend \u2014 security quality and field inspection management, powered by AURIC Core (a separate deployment/database from Mizan, Atlas and HotelOS: see app/app.module.ts).",
   "type": "module",
   "engines": {
     "node": "^22.12.0 || >=24.0.0"
@@ -27,8 +27,5 @@
     "test:cov": "vitest run --coverage",
     "ci": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run build"
   },
-  "comment_dependencies": "Deliberately no dependencies of its own, exactly like atlas/backend: every package is installed at the repo root (../../node_modules) and Core's source (imported via @core/*) is compiled as part of this package, so a second copy of @nestjs/*, fastify, kysely or reflect-metadata here would create a dual-package hazard. Always `npm install` at the repo root, never inside raqib/backend.",
-  "dependencies": {
-    "puppeteer-core": "^25.12.0"
-  }
+  "comment_dependencies": "Deliberately no dependencies of its own, exactly like atlas/backend: every package is installed at the repo root (../../node_modules) and Core's source (imported via @core/*) is compiled as part of this package, so a second copy of @nestjs/*, fastify, kysely or reflect-metadata here would create a dual-package hazard. Always `npm install` at the repo root, never inside raqib/backend."
 }

@@ -16,7 +16,6 @@ All variables are listed in `backend/.env.example`. The ones that matter in prod
 | `AURIC_APP_URL` | public URL of the web app (password-setup links) |
 | `AURIC_CORS_ORIGINS` | the web app origin(s), e.g. `https://raqib.example.com` |
 | `AURIC_FILE_STORAGE_DRIVER=r2` + the R2 keys | evidence and attachments in Cloudflare R2. `local` writes under `AURIC_FILE_STORAGE_PATH` and is for a single small server |
-| `RAQIB_CHROMIUM_PATH` | Chromium/Chrome binary used to render report PDFs, e.g. `/usr/bin/chromium`. Empty = PDF download answers `raqib.pdf_unavailable` (everything else works) |
 | `RAQIB_TRUSTED_PROXY_HOPS=1` | behind nginx. The rate limiter reads the client address that many hops from the right of `X-Forwarded-For`; with `0` behind a proxy every visitor shares one address |
 | `RAQIB_SEED_DEMO=false` | **never** `true` against real data (the process refuses to start with it in production) |
 | `RAQIB_DATA_KEY` | **required in production**: 32 random bytes, base64 (`openssl rand -base64 32`). Seals national IDs and second-factor secrets; back it up with the database password, because without it those values are unrecoverable |
@@ -24,10 +23,6 @@ All variables are listed in `backend/.env.example`. The ones that matter in prod
 | `RAQIB_METRICS_TOKEN` | bearer token for `GET /api/metrics`; unset = 404 |
 | `RAQIB_ALERT_WEBHOOK_URL` | Slack/Teams/PagerDuty-style webhook for server errors and failed jobs |
 | `RAQIB_CLAMAV_HOST` / `_PORT` | optional antivirus daemon for uploads |
-| `RAQIB_PDF_CONCURRENCY` / `_QUEUE_MAX` / `_TIMEOUT_MS` | bounds on PDF rendering (defaults 2 / 20 / 45 s) |
-
-Chromium on the VPS: `sudo apt-get install -y chromium` (or `chromium-browser`) and point `RAQIB_CHROMIUM_PATH` at it.
-It is started per render, headless, with JavaScript disabled and no network needed.
 
 ## Build and run
 
@@ -73,7 +68,6 @@ server {
     proxy_pass http://127.0.0.1:3300;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
-    proxy_read_timeout 120s;          # PDF rendering
   }
 }
 ```
@@ -96,8 +90,8 @@ page for the company is `/request-account/<slug>`; further people join through a
 ## Monitoring
 
 - `GET /api/health` (liveness), `GET /api/health/ready` (Core: database, outbox), `GET /api/health/raqib` (jobs running on time,
-  storage writable, PDF queue). A hard failure answers 503.
-- `GET /api/metrics` (Prometheus, token-protected): request counts and latency, process memory, last job run, PDF queue, outbox
+  storage writable). A hard failure answers 503.
+- `GET /api/metrics` (Prometheus, token-protected): request counts and latency, process memory, last job run, outbox
   backlog and dead letters. Alert on `raqib_jobs_last_run_timestamp_seconds` going stale and on `raqib_outbox_dead_lettered > 0`.
 - Server errors and failed jobs are posted to `RAQIB_ALERT_WEBHOOK_URL` (de-duplicated, at most 30 an hour).
 - Retention runs with the scheduled jobs: decided account requests are erased after `RAQIB_ACCOUNT_REQUEST_RETENTION_DAYS`; evidence
@@ -171,12 +165,8 @@ production web origin there before deploying; local dev uses `http://localhost:4
 
 The deployed environment is described in [docs/raqib-deployment.md](../../docs/raqib-deployment.md).
 
-Report PDFs are rendered by one of two drivers, chosen automatically (`RAQIB_PDF_DRIVER=auto`): a headless Chromium on the server
-(`RAQIB_CHROMIUM_PATH`), or **Cloudflare Browser Rendering** over its REST API (`RAQIB_CF_ACCOUNT_ID` and `RAQIB_CF_API_TOKEN`, a token
-with the account permission *Browser Rendering: Edit*), which suits hosts too small to run a browser. A local Chromium wins when both are set.
-The report HTML is self-contained and is sent to Cloudflare for rendering only; both drivers use the same bounded queue. Without either,
-the PDF button answers 503 `raqib.pdf_unavailable` and says so. The free Cloudflare plan allows 10 browser minutes a day, far more than
-report downloads need.
+Report PDFs are made in the browser (the API returns a print-ready page; see [architecture.md](architecture.md)), so nothing on the server or in R2
+depends on a Chromium or a rendering service.
 
 Uploads nobody attached are cleaned up by the nightly job: a file (or a started upload) older than 48 hours that is not referenced by
 evidence, a confidential attachment or a message is deleted from the database and from R2 (audited as `raqib.retention.uploads_purged`).
