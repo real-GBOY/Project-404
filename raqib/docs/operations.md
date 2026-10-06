@@ -169,6 +169,8 @@ existing objects: copy them first. Set `AURIC_R2_ACCOUNT_ID`, `AURIC_R2_BUCKET`,
 The bucket needs a CORS rule for every web origin that uploads (GET, PUT, HEAD, DELETE; headers `*`; expose `ETag`). Add the
 production web origin there before deploying; local dev uses `http://localhost:4500` (and `:4599` for the e2e preview). `raqib-files` already allows `*.vercel.app` and those two.
 
+The deployed environment is described in [docs/raqib-deployment.md](../../docs/raqib-deployment.md).
+
 Report PDFs are rendered by a Chromium on the server: set `RAQIB_CHROMIUM_PATH`. Without it the PDF button says rendering is
 unavailable. Analytics and audit exports (CSV and Excel) need nothing extra.
 
