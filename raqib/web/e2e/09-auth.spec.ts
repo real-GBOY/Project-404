@@ -5,6 +5,7 @@ import {
   api,
   apiLogin,
   attemptSignIn,
+  signedIn,
   signIn,
   totp,
   inEnglish,
@@ -21,7 +22,7 @@ test.describe("sign-in and account security", () => {
     await page.getByLabel("Password").fill(PASSWORD);
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
     await expect(page.getByText("Guards Supervisor").first()).toBeVisible();
-    await expect(page.getByRole("button", { name: "Sign out" }).first()).toBeVisible();
+    await signedIn(page);
   });
 
   test("five wrong passwords lock the account and say for how long", async ({ page }) => {
@@ -54,7 +55,7 @@ test.describe("sign-in and account security", () => {
     page,
   }) => {
     await signIn(page, ACCOUNTS.insB);
-    await expect(page.getByRole("button", { name: "Sign out" }).first()).toBeVisible();
+    await signedIn(page);
     await page.goto("/account/security");
     await page.getByRole("button", { name: "Turn on two-step verification" }).click();
     const secret = ((await page.locator("code").first().textContent()) ?? "").replace(/\s/g, "");
@@ -77,7 +78,7 @@ test.describe("sign-in and account security", () => {
     await expect(page.getByRole("alert")).toContainText("not valid");
     await page.getByLabel("Verification code").fill(totp(secret, Date.now(), 1)); // the code the phone shows next
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
-    await expect(page.getByRole("button", { name: "Sign out" }).first()).toBeVisible();
+    await expect(page.getByRole("button", { name: "Sign out" }).first()).toBeVisible(); // back on the account page the person left
   });
 
   test("a changed password signs the person out everywhere and the new one works", async ({
@@ -94,7 +95,7 @@ test.describe("sign-in and account security", () => {
     await page.getByLabel("Email").fill(email);
     await page.getByLabel("Password").fill("a-much-longer-password-2026");
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
-    await expect(page.getByRole("button", { name: "Sign out" }).first()).toBeVisible();
+    await expect(page.getByRole("button", { name: "Sign out" }).first()).toBeVisible(); // back on the account page the person left
     const t = await apiLogin(request, email, "a-much-longer-password-2026");
     expect(await api(request, t.token, "GET", "/raqib/account/security")).toMatchObject({
       password: { expired: false },

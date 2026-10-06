@@ -145,7 +145,6 @@ test.describe("working without a connection", () => {
       "no unstarted visit for inspector B",
     );
     await signIn(page, ACCOUNTS.insB);
-    await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
     await context.setOffline(true);
     await page
       .getByText(/Offline/)

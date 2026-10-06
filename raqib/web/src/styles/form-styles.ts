@@ -51,15 +51,4 @@ export const FORM = {
     padding: "0 14px",
   },
   link: { fontSize: 13, color: C.brand.primary, textAlign: "center" },
-  /** a small outlined button on the dark chrome bars (account bar, presenter bar) */
-  barButton: {
-    height: 24,
-    padding: "0 10px",
-    border: `1px solid ${C.chrome.line}`,
-    borderRadius: 4,
-    fontSize: 12,
-    cursor: "pointer",
-    color: C.brand.onDark,
-    background: "transparent",
-  },
 } satisfies Record<string, CSSProperties>;

@@ -23,7 +23,6 @@ test.describe("every role can open every screen it is offered", () => {
       );
 
       await signIn(page, email);
-      await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
 
       // the desktop sidebar lists the role's screens; the mobile layout does not, so use a desktop-sized window
       await page.setViewportSize({ width: 1440, height: 900 });

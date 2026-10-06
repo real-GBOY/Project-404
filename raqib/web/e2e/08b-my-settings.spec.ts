@@ -24,17 +24,28 @@ test.describe("my settings", () => {
     });
   }
 
-  test("the language switch applies at once, and the top bar reaches the page", async ({
+  test("there is no bar above the app; language, demo accounts and sign-out live on the page", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await signIn(page, ACCOUNTS.qm);
-    await page.getByRole("button", { name: "Settings", exact: true }).first().click(); // the bar above the app comes first; the sidebar's organization Settings is another screen
+    await expect(page.getByText("RAQIB · PRESENTER")).toHaveCount(0);
+    await page.locator("aside button", { hasText: "My settings" }).click();
     await expect(page.getByRole("heading", { name: "My settings", level: 1 })).toBeVisible();
-    await page.getByRole("button", { name: "العربية" }).last().click();
+
+    await page.getByRole("button", { name: "العربية" }).click();
     await expect(page.getByRole("heading", { name: "إعداداتي", level: 1 })).toBeVisible();
-    await page.getByRole("button", { name: "English" }).last().click();
+    await page.getByRole("button", { name: "English" }).click();
     await expect(page.getByRole("heading", { name: "My settings", level: 1 })).toBeVisible();
+
+    // the demo account switcher: a real sign-in as another role
+    await page.getByLabel("Signed in as").selectOption(ACCOUNTS.gs);
+    await expect(page.getByText("Guards Supervisor").first()).toBeVisible();
+    await page.locator("aside button", { hasText: "My settings" }).click();
+    await expect(page.getByText(ACCOUNTS.gs, { exact: true })).toBeVisible();
+
+    await page.getByRole("button", { name: "Sign out", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
   });
 
   test("it is reachable on a phone", async ({ page }) => {

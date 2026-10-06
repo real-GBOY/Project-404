@@ -5,10 +5,7 @@ import { DataError } from "@/components/DataError";
 import { EvidenceViewer } from "@/components/EvidenceViewer";
 import { Modal } from "@/components/Modal";
 import { Toast } from "@/components/Toast";
-import { DEMO_MODE } from "@/config";
-import { AccountBar } from "@/features/account/AccountBar";
 import { AccountScreen } from "@/features/account/AccountScreen";
-import { DemoBar } from "@/features/demo/DemoBar";
 import { useSyncState } from "@/hooks/use-sync-state";
 import { SyncStatus } from "@/components/SyncStatus";
 import { useOfflineSync } from "@/hooks/use-offline-sync";
@@ -96,7 +93,6 @@ export function Workspace({ me }: { me: Me }) {
         WebkitFontSmoothing: "antialiased",
       }}
     >
-      {DEMO_MODE ? <DemoBar me={me} lang={ui.lang} /> : <AccountBar me={me} />}
       <div
         style={{
           flex: 1,

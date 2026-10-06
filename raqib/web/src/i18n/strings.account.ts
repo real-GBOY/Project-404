@@ -98,6 +98,12 @@ export const STRINGS_ACCOUNT: Record<string, readonly [string, string]> = {
     "تسجيل الخروج التلقائي بعد {n} دقيقة من عدم النشاط.",
     "You are signed out automatically after {n} minutes of inactivity.",
   ],
+  acct_demo: ["حسابات العرض", "Demo accounts"],
+  acct_demoBody: [
+    "للعرض التجريبي فقط: سجّل الدخول بدور آخر لترى التطبيق كما يراه.",
+    "For the demonstration only: sign in as another role to see the app as they see it.",
+  ],
+  acct_demoLabel: ["تسجيل الدخول باسم", "Signed in as"],
   acct_settingsTitle: ["إعداداتي", "My settings"],
   acct_settingsSub: [
     "ملفك الشخصي وتفضيلاتك وأمان حسابك.",

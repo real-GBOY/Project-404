@@ -7,6 +7,7 @@ import { ROLE_LABEL } from "@/presenters/screens/users";
 import { chooseLanguage } from "@/state/language";
 import { C } from "@/styles/colors";
 import { FORM } from "@/styles/form-styles";
+import { DemoAccountSwitcher } from "@/features/demo/DemoAccountSwitcher";
 import { MfaSection } from "./MfaSection";
 import { PasswordSection } from "./PasswordSection";
 import { SessionsSection } from "./SessionsSection";
@@ -118,6 +119,8 @@ export function AccountScreen({ me, pad, title }: { me: Me; pad: string; title: 
           ))}
         </div>
       </section>
+
+      <DemoAccountSwitcher me={me} />
 
       {flash ? <Notice tone={flash.ok ? "success" : "danger"}>{flash.text}</Notice> : null}
       {sec ? (

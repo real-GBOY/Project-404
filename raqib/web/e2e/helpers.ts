@@ -111,8 +111,12 @@ export async function signIn(
   otp?: string,
 ): Promise<void> {
   await attemptSignIn(page, email, password, otp);
-  await expect(page.getByRole("button", { name: "Sign out" }).first()).toBeVisible();
+  await signedIn(page);
 }
+
+/** The workspace is showing: its top bar (with the notifications button) is the one thing every signed-in screen has. */
+export const signedIn = (page: Page) =>
+  expect(page.getByRole("button", { name: /^Notifications/ }).first()).toBeVisible();
 
 // ── a tiny TOTP (RFC 6238) so a test can act as the person's phone ────────────────────────────────────────────────────
 const B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
