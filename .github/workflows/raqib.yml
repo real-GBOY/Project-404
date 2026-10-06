@@ -68,6 +68,8 @@ jobs:
           cache-dependency-path: raqib/web/package-lock.json
 
       - run: npm ci
+      - name: format
+        run: npm run format:check
       - name: lint
         run: npm run lint
       - name: typecheck
