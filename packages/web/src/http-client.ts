@@ -89,18 +89,42 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
     return new ApiError(res.status, body);
   }
 
+  /**
+   * Whether the last refresh failed because the server was busy or unreachable (429, 5xx, no connection), as opposed to refusing
+   * the token. Only a refused token ends the session: a rate limit, a restart or a dead spot in the signal must not log anyone out.
+   */
+  let refreshUnavailable = false;
+
   const refresh = createRefresher({
     tokens,
     onRefreshed: options.onRefreshed,
     exchange: async (refreshToken) => {
-      const res = await doFetch(buildUrl(options.refreshPath), {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ refreshToken }),
-      });
-      if (!res.ok) return null;
-      const data = (await res.json()) as { tokens: { accessToken: string; refreshToken: string } };
-      return data.tokens;
+      refreshUnavailable = false;
+      for (let attempt = 1; ; attempt++) {
+        let res: Response;
+        try {
+          res = await doFetch(buildUrl(options.refreshPath), {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ refreshToken }),
+          });
+        } catch {
+          refreshUnavailable = true;
+          return null;
+        }
+        if (res.status === 429 && attempt < 2) {
+          const asked = Number(res.headers.get("retry-after"));
+          const pause = Math.min(5_000, (Number.isFinite(asked) && res.headers.has("retry-after") ? asked : 1) * 1_000);
+          await new Promise((r) => setTimeout(r, pause));
+          continue;
+        }
+        if (res.ok) {
+          const data = (await res.json()) as { tokens: { accessToken: string; refreshToken: string } };
+          return data.tokens;
+        }
+        refreshUnavailable = res.status === 429 || res.status >= 500;
+        return null;
+      }
     },
   });
 
@@ -137,6 +161,9 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
     if (res.status === 401 && !opts.anonymous) {
       if (await refresh()) {
         res = await raw(path, opts);
+      } else if (refreshUnavailable) {
+        // the session is intact, it just could not be renewed right now: fail this request, keep the person signed in
+        throw new ApiError(503, { error: { code: "auth.refresh_unavailable", message: "Your session could not be renewed right now. Try again in a moment." } });
       } else {
         tokens.clear();
         options.onLogout?.();

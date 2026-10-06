@@ -10,8 +10,8 @@ function memoryStorage(): KeyValueStorage {
   };
 }
 
-const json = (status: number, body?: unknown) =>
-  new Response(body === undefined ? null : JSON.stringify(body), { status });
+const json = (status: number, body?: unknown, headers?: Record<string, string>) =>
+  new Response(body === undefined ? null : JSON.stringify(body), { status, headers });
 
 function setup(handler: (url: string, init: RequestInit) => Response | Promise<Response>) {
   const tokens = createTokenStore({ refreshKey: "t.refresh", storage: memoryStorage() });
@@ -114,14 +114,46 @@ describe("createHttpClient", () => {
     expect(onLogout).toHaveBeenCalledOnce();
   });
 
-  it("treats a refresh network failure as a failed refresh", async () => {
+  it("keeps the session when the refresh cannot reach the server (a dead spot is not a sign-out)", async () => {
     const { client, tokens, onLogout } = setup((url) => {
       if (url === "/api/auth/refresh") throw new TypeError("network down");
       return json(401, {});
     });
     tokens.set("acc", "ref");
-    await expect(client("/things")).rejects.toBeInstanceOf(ApiError);
-    expect(onLogout).toHaveBeenCalledOnce();
+    const err = await client("/things").catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ApiError);
+    expect((err as ApiError).status).toBe(503);
+    expect((err as ApiError).code).toBe("auth.refresh_unavailable");
+    expect(tokens.getRefresh()).toBe("ref");
+    expect(onLogout).not.toHaveBeenCalled();
+  });
+
+  it("keeps the session when the server is busy or broken during a refresh, and retries one rate limit", async () => {
+    for (const status of [500, 502, 503, 429]) {
+      const { client, tokens, onLogout } = setup((url) => (url === "/api/auth/refresh" ? json(status, {}, { "retry-after": "0" }) : json(401, {})));
+      tokens.set("acc", "ref");
+      await expect(client("/things")).rejects.toMatchObject({ status: 503, code: "auth.refresh_unavailable" });
+      expect(tokens.getRefresh()).toBe("ref");
+      expect(onLogout).not.toHaveBeenCalled();
+    }
+    let attempts = 0;
+    const { client, tokens } = setup((url, init) => {
+      if (url === "/api/auth/refresh") return ++attempts === 1 ? json(429, {}, { "retry-after": "0" }) : json(200, { tokens: { accessToken: "acc2", refreshToken: "ref2" } });
+      return auth(init) === "Bearer acc2" ? json(200, { ok: 1 }) : json(401, {});
+    });
+    tokens.set("acc", "ref");
+    await expect(client("/things")).resolves.toEqual({ ok: 1 });
+    expect(attempts).toBe(2);
+  });
+
+  it("still ends the session when the refresh token itself is refused", async () => {
+    for (const status of [400, 401, 403]) {
+      const { client, tokens, onLogout } = setup((url) => (url === "/api/auth/refresh" ? json(status, {}) : json(401, {})));
+      tokens.set("acc", "ref");
+      await expect(client("/things")).rejects.toBeInstanceOf(ApiError);
+      expect(tokens.getRefresh()).toBeNull();
+      expect(onLogout).toHaveBeenCalledOnce();
+    }
   });
 
   it("does not attempt a refresh when there is no refresh token", async () => {
