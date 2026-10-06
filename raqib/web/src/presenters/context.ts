@@ -42,7 +42,7 @@ export interface Data {
   visits?: Visit[];
   forms?: { items: Form[]; capabilities: { add: boolean; edit: boolean; publish: boolean } };
   inspection?: Inspection;
-  reports?: { items: Report[]; pdf: boolean };
+  reports?: { items: Report[] };
   observations?: Observation[];
   actions?: CorrectiveAction[];
   training?: TrainingRequest[];

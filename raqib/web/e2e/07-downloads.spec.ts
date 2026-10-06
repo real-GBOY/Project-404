@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { ACCOUNTS, signIn, useEnglish } from "./helpers";
 
-/** The files a manager takes away: figures and the audit trail as CSV or Excel, and an issued report as a PDF. */
+/** The files a manager takes away: figures and the audit trail as CSV or Excel, and an issued report printed to PDF by the browser. */
 test.describe("downloads", () => {
   test.beforeEach(async ({ page }) => {
     await useEnglish(page);
@@ -28,15 +28,44 @@ test.describe("downloads", () => {
     });
   }
 
-  test("an issued report downloads as a PDF", async ({ page }) => {
+  test("an issued report prints to PDF from the browser, with no server rendering", async ({
+    page,
+  }) => {
+    // a real print dialog cannot be driven: intercept print() on the report frame and record what would have been printed
+    const printed: Array<{ title: string; dir: string; text: string }> = [];
+    await page.exposeFunction("__printed", (p: { title: string; dir: string; text: string }) =>
+      printed.push(p),
+    );
+    await page.addInitScript(() => {
+      const desc = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, "contentWindow")!;
+      Object.defineProperty(HTMLIFrameElement.prototype, "contentWindow", {
+        get() {
+          const w = desc.get!.call(this) as (Window & { __patched?: boolean }) | null;
+          if (w && !w.__patched) {
+            w.__patched = true;
+            const frame = this as HTMLIFrameElement;
+            w.print = () => {
+              (window as unknown as { __printed: (p: unknown) => void }).__printed({
+                title: frame.contentDocument!.title,
+                dir: frame.contentDocument!.documentElement.dir,
+                text: frame.contentDocument!.body.innerText.slice(0, 600),
+              });
+              w.dispatchEvent(new Event("afterprint")); // as the browser does when the dialog closes
+            };
+          }
+          return w;
+        },
+      });
+    });
     await page.goto("/reports");
-    const pdf = page.getByRole("button", { name: "PDF" }).first();
-    await expect(pdf).toBeVisible();
-    const download = page.waitForEvent("download", { timeout: 20_000 }).catch(() => null);
-    await pdf.click();
-    const file = await download;
-    // Without a Chromium on the server (RAQIB_CHROMIUM_PATH) the product says so instead of downloading
-    test.skip(!file, "PDF rendering needs RAQIB_CHROMIUM_PATH on the server");
-    expect(file!.suggestedFilename()).toMatch(/\.pdf$/);
+    const first = page.getByRole("button", { name: "PDF" }).first();
+    await expect(first).toBeVisible();
+    await first.click();
+    await expect.poll(() => printed.length, { timeout: 20_000 }).toBe(1);
+    expect(printed[0]!.title).toMatch(/^RPT-[\d-]+-en$/); // the suggested file name
+    expect(printed[0]!.dir).toBe("ltr");
+    expect(printed[0]!.text).toContain("RPT-");
+    await expect(page.getByText("Save as PDF")).toBeVisible();
+    await expect(page.locator("iframe")).toHaveCount(0); // the frame cleans itself up
   });
 });

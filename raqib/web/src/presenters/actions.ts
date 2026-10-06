@@ -159,7 +159,8 @@ export interface Actions {
   ): Promise<void>;
   rejectRequest(id: string, reason: string): Promise<void>;
   resendRequest(id: string): Promise<void>;
-  reportPdf(id: string, lang: "ar" | "en"): Promise<Blob>;
+  /** The report as a print-ready page; the browser prints it to PDF. */
+  reportHtml(id: string, lang: "ar" | "en"): Promise<string>;
   evidenceBlob(id: string): Promise<Blob>;
   decideReview(
     visitId: string,

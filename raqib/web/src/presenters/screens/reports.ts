@@ -2,6 +2,7 @@ import type { Report } from "@/api/types";
 import { scoreColor } from "../common";
 import type { Ctx } from "../context";
 import { ROLE_LABEL } from "./users";
+import { printHtml } from "@/services/print-html";
 import { C } from "@/styles/colors";
 
 /** Report row on the issued-reports list (design: rl). */
@@ -40,15 +41,16 @@ export function saveBlob(blob: Blob, name: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
 
+/** The PDF: fetch the print-ready report, then let the browser print it ("Save as PDF"). No server renders anything. */
 export async function downloadPdf(c: Ctx, r: Report, lang: "ar" | "en"): Promise<void> {
   const { i } = c;
   c.toast(i.S("rp_preparing"));
   try {
-    saveBlob(await c.actions.reportPdf(r.id, lang), `${r.ref}-${lang}.pdf`);
-    c.set({ toast: null });
-  } catch (e) {
-    const status = (e as { status?: number }).status;
-    c.toast(status === 500 || status === 503 ? i.S("rp_pdf_unavailable") : i.S("actionFailed"));
+    const html = await c.actions.reportHtml(r.id, lang);
+    await printHtml(html, `${r.ref}-${lang}`);
+    c.toast(i.S("rp_print_hint"));
+  } catch {
+    c.toast(i.S("actionFailed"));
   }
 }
 

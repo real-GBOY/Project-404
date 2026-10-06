@@ -42,9 +42,9 @@ export const STRINGS_REPORTS: Record<string, readonly [string, string]> = {
   rp_signer_reviewer: ["المراجع", "Reviewer"],
   rp_signer_approver: ["المعتمد", "Approver"],
   rp_preparing: ["جارٍ تجهيز الملف…", "Preparing the file…"],
-  rp_pdf_unavailable: [
-    "توليد PDF غير مُفعَّل على هذا الخادم.",
-    "PDF generation is not enabled on this server.",
+  rp_print_hint: [
+    "اختر «حفظ بتنسيق PDF» في نافذة الطباعة.",
+    "Choose “Save as PDF” in the print window.",
   ],
   rp_excel_later: [
     "تصدير Excel يصل مع مرحلة التحليلات.",

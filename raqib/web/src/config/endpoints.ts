@@ -116,7 +116,7 @@ export const ENDPOINTS = {
   },
   reports: {
     list: "/raqib/reports",
-    pdf: (id: string, lang: string) => `/raqib/reports/${id}/pdf?lang=${lang}`,
+    html: (id: string, lang: string) => `/raqib/reports/${id}/html?lang=${lang}`,
   },
   evidence: {
     attach: "/raqib/evidence",
