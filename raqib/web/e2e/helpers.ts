@@ -1,5 +1,5 @@
 import { createHmac } from "node:crypto";
-import { expect, type APIRequestContext, type Page } from "@playwright/test";
+import { expect, type APIRequestContext, type Browser, type Page } from "@playwright/test";
 
 /** The API the specs set up and check state through (a local throw-away backend unless E2E_API says otherwise). */
 export const API_ORIGIN = process.env.E2E_API ?? "http://localhost:3399";
@@ -55,7 +55,7 @@ export async function api<T = unknown>(
  * Interface in English for stable text selectors, and a client address of its own for this test's API calls (the backend
  * trusts one proxy hop here), so the per-address sign-in rate limit never couples one test to another.
  */
-export async function useEnglish(page: Page): Promise<void> {
+export async function inEnglish(page: Page): Promise<void> {
   const ip = nextIp();
   await page.route("**/api/**", (route) =>
     route.continue({ headers: { ...route.request().headers(), "x-forwarded-for": ip } }),
@@ -75,6 +75,18 @@ export async function useEnglish(page: Page): Promise<void> {
     for (const k of Object.keys(localStorage)) if (/lang/i.test(k)) localStorage.removeItem(k);
     localStorage.setItem("raqib.lang", "en");
   });
+}
+
+/** A second (or third) person in their own browser, signed in: for flows that pass work from one role to another. */
+export async function asUser(browser: Browser, email: string): Promise<Page> {
+  const context = await browser.newContext({
+    locale: "en-US",
+    viewport: { width: 1440, height: 900 },
+  });
+  const page = await context.newPage();
+  await inEnglish(page);
+  await signIn(page, email);
+  return page;
 }
 
 /** Fill and submit the sign-in form without waiting for the outcome (for the cases that are meant to fail or ask for more). */

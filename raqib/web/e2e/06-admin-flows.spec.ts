@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { ACCOUNTS, api, apiLogin, signIn, useEnglish } from "./helpers";
+import { ACCOUNTS, api, apiLogin, signIn, inEnglish } from "./helpers";
 
 /**
  * The upkeep flows that keep a running system workable: naming a new inspection form, raising a field observation,
@@ -12,7 +12,7 @@ const fill = (page: Page, label: string, value: string) =>
 
 test.describe("keeping the system workable", () => {
   test.beforeEach(async ({ page }) => {
-    await useEnglish(page);
+    await inEnglish(page);
     await page.setViewportSize({ width: 1440, height: 900 });
   });
 
@@ -83,7 +83,16 @@ test.describe("keeping the system workable", () => {
     await signIn(page, ACCOUNTS.qm);
     await page.goto(`/action/${open.id}`);
     await page.getByRole("button", { name: "Reassign / change due date" }).click();
-    await dialog(page).getByLabel("Due date", { exact: false }).first().fill("2027-01-15");
+    // the people who can take the action are listed (the current owner at least), so it can be handed to someone else
+    await expect(
+      dialog(page).getByLabel("Responsible", { exact: true }).locator("option").first(),
+    ).toBeAttached();
+    expect(await dialog(page).getByLabel("Responsible", { exact: true }).inputValue()).not.toBe("");
+    // a date that differs from whatever earlier runs left, so the change is always a real one
+    const due = new Date(Date.now() + (40 + (Date.now() % 300)) * 86_400_000)
+      .toISOString()
+      .slice(0, 10);
+    await dialog(page).getByLabel("Due date", { exact: false }).first().fill(due);
     await dialog(page).getByRole("button", { name: "Save" }).click();
     await expect(dialog(page)).toBeVisible(); // a reason is required
     await dialog(page).locator("textarea").fill("Waiting for the supplier.");

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { ACCOUNTS, signIn, useEnglish } from "./helpers";
+import { ACCOUNTS, signIn, inEnglish } from "./helpers";
 
 /**
  * A smoke test across the whole product: every role signs in and every screen in its sidebar opens against the real
@@ -7,7 +7,7 @@ import { ACCOUNTS, signIn, useEnglish } from "./helpers";
  * role should see that the backend refuses, a presenter that throws on real data).
  */
 test.describe("every role can open every screen it is offered", () => {
-  test.beforeEach(async ({ page }) => useEnglish(page));
+  test.beforeEach(async ({ page }) => inEnglish(page));
 
   for (const [role, email] of Object.entries(ACCOUNTS)) {
     test(`${role}`, async ({ page }) => {

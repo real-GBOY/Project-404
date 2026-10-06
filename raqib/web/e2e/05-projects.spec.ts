@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { ACCOUNTS, signIn, useEnglish } from "./helpers";
+import { ACCOUNTS, signIn, inEnglish } from "./helpers";
 
 /**
  * The set-up flow a new customer goes through, entirely in the browser: create a project, give it a site and an area, add a
@@ -14,7 +14,7 @@ const fill = (page: Page, label: string, value: string) =>
 
 test.describe("setting up a project and its guards", () => {
   test.beforeEach(async ({ page }) => {
-    await useEnglish(page);
+    await inEnglish(page);
     await page.setViewportSize({ width: 1440, height: 900 });
   });
 

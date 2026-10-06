@@ -1,5 +1,5 @@
 import { expect, test, type APIRequestContext } from "@playwright/test";
-import { ACCOUNTS, PNG, api, apiLogin, signIn, useEnglish } from "./helpers";
+import { ACCOUNTS, PNG, api, apiLogin, signIn, inEnglish } from "./helpers";
 
 interface Item {
   id: string;
@@ -32,7 +32,7 @@ async function startInspection(
 }
 
 test.describe("working without a connection", () => {
-  test.beforeEach(async ({ page }) => useEnglish(page));
+  test.beforeEach(async ({ page }) => inEnglish(page));
 
   test("an inspector keeps working offline, survives a reload with no network, and everything syncs when the signal returns", async ({
     page,

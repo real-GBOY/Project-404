@@ -7,11 +7,11 @@ import {
   attemptSignIn,
   signIn,
   totp,
-  useEnglish,
+  inEnglish,
 } from "./helpers";
 
 test.describe("sign-in and account security", () => {
-  test.beforeEach(async ({ page }) => useEnglish(page));
+  test.beforeEach(async ({ page }) => inEnglish(page));
 
   test("a person signs in and sees their workspace, and a wrong password is refused", async ({
     page,

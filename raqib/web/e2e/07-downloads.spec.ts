@@ -1,10 +1,10 @@
 import { expect, test } from "@playwright/test";
-import { ACCOUNTS, signIn, useEnglish } from "./helpers";
+import { ACCOUNTS, signIn, inEnglish } from "./helpers";
 
 /** The files a manager takes away: figures and the audit trail as CSV or Excel, and an issued report printed to PDF by the browser. */
 test.describe("downloads", () => {
   test.beforeEach(async ({ page }) => {
-    await useEnglish(page);
+    await inEnglish(page);
     await page.setViewportSize({ width: 1440, height: 900 });
     await signIn(page, ACCOUNTS.qm);
   });

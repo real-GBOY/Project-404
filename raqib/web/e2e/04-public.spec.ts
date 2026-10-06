@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
-import { useEnglish } from "./helpers";
+import { inEnglish } from "./helpers";
 
 test.describe("pages an anonymous person can reach", () => {
-  test.beforeEach(async ({ page }) => useEnglish(page));
+  test.beforeEach(async ({ page }) => inEnglish(page));
 
   test("the account-request page loads the organization's options from the API", async ({
     page,
