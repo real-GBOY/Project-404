@@ -10,6 +10,11 @@ export interface R2AdapterConfig {
   endpoint?: string;
   /** Public base URL (custom domain / r2.dev) for `visibility: "public"` files. */
   publicBaseUrl?: string;
+  /**
+   * A folder for this product inside the bucket (a key prefix such as `raqib`). The adapter adds it to every object path, so the
+   * keys the application stores and passes around stay the same and several products can share one bucket.
+   */
+  keyPrefix?: string;
   /** TTL for presigned GET (download) URLs, seconds. Defaults to 900. */
   presignTtlSeconds?: number;
 }
@@ -28,6 +33,7 @@ export class R2Adapter implements StorageAdapter {
   private readonly accessKeyId: string;
   private readonly secretAccessKey: string;
   private readonly publicBaseUrl?: string;
+  private readonly prefix: string;
   private readonly downloadTtl: number;
   private readonly region = "auto";
   private readonly service = "s3";
@@ -40,11 +46,24 @@ export class R2Adapter implements StorageAdapter {
     this.secretAccessKey = config.secretAccessKey;
     this.publicBaseUrl = config.publicBaseUrl?.replace(/\/$/, "");
     this.downloadTtl = config.presignTtlSeconds ?? 900;
+    const folder = (config.keyPrefix ?? "").replace(/^\/+|\/+$/g, "");
+    if (
+      folder &&
+      (!/^[A-Za-z0-9._-]+(\/[A-Za-z0-9._-]+)*$/.test(folder) ||
+        folder.split("/").some((seg) => seg === "." || seg === ".."))
+    )
+      throw new Error(`Invalid R2 key prefix "${config.keyPrefix}".`);
+    this.prefix = folder ? `${folder}/` : "";
   }
 
-  /** `/bucket/key` — the canonical URI path S3 signs over. */
+  /** The object's name in the bucket: the product folder, then the application's key. */
+  private objectKey(key: string): string {
+    return `${this.prefix}${key.replace(/^\/+/, "")}`;
+  }
+
+  /** `/bucket/folder/key` — the canonical URI path S3 signs over. */
   private path(key: string): string {
-    return `/${this.bucket}/${key.replace(/^\/+/, "")}`;
+    return `/${this.bucket}/${this.objectKey(key)}`;
   }
 
   private sign(method: string, key: string, payloadHash: string) {
@@ -116,7 +135,7 @@ export class R2Adapter implements StorageAdapter {
   }
 
   async url(key: string): Promise<string> {
-    if (this.publicBaseUrl) return `${this.publicBaseUrl}/${key.replace(/^\/+/, "")}`;
+    if (this.publicBaseUrl) return `${this.publicBaseUrl}/${this.objectKey(key)}`;
     return presignUrl({
       method: "GET",
       host: this.host,

@@ -33,6 +33,7 @@ import { FilesController } from "@core/files/api/files.controller.js";
             bucket: config.r2Bucket!,
             endpoint: config.r2Endpoint,
             publicBaseUrl: config.r2PublicBaseUrl,
+            keyPrefix: config.r2KeyPrefix,
             presignTtlSeconds: config.filePresignTtlSeconds,
           });
         }
