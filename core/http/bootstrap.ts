@@ -121,15 +121,17 @@ export async function bootstrapAuricApp(options: BootstrapOptions): Promise<void
 
     const app = await createAuricApp(module, config);
 
-    setupOpenApi(app, {
-      title: `${identity.name} API`,
-      version: identity.version,
-      description: `${identity.name} (${identity.codename}) — running on AURIC Core ${CORE_VERSION}. Interactive docs; most write routes need a Bearer access token (see /api/auth/login).`,
-    });
+    if (config.docsEnabled) {
+        setupOpenApi(app, {
+        title: `${identity.name} API`,
+        version: identity.version,
+        description: `${identity.name} (${identity.codename}) — running on AURIC Core ${CORE_VERSION}. Interactive docs; most write routes need a Bearer access token (see /api/auth/login).`,
+      });
+    }
 
     await seed(app);
 
-    await app.listen({ port: config.port, host: "0.0.0.0" });
+    await app.listen({ port: config.port, host: config.host });
     rootLogger.info(
       {
         app: identity.name,
@@ -137,7 +139,7 @@ export async function bootstrapAuricApp(options: BootstrapOptions): Promise<void
         appVersion: identity.version,
         core: CORE_VERSION,
         health: `http://localhost:${config.port}/api/health`,
-        docs: `http://localhost:${config.port}/api/docs`,
+        docs: config.docsEnabled ? `http://localhost:${config.port}/api/docs` : "disabled",
       },
       `${identity.name} (${identity.codename}) — running on AURIC Core ${CORE_VERSION}`,
     );

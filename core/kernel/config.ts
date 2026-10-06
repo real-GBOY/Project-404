@@ -56,6 +56,21 @@ const schema = z.object({
   // The presigned-upload flow works on both — `local` presigns its own
   // authenticated loopback route, `r2` issues real S3 presigned URLs.
   fileStorageDriver: z.enum(["local", "r2"]).default("local"),
+  /** Interface the HTTP server binds to. `127.0.0.1` when a reverse proxy on the same machine is the only way in. */
+  host: z.string().trim().min(1).default("0.0.0.0"),
+  /** Serve the interactive OpenAPI docs at /api/docs. Turn off on a public deployment: it publishes the whole API surface. */
+  docsEnabled: z
+    .enum(["true", "false"])
+    .default("true")
+    .transform((v) => v === "true"),
+  /**
+   * Let anyone register an account (`POST /auth/register`) and create an organization (`POST /organizations`). Right for a
+   * self-service SaaS; turn off where accounts are issued (invitations, account requests, provisioning).
+   */
+  selfSignup: z
+    .enum(["true", "false"])
+    .default("true")
+    .transform((v) => v === "true"),
   fileStoragePath: z.string().default("./storage/files"),
   r2AccountId: z.string().optional(),
   r2AccessKeyId: z.string().optional(),
@@ -149,6 +164,9 @@ function readEnv(): AuricConfig {
     defaultLocale: process.env.AURIC_DEFAULT_LOCALE,
     supportedLocales: process.env.AURIC_SUPPORTED_LOCALES,
     fileStorageDriver: process.env.AURIC_FILE_STORAGE_DRIVER,
+    host: process.env.AURIC_HOST,
+    docsEnabled: process.env.AURIC_DOCS_ENABLED,
+    selfSignup: process.env.AURIC_SELF_SIGNUP,
     fileStoragePath: process.env.AURIC_FILE_STORAGE_PATH,
     r2AccountId: process.env.AURIC_R2_ACCOUNT_ID,
     r2AccessKeyId: process.env.AURIC_R2_ACCESS_KEY_ID,

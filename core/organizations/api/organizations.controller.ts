@@ -11,6 +11,7 @@ import {
 } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import type { z } from "zod";
+import { getConfig } from "@core/kernel/config.js";
 import { Forbidden } from "@core/kernel/errors.js";
 import { CurrentUser, RequirePermission } from "@core/http/decorators.js";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
@@ -49,6 +50,7 @@ export class OrganizationsController {
     @Body(ZodBody(createOrganizationSchema)) input: z.infer<typeof createOrganizationSchema>,
     @CurrentUser() user: Principal,
   ) {
+    if (!getConfig().selfSignup) throw Forbidden("organizations.signup_closed", "Organizations are created by an administrator on this deployment.");
     return {
       organization: await this.service.createOrganization({ ...input, createdBy: user.userId }),
     };

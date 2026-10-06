@@ -5,6 +5,8 @@ import { CurrentUser } from "@core/http/decorators.js";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
 import { ZodBody } from "@core/http/zod.pipe.js";
 import type { Principal } from "@core/http/principal.js";
+import { getConfig } from "@core/kernel/config.js";
+import { Forbidden } from "@core/kernel/errors.js";
 import { USER_PROVIDER } from "@core/kernel/tokens.js";
 import type { IUserProvider } from "@core/contracts/index.js";
 import { IdentityService } from "@core/identity/application/identity-service.js";
@@ -26,6 +28,7 @@ export class AuthController {
   @Post("register")
   @HttpCode(201)
   async register(@Body(ZodBody(registerSchema)) input: z.infer<typeof registerSchema>) {
+    if (!getConfig().selfSignup) throw Forbidden("identity.signup_closed", "Sign-up is closed on this deployment. Ask your administrator for an account.");
     return { user: await this.service.register(input) };
   }
 
