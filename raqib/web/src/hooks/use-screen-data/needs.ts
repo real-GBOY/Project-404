@@ -21,19 +21,25 @@ const GUARD_SCREENS = ["guards", "guard", "visit", "inspect", "review", "trainin
 export function screenNeeds(route: Route, me: Me) {
   const p = me.permissions;
   const n = route.n;
+  // the quality / executive overview is computed from approved reports, observations and corrective actions
+  const management = n === "overview" && ["qm", "qe", "gm"].includes(me.role);
   const guardRecords = p.guardEval.includes("V") || p.training.includes("V");
   const want = {
     // the shell labels a person's scope with project names whenever the template allows reading projects
     projects: p.projects.includes("V"),
     visits: p.visits.includes("V") && VISIT_SCREENS.includes(n),
     guards: (guardRecords && GUARD_SCREENS.includes(n)) || (n === "overview" && me.role === "gs"),
-    users: p.users.includes("V") && ["users", "user", "permissions"].includes(n),
+    // also the pickers in the project and guard dialogs (project managers, guard sign-in accounts)
+    users:
+      p.users.includes("V") &&
+      ["users", "user", "permissions", "projects", "project", "guards"].includes(n),
     permissions: p.permissions.includes("V") && ["user", "permissions"].includes(n),
-    settings: p.settings.includes("V") && n === "settings",
+    settings: p.settings.includes("V") && (n === "settings" || management),
     forms: p.forms.includes("V") && ["forms", "form"].includes(n),
     inspection: ["inspect", "review"].includes(n) && !!route.id,
-    observations: p.observations.includes("V") && ["observations", "review"].includes(n),
-    actions: p.actions.includes("V") && n === "actions",
+    observations:
+      p.observations.includes("V") && (["observations", "review"].includes(n) || management),
+    actions: p.actions.includes("V") && (n === "actions" || management),
     action: p.actions.includes("V") && n === "action" && !!route.id,
     training: p.training.includes("V") && n === "training",
     trainingOne: p.training.includes("V") && n === "trainingD" && !!route.id,
@@ -43,7 +49,9 @@ export function screenNeeds(route: Route, me: Me) {
     audit: p.audit.includes("V") && n === "audit",
     accountRequests: p.users.includes("V") && ["users", "request"].includes(n),
     accountRequest: p.users.includes("V") && n === "request" && !!route.id,
-    reports: p.reports.includes("V") && ["reports", "report", "visit", "review"].includes(n),
+    reports:
+      p.reports.includes("V") &&
+      (["reports", "report", "visit", "review"].includes(n) || management),
   };
   return want;
 }

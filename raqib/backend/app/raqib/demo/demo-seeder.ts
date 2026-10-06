@@ -18,7 +18,8 @@ import { AccessService } from "@raqib/raqib/access/application/access-service.js
 import { VisitsService } from "@raqib/raqib/visits/application/visits-service.js";
 import { runAsOf } from "@raqib/raqib/shared/business-date.js";
 import { addDays } from "@raqib/raqib/shared/dates.js";
-import { DEMO_VISITS } from "./demo-visits.js";
+import { DEMO_VISITS, type DemoVisit } from "./demo-visits.js";
+import { historyVisits } from "./demo-history.js";
 import { DEMO_FORMS } from "./demo-forms.js";
 import { OnboardingService } from "@raqib/raqib/onboarding/application/onboarding-service.js";
 import { ConfidentialService } from "@raqib/raqib/confidential/application/confidential-service.js";
@@ -31,6 +32,7 @@ import { InspectionsService } from "@raqib/raqib/inspections/application/inspect
 import { EvidenceService } from "@raqib/raqib/evidence/application/evidence-service.js";
 import { FILE_STORAGE } from "@core/kernel/tokens.js";
 import type { IFileStorage } from "@core/contracts/index.js";
+import { readRaqibConfig } from "@raqib/config.js";
 import { DEFAULT_SETTINGS } from "@raqib/raqib/settings/domain/defaults.js";
 import { DEMO_NAMED_GUARDS, DEMO_ORG, DEMO_PASSWORD, DEMO_PEOPLE, DEMO_PROJECTS, fillerGuards } from "./demo-data.js";
 
@@ -109,7 +111,7 @@ export class DemoSeeder {
   }
 
   /** Visits are scheduled by the people who would schedule them, on the date they would have, via the real service. */
-  private async seedVisits(orgId: string, userIds: Map<string, string>, today: string): Promise<void> {
+  private async seedVisits(orgId: string, userIds: Map<string, string>, today: string, visits: DemoVisit[] = DEMO_VISITS): Promise<void> {
     const as = async (key: string, agoDays: number, fn: (who: Awaited<ReturnType<AccessService["resolve"]>>) => Promise<unknown>) =>
       withContext({ userId: userIds.get(key)!, organizationId: orgId }, () =>
         runAsOf(addDays(today, -agoDays), async () => {
@@ -117,7 +119,7 @@ export class DemoSeeder {
           await fn(who);
         }),
       );
-    for (const v of DEMO_VISITS) {
+    for (const v of visits) {
       let visitId = "";
       await as(v.by, v.scheduledAgo, async (who) => {
         const created = await this.visits.create(
@@ -441,7 +443,8 @@ export class DemoSeeder {
 
     const now = clock.now();
     const today = localDate(now, DEFAULT_SETTINGS.org.tz);
-    const startDate = "2026-01-01";
+    // assignments must reach back past the oldest generated inspection, or the inspector would not have been eligible for it
+    const startDate = [addDays(today, -(readRaqibConfig().demoHistoryDays + 7)), "2026-01-01"].sort()[0]!;
     const orgId = newId("org");
     const userIds = new Map<string, string>();
     const passwordHash = await argon2Hasher.hash(DEMO_PASSWORD);
@@ -571,6 +574,8 @@ export class DemoSeeder {
     await this.seedTraining(orgId, userIds, today);
     await this.seedConfidential(orgId, userIds, today);
     await this.seedRequests(orgId, userIds, today);
+    // a year of ordinary approved inspections, so the overview and analytics have something to show (RAQIB_DEMO_HISTORY_DAYS)
+    await this.seedVisits(orgId, userIds, today, historyVisits(readRaqibConfig().demoHistoryDays));
 
     log.info({ orgId, people: DEMO_PEOPLE.length, projects: DEMO_PROJECTS.length, today }, "raqib demo organization seeded");
   }
