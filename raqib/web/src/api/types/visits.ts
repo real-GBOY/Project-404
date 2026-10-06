@@ -52,6 +52,7 @@ export interface Visit {
 export interface CreateVisitInput {
   projectId: string;
   siteId: string;
+  areaId?: string | null;
   areaText?: string | null;
   inspectorId?: string | null;
   type: VisitType;

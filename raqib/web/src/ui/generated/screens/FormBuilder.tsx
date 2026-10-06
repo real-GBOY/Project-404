@@ -29,7 +29,12 @@ export function FormBuilder({ vm }: { vm: VM }) {
 </span>
 </div>
 {fm.editable ? (<>
-<input value={fm.nameVal} onChange={fm.onName} style={{ marginTop: "6px", width: "100%", maxWidth: "560px", height: "42px", border: `1px solid ${C.border.input}`, borderRadius: "4px", padding: "0 12px", fontSize: "20px", fontWeight: "600" }} />
+<input value={fm.nameVal} readOnly style={{ marginTop: "6px", width: "100%", maxWidth: "560px", height: "42px", border: `1px solid ${C.border.input}`, borderRadius: "4px", padding: "0 12px", fontSize: "20px", fontWeight: "600" }} />
+{fm.canRename ? (<>
+<button onClick={fm.rename} style={{ marginTop: "6px", height: "34px", padding: "0 12px", border: `1px solid ${C.border.input}`, borderRadius: "4px", background: C.surface.white, color: C.text.ink, fontSize: "13px", cursor: "pointer" }}>
+{t.pa_rename}
+</button>
+</>) : null}
 </>) : null}
 {fm.readOnly ? (<>
 <h1 style={{ margin: "4px 0 0", fontSize: "22px", fontWeight: "600" }}>

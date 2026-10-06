@@ -25,13 +25,7 @@ export function formsList(c: Ctx) {
   return {
     fl: {
       rows, canAdd: !!caps?.add,
-      add: () => {
-        const n = (data.forms?.items.length ?? 0) + 1;
-        void c.actions
-          .createForm({ code: `FRM-NEW-${String(n).padStart(2, "0")}${Date.now().toString().slice(-3)}`, category: "site", name: { ar: "نموذج جديد", en: "New form" } })
-          .then((f) => c.go("form", f.id, { fb: {} }))
-          .catch(() => c.toast(i.S("actionFailed")));
-      },
+      add: () => c.openModal("formNew", undefined, { fcat: "site" }),
     },
   };
 }
@@ -102,7 +96,8 @@ export function formBuilder(c: Ctx, f: Form) {
       name: i.L(f.name), code: f.code, cat: i.S(catKey(f)), desc: i.L(f.description), st: badge(f.active ? i.S("active") : i.S("inactive"), f.active ? "ok" : "neu"),
       verLabel: `v${ver.version}`, verSt: badge(i.S(`fvs_${ver.status}`), verTone(ver.status)),
       editable, readOnly: !editable, roMsg: ver.status === "draft" ? i.S("fb_noEdit") : i.S("fb_locked", { v: ver.version }),
-      nameVal: i.L(f.name), onName: () => undefined,
+      nameVal: i.L(f.name), canRename: !!c.me.permissions.forms.includes("E"),
+      rename: () => c.openModal("formRename", { id: f.id }, { nameAr: f.name.ar, nameEn: f.name.en }),
       versions: f.versions.map((v) => ({
         v: `v${v.version}`, st: badge(i.S(`fvs_${v.status}`), verTone(v.status)), by: v.by ? i.L(v.by.name) : "—", at: i.fd(v.at, "d"), note: i.L(v.note),
         uses: i.S("nInsp", { n: v.uses }), bg: v.id === ver.id ? C.brand.wash : C.surface.white, bd: v.id === ver.id ? C.brand.primary : C.border.hairline,

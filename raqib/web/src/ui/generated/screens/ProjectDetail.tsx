@@ -41,11 +41,18 @@ export function ProjectDetail({ vm }: { vm: VM }) {
 </span>
 </div>
 </div>
+<div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+{pd.canEdit ? (<>
+<button onClick={pd.edit} style={{ height: "40px", padding: "0 12px", border: `1px solid ${C.border.input}`, borderRadius: "4px", background: C.surface.white, color: C.text.ink, fontSize: "13px", cursor: "pointer" }}>
+{t.pa_editProject}
+</button>
+</>) : null}
 {pd.canSchedule ? (<>
 <button onClick={pd.schedule} style={{ height: "40px", padding: "0 16px", border: "0", borderRadius: "4px", background: C.brand.primary, color: C.surface.white, fontWeight: "500", cursor: "pointer" }}>
 {t.scheduleVisit}
 </button>
 </>) : null}
+</div>
 </div>
 <div style={{ display: "flex", gap: "4px", borderBottom: `1px solid ${C.border.hairline}`, overflowX: "auto" }}>
 {(pd.tabs || []).map((tb: any, __i: number) => (<Fragment key={__i}>
@@ -215,14 +222,43 @@ export function ProjectDetail({ vm }: { vm: VM }) {
 </>) : null}
 {pt.sites ? (<>
 <section style={{ background: C.surface.white, border: `1px solid ${C.border.hairline}`, borderRadius: "6px" }}>
+{pd.canEdit ? (<>
+<div style={{ display: "flex", justifyContent: "flex-end", padding: "10px 18px", borderBottom: `1px solid ${C.surface.subtle}` }}>
+<button onClick={pd.addSite} style={{ height: "34px", padding: "0 12px", border: `1px solid ${C.border.input}`, borderRadius: "4px", background: C.surface.white, color: C.text.ink, fontSize: "13px", cursor: "pointer" }}>
+{t.pa_addSite}
+</button>
+</div>
+</>) : null}
+{pd.noSites ? (<>
+<div style={{ padding: "28px 18px", textAlign: "center", fontSize: "13.5px", color: C.text.secondary }}>
+{t.pa_noSites}
+</div>
+</>) : null}
 {(pd.siteRows || []).map((x: any, __i: number) => (<Fragment key={__i}>
 <div style={{ display: "flex", gap: "16px", alignItems: "center", padding: "14px 18px", borderBottom: `1px solid ${C.surface.subtle}`, flexWrap: "wrap" }}>
 <div style={{ flex: "1", minWidth: "200px" }}>
 <div style={{ fontWeight: "600" }}>
 {x.n}
 </div>
-<div style={{ fontSize: "12.5px", color: C.text.secondary }}>
-{t.areas}: {x.areas}
+<div style={{ fontSize: "12.5px", color: C.text.secondary, display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center", marginTop: "4px" }}>
+<span>
+{t.areas}:
+</span>
+{(x.areaChips || []).length === 0 ? (<>
+<span>
+—
+</span>
+</>) : null}
+{(x.areaChips || []).map((a: any, __j: number) => (<Fragment key={__j}>
+<span style={{ display: "inline-flex", alignItems: "center", gap: "4px", border: `1px solid ${C.border.hairline}`, borderRadius: "12px", padding: "1px 4px 1px 10px", background: C.surface.paper }}>
+{a.n}
+{pd.canEdit ? (<>
+<button onClick={a.archive} aria-label={t.pa_archive} title={t.pa_archive} style={{ border: "0", background: "none", cursor: "pointer", color: C.text.muted, fontSize: "14px", lineHeight: "1", padding: "2px 4px" }}>
+×
+</button>
+</>) : null}
+</span>
+</Fragment>))}
 </div>
 </div>
 <span style={{ fontSize: "12.5px", color: C.text.secondary }}>
@@ -231,6 +267,19 @@ export function ProjectDetail({ vm }: { vm: VM }) {
 <span style={{ fontWeight: "600", color: x.scoreC, minWidth: "44px", textAlign: "end" }}>
 {x.scoreTxt}
 </span>
+{pd.canEdit ? (<>
+<span style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+<button onClick={x.addArea} style={{ height: "34px", padding: "0 12px", border: `1px solid ${C.border.input}`, borderRadius: "4px", background: C.surface.white, color: C.text.ink, fontSize: "13px", cursor: "pointer" }}>
+{t.pa_addArea}
+</button>
+<button onClick={x.rename} style={{ height: "34px", padding: "0 12px", border: `1px solid ${C.border.input}`, borderRadius: "4px", background: C.surface.white, color: C.text.ink, fontSize: "13px", cursor: "pointer" }}>
+{t.pa_rename}
+</button>
+<button onClick={x.archive} style={{ height: "34px", padding: "0 12px", border: `1px solid ${C.border.input}`, borderRadius: "4px", background: C.surface.white, color: C.status.danger.fg, fontSize: "13px", cursor: "pointer" }}>
+{t.pa_archive}
+</button>
+</span>
+</>) : null}
 </div>
 </Fragment>))}
 </section>

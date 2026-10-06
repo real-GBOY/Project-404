@@ -37,6 +37,11 @@ export function ActionDetail({ vm }: { vm: VM }) {
 <h1 style={{ margin: "4px 0 0", fontSize: "22px", fontWeight: "600" }}>
 {ad.t}
 </h1>
+{ad.canReassign ? (<>
+<button onClick={ad.reassign} style={{ marginTop: "8px", height: "34px", padding: "0 12px", border: `1px solid ${C.border.input}`, borderRadius: "4px", background: C.surface.white, color: C.text.ink, fontSize: "13px", cursor: "pointer" }}>
+{t.pa_reassign}
+</button>
+</>) : null}
 </div>
 <section style={{ background: C.surface.white, border: `1px solid ${C.border.hairline}`, borderRadius: "6px", padding: "18px" }}>
 {ad.stepH ? (<>

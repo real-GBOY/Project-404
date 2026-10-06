@@ -6,12 +6,22 @@ import { invalidate, type Qc, type Slice } from "./shared";
 export const formActions = (
   qc: Qc,
 ): Slice<
-  "createForm" | "createDraft" | "saveDraft" | "discardDraft" | "publishForm" | "setFormActive"
+  | "createForm"
+  | "renameForm"
+  | "createDraft"
+  | "saveDraft"
+  | "discardDraft"
+  | "publishForm"
+  | "setFormActive"
 > => ({
   async createForm(input) {
     const f = await api.forms.create(input);
     await invalidate(qc, QK.forms);
     return { id: f.id };
+  },
+  async renameForm(id, name) {
+    await api.forms.rename(id, name);
+    await invalidate(qc, QK.forms);
   },
   async createDraft(formId) {
     await api.forms.createDraft(formId);

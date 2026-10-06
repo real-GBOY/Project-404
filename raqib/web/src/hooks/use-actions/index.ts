@@ -7,6 +7,7 @@ import { documentActions } from "./documents";
 import { formActions } from "./forms";
 import { inspectionActions } from "./inspection";
 import { onboardingActions } from "./onboarding";
+import { projectActions } from "./projects";
 import { qualityActions } from "./quality";
 import { reviewActions } from "./review";
 import { trainingActions } from "./training";
@@ -22,6 +23,7 @@ export function useActions(): Actions {
   return useMemo<Actions>(
     () => ({
       ...adminActions(qc),
+      ...projectActions(qc),
       ...visitActions(qc),
       ...inspectionActions(qc),
       ...reviewActions(qc),

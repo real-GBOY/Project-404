@@ -72,6 +72,15 @@ export function ModalFields({ vm }: { vm: VM }) {
 </label>
 <label style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "13px", fontWeight: "500" }}>
 {t.f_area}
+{(md.areaOpts || []).length > 1 ? (<>
+<select value={md.areaId.val} onChange={md.areaId.on} style={{ height: "40px", border: `1px solid ${C.border.input}`, borderRadius: "4px", padding: "0 10px", fontSize: "14px", background: C.surface.white }}>
+{(md.areaOpts || []).map((o: any, __i: number) => (<Fragment key={__i}>
+<option value={o.v}>
+{o.l}
+</option>
+</Fragment>))}
+</select>
+</>) : null}
 <input value={md.area.val} onChange={md.area.on} style={{ height: "40px", border: `1px solid ${C.border.input}`, borderRadius: "4px", padding: "0 10px", fontSize: "14px" }} />
 </label>
 <label style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "13px", fontWeight: "500" }}>

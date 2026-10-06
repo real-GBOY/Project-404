@@ -1,3 +1,4 @@
+import { ApiError } from "@/services/http";
 import type { Person, RoleKey } from "@/api/types";
 import { badge } from "../common";
 import type { Ctx } from "../context";
@@ -101,6 +102,19 @@ export function userDetail(c: Ctx, u: Person) {
       changeRole: () => c.openModal("roleChange", { uid: u.id, ref: i.L(u.name) }, { role: u.role }),
       editScope: () => c.openModal("userScope", { uid: u.id, ref: i.L(u.name) }, { projects: u.scope === "all" ? [] : [...u.scope] }),
       toggleStatus: () => c.openModal(u.status === "disabled" ? "userEnable" : "userDisable", { uid: u.id, ref: i.L(u.name) }),
+      editProfile: () =>
+        c.openModal(
+          "userEdit",
+          { uid: u.id },
+          { nameAr: u.name.ar, nameEn: u.name.en, titleAr: u.title.ar, titleEn: u.title.en, phone: "", empNo: u.employeeNo ?? "" },
+        ),
+      canMfaReset: u.status !== "invited",
+      resetMfa: () => c.openModal("userMfaReset", { uid: u.id, ref: i.L(u.name) }),
+      canExport: c.me.permissions.users.includes("X"),
+      exportData: () =>
+        void c.actions
+          .exportPersonalData(u.id, `personal-data-${u.employeeNo ?? u.id}.json`)
+          .catch((e) => c.toast(e instanceof ApiError ? e.message : i.S("actionFailed"))),
       statusLabel: u.status === "disabled" ? i.S("enableUser") : i.S("disableUser"),
       canScope: u.scope !== "all",
       back: () => c.go("users"),

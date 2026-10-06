@@ -42,6 +42,19 @@ export function UserDetail({ vm }: { vm: VM }) {
 {t.editScope}
 </button>
 </>) : null}
+<button onClick={ud.editProfile} style={{ height: "40px", padding: "0 14px", border: `1px solid ${C.border.input}`, borderRadius: "4px", background: C.surface.white, cursor: "pointer" }}>
+{t.pa_editProfile}
+</button>
+{ud.canMfaReset ? (<>
+<button onClick={ud.resetMfa} style={{ height: "40px", padding: "0 14px", border: `1px solid ${C.border.input}`, borderRadius: "4px", background: C.surface.white, cursor: "pointer" }}>
+{t.pa_resetMfa}
+</button>
+</>) : null}
+{ud.canExport ? (<>
+<button onClick={ud.exportData} style={{ height: "40px", padding: "0 14px", border: `1px solid ${C.border.input}`, borderRadius: "4px", background: C.surface.white, cursor: "pointer" }}>
+{t.pa_exportData}
+</button>
+</>) : null}
 <button onClick={ud.changeRole} style={{ height: "40px", padding: "0 14px", border: `1px solid ${C.border.input}`, borderRadius: "4px", background: C.surface.white, cursor: "pointer" }}>
 {t.changeRole}
 </button>

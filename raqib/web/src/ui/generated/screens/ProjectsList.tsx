@@ -10,6 +10,7 @@ export function ProjectsList({ vm }: { vm: VM }) {
   const { mobile, notMobile, pad, pl, pstatusOpts, t } = vm;
   return (<>
 <div style={{ padding: pad, maxWidth: "1360px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "16px" }}>
+<div style={{ display: "flex", gap: "12px", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
 <div>
 <h1 style={{ margin: "0", fontSize: "22px", fontWeight: "600" }}>
 {t.nav_projects_l}
@@ -17,6 +18,12 @@ export function ProjectsList({ vm }: { vm: VM }) {
 <div style={{ fontSize: "13px", color: C.text.secondary }}>
 {pl.count}
 </div>
+</div>
+{pl.canCreate ? (<>
+<button onClick={pl.create} style={{ height: "40px", padding: "0 16px", border: "0", borderRadius: "4px", background: C.brand.primary, color: C.surface.white, fontWeight: "500", cursor: "pointer" }}>
+{t.pa_newProject}
+</button>
+</>) : null}
 </div>
 <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
 <input value={pl.q} onChange={pl.onQ} placeholder={t.projSearchPh} style={{ height: "38px", flex: "1", minWidth: "220px", maxWidth: "380px", border: `1px solid ${C.border.input}`, borderRadius: "4px", padding: "0 12px", fontSize: "14px", background: C.surface.white }} />

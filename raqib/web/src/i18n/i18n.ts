@@ -10,6 +10,7 @@ import { STRINGS_REPORTS } from "./strings.reports";
 import { STRINGS_SCREENS } from "./strings.screens";
 import { STRINGS_ACCOUNT } from "./strings.account";
 import { STRINGS_OFFLINE } from "./strings.offline";
+import { STRINGS_PROJECTS } from "./strings.projects";
 
 type Table = Record<string, readonly [string, string]>;
 const STR: Table = {
@@ -24,6 +25,7 @@ const STR: Table = {
   ...STRINGS_QUALITY,
   ...STRINGS_ACCOUNT,
   ...STRINGS_OFFLINE,
+  ...STRINGS_PROJECTS,
 };
 
 /** `{ar, en}` master data, or a plain user-entered string, as display text. User text is never translated. */

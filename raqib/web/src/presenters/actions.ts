@@ -9,6 +9,11 @@ import type {
   RescheduleVisitInput,
   RoleKey,
   TemplateChange,
+  L10n,
+  Severity,
+  Guard,
+  GuardInput,
+  ProjectInput,
 } from "@/api/types";
 
 /**
@@ -18,6 +23,24 @@ import type {
  * approved design asks for one, and rejects with the backend's error on refusal.
  */
 export interface Actions {
+  createProject(input: ProjectInput): Promise<void>;
+  updateProject(id: string, patch: Partial<Omit<ProjectInput, "code">>): Promise<void>;
+  addSite(projectId: string, name: L10n): Promise<void>;
+  renameSite(id: string, name: L10n): Promise<void>;
+  archiveSite(id: string): Promise<void>;
+  addArea(siteId: string, name: L10n): Promise<void>;
+  archiveArea(id: string): Promise<void>;
+  createGuard(input: GuardInput): Promise<void>;
+  updateGuard(id: string, patch: Partial<Omit<GuardInput, "employeeNo">>): Promise<void>;
+  setGuardStatus(id: string, status: Guard["status"]): Promise<void>;
+  reassignAction(id: string, input: { responsibleId?: string; dueDate?: string; reason: string }): Promise<void>;
+  raiseObservation(input: { projectId: string; siteId: string; text: string; note?: string; severity: Severity }): Promise<void>;
+  updateProfile(
+    id: string,
+    patch: { name?: L10n; title?: L10n; phone?: string | null; employeeNo?: string | null },
+  ): Promise<void>;
+  resetMfa(id: string, reason: string): Promise<void>;
+  exportPersonalData(id: string, fileName: string): Promise<void>;
   changeRole(id: string, role: RoleKey, reason: string): Promise<void>;
   setScope(id: string, projectIds: string[], reason: string): Promise<void>;
   setStatus(id: string, status: "active" | "disabled", reason: string): Promise<void>;
@@ -128,6 +151,7 @@ export interface Actions {
     action: "forward" | "return" | "reject" | "approve",
     body: { reason?: string; comment?: string; itemIds?: string[] },
   ): Promise<void>;
+  renameForm(id: string, name: L10n): Promise<void>;
   createForm(input: {
     code: string;
     category: "site" | "guard";

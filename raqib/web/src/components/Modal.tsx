@@ -1,4 +1,5 @@
 import { ModalFields } from "@/ui/generated/ModalFields";
+import { ModalForm } from "./ModalForm";
 import type { VM } from "@/ui/vm";
 import { C } from "@/styles/colors";
 
@@ -60,6 +61,7 @@ export function Modal({ vm }: { vm: VM }) {
           style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: "12px" }}
         >
           <ModalFields vm={vm} />
+          {md.isForm ? <ModalForm fields={md.formFields} /> : null}
           {md.isDiff ? (
             <div
               style={{

@@ -15,7 +15,8 @@ export function GuardsTable({ vm }: { vm: VM }) {
 {t.guardsInScope}
 </h2>
 {(gd.rows || []).map((g: any, __i: number) => (<Fragment key={__i}>
-<Hover as="button" onClick={g.go} style={{ width: "100%", border: "0", background: C.surface.white, cursor: "pointer", textAlign: "start", display: "flex", gap: "14px", alignItems: "center", padding: "12px 18px", borderBottom: `1px solid ${C.surface.subtle}`, flexWrap: "wrap" }} hover={{ background: C.surface.paper }}>
+<div style={{ display: "flex", alignItems: "center", borderBottom: `1px solid ${C.surface.subtle}`, background: C.surface.white, opacity: g.inactive ? 0.6 : 1 }}>
+<Hover as="button" onClick={g.go} style={{ flex: "1", minWidth: "0", border: "0", background: C.surface.white, cursor: "pointer", textAlign: "start", display: "flex", gap: "14px", alignItems: "center", padding: "12px 18px", flexWrap: "wrap" }} hover={{ background: C.surface.paper }}>
 <span style={{ flex: "1", minWidth: "200px" }}>
 <span style={{ display: "block", fontWeight: "500" }}>
 {g.name}
@@ -44,6 +45,17 @@ export function GuardsTable({ vm }: { vm: VM }) {
 </span>
 </span>
 </Hover>
+{gd.canManage ? (<>
+<span style={{ display: "flex", gap: "6px", padding: "0 14px" }}>
+<button onClick={g.edit} style={{ height: "30px", padding: "0 10px", border: `1px solid ${C.border.input}`, borderRadius: "4px", background: C.surface.white, color: C.text.ink, fontSize: "12.5px", cursor: "pointer" }}>
+{t.pa_editGuard}
+</button>
+<button onClick={g.toggle} style={{ height: "30px", padding: "0 10px", border: `1px solid ${C.border.input}`, borderRadius: "4px", background: C.surface.white, color: C.text.ink, fontSize: "12.5px", cursor: "pointer" }}>
+{g.toggleLabel}
+</button>
+</span>
+</>) : null}
+</div>
 </Fragment>))}
 </section>
 </div>

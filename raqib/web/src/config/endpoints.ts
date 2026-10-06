@@ -31,6 +31,8 @@ export const ENDPOINTS = {
     role: (id: string) => `/raqib/users/${id}/role`,
     scope: (id: string) => `/raqib/users/${id}/scope`,
     status: (id: string) => `/raqib/users/${id}/status`,
+    mfaReset: (id: string) => `/raqib/account/users/${id}/mfa-reset`,
+    personalData: (id: string) => `/raqib/account/users/${id}/personal-data`,
   },
   projects: {
     list: "/raqib/projects",
@@ -89,6 +91,7 @@ export const ENDPOINTS = {
     step: (id: string, step: "start" | "submit" | "return" | "close") =>
       `/raqib/actions/${id}/${step}`,
     comments: (id: string) => `/raqib/actions/${id}/comments`,
+    reassign: (id: string) => `/raqib/actions/${id}/reassign`,
   },
   training: {
     list: "/raqib/training",
@@ -121,5 +124,9 @@ export const ENDPOINTS = {
     content: (id: string) => `/raqib/evidence/${id}/content`,
   },
   files: { presign: "/files/uploads", confirm: (id: string) => `/files/${id}/confirm` },
-  guards: { list: "/raqib/guards", byId: (id: string) => `/raqib/guards/${id}` },
+  guards: {
+    list: "/raqib/guards",
+    byId: (id: string) => `/raqib/guards/${id}`,
+    status: (id: string) => `/raqib/guards/${id}/status`,
+  },
 } as const;

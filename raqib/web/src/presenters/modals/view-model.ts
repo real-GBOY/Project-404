@@ -9,6 +9,7 @@ const {
   PROVIDERS: TRAINING_PROVIDERS,
   RESULTS: TRAINING_RESULTS,
 } = TRAINING_OPTIONS;
+import { formFields, isFormKind } from "./forms";
 import { submitModal } from "./submit";
 import { NEED_REASON } from "./validation";
 
@@ -71,6 +72,10 @@ export function modalVM(c: Ctx) {
       "trReject",
       "revoke",
       "reqReject",
+      "siteArchive",
+      "areaArchive",
+      "guardOff",
+      "userMfaReset",
     ].includes(K)
       ? C.status.danger.fg
       : ["return", "caReturn", "trReturn"].includes(K)
@@ -91,10 +96,17 @@ export function modalVM(c: Ctx) {
       on: (e: { target: { value: string } }) =>
         set((st) => ({ mf: { ...st.mf, p: e.target.value, s: "", ins: "" }, mErr: null })),
     },
-    s: fld("s"),
+    s: {
+      ...fld("s"),
+      on: (e: { target: { value: string } }) =>
+        set((st) => ({ mf: { ...st.mf, s: e.target.value, areaId: "" }, mErr: null })),
+    },
+    areaId: fld("areaId"),
     area: fld("area"),
     type: fld("type"),
     shift: fld("shift"),
+    isForm: isFormKind(K),
+    formFields: isFormKind(K) ? formFields(c, K, fld) : [],
     isSched: ["resched", "create"].includes(K),
     isCreate: K === "create",
     ...visitOptions(c),
@@ -200,9 +212,17 @@ function visitOptions(c: Ctx) {
   const choose = { v: "", l: i.S("choose") };
   return {
     pOpts: [choose].concat(
-      (data.projects ?? []).filter((p) => p.sites.length).map((p) => ({ v: p.id, l: i.L(p.name) })),
+      (data.projects ?? [])
+        .filter((p) => p.sites.length && p.status !== "closed")
+        .map((p) => ({ v: p.id, l: i.L(p.name) })),
     ),
     sOpts: [choose].concat((project?.sites ?? []).map((x) => ({ v: x.id, l: i.L(x.name) }))),
+    areaOpts: [{ v: "", l: i.S("pf_otherArea") }].concat(
+      (project?.sites.find((x) => x.id === ui.mf.s)?.areas ?? []).map((a) => ({
+        v: a.id,
+        l: i.L(a.name),
+      })),
+    ),
     insOpts: [{ v: "", l: i.S("unassigned") }].concat(
       (data.inspectors ?? []).map((x) => ({ v: x.id, l: i.L(x.name) })),
     ),

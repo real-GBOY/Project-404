@@ -7,12 +7,26 @@ import { invalidate, type Qc, type Slice } from "./shared";
 export const qualityActions = (
   qc: Qc,
 ): Slice<
-  "assignAction" | "actionStep" | "commentAction" | "uploadActionEvidence" | "removeActionEvidence"
+  | "assignAction"
+  | "reassignAction"
+  | "raiseObservation"
+  | "actionStep"
+  | "commentAction"
+  | "uploadActionEvidence"
+  | "removeActionEvidence"
 > => ({
   async assignAction(observationId, input) {
     const a = await api.actions.create(observationId, input);
     await invalidate(qc, QK.observations, QK.actions);
     return a;
+  },
+  async reassignAction(id, input) {
+    qc.setQueryData([QK.action, id], await api.actions.reassign(id, input));
+    await invalidate(qc, QK.actions, QK.observations);
+  },
+  async raiseObservation(input) {
+    await api.observations.create(input);
+    await invalidate(qc, QK.observations);
   },
   async actionStep(id, step, body) {
     qc.setQueryData([QK.action, id], await api.actions.step(id, step, body ?? {}));

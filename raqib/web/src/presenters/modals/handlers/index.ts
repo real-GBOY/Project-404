@@ -1,6 +1,8 @@
 import { accessHandlers } from "./confidential";
 import { adminHandlers } from "./admin";
 import { formHandlers } from "./forms";
+import { projectHandlers } from "./projects";
+import { setupHandlers } from "./setup";
 import { qualityHandlers } from "./quality";
 import { reviewHandlers } from "./review";
 import { trainingHandlers } from "./training";
@@ -16,4 +18,6 @@ export const HANDLERS: ModalHandlers = {
   ...accessHandlers,
   ...formHandlers,
   ...adminHandlers,
+  ...projectHandlers,
+  ...setupHandlers,
 };

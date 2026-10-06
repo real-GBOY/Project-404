@@ -23,6 +23,9 @@ export const actionsApi = {
     step: "start" | "submit" | "return" | "close",
     body: { reason?: string; comment?: string } = {},
   ) => http<CorrectiveAction>(ENDPOINTS.actions.step(id, step), { method: "POST", body }),
+  /** Hand an open action to someone else and/or move its due date. */
+  reassign: (id: string, b: { responsibleId?: string; dueDate?: string; reason: string }) =>
+    http<CorrectiveAction>(ENDPOINTS.actions.reassign(id), { method: "POST", body: b }),
   comment: (id: string, text: string) =>
     http<CorrectiveAction>(ENDPOINTS.actions.comments(id), { method: "POST", body: { text } }),
 };

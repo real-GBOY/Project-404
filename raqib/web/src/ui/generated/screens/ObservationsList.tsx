@@ -10,6 +10,7 @@ export function ObservationsList({ vm }: { vm: VM }) {
   const { ol, pad, t } = vm;
   return (<>
 <div style={{ padding: pad, maxWidth: "1360px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "16px" }}>
+<div style={{ display: "flex", gap: "12px", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
 <div>
 <h1 style={{ margin: "0", fontSize: "22px", fontWeight: "600" }}>
 {t.nav_observations_l}
@@ -17,6 +18,12 @@ export function ObservationsList({ vm }: { vm: VM }) {
 <div style={{ fontSize: "13px", color: C.text.secondary }}>
 {t.obsSub}
 </div>
+</div>
+{ol.canRaise ? (<>
+<button onClick={ol.raise} style={{ height: "40px", padding: "0 16px", border: "0", borderRadius: "4px", background: C.brand.primary, color: C.surface.white, fontWeight: "500", cursor: "pointer" }}>
+{t.pa_raiseObs}
+</button>
+</>) : null}
 </div>
 <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
 {(ol.chips || []).map((c: any, __i: number) => (<Fragment key={__i}>

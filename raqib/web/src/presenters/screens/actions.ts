@@ -72,6 +72,8 @@ export function observationsList(c: Ctx) {
       rows,
       has: rows.length > 0,
       none: rows.length === 0,
+      canRaise: me.permissions.observations.includes("A"),
+      raise: () => c.openModal("obsNew", undefined, { osev: "medium" }),
     },
   };
 }
@@ -243,6 +245,13 @@ export function actionDetail(c: Ctx, a: CorrectiveAction) {
         if (!text) return;
         void c.actions.commentAction(a.id, text).then(() => set((s) => ({ mf: { ...s.mf, comment: "" } }))).catch(fail);
       },
+      canReassign: p.includes("A") && stored !== "closed",
+      reassign: () =>
+        c.openModal(
+          "caReassign",
+          { aid: a.id, ref: a.ref, pid: a.project.id, curResp: a.responsible.id, curDue: a.dueDate },
+          { resp: a.responsible.id, due: a.dueDate },
+        ),
       canReview,
       canClose: canReview && p.includes("P"),
       noCloseNote: canReview && !p.includes("P"),

@@ -6,7 +6,8 @@ export const visitHandlers: ModalHandlers = {
     const v = await c.actions.createVisit({
       projectId: f.p as string,
       siteId: f.s as string,
-      areaText: ((f.area as string) || "").trim() || null,
+      areaId: (f.areaId as string) || null,
+      areaText: (f.areaId ? "" : ((f.area as string) || "").trim()) || null,
       inspectorId: (f.ins as string) || null,
       type: (f.type as never) || "routine",
       shift: (f.shift as never) || "morning",
