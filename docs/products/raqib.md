@@ -98,7 +98,7 @@ when and why:
 | HTTP routes, all behind a declared permission | **121** |
 | Tenant tables with forced row-level security | **35** `raqib_*` tables, 11 migrations of hand-written SQL |
 | Roles · permission modules · rights | **7 · 14 · 8** |
-| Backend tests (unit, integration over real HTTP, authorization, RLS) | **256** in 32 files |
+| Backend tests (unit, integration over real HTTP, authorization, RLS) | **245** in 30 files |
 | Browser tests (real Chrome, real backend, offline, sign-in, MFA, downloads) | **28** |
 | Web unit tests, including architecture rules that fail the build on a layer violation | **41** |
 | Interface strings, each in Arabic and English | **1,772** |
@@ -153,7 +153,7 @@ The password is `demo-password-2026` for every account.
 
 | Suite | Command | What it covers |
 |---|---|---|
-| Backend | `cd raqib/backend && npm run ci` | typecheck · lint · format · 256 tests (real HTTP, authorization, tenant isolation, security, retention) · build |
+| Backend | `cd raqib/backend && npm run ci` | typecheck · lint · format · 245 tests (real HTTP, authorization, tenant isolation, security, retention) · build |
 | Web | `cd raqib/web && npm run typecheck && npm run lint && npm run format:check && npm test && npm run build` | 41 tests including the architecture rules, then the production build |
 | End to end | `cd raqib/web && npm run e2e` | Playwright in real Chrome against the real backend on a throw-away database: every role opens every screen, offline field work, sign-in lockout, two-step verification, setup and upkeep flows, CSV, Excel and PDF downloads |
 
