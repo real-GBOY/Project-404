@@ -11,6 +11,7 @@ export type ErrorKind =
   | "not_found" // 404 — resource does not exist
   | "conflict" // 409 — violates a uniqueness / state rule
   | "rate_limited" // 429
+  | "unavailable" // 503 — a capability this deployment has not enabled, or cannot reach right now
   | "internal"; // 500 — unexpected
 
 export interface AppErrorOptions {
@@ -68,6 +69,7 @@ const STATUS_BY_KIND: Record<ErrorKind, number> = {
   not_found: 404,
   conflict: 409,
   rate_limited: 429,
+  unavailable: 503,
   internal: 500,
 };
 
