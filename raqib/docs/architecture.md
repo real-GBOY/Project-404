@@ -39,6 +39,22 @@ name/role/title snapshots, previous/new state, reason, time. Project assignments
 (`project_assignments`: user, project, from, to) so past scope is reconstructable. Reports freeze a JSON
 snapshot + the generated PDF (Core file) so a historical report is reproducible.
 
+**Set-up flow (projects, sites, areas, guards).** A tenant is stood up entirely from the product: create a project, add its
+sites and areas (rename or archive them later; archived ones keep their history but take no new visits), then add guards to
+the roster. All of it needs the `projects` **E** right (creating a project needs **A**) and the caller's project scope. A guard
+has a fixed employee number (history is keyed on it), a 10-digit national ID stored sealed and shown masked (never written
+to the audit trail), and may be linked to one guard-role sign-in account so they can use the confidential area. Taking a guard
+off the roster only blocks new evaluations; their records stay. The web does this through data-entry dialogs
+(`presenters/modals/forms.ts` field specs, `handlers/projects.ts`, `components/ModalForm.tsx`).
+
+**Upkeep flows.** A project that has ended is set to `closed`: it stays in history and reports but takes no new visits (409
+`raqib.project_closed`). A person's name, title, phone and employee number are corrected with `PATCH /users/:id` (role, scope and
+status keep their own routes); an administrator can reset a lost second factor and export a person's data from their page. A
+stuck corrective action is moved to another eligible person and/or a later due date with `POST /actions/:id/reassign` (reason
+required, closed actions are immutable, the new person is notified, the overdue warning can fire again). Inspection forms are
+created with a real code and name and can be renamed, and field observations can be raised outside an inspection. Visits take an
+area from the site's list, or free text for an area that is not registered.
+
 Other tables: `guard_evaluations(+scores)`, `observations`, `corrective_actions(+log)`, `evidence`
 (business context link to a Core file), `training_requests(+history)`, `account_requests`,
 `role_templates` (per-org role × module × action matrix — the editable Permission Templates screen),
