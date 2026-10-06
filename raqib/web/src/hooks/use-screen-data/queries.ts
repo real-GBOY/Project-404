@@ -93,7 +93,8 @@ export function queryDefs({
     { key: QK.action, enabled: want.action, fn: () => api.actions.get(id), extra: [id] },
     {
       key: QK.responsibles,
-      enabled: !!ui.modal && ui.modal.kind === "ca",
+      // the people who can take an action on that project: needed to create one, and to hand one to someone else
+      enabled: !!ui.modal && (ui.modal.kind === "ca" || ui.modal.kind === "caReassign"),
       fn: () => api.actions.responsible(String(ui.modal?.pid ?? "")),
       extra: [String(ui.modal?.pid ?? "")],
     },

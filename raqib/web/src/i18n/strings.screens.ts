@@ -229,7 +229,7 @@ export const STRINGS_SCREENS: Record<string, readonly [string, string]> = {
   grantee: ["الشخص", "Person"],
   grantLevel: ["مستوى الوصول", "Access level"],
   grantScope: ["النطاق", "Scope"],
-  expires: ["ينتهي في (اختياري)", "Expires (optional)"],
+  expires: ["ينتهي في (مطلوب)", "Expires (required)"],
   sectionName: ["اسم القسم", "Section name"],
   tr1: [
     "تدريب على إجراءات التحقق من الهوية — بعد ملاحظة متكررة",
