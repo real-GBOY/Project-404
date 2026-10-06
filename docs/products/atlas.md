@@ -1,7 +1,7 @@
 # Atlas: real-estate developer OS
 
-| [Overview](../../README.md) | [Mizan](mizan.md) | **Atlas** | [HotelOS](hotelos.md) | [Security](../../SECURITY.md) |
-|:---:|:---:|:---:|:---:|:---:|
+| [Overview](../../README.md) | [Mizan](mizan.md) | **Atlas** | [HotelOS](hotelos.md) | [Raqib](raqib.md) | [Security](../../SECURITY.md) |
+|:---:|:---:|:---:|:---:|:---:|:---:|
 
 Atlas is the operating system for a property developer's sales and finance team. It covers CRM, property
 inventory, sales, payment plans and collections, following a buyer from the first lead to the last
