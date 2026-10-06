@@ -16,10 +16,14 @@ function analyticsQs(q: AnalyticsQueryParams): string {
 
 export const analyticsApi = {
   get: (q: AnalyticsQueryParams) => http<AnalyticsResult>(ENDPOINTS.analytics(analyticsQs(q))),
-  exportCsv: async (q: AnalyticsQueryParams): Promise<Blob> => {
-    const r = await fetch(`${API_BASE_URL}${ENDPOINTS.analyticsExport(analyticsQs(q))}`, {
-      headers: http.bearerHeaders(),
-    });
+  /** The current filters as a download: `.csv` or a native Excel workbook. */
+  exportFile: async (q: AnalyticsQueryParams, format: "csv" | "xlsx"): Promise<Blob> => {
+    const r = await fetch(
+      `${API_BASE_URL}${ENDPOINTS.analyticsExport(analyticsQs(q), format === "xlsx" ? ".xlsx" : "")}`,
+      {
+        headers: http.bearerHeaders(),
+      },
+    );
     if (!r.ok) throw new Error(`export ${r.status}`);
     return r.blob();
   },

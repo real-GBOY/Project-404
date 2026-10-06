@@ -6,11 +6,11 @@ import type { Slice } from "./shared";
 export const documentActions = (): Slice<
   "exportAnalytics" | "exportAudit" | "reportPdf" | "evidenceBlob"
 > => ({
-  async exportAnalytics(q) {
-    saveBlob(await api.analytics.exportCsv(q), "raqib-analytics.csv");
+  async exportAnalytics(q, format) {
+    saveBlob(await api.analytics.exportFile(q, format), `raqib-analytics.${format}`);
   },
-  async exportAudit(q) {
-    saveBlob(await api.audit.exportCsv(q), "raqib-audit.csv");
+  async exportAudit(q, format) {
+    saveBlob(await api.audit.exportFile(q, format), `raqib-audit.${format}`);
   },
   reportPdf: (id, lang) => api.reports.pdf(id, lang),
   evidenceBlob: (id) => api.evidence.blob(id),

@@ -46,7 +46,15 @@ describe("visibleNav (UX only — the backend enforces every route)", () => {
           guardEval: "VRPX",
         }),
       ),
-    ).toEqual(["overview", "projects", "guards", "users", "permissions", "settings"]);
+    ).toEqual([
+      "overview",
+      "projects",
+      "guards",
+      "users",
+      "permissions",
+      "settings",
+      "confidential",
+    ]);
     expect(visibleNav(me("pm", { projects: "VD" }))).toEqual(["overview", "projects"]);
   });
 

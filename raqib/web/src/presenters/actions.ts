@@ -112,13 +112,16 @@ export interface Actions {
     step: "approve" | "return" | "reject" | "resubmit" | "schedule" | "complete",
     body?: Record<string, unknown>,
   ): Promise<void>;
-  exportAnalytics(q: {
-    period: string;
-    from: string;
-    to: string;
-    projectId: string;
-    siteId: string;
-  }): Promise<void>;
+  exportAnalytics(
+    q: {
+      period: string;
+      from: string;
+      to: string;
+      projectId: string;
+      siteId: string;
+    },
+    format: "csv" | "xlsx",
+  ): Promise<void>;
   confSubmit(input: {
     kind: "misconduct" | "violation" | "safety";
     subject: string;
@@ -140,13 +143,16 @@ export interface Actions {
     expiresAt: string;
   }): Promise<void>;
   confRevoke(id: string, reason: string): Promise<void>;
-  exportAudit(q: {
-    q: string;
-    entity: string;
-    actor: string;
-    from: string;
-    to: string;
-  }): Promise<void>;
+  exportAudit(
+    q: {
+      q: string;
+      entity: string;
+      actor: string;
+      from: string;
+      to: string;
+    },
+    format: "csv" | "xlsx",
+  ): Promise<void>;
   approveRequest(
     id: string,
     input: { role: string; projectIds: string[]; comment?: string },

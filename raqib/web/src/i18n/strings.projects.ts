@@ -182,4 +182,5 @@ export const STRINGS_PROJECTS: Record<string, readonly [string, string]> = {
   m_caReassign_ok: ["حفظ", "Save"],
   m_reasonPh_caReassign: ["سبب التغيير", "Reason for the change"],
   pf_otherArea: ["منطقة أخرى (اكتبها)", "Other area (type it)"],
+  exportCsv: ["تصدير CSV", "Export CSV"],
 };

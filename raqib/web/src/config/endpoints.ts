@@ -101,13 +101,13 @@ export const ENDPOINTS = {
   guardHistory: (id: string) => `/raqib/guards/${id}/history`,
   guardSummary: "/raqib/guards-summary",
   analytics: (qs: string) => `/raqib/analytics?${qs}`,
-  analyticsExport: (qs: string) => `/raqib/analytics/export?${qs}`,
+  analyticsExport: (qs: string, ext: "" | ".xlsx" = "") => `/raqib/analytics/export${ext}?${qs}`,
   search: (q: string) => `/raqib/search?q=${encodeURIComponent(q)}`,
   conf: {
     base: "/raqib/confidential",
   },
   audit: (qs: string) => `/raqib/audit?${qs}`,
-  auditExport: (qs: string) => `/raqib/audit/export?${qs}`,
+  auditExport: (qs: string, ext: "" | ".xlsx" = "") => `/raqib/audit/export${ext}?${qs}`,
   accountRequests: {
     list: "/raqib/account-requests",
     byId: (id: string) => `/raqib/account-requests/${id}`,

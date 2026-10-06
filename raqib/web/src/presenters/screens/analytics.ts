@@ -109,7 +109,10 @@ export function analytics(c: Ctx, result: AnalyticsResult | undefined) {
       isFixed: false,
       back: () => c.go("overview"),
       canExport: me.permissions.analytics.includes("X"),
-      exportCsv: () => void c.actions.exportAnalytics(q).catch(() => c.toast(i.S("actionFailed"))),
+      exportCsv: () =>
+        void c.actions.exportAnalytics(q, "csv").catch(() => c.toast(i.S("actionFailed"))),
+      exportXlsx: () =>
+        void c.actions.exportAnalytics(q, "xlsx").catch(() => c.toast(i.S("actionFailed"))),
       range: result ? `${i.fd(result.range.from, "d")} – ${i.fd(result.range.to, "full")}` : "",
       pers: PERIODS.map((k) => ({
         label: i.S(k === "custom" ? "per_custom" : `per_${k === "year" ? "year" : k}`),

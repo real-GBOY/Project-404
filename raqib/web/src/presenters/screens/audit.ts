@@ -71,7 +71,9 @@ export function auditLog(c: Ctx) {
       note: any ? i.S("auditFiltered") : i.S("auditNote"),
       canExport: me.permissions.audit.includes("X"),
       exportCsv: () =>
-        void c.actions.exportAudit(auditQuery(c)).catch(() => c.toast(i.S("actionFailed"))),
+        void c.actions.exportAudit(auditQuery(c), "csv").catch(() => c.toast(i.S("actionFailed"))),
+      exportXlsx: () =>
+        void c.actions.exportAudit(auditQuery(c), "xlsx").catch(() => c.toast(i.S("actionFailed"))),
     },
   };
 }

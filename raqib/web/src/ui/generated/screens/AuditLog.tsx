@@ -63,6 +63,19 @@ export function AuditLog({ vm }: { vm: VM }) {
                     cursor: "pointer",
                   }}
                 >
+                  {t.exportCsv}
+                </button>
+                <button
+                  onClick={au.exportXlsx}
+                  style={{
+                    height: "40px",
+                    padding: "0 14px",
+                    border: `1px solid ${C.border.input}`,
+                    borderRadius: "4px",
+                    background: C.surface.white,
+                    cursor: "pointer",
+                  }}
+                >
                   {t.exportExcel}
                 </button>
               </>
