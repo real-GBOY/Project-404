@@ -12,6 +12,14 @@ const schema = z.object({
     .enum(["true", "false"])
     .default("false")
     .transform((v) => v === "true"),
+  /**
+   * A deliberate second key for a dedicated showcase deployment: lets `RAQIB_SEED_DEMO=true` run with NODE_ENV=production.
+   * Without it production refuses to seed, so the demo company can never appear next to real data by accident.
+   */
+  allowDemoInProduction: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((v) => v === "true"),
   /** How many days of past inspection history the demo seeds. */
   demoHistoryDays: z.coerce.number().int().min(1).max(365).default(365),
   /** How often the scheduled jobs (overdue visits and actions) run. Default 15 minutes. */
@@ -67,6 +75,7 @@ export type RaqibConfig = z.infer<typeof schema>;
 export function readRaqibConfig(env: NodeJS.ProcessEnv = process.env): RaqibConfig {
   const parsed = schema.safeParse({
     seedDemo: env.RAQIB_SEED_DEMO,
+    allowDemoInProduction: env.RAQIB_ALLOW_DEMO_IN_PRODUCTION,
     demoHistoryDays: env.RAQIB_DEMO_HISTORY_DAYS,
     jobsIntervalMs: env.RAQIB_JOBS_INTERVAL_MS,
     chromiumPath: env.RAQIB_CHROMIUM_PATH,
@@ -96,4 +105,10 @@ export function readRaqibConfig(env: NodeJS.ProcessEnv = process.env): RaqibConf
 export function accountPolicyEnforced(env: NodeJS.ProcessEnv = process.env): boolean {
   const v = readRaqibConfig(env).enforceAccountPolicy;
   return v === "" ? env.NODE_ENV === "production" : v === "true";
+}
+
+/** Why the demo company may not be seeded in this process, or null when it may. Production needs the explicit second key. */
+export function demoSeedRefusal(cfg: Pick<RaqibConfig, "seedDemo" | "allowDemoInProduction">, nodeEnv: string): string | null {
+  if (!cfg.seedDemo || nodeEnv !== "production" || cfg.allowDemoInProduction) return null;
+  return "RAQIB_SEED_DEMO=true is refused in production: the demo organization must never be created next to real data. A dedicated showcase deployment can opt in with RAQIB_ALLOW_DEMO_IN_PRODUCTION=true.";
 }

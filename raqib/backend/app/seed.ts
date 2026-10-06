@@ -14,7 +14,7 @@ import { LifecycleService } from "@raqib/raqib/lifecycle/lifecycle-service.js";
 import { assertDataKeyConfigured } from "@raqib/raqib/shared/data-key.js";
 import { DemoSeeder } from "@raqib/raqib/demo/demo-seeder.js";
 import { getConfig } from "@core/kernel/config.js";
-import { readRaqibConfig } from "./config.js";
+import { demoSeedRefusal, readRaqibConfig } from "./config.js";
 
 const log = moduleLogger("raqib-app-seed");
 
@@ -38,9 +38,8 @@ export class AppSeedService {
 
   async seed(): Promise<void> {
     assertDataKeyConfigured();
-    if (readRaqibConfig().seedDemo && getConfig().nodeEnv === "production") {
-      throw new Error("RAQIB_SEED_DEMO=true is refused in production: the demo organization must never be created next to real data.");
-    }
+    const refusal = demoSeedRefusal(readRaqibConfig(), getConfig().nodeEnv);
+    if (refusal) throw new Error(refusal);
     await this.coreSeed.seed();
 
     await runAsSystem(() => seedRbacDefinitions(this.rbac, this.uow, { permissions: [], roles: RAQIB_ROLES }));
