@@ -1,0 +1,16 @@
+import pg from "pg";
+import fs from "node:fs";
+import { R2Adapter } from "../../core/files/infrastructure/r2-adapter.js";
+const env = fs.readFileSync(".env", "utf8");
+const g = (k: string) => env.match(new RegExp(`^${k}=(.*)$`, "m"))![1]!;
+console.log("prefix in .env:", env.match(/^AURIC_R2_KEY_PREFIX=(.*)$/m)?.[1], "| bucket:", g("AURIC_R2_BUCKET"), "| account:", g("AURIC_R2_ACCOUNT_ID"));
+const cfg = { accountId: g("AURIC_R2_ACCOUNT_ID"), accessKeyId: g("AURIC_R2_ACCESS_KEY_ID"), secretAccessKey: g("AURIC_R2_SECRET_ACCESS_KEY"), bucket: g("AURIC_R2_BUCKET") };
+const folder = new R2Adapter({ ...cfg, keyPrefix: "raqib" });
+const db = new pg.Client({ connectionString: g("AURIC_DATABASE_URL").replace(/\/raqib$/, "/raqib_demo") });
+await db.connect();
+const rows = (await db.query("select storage_key from files where deleted_at is null")).rows as Array<{ storage_key: string }>;
+let present = 0; const missing: string[] = [];
+for (const r of rows) (await folder.head(r.storage_key)) ? present++ : missing.push(r.storage_key);
+console.log({ filesInDb: rows.length, presentUnderRaqib: present, missing: missing.length });
+console.log("sample key in bucket:", `raqib/${rows[0]?.storage_key}`);
+await db.end();

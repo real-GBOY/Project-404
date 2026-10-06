@@ -1,0 +1,13 @@
+node_modules
+dist
+dist-ssr
+*.local
+.vite
+coverage
+node_modules/.tmp
+
+.vercel
+.env*
+
+test-results
+playwright-report

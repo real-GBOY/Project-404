@@ -1,0 +1,132 @@
+/**
+ * Every backend route the app calls, in one place. Paths are relative to `API_BASE_URL`; dynamic
+ * segments are functions. (Backend: raqib/backend/app/raqib/*.)
+ */
+export const ENDPOINTS = {
+  auth: {
+    login: "/auth/login",
+    refresh: "/auth/refresh",
+    logout: "/auth/logout",
+    forgot: "/auth/password/forgot",
+    reset: "/auth/password/reset",
+  },
+  account: {
+    security: "/raqib/account/security",
+    mfaSetup: "/raqib/account/mfa/setup",
+    mfaEnable: "/raqib/account/mfa/enable",
+    mfaDisable: "/raqib/account/mfa/disable",
+    password: "/raqib/account/password",
+    revoke: "/raqib/account/sessions/revoke",
+  },
+  publicOnboarding: {
+    info: (org: string) => `/raqib/public/onboarding/${encodeURIComponent(org)}`,
+    requests: (org: string) => `/raqib/public/onboarding/${encodeURIComponent(org)}/requests`,
+  },
+  me: "/raqib/me",
+  settings: "/raqib/settings",
+  permissions: "/raqib/permissions",
+  users: {
+    list: "/raqib/users",
+    byId: (id: string) => `/raqib/users/${id}`,
+    role: (id: string) => `/raqib/users/${id}/role`,
+    scope: (id: string) => `/raqib/users/${id}/scope`,
+    status: (id: string) => `/raqib/users/${id}/status`,
+    mfaReset: (id: string) => `/raqib/account/users/${id}/mfa-reset`,
+    personalData: (id: string) => `/raqib/account/users/${id}/personal-data`,
+  },
+  projects: {
+    list: "/raqib/projects",
+    byId: (id: string) => `/raqib/projects/${id}`,
+    sites: (id: string) => `/raqib/projects/${id}/sites`,
+  },
+  sites: {
+    byId: (id: string) => `/raqib/sites/${id}`,
+    areas: (id: string) => `/raqib/sites/${id}/areas`,
+  },
+  areas: { byId: (id: string) => `/raqib/areas/${id}` },
+  visits: {
+    list: "/raqib/visits",
+    byId: (id: string) => `/raqib/visits/${id}`,
+    reschedule: (id: string) => `/raqib/visits/${id}/reschedule`,
+    cancel: (id: string) => `/raqib/visits/${id}/cancel`,
+    inspectors: "/raqib/visits/inspectors/eligible",
+  },
+  notifications: {
+    list: "/notifications",
+    read: (id: string) => `/notifications/${id}/read`,
+    readAll: "/notifications/read-all",
+  },
+  forms: {
+    list: "/raqib/forms",
+    byId: (id: string) => `/raqib/forms/${id}`,
+    versions: (id: string) => `/raqib/forms/${id}/versions`,
+    draft: (id: string) => `/raqib/forms/${id}/draft`,
+    publish: (id: string) => `/raqib/forms/${id}/publish`,
+    active: (id: string) => `/raqib/forms/${id}/active`,
+    makeDefault: (id: string) => `/raqib/forms/${id}/default`,
+  },
+  inspection: {
+    base: (visitId: string) => `/raqib/visits/${visitId}/inspection`,
+    start: (visitId: string) => `/raqib/visits/${visitId}/inspection/start`,
+    answer: (visitId: string, itemId: string) =>
+      `/raqib/visits/${visitId}/inspection/answers/${itemId}`,
+    guardScore: (visitId: string, guardId: string, itemId: string) =>
+      `/raqib/visits/${visitId}/inspection/guards/${guardId}/scores/${itemId}`,
+    guardNote: (visitId: string, guardId: string) =>
+      `/raqib/visits/${visitId}/inspection/guards/${guardId}/note`,
+    submit: (visitId: string) => `/raqib/visits/${visitId}/inspection/submit`,
+  },
+  review: (visitId: string, action: "forward" | "return" | "reject" | "approve") =>
+    `/raqib/visits/${visitId}/review/${action}`,
+  observations: {
+    list: "/raqib/observations",
+    create: "/raqib/observations",
+    action: (id: string) => `/raqib/observations/${id}/action`,
+  },
+  actions: {
+    list: "/raqib/actions",
+    byId: (id: string) => `/raqib/actions/${id}`,
+    responsible: (projectId: string) =>
+      `/raqib/actions/responsible?projectId=${encodeURIComponent(projectId)}`,
+    step: (id: string, step: "start" | "submit" | "return" | "close") =>
+      `/raqib/actions/${id}/${step}`,
+    comments: (id: string) => `/raqib/actions/${id}/comments`,
+    reassign: (id: string) => `/raqib/actions/${id}/reassign`,
+  },
+  training: {
+    list: "/raqib/training",
+    byId: (id: string) => `/raqib/training/${id}`,
+    step: (id: string, step: string) => `/raqib/training/${id}/${step}`,
+  },
+  guardHistory: (id: string) => `/raqib/guards/${id}/history`,
+  guardSummary: "/raqib/guards-summary",
+  analytics: (qs: string) => `/raqib/analytics?${qs}`,
+  analyticsExport: (qs: string, ext: "" | ".xlsx" = "") => `/raqib/analytics/export${ext}?${qs}`,
+  search: (q: string) => `/raqib/search?q=${encodeURIComponent(q)}`,
+  conf: {
+    base: "/raqib/confidential",
+  },
+  audit: (qs: string) => `/raqib/audit?${qs}`,
+  auditExport: (qs: string, ext: "" | ".xlsx" = "") => `/raqib/audit/export${ext}?${qs}`,
+  accountRequests: {
+    list: "/raqib/account-requests",
+    byId: (id: string) => `/raqib/account-requests/${id}`,
+    step: (id: string, step: "approve" | "reject" | "resend") =>
+      `/raqib/account-requests/${id}/${step}`,
+  },
+  reports: {
+    list: "/raqib/reports",
+    pdf: (id: string, lang: string) => `/raqib/reports/${id}/pdf?lang=${lang}`,
+  },
+  evidence: {
+    attach: "/raqib/evidence",
+    byId: (id: string) => `/raqib/evidence/${id}`,
+    content: (id: string) => `/raqib/evidence/${id}/content`,
+  },
+  files: { presign: "/files/uploads", confirm: (id: string) => `/files/${id}/confirm` },
+  guards: {
+    list: "/raqib/guards",
+    byId: (id: string) => `/raqib/guards/${id}`,
+    status: (id: string) => `/raqib/guards/${id}/status`,
+  },
+} as const;

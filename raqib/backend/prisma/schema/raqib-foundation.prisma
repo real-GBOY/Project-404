@@ -1,0 +1,164 @@
+// app/raqib — foundation: settings, permission templates, profiles, projects, sites, areas,
+// dated project assignments, guards. Mirrors migration 20261005120000_raqib_foundation for Kysely
+// type generation only; the SQL is the source of truth for constraints, triggers and RLS.
+
+model raqib_settings {
+  organization_id String   @id
+  /// @kyselyType(Json<Record<string, unknown>>)
+  data            Json     @default("{}")
+  updated_by      String?
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("raqib_settings")
+}
+
+model raqib_role_templates {
+  id              String   @id
+  organization_id String
+  /// @kyselyType('qm' | 'qe' | 'pm' | 'ins' | 'gs' | 'guard' | 'gm')
+  role_key        String
+  module          String
+  actions         String   @default("")
+  updated_by      String?
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, role_key, module], map: "raqib_role_templates_uq")
+  @@map("raqib_role_templates")
+}
+
+model raqib_profiles {
+  organization_id String
+  user_id         String
+  /// @kyselyType('qm' | 'qe' | 'pm' | 'ins' | 'gs' | 'guard' | 'gm')
+  role_key        String
+  name_ar         String
+  name_en         String
+  title_ar        String    @default("")
+  title_en        String    @default("")
+  employee_no     String?
+  phone           String?
+  /// @kyselyType('active' | 'invited' | 'disabled')
+  status          String    @default("active")
+  last_active_at  DateTime? @db.Timestamptz(6)
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@id([organization_id, user_id])
+  @@map("raqib_profiles")
+}
+
+model raqib_projects {
+  id               String    @id
+  organization_id  String
+  code             String
+  name_ar          String
+  name_en          String
+  city_ar          String    @default("")
+  city_en          String    @default("")
+  region_ar        String    @default("")
+  region_en        String    @default("")
+  manager_user_id  String?
+  /// @kyselyType('active' | 'attention' | 'mobilizing' | 'closed')
+  status           String    @default("active")
+  first_visit_date DateTime? @db.Date
+  archived_at      DateTime? @db.Timestamptz(6)
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "raqib_projects_org_id_uq")
+  @@unique([organization_id, code], map: "raqib_projects_code_uq")
+  @@map("raqib_projects")
+}
+
+model raqib_sites {
+  id              String    @id
+  organization_id String
+  project_id      String
+  name_ar         String
+  name_en         String
+  sort_order      Int       @default(0)
+  archived_at     DateTime? @db.Timestamptz(6)
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "raqib_sites_org_id_uq")
+  @@map("raqib_sites")
+}
+
+model raqib_areas {
+  id              String    @id
+  organization_id String
+  site_id         String
+  name_ar         String
+  name_en         String
+  sort_order      Int       @default(0)
+  archived_at     DateTime? @db.Timestamptz(6)
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "raqib_areas_org_id_uq")
+  @@map("raqib_areas")
+}
+
+model raqib_project_assignments {
+  id              String    @id
+  organization_id String
+  user_id         String
+  project_id      String
+  valid_from      DateTime  @db.Date
+  valid_to        DateTime? @db.Date
+  created_by      String?
+  ended_by        String?
+  reason          String?
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@map("raqib_project_assignments")
+}
+
+model raqib_guards {
+  id              String   @id
+  organization_id String
+  project_id      String
+  user_id         String?
+  employee_no     String
+  national_id     String
+  name_ar         String
+  name_en         String
+  post_ar         String   @default("")
+  post_en         String   @default("")
+  /// @kyselyType('morning' | 'evening' | 'night')
+  shift           String   @default("morning")
+  /// @kyselyType('active' | 'inactive')
+  status          String   @default("active")
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "raqib_guards_org_id_uq")
+  @@unique([organization_id, employee_no], map: "raqib_guards_employee_uq")
+  @@map("raqib_guards")
+}
+
+model raqib_account_security {
+  user_id             String    @id
+  password_changed_at DateTime? @db.Timestamptz(6)
+  mfa_secret          String?
+  mfa_enabled_at      DateTime? @db.Timestamptz(6)
+  mfa_last_step       BigInt?
+  /// @kyselyType(Json<string[]>)
+  mfa_recovery        Json      @default("[]")
+  updated_at          DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@map("raqib_account_security")
+}
+
+model raqib_auth_throttle {
+  email_normalized String    @id
+  failures         Int       @default(0)
+  first_failure_at DateTime  @db.Timestamptz(6)
+  locked_until     DateTime? @db.Timestamptz(6)
+  updated_at       DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@map("raqib_auth_throttle")
+}

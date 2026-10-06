@@ -1,0 +1,20 @@
+model raqib_reports {
+  id                  String   @id
+  organization_id     String
+  visit_id            String
+  inspection_id       String
+  project_id          String
+  ref                 String
+  score_pct           Int?
+  /// @kyselyType(Json<Record<string, unknown>>)
+  snapshot            Json
+  approved_by         String?
+  approved_by_name_ar String
+  approved_by_name_en String
+  generated_at        DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "raqib_reports_org_id_uq")
+  @@unique([organization_id, visit_id], map: "raqib_reports_visit_uq")
+  @@unique([organization_id, ref], map: "raqib_reports_ref_uq")
+  @@map("raqib_reports")
+}

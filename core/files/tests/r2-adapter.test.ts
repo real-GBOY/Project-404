@@ -159,3 +159,44 @@ describe("R2Adapter signed server-side requests", () => {
     expect(parsed.searchParams.get("X-Amz-Signature")).toBeTruthy();
   });
 });
+
+describe("R2Adapter key prefix (a folder for one product inside a shared bucket)", () => {
+  const prefixed = { ...CONFIG, keyPrefix: "raqib" };
+
+  it("puts every object under the folder and signs that path", async () => {
+    const adapter = new R2Adapter(prefixed);
+    const { url } = await adapter.presignPut(KEY, { contentType: "image/png", expiresIn: 900 });
+    expect(new URL(url).pathname).toBe(`/${CONFIG.bucket}/raqib/${KEY}`);
+    vi.stubGlobal(
+      "fetch",
+      stubFetch(() => new Response(null, { status: 200 })),
+    );
+    await adapter.put(KEY, Buffer.from("x"));
+    await adapter.head(KEY);
+    await adapter.remove(KEY);
+    expect(calls.map((c) => new URL(c.url).pathname)).toEqual(
+      Array(3).fill(`/${CONFIG.bucket}/raqib/${KEY}`),
+    );
+  });
+
+  it("accepts nested folders and stray slashes, and a public URL carries the folder too", async () => {
+    const adapter = new R2Adapter({
+      ...CONFIG,
+      keyPrefix: "/products/raqib/",
+      publicBaseUrl: "https://files.example.com/",
+    });
+    expect(await adapter.url(KEY)).toBe(`https://files.example.com/products/raqib/${KEY}`);
+  });
+
+  it("leaves paths untouched with no prefix, and refuses one that could escape the folder", async () => {
+    const { url } = await new R2Adapter(CONFIG).presignPut(KEY, {
+      contentType: "image/png",
+      expiresIn: 900,
+    });
+    expect(new URL(url).pathname).toBe(`/${CONFIG.bucket}/${KEY}`);
+    expect(() => new R2Adapter({ ...CONFIG, keyPrefix: "../other" })).toThrow(
+      /Invalid R2 key prefix/,
+    );
+    expect(() => new R2Adapter({ ...CONFIG, keyPrefix: "a b" })).toThrow(/Invalid R2 key prefix/);
+  });
+});

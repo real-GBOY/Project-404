@@ -1,0 +1,35 @@
+model raqib_account_requests {
+  id                   String    @id
+  organization_id      String
+  ref                  String
+  name                 String
+  email                String
+  phone                String
+  national_id          String
+  employee_no          String    @default("")
+  department           String    @default("")
+  /// @kyselyType('qe' | 'pm' | 'ins' | 'gs' | 'guard')
+  requested_role       String
+  requested_projects   String    @default("")
+  justification        String
+  declaration_version  String
+  signed_name          String
+  signed_at            DateTime  @db.Timestamptz(6)
+  /// @kyselyType('pending' | 'approved' | 'rejected')
+  status               String    @default("pending")
+  decided_by           String?
+  decided_by_name_ar   String?
+  decided_by_name_en   String?
+  decided_at           DateTime? @db.Timestamptz(6)
+  decision_reason      String?
+  assigned_role        String?
+  /// @kyselyType(Json<string[]>)
+  assigned_project_ids Json?
+  user_id              String?
+  created_at           DateTime  @default(now()) @db.Timestamptz(6)
+  erased_at            DateTime? @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "raqib_account_requests_org_id_uq")
+  @@unique([organization_id, ref], map: "raqib_account_requests_ref_uq")
+  @@map("raqib_account_requests")
+}

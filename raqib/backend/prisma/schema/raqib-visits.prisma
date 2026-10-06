@@ -1,0 +1,72 @@
+// app/raqib — visits: counters, visits, guards on shift, event history. Mirrors migration
+// 20261006120000_raqib_visits for Kysely type generation only; the SQL is the source of truth.
+
+model raqib_counters {
+  organization_id String
+  kind            String
+  year            Int
+  value           Int    @default(0)
+
+  @@id([organization_id, kind, year])
+  @@map("raqib_counters")
+}
+
+model raqib_visits {
+  id                  String    @id
+  organization_id     String
+  ref                 String
+  project_id          String
+  site_id             String
+  area_id             String?
+  area_text           String?
+  inspector_id        String?
+  /// @kyselyType('routine' | 'surprise' | 'follow' | 'night')
+  visit_type          String    @default("routine")
+  /// @kyselyType('morning' | 'evening' | 'night')
+  shift               String    @default("morning")
+  scheduled_date      DateTime  @db.Date
+  scheduled_time      String
+  /// @kyselyType('scheduled' | 'assigned' | 'in_progress' | 'pending_review' | 'pending_approval' | 'returned' | 'approved' | 'rejected' | 'cancelled')
+  status              String    @default("scheduled")
+  round               Int       @default(1)
+  overdue_notified_at DateTime? @db.Timestamptz(6)
+  created_by          String?
+  created_at          DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "raqib_visits_org_id_uq")
+  @@unique([organization_id, ref], map: "raqib_visits_ref_uq")
+  @@map("raqib_visits")
+}
+
+model raqib_visit_guards {
+  organization_id String
+  visit_id        String
+  guard_id        String
+
+  @@id([organization_id, visit_id, guard_id])
+  @@map("raqib_visit_guards")
+}
+
+model raqib_visit_events {
+  id              String   @id
+  organization_id String
+  visit_id        String
+  seq             BigInt   @default(autoincrement())
+  /// @kyselyType('scheduled' | 'assigned' | 'started' | 'submitted' | 'resubmitted' | 'reviewed' | 'returned' | 'rejected' | 'approved' | 'rescheduled' | 'cancelled')
+  action          String
+  from_status     String?
+  to_status       String
+  actor_id        String?
+  actor_name_ar   String
+  actor_name_en   String
+  actor_role      String?
+  actor_title_ar  String   @default("")
+  actor_title_en  String   @default("")
+  reason          String?
+  /// @kyselyType(Json<Record<string, unknown>>)
+  detail          Json?
+  at              DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("raqib_visit_events")
+}

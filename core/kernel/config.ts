@@ -63,6 +63,19 @@ const schema = z.object({
   r2Bucket: z.string().optional(),
   r2Endpoint: z.string().url().optional(),
   r2PublicBaseUrl: z.string().url().optional(),
+  /** A folder inside the bucket for this product's objects, e.g. `raqib` (R2 has no real folders: it is a key prefix). */
+  r2KeyPrefix: z
+    .string()
+    .trim()
+    .regex(
+      /^([A-Za-z0-9._-]+(\/[A-Za-z0-9._-]+)*)?$/,
+      "AURIC_R2_KEY_PREFIX must be letters, digits, . _ - and / between folders, with no leading or trailing slash",
+    )
+    .refine(
+      (v) => !v.split("/").some((seg) => seg === "." || seg === ".."),
+      "AURIC_R2_KEY_PREFIX cannot contain . or .. folders",
+    )
+    .default(""),
   /** TTL for a presigned upload/download URL, seconds. */
   filePresignTtlSeconds: z.coerce.number().int().positive().default(900),
   /** Hard cap on a single upload, bytes. Matches the multipart limit (25 MiB). */
@@ -143,6 +156,7 @@ function readEnv(): AuricConfig {
     r2Bucket: process.env.AURIC_R2_BUCKET,
     r2Endpoint: process.env.AURIC_R2_ENDPOINT,
     r2PublicBaseUrl: process.env.AURIC_R2_PUBLIC_BASE_URL,
+    r2KeyPrefix: process.env.AURIC_R2_KEY_PREFIX?.replace(/^\/+|\/+$/g, ""),
     filePresignTtlSeconds: process.env.AURIC_FILE_PRESIGN_TTL_SECONDS,
     fileMaxUploadBytes: process.env.AURIC_FILE_MAX_UPLOAD_BYTES,
     fileAllowedMimeTypes: process.env.AURIC_FILE_ALLOWED_MIME_TYPES,

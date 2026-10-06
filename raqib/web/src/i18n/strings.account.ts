@@ -1,0 +1,101 @@
+/** Translation table [ar, en] — account security, password recovery, session handling. */
+export const STRINGS_ACCOUNT: Record<string, readonly [string, string]> = {
+  acct_title: ["أمان الحساب", "Account security"],
+  acct_back: ["العودة إلى التطبيق", "Back to the app"],
+  acct_signOut: ["تسجيل الخروج", "Sign out"],
+  acct_forgot: ["نسيت كلمة المرور؟", "Forgot your password?"],
+  acct_forgotTitle: ["استعادة كلمة المرور", "Reset your password"],
+  acct_forgotBody: [
+    "أدخل بريدك الإلكتروني وسنرسل إليك رابطًا لاختيار كلمة مرور جديدة.",
+    "Enter your email and we will send you a link to choose a new password.",
+  ],
+  acct_forgotSend: ["إرسال الرابط", "Send the link"],
+  acct_forgotDone: [
+    "إن كان هذا البريد مسجلًا لدينا فسيصلك رابط الاستعادة قريبًا. الرابط صالح لمدة ساعة.",
+    "If that email is registered, a reset link is on its way. It is valid for one hour.",
+  ],
+  acct_toSignIn: ["العودة إلى تسجيل الدخول", "Back to sign in"],
+  acct_otpLabel: ["رمز التحقق", "Verification code"],
+  acct_otpHint: [
+    "أدخل الرمز المكون من 6 أرقام من تطبيق المصادقة، أو أحد رموز الاسترداد.",
+    "Enter the 6-digit code from your authenticator app, or a recovery code.",
+  ],
+  acct_otpInvalid: ["الرمز غير صحيح. حاول مرة أخرى.", "That code is not valid. Try again."],
+  acct_locked: [
+    "تم تعليق الحساب مؤقتًا بسبب محاولات خاطئة كثيرة. حاول بعد {m} دقيقة أو استعد كلمة المرور.",
+    "This account is temporarily locked after too many failed attempts. Try again in {m} minute(s) or reset your password.",
+  ],
+  acct_idle: ["سُجّل خروجك لعدم النشاط.", "You were signed out after a period of inactivity."],
+  acct_required: [
+    "تتطلب مؤسستك إكمال هذه الخطوات قبل متابعة العمل.",
+    "Your organization requires you to complete these steps before you continue.",
+  ],
+  acct_mfaTitle: ["التحقق بخطوتين", "Two-step verification"],
+  acct_mfaOn: ["مفعّل", "On"],
+  acct_mfaOff: ["غير مفعّل", "Off"],
+  acct_mfaRequiredTag: ["مطلوب لدورك", "Required for your role"],
+  acct_mfaBody: [
+    "أضف طبقة حماية: بعد كلمة المرور يُطلب منك رمز متغير من تطبيق مصادقة على هاتفك.",
+    "Add a second layer: after your password you enter a changing code from an authenticator app on your phone.",
+  ],
+  acct_mfaStart: ["تفعيل التحقق بخطوتين", "Turn on two-step verification"],
+  acct_mfaStep1: [
+    "١. أضف الحساب إلى تطبيق المصادقة (Google Authenticator أو Microsoft Authenticator أو غيرهما) بإدخال هذا المفتاح يدويًا:",
+    "1. Add the account to your authenticator app (Google Authenticator, Microsoft Authenticator, …) by entering this key manually:",
+  ],
+  acct_mfaOpenApp: ["فتح في تطبيق المصادقة", "Open in authenticator app"],
+  acct_mfaStep2: [
+    "٢. أدخل الرمز المكون من 6 أرقام الذي يعرضه التطبيق لتأكيد الإعداد:",
+    "2. Enter the 6-digit code the app shows to confirm:",
+  ],
+  acct_mfaConfirm: ["تأكيد وتفعيل", "Confirm and turn on"],
+  acct_mfaRecoveryTitle: ["رموز الاسترداد", "Recovery codes"],
+  acct_mfaRecoveryBody: [
+    "احفظ هذه الرموز في مكان آمن. يعمل كل رمز مرة واحدة إذا فقدت هاتفك. لن تُعرض مرة أخرى.",
+    "Keep these in a safe place. Each works once if you lose your phone. They are shown only now.",
+  ],
+  acct_mfaRecoveryLeft: ["رموز الاسترداد المتبقية: {n}", "Recovery codes left: {n}"],
+  acct_mfaSaved: ["حفظتها", "I have saved them"],
+  acct_mfaDisable: ["إيقاف التحقق بخطوتين", "Turn off two-step verification"],
+  acct_mfaDisableBody: [
+    "أدخل كلمة المرور ورمزًا حاليًا لإيقافه.",
+    "Enter your password and a current code to turn it off.",
+  ],
+  acct_mfaCannotDisable: [
+    "مؤسستك تشترط التحقق بخطوتين لدورك، فلا يمكن إيقافه.",
+    "Your organization requires two-step verification for your role, so it cannot be turned off.",
+  ],
+  acct_pwTitle: ["كلمة المرور", "Password"],
+  acct_pwChanged: ["آخر تغيير: {d}", "Last changed: {d}"],
+  acct_pwNever: ["لم تُغيَّر منذ إنشاء الحساب", "Not changed since the account was created"],
+  acct_pwExpired: [
+    "انتهت صلاحية كلمة المرور (تُستبدل كل {n} يومًا). اختر كلمة مرور جديدة.",
+    "Your password has expired (it must change every {n} days). Choose a new one.",
+  ],
+  acct_pwCurrent: ["كلمة المرور الحالية", "Current password"],
+  acct_pwNew: ["كلمة المرور الجديدة", "New password"],
+  acct_pwRule: ["{n} أحرف على الأقل", "At least {n} characters"],
+  acct_pwSave: ["تغيير كلمة المرور", "Change password"],
+  acct_pwDone: [
+    "تم تغيير كلمة المرور. أُنهيت جلساتك الأخرى.",
+    "Password changed. Your other sessions were signed out.",
+  ],
+  acct_pwWrong: ["كلمة المرور الحالية غير صحيحة.", "The current password is not correct."],
+  acct_pwShort: [
+    "كلمة المرور أقصر من الحد الأدنى ({n}).",
+    "The password is shorter than the minimum ({n}).",
+  ],
+  acct_sessTitle: ["الجلسات", "Sessions"],
+  acct_sessBody: [
+    "أنهِ جميع الجلسات على الأجهزة الأخرى. ستبقى هذه الجلسة مفتوحة حتى تنتهي صلاحيتها.",
+    "Sign out everywhere else. This session stays until you sign out.",
+  ],
+  acct_sessRevoke: ["إنهاء جميع الجلسات", "Sign out everywhere"],
+  acct_sessDone: ["أُنهيت جميع الجلسات.", "All sessions signed out."],
+  acct_failed: ["تعذر إكمال الطلب. حاول مرة أخرى.", "That did not work. Please try again."],
+  acct_saved: ["تم الحفظ", "Saved"],
+  acct_idleNote: [
+    "تسجيل الخروج التلقائي بعد {n} دقيقة من عدم النشاط.",
+    "You are signed out automatically after {n} minutes of inactivity.",
+  ],
+};

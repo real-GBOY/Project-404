@@ -1,0 +1,168 @@
+// app/raqib — forms, versions, inspections (+ snapshot), answers, guard evaluation, flags, evidence.
+// Mirrors migration 20261007120000_raqib_forms_inspections for Kysely type generation only.
+
+model raqib_forms {
+  id              String   @id
+  organization_id String
+  code            String
+  /// @kyselyType('site' | 'guard')
+  category        String
+  name_ar         String
+  name_en         String
+  description_ar  String   @default("")
+  description_en  String   @default("")
+  active          Boolean  @default(true)
+  is_default      Boolean  @default(false)
+  created_by      String?
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "raqib_forms_org_id_uq")
+  @@unique([organization_id, code], map: "raqib_forms_code_uq")
+  @@map("raqib_forms")
+}
+
+model raqib_form_versions {
+  id              String    @id
+  organization_id String
+  form_id         String
+  version         String
+  /// @kyselyType('draft' | 'published' | 'archived')
+  status          String    @default("draft")
+  /// @kyselyType(Json<unknown[]>)
+  sections        Json      @default("[]")
+  note_ar         String    @default("")
+  note_en         String    @default("")
+  created_by      String?
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  published_by    String?
+  published_at    DateTime? @db.Timestamptz(6)
+  superseded_at   DateTime? @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "raqib_form_versions_org_id_uq")
+  @@unique([organization_id, form_id, version], map: "raqib_form_versions_uq")
+  @@map("raqib_form_versions")
+}
+
+model raqib_inspections {
+  id                    String    @id
+  organization_id       String
+  visit_id              String
+  form_version_id       String
+  guard_form_version_id String?
+  scoring_policy        String    @default("weighted_compliance_v1")
+  started_by            String?
+  started_at            DateTime  @default(now()) @db.Timestamptz(6)
+  submitted_at          DateTime? @db.Timestamptz(6)
+  score_pct             Int?
+  /// @kyselyType(Json<Record<string, unknown>> | null)
+  counts                Json?
+
+  @@unique([organization_id, id], map: "raqib_inspections_org_id_uq")
+  @@unique([organization_id, visit_id], map: "raqib_inspections_visit_uq")
+  @@map("raqib_inspections")
+}
+
+model raqib_inspection_items {
+  id               String  @id
+  organization_id  String
+  inspection_id    String
+  /// @kyselyType('site' | 'guard')
+  kind             String
+  section_pos      Int
+  section_key      String
+  section_title_ar String
+  section_title_en String
+  position         Int
+  item_key         String
+  text_ar          String
+  text_en          String
+  weight           Int
+  answer_type      String
+  required         Boolean
+  na_allowed       Boolean
+  evidence_on_nc   Boolean
+
+  @@unique([organization_id, id], map: "raqib_inspection_items_org_id_uq")
+  @@unique([inspection_id, kind, item_key], map: "raqib_inspection_items_key_uq")
+  @@map("raqib_inspection_items")
+}
+
+model raqib_answers {
+  id              String   @id
+  organization_id String
+  inspection_id   String
+  item_id         String
+  /// @kyselyType('c' | 'n' | 'x' | null)
+  value           String?
+  note            String?
+  /// @kyselyType('low' | 'medium' | 'high' | null)
+  severity        String?
+  edited_round    Int      @default(1)
+  updated_by      String?
+  updated_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, item_id], map: "raqib_answers_item_uq")
+  @@map("raqib_answers")
+}
+
+model raqib_guard_scores {
+  organization_id String
+  inspection_id   String
+  guard_id        String
+  item_id         String
+  score           Int
+  updated_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@id([organization_id, inspection_id, guard_id, item_id])
+  @@map("raqib_guard_scores")
+}
+
+model raqib_guard_notes {
+  organization_id String
+  inspection_id   String
+  guard_id        String
+  note            String   @default("")
+  updated_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@id([organization_id, inspection_id, guard_id])
+  @@map("raqib_guard_notes")
+}
+
+model raqib_inspection_flags {
+  id              String   @id
+  organization_id String
+  inspection_id   String
+  item_id         String
+  round           Int
+  created_by      String?
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, inspection_id, item_id, round], map: "raqib_inspection_flags_uq")
+  @@map("raqib_inspection_flags")
+}
+
+model raqib_evidence {
+  id              String    @id
+  organization_id String
+  file_id         String
+  /// @kyselyType('photo' | 'video' | 'doc')
+  kind            String
+  name            String
+  mime            String
+  size_bytes      BigInt
+  /// @kyselyType('answer' | 'guard_eval' | 'corrective_action' | 'observation')
+  context         String
+  inspection_id   String?
+  item_id         String?
+  guard_id        String?
+  ref_id          String?
+  uploaded_by     String?
+  uploaded_at     DateTime  @default(now()) @db.Timestamptz(6)
+  removed_at      DateTime? @db.Timestamptz(6)
+  purged_at       DateTime? @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "raqib_evidence_org_id_uq")
+  @@unique([organization_id, file_id], map: "raqib_evidence_file_uq")
+  @@map("raqib_evidence")
+}
