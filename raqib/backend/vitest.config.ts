@@ -23,11 +23,14 @@ export default defineConfig({
     environment: "node",
     globals: false,
     passWithNoTests: false,
-    // Tests never inherit a developer's local .env choices (e.g. RAQIB_SEED_DEMO=true):
+    // Tests never inherit a developer's local .env choices (e.g. RAQIB_SEED_DEMO=true, an R2 bucket):
     // suites seed the demo explicitly when they need it.
     env: {
       AURIC_TEST_DATABASE_URL: testDatabaseUrl,
       RAQIB_SEED_DEMO: "false",
+      // uploads in tests go to disk, never to a developer's real bucket, and PDF rendering is not needed
+      AURIC_FILE_STORAGE_DRIVER: "local",
+      RAQIB_CHROMIUM_PATH: "",
       RAQIB_DEMO_HISTORY_DAYS: "14",
       RAQIB_TRUSTED_PROXY_HOPS: "1",
     },
