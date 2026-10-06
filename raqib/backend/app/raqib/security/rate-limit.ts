@@ -20,7 +20,12 @@ interface Rule {
  * the request itself); report downloads and uploads per person; everything else generously.
  */
 export const RULES: Rule[] = [
-  { name: "auth", match: (m, p) => m === "POST" && /^\/auth\/(login|refresh|password|forgot|reset|register)/.test(p), limit: 20, windowMs: 60_000, by: "ip" },
+  // Renewing a session needs a valid refresh token already, so it is not a guessable door: it gets its own roomy bucket instead of
+  // sharing the sign-in one (a whole shift behind one office address must not be signed out because someone else is signing in).
+  { name: "auth-refresh", match: (m, p) => m === "POST" && p === "/auth/refresh", limit: 300, windowMs: 60_000, by: "ip" },
+  // The guessable doors. Per-account lock-out is the real brake on password guessing; this is the coarse per-address one, sized so
+  // a shift starting at one site (many people, one public address) is not locked out.
+  { name: "auth", match: (m, p) => m === "POST" && /^\/auth\/(login|password|forgot|reset|register)/.test(p), limit: 60, windowMs: 60_000, by: "ip" },
   {
     name: "account-request",
     match: (m, p) => m === "POST" && p.startsWith("/raqib/public/onboarding"),

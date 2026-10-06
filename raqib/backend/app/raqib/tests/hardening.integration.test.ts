@@ -140,7 +140,7 @@ describe.skipIf(!hasTestDb)("Raqib hardening", () => {
 
   it("rate limits sign-in attempts", async () => {
     let limited = 0;
-    for (let n = 0; n < 30; n++) {
+    for (let n = 0; n < 80; n++) {
       const res = await http.inject({ method: "POST", url: "/api/auth/login", payload: { email: "nobody@example.com", password: "wrong-password-1" } });
       if (res.statusCode === 429) limited++;
     }

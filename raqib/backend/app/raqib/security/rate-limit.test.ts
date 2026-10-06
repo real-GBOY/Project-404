@@ -5,12 +5,21 @@ describe("rate limiter", () => {
   it("limits sign-in attempts per client address and recovers after the window", () => {
     const l = new RateLimiter();
     const t0 = 1_000_000;
-    for (let n = 0; n < 20; n++) expect(l.check("POST", "/auth/login", "1.1.1.1", null, t0).allowed).toBe(true);
+    for (let n = 0; n < 60; n++) expect(l.check("POST", "/auth/login", "1.1.1.1", null, t0).allowed).toBe(true);
     const blocked = l.check("POST", "/auth/login", "1.1.1.1", null, t0 + 1000);
     expect(blocked).toMatchObject({ allowed: false, rule: "auth" });
     expect(blocked.retryAfterSec).toBeGreaterThan(0);
     expect(l.check("POST", "/auth/login", "2.2.2.2", null, t0 + 1000).allowed).toBe(true); // another address
     expect(l.check("POST", "/auth/login", "1.1.1.1", null, t0 + 61_000).allowed).toBe(true); // a new window
+  });
+
+  it("does not let sign-ins use up the budget for renewing sessions, or the other way round", () => {
+    const l = new RateLimiter();
+    const t0 = 1_000_000;
+    for (let n = 0; n < 60; n++) l.check("POST", "/auth/login", "9.9.9.9", null, t0);
+    expect(l.check("POST", "/auth/login", "9.9.9.9", null, t0 + 1)).toMatchObject({ allowed: false, rule: "auth" });
+    for (let n = 0; n < 300; n++) expect(l.check("POST", "/auth/refresh", "9.9.9.9", null, t0 + 2).allowed).toBe(true);
+    expect(l.check("POST", "/auth/refresh", "9.9.9.9", null, t0 + 3)).toMatchObject({ allowed: false, rule: "auth-refresh" });
   });
 
   it("limits confidential submissions per person, not per address", () => {
