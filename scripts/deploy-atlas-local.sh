@@ -14,8 +14,8 @@
 # nginx server block, TLS cert, /opt/atlas/.env) — this script only ships code
 # and restarts the service, exactly like scripts/deploy-vps.sh does for Mizan.
 SSH_KEY="${SSH_KEY:-me}"                       # private key file (repo root)
-SSH_USER="${SSH_USER:-ubuntu}"
-SSH_HOST="${SSH_HOST:-100.26.109.162}"
+SSH_USER="${SSH_USER:-root}"
+SSH_HOST="${SSH_HOST:-162.35.28.116}"
 BACKEND_DIR="${BACKEND_DIR:-/opt/atlas}"
 WEB_ROOT="${WEB_ROOT:-/var/www/atlas}"
 SERVICE="${SERVICE:-atlas}"
@@ -69,4 +69,4 @@ echo "→ releasing on the box"
   sudo systemctl reload nginx || true
 "
 
-echo "✓ deployed atlas $REV — check https://atlas.100-26-109-162.sslip.io"
+echo "✓ deployed atlas $REV — check https://atlas.162-35-28-116.sslip.io"
