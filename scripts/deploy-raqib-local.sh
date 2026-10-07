@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# One-shot manual deploy of the RAQIB BACKEND from a local checkout to the shared VPS, as its own systemd
+# One-shot manual deploy of the RAQIB BACKEND from a local checkout to the Raqib VPS (Interserver), as its own systemd
 # service (raqib, :3300) + nginx server block + Postgres database. The web app (raqib/web) is on Vercel,
 # not shipped here.
 #
@@ -9,8 +9,8 @@
 #
 # Needs the one-time box setup from docs/raqib-deployment.md first.
 SSH_KEY="${SSH_KEY:-me}"
-SSH_USER="${SSH_USER:-ubuntu}"
-SSH_HOST="${SSH_HOST:-100.26.109.162}"
+SSH_USER="${SSH_USER:-root}"
+SSH_HOST="${SSH_HOST:-162.35.28.116}"
 BACKEND_DIR="${BACKEND_DIR:-/opt/raqib}"
 SERVICE="${SERVICE:-raqib}"
 PORT="${PORT:-3300}"
@@ -48,4 +48,4 @@ echo "→ releasing on the box"
   rm -f /tmp/raqib-backend.tgz /tmp/package.json /tmp/package-lock.json /tmp/deploy-vps.sh /tmp/raqib-backup.sh /tmp/offsite-backup.mjs /tmp/raqib-deploy.env
   sudo env BACKEND_DIR='$BACKEND_DIR' SERVICE='$SERVICE' PORT='$PORT' bash '$BACKEND_DIR/deploy-vps.sh'
 "
-echo "✓ deployed raqib $REV — https://raqib.100-26-109-162.sslip.io/api/health"
+echo "✓ deployed raqib $REV — https://raqib.162-35-28-116.sslip.io/api/health"

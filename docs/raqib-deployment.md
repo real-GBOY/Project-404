@@ -1,14 +1,14 @@
 # Raqib deployment
 
-Raqib runs on the **same VPS as the other products** (`ubuntu@100.26.109.162`, ARM64, 921 MB RAM + 2 GB swap), as an independent
-service: its own systemd unit, nginx server block, Postgres database and `.env`. The web app is on Vercel. Nothing here touches
-Mizan, Atlas or HotelOS.
+Raqib runs on **its own VPS** (Interserver KVM slice `vps3694926`, `root@162.35.28.116`, Ubuntu 24.04, x86_64, 1 vCPU, 1.6 GB RAM + 3 GB swap, about $3/month),
+moved there on 2026-10-07 from the shared AWS box (`100.26.109.162`), which still hosts Mizan, Atlas and HotelOS and no longer serves Raqib.
+It is an independent service: its own systemd unit, nginx server block, local Postgres 16 database and `.env`. The web app is on Vercel.
 
 | Piece | Where |
 |---|---|
-| API | `https://raqib.100-26-109-162.sslip.io/api` (systemd `raqib`, `127.0.0.1:3300`, Node 24, heap capped at 300 MB) |
+| API | `https://raqib.162-35-28-116.sslip.io/api` (systemd `raqib`, `127.0.0.1:3300`, Node 24, heap capped at 300 MB) |
 | Web app | `https://raqib-web.vercel.app` (Vercel project `raqib-web`, root directory `raqib/web`, git-connected to `main`) |
-| Database | `raqib` on the box's Postgres 12, restricted roles `auric_app` / `auric_system` (shared cluster-wide roles, row-level security) |
+| Database | `raqib` on the box's own Postgres 16, restricted roles `auric_app` / `auric_system` (cluster-wide roles, row-level security); the migration owner is `postgres` over `127.0.0.1` |
 | Files | Cloudflare R2 bucket `raqib-files` (Western Europe), presigned uploads straight from the browser |
 | TLS | Let's Encrypt via certbot for the sslip.io host, renewed by the box's timer |
 
@@ -19,18 +19,22 @@ bash scripts/deploy-raqib-local.sh                # build the backend and ship i
 SKIP_BUILD=1 bash scripts/deploy-raqib-local.sh   # ship the existing dist/
 ```
 
-The script needs the SSH key `me` (repo root, gitignored) and ships `dist/` plus the shared `package.json` and lockfile, then runs
+The script defaults to `root@162.35.28.116` and needs the SSH key `me` (repo root, gitignored) and ships `dist/` plus the shared `package.json` and lockfile, then runs
 `/opt/raqib/deploy-vps.sh` on the box: install production dependencies only if the lockfile changed, restart the service, wait for
 `/api/health`. Migrations run when the process boots. The **first boot of a demo database takes about three minutes** (it plays a
 year of inspections through the real services), so the script's 60-second health gate may report a failure while the service is
 still seeding: check `journalctl -u raqib` before assuming it is broken.
 
 The web app deploys by itself on every push to `main` (Vercel). Its environment (Production and Preview): `VITE_API_BASE` (the API
-URL above) and `VITE_DEMO=true` (the demo accounts panel on the sign-in page).
+URL above, **including the `/api` suffix**: the client's endpoints have no prefix) and `VITE_DEMO=true` (the demo accounts panel on the sign-in page).
 
 ## One-time setup (already done)
 
-1. `sudo -u postgres createdb raqib`.
+0. Fresh Ubuntu 24.04 as root: a 2 GB swap file (the first demo seed is memory-hungry), `nginx postgresql certbot python3-certbot-nginx`, Node 24 from
+   NodeSource, a system user `auric` (home `/opt/raqib`, no shell), `ufw` allowing only 22, 80 and 443. Generated passwords live in `/root/.raqib-db-pass`,
+   `/root/.raqib-app-pass` and `/root/.raqib-sys-pass` (root-only) and are written into `.env`.
+1. `sudo -u postgres createdb raqib`, set a password for `postgres`, and create `auric_app` (NOBYPASSRLS) and `auric_system` (BYPASSRLS) with LOGIN and
+   passwords before the first boot (the migration owner must be a superuser to alter them).
 2. `/opt/raqib/.env`, mode 600, root-owned, never committed. Everything from `raqib/backend/.env.example` that matters:
    `NODE_ENV=production`, `AURIC_PORT=3300`, the three database URLs (owner for migrations, `auric_app` and `auric_system` at runtime),
    a **new** `AURIC_JWT_SECRET`, a **new** `RAQIB_DATA_KEY` (`openssl rand -base64 32`; back it up: losing it loses sealed national ids and
@@ -40,11 +44,12 @@ URL above) and `VITE_DEMO=true` (the demo accounts panel on the sign-in page).
    `AURIC_DOCS_ENABLED=false` (do not publish the API surface) and `AURIC_HOST=127.0.0.1` (only nginx can reach the process).
 3. `/etc/systemd/system/raqib.service` (User `auric`, `EnvironmentFile=/opt/raqib/.env`, `NODE_OPTIONS=--max-old-space-size=300`,
    `Restart=on-failure`), then `systemctl enable raqib`.
-4. nginx server block `raqib.100-26-109-162.sslip.io` proxying `/api/` to `127.0.0.1:3300` (and nothing at `/`: it redirects to the web app), then
-   `sudo certbot --nginx -d raqib.100-26-109-162.sslip.io --redirect`.
+4. nginx server block `raqib.162-35-28-116.sslip.io` proxying `/api/` to `127.0.0.1:3300` (and nothing at `/`: it redirects to the web app), then
+   `sudo certbot --nginx -d raqib.162-35-28-116.sslip.io --redirect`.
 5. R2: bucket `raqib-files` with a CORS rule for `https://*.vercel.app` (and the local dev ports): GET, PUT, HEAD, DELETE, any header,
    expose `ETag`. See [raqib/docs/operations.md](../raqib/docs/operations.md).
-6. Vercel: project `raqib-web`, framework Vite, root directory `raqib/web`, repository `real-GBOY/Project-404`, the two variables above.
+6. Backups: `/etc/cron.d/raqib-backup` runs `/opt/raqib/raqib-backup.sh` at 02:30 UTC (see below).
+7. Vercel: project `raqib-web`, framework Vite, root directory `raqib/web`, repository `real-GBOY/Project-404`, the two variables above.
 
 ## Demo mode on this deployment
 
@@ -82,7 +87,7 @@ host ever changes, update `connect-src` there**, or the app will stop reaching i
 
 ## Testing the live site
 
-The browser suite can run against production: `E2E_WEB=https://raqib-web.vercel.app E2E_API=https://raqib.100-26-109-162.sslip.io npx playwright test`
+The browser suite can run against production: `E2E_WEB=https://raqib-web.vercel.app E2E_API=https://raqib.162-35-28-116.sslip.io npx playwright test`
 with the specs that are safe on shared demo data (`01` to `08`). **Never run `09-auth`** there: it locks accounts and changes
 passwords. The confidential-report workflow is rate limited on purpose (5 submissions and 20 entries per person per hour), so run it about once an hour against the demo guard. The create-data specs leave test records behind; take a backup first and restore it afterwards if you want the demo exactly as seeded.
 
