@@ -10,8 +10,8 @@
 # Requires: ssh + tar on PATH, and an SSH key that can log in as $SSH_USER with
 # passwordless sudo on the box. Override any of these:
 SSH_KEY="${SSH_KEY:-me}"                       # private key file (repo root)
-SSH_USER="${SSH_USER:-root}"
-SSH_HOST="${SSH_HOST:-162.35.28.116}"
+SSH_USER="${SSH_USER:-ubuntu}"
+SSH_HOST="${SSH_HOST:-100.26.109.162}"
 BACKEND_DIR="${BACKEND_DIR:-/opt/mizan}"
 WEB_ROOT="${WEB_ROOT:-/var/www/mizan}"
 SERVICE="${SERVICE:-mizan}"

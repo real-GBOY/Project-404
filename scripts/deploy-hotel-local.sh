@@ -9,8 +9,8 @@
 #
 # Needs the one-time box setup from docs/hotelos-deployment.md first.
 SSH_KEY="${SSH_KEY:-me}"
-SSH_USER="${SSH_USER:-root}"
-SSH_HOST="${SSH_HOST:-162.35.28.116}"
+SSH_USER="${SSH_USER:-ubuntu}"
+SSH_HOST="${SSH_HOST:-100.26.109.162}"
 BACKEND_DIR="${BACKEND_DIR:-/opt/hotelos}"
 SERVICE="${SERVICE:-hotelos}"
 PORT="${PORT:-3200}"
@@ -44,4 +44,4 @@ echo "→ releasing on the box"
   rm -f /tmp/hotelos-backend.tgz /tmp/package.json /tmp/package-lock.json /tmp/deploy-vps.sh /tmp/hotelos-deploy.env
   sudo env BACKEND_DIR='$BACKEND_DIR' SERVICE='$SERVICE' PORT='$PORT' bash '$BACKEND_DIR/deploy-vps.sh'
 "
-echo "✓ deployed hotelos $REV — https://hotel.162-35-28-116.sslip.io/api/health"
+echo "✓ deployed hotelos $REV — https://hotel.100-26-109-162.sslip.io/api/health"
