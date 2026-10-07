@@ -26,6 +26,16 @@ export function analyticsQuery(c: Ctx): {
   };
 }
 
+const DAY = 86_400_000;
+const isoDay = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
+
+/** A fixed period always has a range; a custom one needs both dates, in order and within the year the backend allows. */
+export function analyticsRangeReady(q: { period: string; from: string; to: string }): boolean {
+  if (q.period !== "custom") return true;
+  if (!q.from || !q.to || q.from > q.to) return false;
+  return Date.parse(q.to) - Date.parse(q.from) <= 366 * DAY;
+}
+
 const KPI_ORDER = [
   "compliance",
   "inspections",
@@ -116,7 +126,17 @@ export function analytics(c: Ctx, result: AnalyticsResult | undefined) {
       range: result ? `${i.fd(result.range.from, "d")} – ${i.fd(result.range.to, "full")}` : "",
       pers: PERIODS.map((k) => ({
         label: i.S(k === "custom" ? "per_custom" : `per_${k === "year" ? "year" : k}`),
-        set: () => set({ anPeriod: k }),
+        // choosing Custom starts from the last 30 days, so there is a valid range to show before anyone types a date
+        set: () =>
+          set(
+            k === "custom" && !(ui.anFrom && ui.anTo)
+              ? {
+                  anPeriod: k,
+                  anFrom: isoDay(Date.parse(me.today) - 29 * DAY),
+                  anTo: me.today,
+                }
+              : { anPeriod: k },
+          ),
         bg: q.period === k ? C.text.ink : C.surface.white,
         fg: q.period === k ? C.surface.white : C.text.body,
       })),

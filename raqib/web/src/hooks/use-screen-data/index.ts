@@ -59,7 +59,9 @@ export function useScreenData(route: Route, me: Me, ui: UiState): ScreenData {
   const pending =
     confidential.pending ||
     defs.some((d, idx) => d.enabled && !NON_BLOCKING.has(d.key) && results[idx]!.isPending);
-  const error = (results.find((r) => r.error)?.error as Error | undefined) ?? null;
+  // only a query this screen wants can fail it: a disabled query still reports the error it cached earlier
+  const error =
+    (results.find((r, idx) => defs[idx]!.enabled && r.error)?.error as Error | undefined) ?? null;
   const denial = deriveDenial(route, data, error, pending);
   return {
     data,

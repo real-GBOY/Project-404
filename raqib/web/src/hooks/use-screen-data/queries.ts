@@ -3,6 +3,7 @@ import type { AnalyticsQueryParams, AuditQueryParams, ConfAccess, Me } from "@/a
 import { applyOps } from "@/services/offline/apply";
 import { offline } from "@/services/offline/session";
 import type { Route } from "@/presenters/context";
+import { analyticsRangeReady } from "@/presenters/screens/analytics";
 import type { UiState } from "@/state/ui-store";
 import { QK } from "../query-keys";
 import type { ScreenNeeds } from "./needs";
@@ -109,7 +110,7 @@ export function queryDefs({
     { key: QK.guardSummary, enabled: want.guardSummary, fn: () => api.guardSummary() },
     {
       key: QK.analytics,
-      enabled: want.analytics,
+      enabled: want.analytics && analyticsRangeReady(analytics), // a half-typed custom range is not asked of the server
       fn: () => api.analytics.get(analytics),
       extra: [
         analytics.period,
