@@ -1,6 +1,6 @@
 /* eslint-disable */
 // Transpiled once from the approved Claude Design (Raqib.dc.html), now owned in this repo: colors come from @/styles/colors, fonts from @/styles/typography. Behavior belongs in presenters.
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
 import { Hover } from "@/components/Hover";
 import type { VM } from "@/ui/vm";
 import { C } from "@/styles/colors";
@@ -8,6 +8,9 @@ import { FONT } from "@/styles/typography";
 
 export function VisitsList({ vm }: { vm: VM }) {
   const { mobile, notMobile, pad, pageTitle, t, vl } = vm;
+  // Drag-and-drop state of the week grid (which visit is lifted, which day it is over); the drop itself is the presenter's.
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [over, setOver] = useState<number | null>(null);
   return (
     <>
       <div
@@ -434,7 +437,10 @@ export function VisitsList({ vm }: { vm: VM }) {
         ) : null}
         {vl.isWeek ? (
           <>
-            <div style={{ fontSize: "13px", color: C.text.secondary }}>{vl.weekLabel}</div>
+            <div style={{ fontSize: "13px", color: C.text.secondary }}>
+              {vl.weekLabel}
+              {vl.canSchedule && notMobile ? ` · ${t.weekDragHint}` : ""}
+            </div>
             {notMobile ? (
               <>
                 <div
@@ -451,11 +457,33 @@ export function VisitsList({ vm }: { vm: VM }) {
                   {(vl.days || []).map((d: any, __i: number) => (
                     <Fragment key={__i}>
                       <div
+                        data-day={d.iso}
+                        onDragOver={(e) => {
+                          if (!d.canDrop || !dragId) return;
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = "move";
+                          if (over !== __i) setOver(__i);
+                        }}
+                        onDragLeave={(e) => {
+                          if (!e.currentTarget.contains(e.relatedTarget as Node | null))
+                            setOver(null);
+                        }}
+                        onDrop={(e) => {
+                          if (!d.canDrop) return;
+                          e.preventDefault();
+                          const id = e.dataTransfer.getData("text/plain") || dragId;
+                          setOver(null);
+                          setDragId(null);
+                          if (id) d.dropVisit(id);
+                        }}
                         style={{
                           borderInlineEnd: `1px solid ${C.surface.track}`,
                           display: "flex",
                           flexDirection: "column",
                           minWidth: "0",
+                          background: over === __i ? C.brand.washAlt : "transparent",
+                          outline: over === __i ? `2px dashed ${C.brand.primary}` : "none",
+                          outlineOffset: "-3px",
                         }}
                       >
                         <div
@@ -494,56 +522,79 @@ export function VisitsList({ vm }: { vm: VM }) {
                         >
                           {(d.items || []).map((v: any, __i: number) => (
                             <Fragment key={__i}>
-                              <button
-                                onClick={v.go}
+                              <div
+                                draggable={v.canDrag}
+                                data-visit={v.id}
+                                onDragStart={(e) => {
+                                  if (!v.canDrag) return;
+                                  e.dataTransfer.setData("text/plain", v.id);
+                                  e.dataTransfer.effectAllowed = "move";
+                                  setDragId(v.id);
+                                }}
+                                onDragEnd={() => {
+                                  setDragId(null);
+                                  setOver(null);
+                                }}
                                 style={{
-                                  textAlign: "start",
-                                  border: `1px solid ${C.border.hairline}`,
-                                  borderTop: `3px solid ${v.bar}`,
-                                  borderRadius: "3px",
-                                  background: C.surface.paper,
-                                  padding: "6px 8px",
-                                  cursor: "pointer",
                                   display: "flex",
                                   flexDirection: "column",
-                                  gap: "1px",
-                                  fontSize: "12px",
                                   minWidth: "0",
+                                  cursor: v.canDrag ? "grab" : "default",
+                                  opacity: dragId === v.id ? 0.45 : 1,
                                 }}
                               >
-                                <span
-                                  dir="ltr"
+                                <button
+                                  onClick={v.go}
+                                  draggable={false}
                                   style={{
-                                    fontFamily: FONT.mono,
-                                    fontWeight: "500",
                                     textAlign: "start",
+                                    border: `1px solid ${C.border.hairline}`,
+                                    borderTop: `3px solid ${v.bar}`,
+                                    borderRadius: "3px",
+                                    background: C.surface.paper,
+                                    padding: "6px 8px",
+                                    cursor: v.canDrag ? "grab" : "pointer",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: "1px",
+                                    fontSize: "12px",
+                                    minWidth: "0",
                                   }}
                                 >
-                                  {v.time}
-                                </span>
-                                <span
-                                  style={{
-                                    fontWeight: "500",
-                                    fontSize: "12.5px",
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                    whiteSpace: "nowrap",
-                                  }}
-                                >
-                                  {v.site}
-                                </span>
-                                <span
-                                  style={{
-                                    color: C.text.secondary,
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                    whiteSpace: "nowrap",
-                                  }}
-                                >
-                                  {v.ins}
-                                </span>
-                                <span style={{ color: v.st.fg }}>{v.st.label}</span>
-                              </button>
+                                  <span
+                                    dir="ltr"
+                                    style={{
+                                      fontFamily: FONT.mono,
+                                      fontWeight: "500",
+                                      textAlign: "start",
+                                    }}
+                                  >
+                                    {v.time}
+                                  </span>
+                                  <span
+                                    style={{
+                                      fontWeight: "500",
+                                      fontSize: "12.5px",
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                      whiteSpace: "nowrap",
+                                    }}
+                                  >
+                                    {v.site}
+                                  </span>
+                                  <span
+                                    style={{
+                                      color: C.text.secondary,
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                      whiteSpace: "nowrap",
+                                    }}
+                                  >
+                                    {v.ins}
+                                  </span>
+                                  <span style={{ color: v.st.fg }}>{v.st.label}</span>
+                                </button>
+                              </div>
                             </Fragment>
                           ))}
                         </div>

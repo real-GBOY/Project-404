@@ -329,6 +329,10 @@ export const STRINGS_CORE: Record<string, readonly [string, string]> = {
   visitsAll: ["{n} زيارة ضمن نطاقك", "{n} visits in your scope"],
   view_list: ["قائمة", "List"],
   view_week: ["أسبوع", "Week"],
+  weekDragHint: [
+    "اسحب الزيارة وأفلتها على يوم آخر لإعادة جدولتها.",
+    "Drag a visit onto another day to reschedule it.",
+  ],
   newVisit: ["زيارة جديدة", "New visit"],
   c_ref: ["المرجع", "Reference"],
   c_projSite: ["الموقع / المشروع", "Site / project"],

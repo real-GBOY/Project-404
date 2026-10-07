@@ -123,15 +123,25 @@ export function visitsList(c: Ctx) {
     };
   });
   const start = new Date(`${me.today}T00:00`);
+  const canSchedule = me.permissions.visits.includes("A");
   const days = Array.from({ length: 7 }, (_, n) => {
     const d = new Date(start.getTime() + n * 864e5);
     const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
     const items = vis
       .filter((v) => v.date === iso)
       .sort((a, b) => a.time.localeCompare(b.time))
-      .map((v) => ({ ...visitRow(c, v), bar: TONE[VST[v.status]]![0] }));
+      .map((v) => ({
+        ...visitRow(c, v),
+        bar: TONE[VST[v.status]]![0],
+        id: v.id,
+        canDrag: canSchedule && MOVABLE.includes(v.storedStatus),
+      }));
     const today = iso === me.today;
     return {
+      iso,
+      canDrop: canSchedule,
+      /** A visit was dropped on this day: ask for the reason in the usual reschedule form, prefilled with the new date. */
+      dropVisit: (id: string) => moveVisit(c, id, iso),
       wd: i.fd(iso, "wd"),
       dn: i.fd(iso, "dn"),
       today,
@@ -142,7 +152,6 @@ export function visitsList(c: Ctx) {
       full: i.fd(iso, "dy"),
     };
   });
-  const canSchedule = me.permissions.visits.includes("A");
   const weekEnd = new Date(start.getTime() + 6 * 864e5);
   const weekEndIso = `${weekEnd.getFullYear()}-${String(weekEnd.getMonth() + 1).padStart(2, "0")}-${String(weekEnd.getDate()).padStart(2, "0")}`;
   return {
@@ -167,6 +176,26 @@ export function visitsList(c: Ctx) {
         }),
     },
   };
+}
+
+/** Visits whose date can still be changed (the same rule the visit page uses for its Reschedule button). */
+const MOVABLE = ["scheduled", "assigned", "in_progress", "returned"];
+
+/** Drag-and-drop on the week grid: open the reschedule form for this visit with the dropped day, keeping time and inspector. */
+function moveVisit(c: Ctx, id: string, date: string): void {
+  const v = (c.data.visits ?? []).find((x) => x.id === id);
+  if (
+    !v ||
+    v.date === date ||
+    !c.me.permissions.visits.includes("A") ||
+    !MOVABLE.includes(v.storedStatus)
+  )
+    return;
+  c.openModal(
+    "resched",
+    { vid: v.id, ref: v.ref },
+    { date, time: v.time, ins: v.inspector?.id ?? "", p: v.project.id },
+  );
 }
 
 function nextDay(iso: string, n: number): string {

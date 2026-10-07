@@ -1,6 +1,6 @@
 /* eslint-disable */
 // Transpiled once from the approved Claude Design (Raqib.dc.html), now owned in this repo: colors come from @/styles/colors, fonts from @/styles/typography. Behavior belongs in presenters.
-import { Fragment } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { Hover } from "@/components/Hover";
 import type { VM } from "@/ui/vm";
 import { C } from "@/styles/colors";
@@ -23,6 +23,34 @@ export function SearchPalette({ vm }: { vm: VM }) {
     searchW,
     t,
   } = vm;
+  // Keyboard navigation (the footer promises it): ↑/↓ move through the results across groups, Enter opens the active one.
+  // Esc is handled for every overlay by use-overlay-dismissal. The active row restarts at the top whenever the results change.
+  const flat: any[] = (searchGroups || []).flatMap((g: any) => g.items || []);
+  const signature = flat.map((it) => `${it.title}|${it.sub}`).join("||");
+  const [active, setActive] = useState(0);
+  const list = useRef<HTMLDivElement | null>(null);
+  useEffect(() => setActive(0), [signature]);
+  const at = Math.min(active, Math.max(flat.length - 1, 0));
+  useEffect(() => {
+    list.current
+      ?.querySelector<HTMLElement>(`[data-hit="${at}"]`)
+      ?.scrollIntoView({ block: "nearest" });
+  }, [at, signature]);
+  const onKeyDown = (e: { key: string; preventDefault(): void }) => {
+    if (!flat.length) return;
+    const go = (n: number) => {
+      e.preventDefault();
+      setActive(n);
+    };
+    if (e.key === "ArrowDown") go((at + 1) % flat.length);
+    else if (e.key === "ArrowUp") go((at - 1 + flat.length) % flat.length);
+    else if (e.key === "Home") go(0);
+    else if (e.key === "End") go(flat.length - 1);
+    else if (e.key === "Enter") {
+      e.preventDefault();
+      flat[at]?.go();
+    }
+  };
   return (
     <>
       <div
@@ -53,6 +81,13 @@ export function SearchPalette({ vm }: { vm: VM }) {
             ref={searchRef}
             value={q}
             onChange={onQ}
+            onKeyDown={onKeyDown}
+            role="combobox"
+            aria-expanded={flat.length > 0}
+            aria-controls="search-hits"
+            aria-autocomplete="list"
+            aria-activedescendant={flat.length ? `search-hit-${at}` : undefined}
+            autoComplete="off"
             placeholder={t.searchPh}
             style={{
               width: "100%",
@@ -75,7 +110,7 @@ export function SearchPalette({ vm }: { vm: VM }) {
         >
           {searchScope}
         </div>
-        <div style={{ overflowY: "auto", flex: "1" }}>
+        <div ref={list} id="search-hits" role="listbox" style={{ overflowY: "auto", flex: "1" }}>
           {searchRecent ? (
             <>
               <div style={{ padding: "12px 18px" }}>
@@ -105,54 +140,72 @@ export function SearchPalette({ vm }: { vm: VM }) {
               </div>
             </>
           ) : null}
-          {(searchGroups || []).map((g: any, __i: number) => (
-            <Fragment key={__i}>
-              <div>
-                <div style={{ fontSize: "11.5px", color: C.text.muted, padding: "10px 18px 4px" }}>
-                  {g.label}
-                </div>
-                {(g.items || []).map((it: any, __i: number) => (
-                  <Fragment key={__i}>
-                    <Hover
-                      as="button"
-                      onClick={it.go}
-                      style={{
-                        width: "100%",
-                        display: "flex",
-                        gap: "12px",
-                        alignItems: "center",
-                        padding: "9px 18px",
-                        border: "0",
-                        background: it.bg,
-                        cursor: "pointer",
-                        textAlign: "start",
-                      }}
-                      hover={{ background: C.brand.washAlt }}
-                    >
-                      <span style={{ flex: "1", minWidth: "0" }}>
-                        <span style={{ display: "block", fontWeight: "500", fontSize: "13.5px" }}>
-                          {it.title}
-                        </span>
-                        <span
+          {(() => {
+            let n = -1;
+            return (searchGroups || []).map((g: any, __i: number) => (
+              <Fragment key={__i}>
+                <div role="group" aria-label={g.label}>
+                  <div
+                    style={{ fontSize: "11.5px", color: C.text.muted, padding: "10px 18px 4px" }}
+                  >
+                    {g.label}
+                  </div>
+                  {(g.items || []).map((it: any, __j: number) => {
+                    const idx = ++n;
+                    const on = idx === at;
+                    return (
+                      <Fragment key={__j}>
+                        <Hover
+                          as="button"
+                          id={`search-hit-${idx}`}
+                          data-hit={idx}
+                          role="option"
+                          aria-selected={on}
+                          tabIndex={-1}
+                          onClick={it.go}
+                          onMouseMove={() => (on ? undefined : setActive(idx))}
                           style={{
-                            display: "block",
-                            fontSize: "12px",
-                            color: C.text.secondary,
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
+                            width: "100%",
+                            display: "flex",
+                            gap: "12px",
+                            alignItems: "center",
+                            padding: "9px 18px",
+                            border: "0",
+                            borderInlineStart: `3px solid ${on ? C.brand.primary : "transparent"}`,
+                            background: on ? C.brand.washAlt : it.bg,
+                            cursor: "pointer",
+                            textAlign: "start",
                           }}
+                          hover={{ background: C.brand.washAlt }}
                         >
-                          {it.sub}
-                        </span>
-                      </span>
-                      <span style={{ fontSize: "11px", color: C.text.muted }}>{it.kind}</span>
-                    </Hover>
-                  </Fragment>
-                ))}
-              </div>
-            </Fragment>
-          ))}
+                          <span style={{ flex: "1", minWidth: "0" }}>
+                            <span
+                              style={{ display: "block", fontWeight: "500", fontSize: "13.5px" }}
+                            >
+                              {it.title}
+                            </span>
+                            <span
+                              style={{
+                                display: "block",
+                                fontSize: "12px",
+                                color: C.text.secondary,
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              {it.sub}
+                            </span>
+                          </span>
+                          <span style={{ fontSize: "11px", color: C.text.muted }}>{it.kind}</span>
+                        </Hover>
+                      </Fragment>
+                    );
+                  })}
+                </div>
+              </Fragment>
+            ));
+          })()}
           {searchNone ? (
             <>
               <div style={{ padding: "28px 18px", textAlign: "center", color: C.text.secondary }}>
