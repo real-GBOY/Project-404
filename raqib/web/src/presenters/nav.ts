@@ -1,5 +1,6 @@
 import type { Me, ModuleKey, RoleKey } from "@/api/types";
 import type { L10n } from "@/api/types";
+import { DEMO_SCOPE } from "@/config";
 
 /**
  * Navigation is UX: which entries a role is OFFERED. The backend enforces every route regardless.
@@ -128,10 +129,26 @@ export const ENABLED_NAV: ReadonlySet<string> = new Set([
   "account",
 ]);
 
-export function visibleNav(me: Me): string[] {
+/** What the client demo shows (VITE_DEMO_SCOPE=client): the inspection story and its supporting screens, nothing administrative. */
+export const CLIENT_DEMO_NAV: ReadonlySet<string> = new Set([
+  "overview",
+  "projects",
+  "visits",
+  "reviews",
+  "inspections",
+  "observations",
+  "actions",
+  "reports",
+  "analytics",
+  "forms",
+  "account",
+]);
+
+export function visibleNav(me: Me, scoped: boolean = DEMO_SCOPE): string[] {
   const t = me.permissions;
   return ROLE_NAV[me.role].filter((k) => {
     if (!ENABLED_NAV.has(k)) return false;
+    if (scoped && !CLIENT_DEMO_NAV.has(k)) return false;
     if (k === "overview" || k === "confidential" || k === "account") return true;
     if (k === "reviews") return t.inspections.includes("R") || t.inspections.includes("P");
     if (k === "inspections") return t.inspections.includes("S");

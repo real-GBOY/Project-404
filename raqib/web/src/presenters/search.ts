@@ -1,8 +1,9 @@
 import type { SearchHit } from "@/api/types";
 import type { Ctx } from "./context";
 import { C } from "@/styles/colors";
+import { DEMO_SCOPE } from "@/config";
 
-const KINDS = [
+const ALL_KINDS = [
   "project",
   "visit",
   "report",
@@ -12,6 +13,9 @@ const KINDS = [
   "guard",
   "user",
 ] as const;
+/** Result kinds the client demo hides along with their screens. */
+const HIDDEN_IN_DEMO: readonly string[] = ["training", "guard", "user"];
+const KINDS = DEMO_SCOPE ? ALL_KINDS.filter((k) => !HIDDEN_IN_DEMO.includes(k)) : ALL_KINDS;
 const CONF_WORDS = /confidential|سري|بلاغ|whistle|complaint/i;
 
 /** The search palette (design: SearchPalette). Results come from the backend, already scope- and permission-filtered. */
@@ -53,6 +57,6 @@ export function searchVM(c: Ctx) {
     searchRecent: q.length < 2 && ui.recentQ.length > 0,
     searchGroups: q.length >= 2 ? groups : [],
     searchNone: q.length >= 2 && groups.length === 0 && c.data.searchHits !== undefined,
-    confHit: CONF_WORDS.test(q),
+    confHit: !DEMO_SCOPE && CONF_WORDS.test(q),
   };
 }

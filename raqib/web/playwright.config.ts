@@ -65,7 +65,12 @@ export default defineConfig({
           url: WEB,
           timeout: 240_000,
           reuseExistingServer: !!process.env.RAQIB_E2E_REUSE,
-          env: { VITE_DEMO: "true", RAQIB_API_PROXY_TARGET: API },
+          env: {
+            VITE_DEMO: "true",
+            RAQIB_API_PROXY_TARGET: API,
+            // E2E_DEMO_SCOPE=client builds the client-demo variant (see e2e/10-client-demo-scope.spec.ts)
+            ...(process.env.E2E_DEMO_SCOPE ? { VITE_DEMO_SCOPE: process.env.E2E_DEMO_SCOPE } : {}),
+          },
         },
       ],
 });
