@@ -44,3 +44,6 @@ packages/create-auric/docs/
 
 # local credentials notes (VPS passwords, DB secrets) — never commit
 /credentials/
+
+# generated walkthrough videos and their scratch output
+/raqib/video-out/

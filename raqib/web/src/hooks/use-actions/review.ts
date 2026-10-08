@@ -7,5 +7,8 @@ export const reviewActions = (qc: Qc): Slice<"decideReview"> => ({
   async decideReview(visitId, action, body) {
     putInspection(qc, visitId, await api.review.decide(visitId, action, body));
     await invalidate(qc, QK.visits);
+    // Approving issues the report and every decision notifies someone: refresh those lists too, or they show stale for a while.
+    await invalidate(qc, QK.reports);
+    await invalidate(qc, QK.notifications);
   },
 });

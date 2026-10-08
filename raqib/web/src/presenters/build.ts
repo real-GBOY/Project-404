@@ -113,7 +113,13 @@ export function buildVM(c: Ctx, opts: { pending: boolean; denial: Denial | null 
         v.storedStatus,
       )
     )
-      c.go("review", route.id);
+      // Someone who can review sees the review screen; the inspector who just submitted (no review right) sees the visit itself.
+      c.go(
+        me.permissions.inspections.includes("R") || me.permissions.inspections.includes("P")
+          ? "review"
+          : "visit",
+        route.id,
+      );
   }
   let body: VM = {};
   if (denial) {
