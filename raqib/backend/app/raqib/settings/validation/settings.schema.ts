@@ -31,6 +31,7 @@ export const orgSettingsSchema = z
         ncNote: flag,
         ncEvidence: flag,
         lockAfterSubmit: flag,
+        allowEarlyStart: flag,
         overdueHours: z.number().int().min(0).max(720),
       })
       .strict(),

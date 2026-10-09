@@ -572,7 +572,9 @@ export class DemoSeeder {
     await withContext({ userId: ownerId, organizationId: orgId }, async () => {
       await this.uow.transaction(async () => {
         const sample = readRaqibConfig().demoSampleValues;
-        await this.settings.save(sample ? SAMPLE_SETTINGS : DEFAULT_SETTINGS, ownerId);
+        // the demo schedules visits ahead of time and lets them be started straight away; a real organization starts on the day
+        const base = sample ? SAMPLE_SETTINGS : DEFAULT_SETTINGS;
+        await this.settings.save({ ...base, insp: { ...base.insp, allowEarlyStart: true } }, ownerId);
         if (sample) {
           // PLACEHOLDER deduction values for the demo, not the client's: 100 minus these per non-compliant item
           await this.scoring.insert({

@@ -186,6 +186,7 @@ export function settingsScreen(c: Ctx) {
     ),
     forms: [
       F("tog", "insp", "latestOnStart"),
+      F("tog", "insp", "allowEarlyStart"),
       F("tog", "insp", "publishNeedsApproval"),
       F("tog", "insp", "ncNote"),
       F("tog", "insp", "ncEvidence"),

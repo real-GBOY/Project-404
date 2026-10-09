@@ -14,7 +14,15 @@ export interface OrgSettings {
     /** Core file id of the organization logo ("" until the client supplies one). */ logo: string;
   };
   scoring: { high: number; mid: number; naExcluded: boolean; criticalFail: boolean };
-  insp: { latestOnStart: boolean; publishNeedsApproval: boolean; ncNote: boolean; ncEvidence: boolean; lockAfterSubmit: boolean; overdueHours: number };
+  insp: {
+    latestOnStart: boolean;
+    publishNeedsApproval: boolean;
+    ncNote: boolean;
+    ncEvidence: boolean;
+    lockAfterSubmit: boolean;
+    overdueHours: number;
+    allowEarlyStart: boolean;
+  };
   attach: { photo: number; video: number; doc: number; types: string; videoProtected: boolean; linkMinutes: number; retention: number; compress: boolean };
   notif: Record<string, [number, number]>;
   report: { lang: "both" | "ar" | "en"; branding: boolean; evidence: boolean; signatures: boolean; history: boolean; watermark: boolean };
@@ -58,7 +66,7 @@ export const DEFAULT_SETTINGS: OrgSettings = {
     logo: "",
   },
   scoring: { high: 85, mid: 75, naExcluded: true, criticalFail: false },
-  insp: { latestOnStart: true, publishNeedsApproval: true, ncNote: true, ncEvidence: true, lockAfterSubmit: true, overdueHours: 24 },
+  insp: { latestOnStart: true, publishNeedsApproval: true, ncNote: true, ncEvidence: true, lockAfterSubmit: true, overdueHours: 24, allowEarlyStart: false },
   attach: { photo: 25, video: 500, doc: 20, types: "JPG, PNG, HEIC, MP4, MOV, PDF", videoProtected: true, linkMinutes: 5, retention: 7, compress: true },
   notif: {
     assigned: [1, 1],

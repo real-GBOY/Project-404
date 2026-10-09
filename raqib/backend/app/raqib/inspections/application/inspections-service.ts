@@ -391,6 +391,10 @@ export class InspectionsService {
         // the first form moves the visit into progress; the others may be started while it is under way
         let to = v.status;
         if (v.status === "scheduled" || v.status === "assigned") {
+          // an inspection starts on its scheduled day (or later), unless the organization allows starting early
+          if (v.date > who.today && !(await this.settings.current()).insp.allowEarlyStart) {
+            throw Conflict("raqib.too_early", `This visit is scheduled for ${v.date}. It can be started on that day.`);
+          }
           const moved = visitNext(v.status, "start", true);
           if (!moved) throw Conflict("raqib.cannot_start", "This visit cannot be started in its current state.");
           to = moved;
@@ -519,6 +523,15 @@ export class InspectionsService {
       let applied = patch;
       if (patch.value === "n" && patch.severity === undefined && !(await this.repo.answers(i.id)).get(itemId)?.severity) {
         applied = { ...patch, severity: "medium" };
+      }
+      // Moving an item away from "non-compliant" drops the violation's note; its evidence must be removed first, so a
+      // violation photo never sits under a compliant item (and nothing is deleted behind the inspector's back).
+      const before = (await this.repo.answers(i.id)).get(itemId);
+      if (patch.value && patch.value !== "n" && before?.value === "n") {
+        if ((await this.repo.liveEvidenceCount(i.id, itemId)) > 0) {
+          throw Conflict("raqib.remove_evidence_first", "Remove this item's evidence before changing its answer.");
+        }
+        applied = { ...applied, note: null };
       }
       await this.repo.upsertAnswer(i.id, itemId, applied, v.status === "returned" ? v.round + 1 : v.round, who.userId);
       return this.assemble(i, v, who);

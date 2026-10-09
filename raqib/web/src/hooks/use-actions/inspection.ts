@@ -99,8 +99,17 @@ export const inspectionActions = (
         sendOrQueue(visitId, { kind: "answer", visitId, itemId, patch }, async () =>
           put(visitId, await api.inspection.answer(visitId, itemId, patch)),
         );
-      if (patch.note === undefined) return void (await send());
-      return afterPause(`a:${itemId}`, send);
+      // a refusal from the server (not a lost connection) puts the screen back to what the server holds
+      const guarded = async () => {
+        try {
+          await send();
+        } catch (err) {
+          if (!isNetworkError(err)) await invalidate(qc, QK.inspection);
+          throw err;
+        }
+      };
+      if (patch.note === undefined) return void (await guarded());
+      return afterPause(`a:${itemId}`, guarded);
     },
 
     async setGuardScore(visitId, guardId, itemId, score) {

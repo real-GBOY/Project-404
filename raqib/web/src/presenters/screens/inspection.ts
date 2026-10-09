@@ -141,6 +141,9 @@ function issueText(c: Ctx, x: InspectionIssue, guardNames: Map<string, string>):
 /** The inspection workspace (design: vmInspect) on the backend's inspection read model. */
 export function inspectionWorkspace(c: Ctx, insp: Inspection, visit: Visit | undefined) {
   const { i, ui, set, data } = c;
+  // the server refused an answer change (for example, evidence still attached): say why; the screen reverts itself
+  const refused = (err: unknown) =>
+    c.toast(err instanceof ApiError ? err.message : i.S("actionFailed"));
   const mob = c.mobile;
   const vid = insp.visitId;
   const guardsById = new Map((data.guards ?? []).map((g) => [g.id, g]));
@@ -214,7 +217,8 @@ export function inspectionWorkspace(c: Ctx, insp: Inspection, visit: Visit | und
               label,
               set: q.locked
                 ? () => undefined
-                : () => void c.actions.saveAnswer(vid, q.id, { value: on ? null : val }),
+                : () =>
+                    void c.actions.saveAnswer(vid, q.id, { value: on ? null : val }).catch(refused),
               bg: on ? col[1] : C.surface.white,
               fg: on ? col[0] : C.text.body,
               bd: on ? col[0] : C.border.input,
@@ -253,7 +257,7 @@ export function inspectionWorkspace(c: Ctx, insp: Inspection, visit: Visit | und
             noteLabel: nc ? i.S("noteReq") : i.S("noteOpt"),
             note: q.note,
             onNote: (e: { target: { value: string } }) =>
-              void c.actions.saveAnswer(vid, q.id, { note: e.target.value }),
+              void c.actions.saveAnswer(vid, q.id, { note: e.target.value }).catch(refused),
             noteErr: nc && !q.note.trim(),
             noteBd: nc && !q.note.trim() ? C.status.danger.borderStrong : C.border.input,
             evLabel: nc ? i.S("evReq") : i.S("evOpt"),
@@ -270,7 +274,7 @@ export function inspectionWorkspace(c: Ctx, insp: Inspection, visit: Visit | und
                 q.severity ?? "medium",
                 k,
                 i.S(`sev_${k}`),
-                () => void c.actions.saveAnswer(vid, q.id, { severity: k }),
+                () => void c.actions.saveAnswer(vid, q.id, { severity: k }).catch(refused),
               ),
             ),
           };
@@ -336,7 +340,7 @@ export function inspectionWorkspace(c: Ctx, insp: Inspection, visit: Visit | und
     ix: {
       ref: insp.ref,
       title: visit
-        ? `${i.L(visit.project.name)} · ${i.L(visit.site.name)} · ${visit.area == null ? "—" : i.L(visit.area)}`
+        ? `${i.L(visit.project.name)} · ${i.L(visit.site.name)}${visit.area == null ? "" : ` · ${i.L(visit.area)}`}`
         : insp.ref,
       formTag: `${insp.form.code} v${insp.form.version}`,
       showScore: sc.visible,

@@ -55,5 +55,9 @@ export const STRINGS_SURVEYS: Record<string, readonly [string, string]> = {
     "اختياري: يُقيَّمون أثناء التفتيش.",
     "Optional: they are evaluated during the inspection.",
   ],
+  sf_insp_allowEarlyStart: [
+    "السماح للمفتش ببدء الزيارة قبل موعدها",
+    "Let the inspector start a visit before its scheduled day",
+  ],
   sv_remove: ["إزالة", "Remove"],
 };

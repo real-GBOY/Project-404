@@ -22,6 +22,7 @@ export interface OrgSettings {
     ncEvidence: boolean;
     lockAfterSubmit: boolean;
     overdueHours: number;
+    allowEarlyStart: boolean;
   };
   attach: {
     photo: number;

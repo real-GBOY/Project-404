@@ -294,7 +294,7 @@ export function visitDetail(c: Ctx, v: Visit) {
   return {
     vd: {
       ...visitRow(c, v),
-      title: `${i.L(v.site.name)} — ${areaOf(c, v)}`,
+      title: v.area == null ? i.L(v.site.name) : `${i.L(v.site.name)} — ${areaOf(c, v)}`,
       details: [
         [i.S("f_project"), `${i.L(v.project.name)} · ${v.project.code}`],
         [i.S("f_site"), `${i.L(v.site.name)} · ${areaOf(c, v)}`],

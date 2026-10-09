@@ -220,7 +220,7 @@ export function reviewDetail(c: Ctx, insp: Inspection, v: Visit) {
   return {
     rv: {
       ...visitRow(c, v),
-      title: `${i.L(v.site.name)} — ${v.area == null ? "—" : i.L(v.area)}`,
+      title: v.area == null ? i.L(v.site.name) : `${i.L(v.site.name)} — ${i.L(v.area)}`,
       submitted: sub ? i.S("submittedBy", { u: i.L(sub.actor.name), t: i.fd(sub.at, "dt") }) : "",
       formTag: `${insp.form.code} · v${insp.form.version}`,
       formChips:

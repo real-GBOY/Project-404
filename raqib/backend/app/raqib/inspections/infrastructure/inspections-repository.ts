@@ -229,6 +229,18 @@ export class InspectionsRepository {
     );
   }
 
+  /** Evidence still attached (not removed) to one item of an inspection. */
+  async liveEvidenceCount(inspectionId: string, itemId: string): Promise<number> {
+    const r = await raqibDb()
+      .selectFrom("raqib_evidence")
+      .select(sql<number>`count(*)::int`.as("n"))
+      .where("inspection_id", "=", inspectionId)
+      .where("item_id", "=", itemId)
+      .where("removed_at", "is", null)
+      .executeTakeFirst();
+    return r?.n ?? 0;
+  }
+
   async upsertAnswer(
     inspectionId: string,
     itemId: string,
