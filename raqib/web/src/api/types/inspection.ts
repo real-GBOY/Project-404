@@ -53,10 +53,31 @@ export interface InspectionIssue {
   step: number;
 }
 
+/** One of a visit's required forms and how far it has got. */
+export interface VisitFormProgress {
+  formId: string;
+  code: string;
+  name: L10n;
+  position: number;
+  issueNo: string | null;
+  inspectionId: string | null;
+  started: boolean;
+  answered: number;
+  total: number;
+  /** Items still blocking submission. */
+  blocking: number;
+  submitted: boolean;
+}
+
 export interface Inspection {
   id: string;
   visitId: string;
   ref: string;
+  /** Unique number of this form inspection. */
+  issueNo: string;
+  formId: string;
+  /** 0 = the visit's lead form. */
+  position: number;
   status: string;
   round: number;
   form: { versionId: string; code: string; version: string; name: L10n };
@@ -72,6 +93,8 @@ export interface Inspection {
     nonCompliant: number;
     na: number;
     evidence: number;
+    /** False for roles that only inspect: the percentage is withheld by the server. */
+    visible: boolean;
   };
   issues: InspectionIssue[];
   editable: boolean;

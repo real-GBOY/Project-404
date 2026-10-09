@@ -10,6 +10,7 @@ import { onboardingActions } from "./onboarding";
 import { projectActions } from "./projects";
 import { qualityActions } from "./quality";
 import { reviewActions } from "./review";
+import { scoringActions } from "./scoring";
 import { trainingActions } from "./training";
 import { visitActions } from "./visits";
 
@@ -32,6 +33,7 @@ export function useActions(): Actions {
       ...confidentialActions(qc),
       ...onboardingActions(qc),
       ...formActions(qc),
+      ...scoringActions(qc),
       ...documentActions(),
     }),
     [qc],

@@ -6,6 +6,7 @@ import { ROLE_LABEL } from "./users";
 import { C } from "@/styles/colors";
 
 const ST_TONE: Record<TrainingStatus, string> = {
+  pending_supervisor: "rev",
   pending_pm: "rev",
   returned: "warn",
   rejected: "bad",
@@ -14,6 +15,7 @@ const ST_TONE: Record<TrainingStatus, string> = {
   completed: "ok",
 };
 const ST_KEY: Record<TrainingStatus, string> = {
+  pending_supervisor: "trs_pending_supervisor",
   pending_pm: "trs_pending",
   returned: "trs_returned",
   rejected: "trs_rejected",
@@ -27,6 +29,7 @@ const PROVIDERS = ["internal", "academy", "external"] as const;
 const RESULTS = ["passed", "attended", "failed"] as const;
 const FILTERS = [
   "all",
+  "pending_supervisor",
   "pending_pm",
   "returned",
   "approved",
@@ -88,7 +91,14 @@ export function openRequest(c: Ctx, guard: Guard | null): void {
   c.openModal(
     "tr",
     {},
-    { g: guard?.id ?? "", reason2: "low_score", course: "", related: "", pri: "medium", notes: "" },
+    {
+      g: guard?.id ?? (c.me.role === "guard" ? "self" : ""),
+      reason2: "low_score",
+      course: "",
+      related: "",
+      pri: "medium",
+      notes: "",
+    },
   );
 }
 
@@ -98,12 +108,18 @@ export function trainingDetail(c: Ctx, t: TrainingRequest) {
   const own = t.requestedById === me.id;
   const log = t.log ?? [];
   const roleName = (r: string | null) => (r ? i.L(ROLE_LABEL[r as keyof typeof ROLE_LABEL]) : "");
-  const canDecide = t.status === "pending_pm" && !own && p.includes("P");
+  // the supervisor decides a guard's request first (needs S), then the project manager (needs P)
+  const atSupervisor = t.status === "pending_supervisor";
+  const canDecide =
+    !own && ((t.status === "pending_pm" && p.includes("P")) || (atSupervisor && p.includes("S")));
   const isGS = t.status === "returned" && own && p.includes("E");
   const canSched = t.status === "approved" && p.includes("R");
   const canDone = t.status === "scheduled" && p.includes("R");
   const order: TrainingStatus[] = ["pending_pm", "approved", "scheduled", "completed"];
-  const idx = t.status === "returned" ? 0 : t.status === "rejected" ? 0 : order.indexOf(t.status);
+  const idx =
+    t.status === "returned" || t.status === "rejected" || atSupervisor
+      ? 0
+      : order.indexOf(t.status);
   const stepLabels = [
     i.S("tr_created"),
     i.S("tr_approved"),
@@ -114,7 +130,7 @@ export function trainingDetail(c: Ctx, t: TrainingRequest) {
     const done =
       n < idx ||
       (n === idx && t.status === "completed") ||
-      (n === 0 && t.status !== "pending_pm" && t.status !== "returned");
+      (n === 0 && t.status !== "pending_pm" && t.status !== "returned" && !atSupervisor);
     const now = n === idx && !done;
     const bad = t.status === "rejected" && n === 1;
     return {
@@ -166,6 +182,7 @@ export function trainingDetail(c: Ctx, t: TrainingRequest) {
         [i.S("f_trReason"), i.S(`trr_${t.reason}`)],
         [i.S("f_related"), t.related || "—"],
         [i.S("f_requestedBy"), t.requestedBy ? i.L(t.requestedBy) : "—"],
+        [i.S("f_requesterKind"), i.S(t.requesterKind === "guard" ? "rk_guard" : "rk_supervisor")],
         [i.S("f_round"), String(t.round)],
         ...(t.scheduledDate
           ? [
@@ -185,8 +202,10 @@ export function trainingDetail(c: Ctx, t: TrainingRequest) {
       isPM: canDecide,
       approve: () =>
         void c.actions
-          .trainingStep(t.id, "approve")
-          .then(() => c.toast(i.S("toastTrApproved", { r: t.ref })))
+          .trainingStep(t.id, atSupervisor ? "review" : "approve")
+          .then(() =>
+            c.toast(i.S(atSupervisor ? "toastTrForwarded" : "toastTrApproved", { r: t.ref })),
+          )
           .catch(fail(c)),
       ret: () => c.openModal("trReturn", { tid: t.id, ref: t.ref }),
       rej: () => c.openModal("trReject", { tid: t.id, ref: t.ref }),
@@ -221,11 +240,13 @@ export function trainingDetail(c: Ctx, t: TrainingRequest) {
         t.status !== "completed" &&
         t.status !== "rejected",
       waitTxt:
-        t.status === "pending_pm"
-          ? i.S("waitPm")
-          : t.status === "returned"
-            ? i.S("waitRequester")
-            : i.S("waitQuality"),
+        t.status === "pending_supervisor"
+          ? i.S("waitSupervisor")
+          : t.status === "pending_pm"
+            ? i.S("waitPm")
+            : t.status === "returned"
+              ? i.S("waitRequester")
+              : i.S("waitQuality"),
     },
   };
 }

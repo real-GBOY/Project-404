@@ -4,7 +4,10 @@ import { optional, refOf } from "./types";
 /** The review desk: return, reject, forward, approve; and submitting an inspection. */
 export const reviewHandlers: ModalHandlers = {
   async return({ c, m, reason }) {
-    const ids = (m.flags as Array<{ id: string }> | undefined)?.map((x) => x.id) ?? [];
+    const ids =
+      (m.flagIds as string[] | undefined) ??
+      (m.flags as Array<{ id: string }> | undefined)?.map((x) => x.id) ??
+      [];
     await c.actions.decideReview(m.vid as string, "return", { reason, itemIds: ids });
     c.set((st) => ({
       rflags: Object.fromEntries(

@@ -70,7 +70,7 @@ export function overviewProjectManager(c: Ctx) {
         ? i.S("pm_next", {
             r: nextVisit.ref,
             d: i.fd(nextVisit.date, "d"),
-            t: nextVisit.time,
+            t: i.ft(nextVisit.time),
             s: i.L(nextVisit.site.name),
           })
         : i.S("pm_noNext"),

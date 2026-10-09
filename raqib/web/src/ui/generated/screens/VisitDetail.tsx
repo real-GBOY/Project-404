@@ -164,6 +164,25 @@ export function VisitDetail({ vm }: { vm: VM }) {
                 </button>
               </>
             ) : null}
+            {(vd.blankForms || []).map((bf: any, __i: number) => (
+              <Fragment key={__i}>
+                <button
+                  onClick={bf.print}
+                  style={{
+                    height: "44px",
+                    padding: "0 14px",
+                    border: `1px solid ${C.border.input}`,
+                    borderRadius: "4px",
+                    background: C.surface.white,
+                    color: C.text.body,
+                    cursor: "pointer",
+                    fontSize: "13px",
+                  }}
+                >
+                  {bf.label}
+                </button>
+              </Fragment>
+            ))}
             {vd.canStart ? (
               <>
                 <button

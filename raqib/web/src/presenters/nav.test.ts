@@ -54,14 +54,20 @@ describe("visibleNav (UX only — the backend enforces every route)", () => {
       "permissions",
       "settings",
       "confidential",
+      "surveys",
       "account",
     ]);
-    expect(visibleNav(me("pm", { projects: "VD" }))).toEqual(["overview", "projects", "account"]);
+    expect(visibleNav(me("pm", { projects: "VD" }))).toEqual([
+      "overview",
+      "projects",
+      "surveys",
+      "account",
+    ]);
   });
 
   it("follows an edited template, not the role name", () => {
-    expect(visibleNav(me("ins", {}))).toEqual(["overview", "account"]);
-    expect(visibleNav(me("ins", { projects: "V" }))).toEqual(["overview", "account"]); // inspectors' nav never includes projects
+    expect(visibleNav(me("ins", {}))).toEqual(["overview", "surveys", "account"]);
+    expect(visibleNav(me("ins", { projects: "V" }))).toEqual(["overview", "surveys", "account"]); // inspectors' nav never includes projects
   });
 
   it("the client demo hides administration, confidential reports, training and guards, and keeps the inspection story", () => {

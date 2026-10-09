@@ -7,7 +7,8 @@ export const trainingApi = {
   list: () => allPages<TrainingRequest>(ENDPOINTS.training.list).then((r) => r.items),
   get: (id: string) => http<TrainingRequest>(ENDPOINTS.training.byId(id)),
   create: (b: {
-    guardId: string;
+    /** A supervisor names the guard; a guard asks for themselves and sends none. */
+    guardId?: string;
     reason: TrainingReason;
     course: string;
     related: string;
@@ -16,7 +17,7 @@ export const trainingApi = {
   }) => http<TrainingRequest>(ENDPOINTS.training.list, { method: "POST", body: b }),
   step: (
     id: string,
-    step: "approve" | "return" | "reject" | "resubmit" | "schedule" | "complete",
+    step: "review" | "approve" | "return" | "reject" | "resubmit" | "schedule" | "complete",
     body: Record<string, unknown> = {},
   ) => http<TrainingRequest>(ENDPOINTS.training.step(id, step), { method: "POST", body }),
 };

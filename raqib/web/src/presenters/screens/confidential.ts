@@ -6,7 +6,7 @@ import { badge } from "../common";
 import type { Ctx } from "../context";
 import { C } from "@/styles/colors";
 
-const KINDS = ["misconduct", "violation", "safety"] as const;
+const KINDS = ["misconduct", "violation", "safety", "survey"] as const;
 const MODES = ["named", "confidential", "anonymous"] as const;
 const STATUS_TONE = { new: "info", under_review: "warn", closed: "ok" } as const;
 

@@ -1,5 +1,6 @@
 import type { RoleKey } from "@/api/types";
 import type { Ctx } from "../context";
+import { shiftLabel } from "../common";
 import { ROLE_LABEL } from "../screens/users";
 import { TRAINING_OPTIONS } from "../screens/training";
 import { C } from "@/styles/colors";
@@ -13,7 +14,7 @@ import { formFields, isFormKind } from "./forms";
 import { submitModal } from "./submit";
 import { NEED_REASON } from "./validation";
 
-const ROLES: RoleKey[] = ["qm", "qe", "pm", "ins", "gs", "guard", "gm"];
+const ROLES: RoleKey[] = ["qm", "qe", "pm", "ins", "gs", "guard", "gm", "adm"];
 
 /** The dialog view-model (design: vmModal + vmModalExt) for the kinds this build supports. */
 export function modalVM(c: Ctx) {
@@ -47,6 +48,20 @@ export function modalVM(c: Ctx) {
           mf: {
             ...s.mf,
             projects: cur.includes(p.id) ? cur.filter((x) => x !== p.id) : cur.concat([p.id]),
+          },
+        })),
+    };
+  });
+  const formChecks = (c.data.formOptions ?? []).map((fo) => {
+    const cur = (f.forms as string[] | undefined) ?? [];
+    return {
+      label: `${i.L(fo.name)} · ${fo.code} v${fo.version}`,
+      on: cur.includes(fo.id),
+      toggle: () =>
+        set((s) => ({
+          mf: {
+            ...s.mf,
+            forms: cur.includes(fo.id) ? cur.filter((x) => x !== fo.id) : cur.concat([fo.id]),
           },
         })),
     };
@@ -142,6 +157,8 @@ export function modalVM(c: Ctx) {
     isTrSched: K === "trSchedule",
     isTrDone: K === "trComplete",
     g: fld("g"),
+    // a guard asks for themselves, so there is no one to pick
+    gPick: c.me.role !== "guard",
     gOpts: [{ v: "", l: i.S("choose") }].concat(
       (c.data.guards ?? []).map((x) => ({ v: x.id, l: `${i.L(x.name)} · ${x.employeeNo}` })),
     ),
@@ -190,13 +207,17 @@ export function modalVM(c: Ctx) {
       K === "publish" ? i.S("pubAffect", { n: Number(m.uses ?? 0), v: String(m.oldV ?? "") }) : "",
     isRoleSel: ["roleChange", "reqApprove"].includes(K),
     roleOpts: [{ v: "", l: i.S("choose") }].concat(
-      (K === "reqApprove" ? (["qe", "pm", "ins", "gs", "guard"] as RoleKey[]) : ROLES).map((k) => ({
-        v: k,
-        l: i.L(ROLE_LABEL[k]),
-      })),
+      (K === "reqApprove" ? (["qe", "pm", "ins", "gs", "guard", "adm"] as RoleKey[]) : ROLES).map(
+        (k) => ({
+          v: k,
+          l: i.L(ROLE_LABEL[k]),
+        }),
+      ),
     ),
     isProj: ["userScope", "reqApprove"].includes(K),
     projChecks,
+    formChecks,
+    hasFormChecks: formChecks.length > 1,
     isDiff: ["permSave", "scopeSave", "settingsSave", "publish"].includes(K) && !!diff.length,
     diff,
   };
@@ -227,6 +248,9 @@ function visitOptions(c: Ctx) {
       (data.inspectors ?? []).map((x) => ({ v: x.id, l: i.L(x.name) })),
     ),
     typeOpts: ["routine", "surprise", "follow", "night"].map((k) => ({ v: k, l: i.S(`vt_${k}`) })),
-    shiftOpts: ["morning", "evening", "night"].map((k) => ({ v: k, l: i.S(`sh_${k}`) })),
+    shiftOpts: (data.shifts?.map((s) => s.key) ?? ["morning", "evening", "night"]).map((k) => ({
+      v: k,
+      l: shiftLabel({ i, data }, k),
+    })),
   };
 }

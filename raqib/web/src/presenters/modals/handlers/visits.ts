@@ -13,6 +13,7 @@ export const visitHandlers: ModalHandlers = {
       shift: (f.shift as never) || "morning",
       date: f.date as string,
       time: f.time as string,
+      formIds: (f.forms as string[] | undefined) ?? [],
       reason,
     });
     c.toast(c.i.S("toastCreated", { r: v.ref }), {

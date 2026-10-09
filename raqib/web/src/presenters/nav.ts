@@ -25,6 +25,7 @@ export const NAV_META: Record<string, { g: string; l: L10n }> = {
   audit: { g: "admin", l: { ar: "سجل التدقيق", en: "Audit log" } },
   settings: { g: "admin", l: { ar: "الإعدادات", en: "Settings" } },
   confidential: { g: "restricted", l: { ar: "البلاغات السرية", en: "Confidential reports" } },
+  surveys: { g: "me", l: { ar: "الاستبيانات", en: "Surveys" } },
   account: { g: "me", l: { ar: "إعداداتي", en: "My settings" } },
 };
 
@@ -56,6 +57,7 @@ export const ROLE_NAV: Record<RoleKey, string[]> = {
     "audit",
     "settings",
     "confidential",
+    "surveys",
     "account",
   ],
   qe: [
@@ -70,6 +72,7 @@ export const ROLE_NAV: Record<RoleKey, string[]> = {
     "reports",
     "analytics",
     "forms",
+    "surveys",
     "account",
   ],
   pm: [
@@ -80,12 +83,23 @@ export const ROLE_NAV: Record<RoleKey, string[]> = {
     "training",
     "reports",
     "analytics",
+    "surveys",
     "account",
   ],
-  ins: ["overview", "visits", "inspections", "account"],
-  gs: ["overview", "guards", "observations", "training", "account"],
-  guard: ["overview", "confidential", "account"],
-  gm: ["overview", "analytics", "reports", "audit", "confidential", "account"],
+  ins: ["overview", "visits", "inspections", "surveys", "account"],
+  gs: ["overview", "guards", "observations", "training", "surveys", "account"],
+  adm: ["overview", "visits", "projects", "surveys", "account"],
+  guard: ["overview", "training", "confidential", "surveys", "account"],
+  gm: [
+    "overview",
+    "analytics",
+    "reports",
+    "audit",
+    "settings",
+    "confidential",
+    "surveys",
+    "account",
+  ],
 };
 
 /** Nav entry → the template module that must grant View. */
@@ -126,6 +140,7 @@ export const ENABLED_NAV: ReadonlySet<string> = new Set([
   "users",
   "permissions",
   "settings",
+  "surveys",
   "account",
 ]);
 
@@ -149,7 +164,7 @@ export function visibleNav(me: Me, scoped: boolean = DEMO_SCOPE): string[] {
   return ROLE_NAV[me.role].filter((k) => {
     if (!ENABLED_NAV.has(k)) return false;
     if (scoped && !CLIENT_DEMO_NAV.has(k)) return false;
-    if (k === "overview" || k === "confidential" || k === "account") return true;
+    if (k === "overview" || k === "confidential" || k === "surveys" || k === "account") return true;
     if (k === "reviews") return t.inspections.includes("R") || t.inspections.includes("P");
     if (k === "inspections") return t.inspections.includes("S");
     const m = MODULE_OF_NAV[k];

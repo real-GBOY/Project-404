@@ -320,15 +320,17 @@ export function OverviewInspector({ vm }: { vm: VM }) {
                         <span style={{ fontFamily: FONT.mono }}>{v.ref}</span>· {v.date}
                       </span>
                     </span>
-                    <span
-                      style={{
-                        fontWeight: "600",
-                        color: v.scoreC,
-                        fontVariantNumeric: "tabular-nums",
-                      }}
-                    >
-                      {v.score}
-                    </span>
+                    {v.score !== "—" ? (
+                      <span
+                        style={{
+                          fontWeight: "600",
+                          color: v.scoreC,
+                          fontVariantNumeric: "tabular-nums",
+                        }}
+                      >
+                        {v.score}
+                      </span>
+                    ) : null}
                     <span
                       style={{
                         height: "22px",

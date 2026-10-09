@@ -3,7 +3,25 @@ import type { L10n } from "./common";
 
 export type VisitType = "routine" | "surprise" | "follow" | "night";
 
-export type Shift = "morning" | "evening" | "night";
+/** A configured shift key (the organization defines them; "morning", "evening" and "night" are the original three). */
+export type Shift = string;
+
+/** A form a scheduler can require on a visit. */
+export interface FormOption {
+  id: string;
+  code: string;
+  name: L10n;
+  version: string;
+  isDefault: boolean;
+}
+
+/** A shift as the organization configured it; `start`/`end` are "HH:MM" or empty until set. */
+export interface ShiftDef {
+  key: string;
+  name: L10n;
+  start: string;
+  end: string;
+}
 
 export type VisitStatus =
   | "scheduled"
@@ -43,6 +61,8 @@ export interface Visit {
   storedStatus: VisitStatus;
   round: number;
   guardIds: string[];
+  /** Forms this visit requires, in order (empty = the default site form). */
+  forms: Array<{ id: string; code: string; name: L10n }>;
   scorePct: number | null;
   inspectionId: string | null;
   history: VisitHistoryEntry[];
@@ -59,6 +79,7 @@ export interface CreateVisitInput {
   shift: Shift;
   date: string;
   time: string;
+  formIds?: string[];
   reason: string;
 }
 

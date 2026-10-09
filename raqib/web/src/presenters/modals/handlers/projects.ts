@@ -15,6 +15,9 @@ const projectBody = (f: ModalSubmit["f"]) => ({
   managerUserId: text(f.mgr) || null,
   status: (text(f.pstatus) || "mobilizing") as ProjectStatus,
   firstVisitDate: text(f.first) || null,
+  contractStart: text(f.cstart) || null,
+  contractEnd: text(f.cend) || null,
+  employeesAssigned: text(f.emps) === "" ? null : Number(text(f.emps)),
 });
 
 const guardBody = (f: ModalSubmit["f"]) => ({

@@ -243,6 +243,44 @@ export function ModalFields({ vm }: { vm: VM }) {
               </select>
             </label>
           </div>
+          {md.hasFormChecks ? (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "4px",
+                fontSize: "13px",
+                fontWeight: "500",
+              }}
+            >
+              {t.f_forms}
+              <span style={{ fontWeight: "400", color: C.text.secondary, fontSize: "12px" }}>
+                {t.f_formsHint}
+              </span>
+              {(md.formChecks || []).map((fc: any, __i: number) => (
+                <Fragment key={__i}>
+                  <label
+                    style={{
+                      display: "flex",
+                      gap: "10px",
+                      alignItems: "center",
+                      minHeight: "34px",
+                      fontWeight: "400",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={fc.on}
+                      onChange={fc.toggle}
+                      style={{ width: "18px", height: "18px", accentColor: C.brand.primary }}
+                    />
+                    {fc.label}
+                  </label>
+                </Fragment>
+              ))}
+            </div>
+          ) : null}
         </>
       ) : null}
       {md.isSched ? (
@@ -466,36 +504,38 @@ export function ModalFields({ vm }: { vm: VM }) {
       ) : null}
       {md.isTr ? (
         <>
-          <label
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "5px",
-              fontSize: "13px",
-              fontWeight: "500",
-            }}
-          >
-            {t.k_guard}
-            <select
-              value={md.g.val}
-              onChange={md.g.on}
+          {md.gPick ? (
+            <label
               style={{
-                height: "40px",
-                border: `1px solid ${md.g.bd}`,
-                borderRadius: "4px",
-                padding: "0 10px",
-                fontSize: "14px",
-                background: C.surface.white,
-                fontWeight: "400",
+                display: "flex",
+                flexDirection: "column",
+                gap: "5px",
+                fontSize: "13px",
+                fontWeight: "500",
               }}
             >
-              {(md.gOpts || []).map((o: any, __i: number) => (
-                <Fragment key={__i}>
-                  <option value={o.v}>{o.l}</option>
-                </Fragment>
-              ))}
-            </select>
-          </label>
+              {t.k_guard}
+              <select
+                value={md.g.val}
+                onChange={md.g.on}
+                style={{
+                  height: "40px",
+                  border: `1px solid ${md.g.bd}`,
+                  borderRadius: "4px",
+                  padding: "0 10px",
+                  fontSize: "14px",
+                  background: C.surface.white,
+                  fontWeight: "400",
+                }}
+              >
+                {(md.gOpts || []).map((o: any, __i: number) => (
+                  <Fragment key={__i}>
+                    <option value={o.v}>{o.l}</option>
+                  </Fragment>
+                ))}
+              </select>
+            </label>
+          ) : null}
           <label
             style={{
               display: "flex",

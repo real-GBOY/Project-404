@@ -37,12 +37,17 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
   {
     email: "m.alharbi@raqib.sa",
     role: "gs",
-    label: { ar: "ماجد الحربي — مشرف حراسات", en: "Majed Al-Harbi — Guards Supervisor" },
+    label: { ar: "ماجد الحربي — مشرف أمن", en: "Majed Al-Harbi — Security Supervisor" },
   },
   {
     email: "g-10302@raqib.sa",
     role: "guard",
     label: { ar: "عبدالله المطيري — حارس أمن", en: "Abdullah Al-Mutairi — Security Guard" },
+  },
+  {
+    email: "h.alzahrani@raqib.sa",
+    role: "adm",
+    label: { ar: "هند الزهراني — موظف إداري", en: "Hind Al-Zahrani — Administrative Staff" },
   },
   {
     email: "m.alsudairi@raqib.sa",

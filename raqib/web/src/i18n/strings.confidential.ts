@@ -1,6 +1,7 @@
 /** Confidential area wording the approved design did not spell out. Spread first so design strings win. */
 export const STRINGS_CONFIDENTIAL: Record<string, readonly [string, string]> = {
   cfk_misconduct: ["سلوك غير مهني", "Misconduct"],
+  cfk_survey: ["استبيان سري", "Confidential survey"],
   cfk_violation: ["مخالفة", "Violation"],
   cfk_safety: ["سلامة", "Safety concern"],
   cfi_named: ["باسمي", "With my name"],

@@ -1,5 +1,7 @@
+import type { RoleKey } from "@/api/types";
 import type { Ctx } from "../context";
 import type { FormField } from "@/ui/form-field";
+import { ROLE_LABEL } from "../screens/users";
 
 type Fld = (k: string) => Pick<FormField, "val" | "on" | "bd" | "err">;
 
@@ -17,6 +19,8 @@ export const FORM_KINDS = [
   "obsNew",
   "userEdit",
   "caReassign",
+  "scoringRules",
+  "scoringDesignate",
 ] as const;
 /** Yes/no dialogs about one record. */
 export const CONFIRM_KINDS = [
@@ -103,6 +107,23 @@ export function formFields(c: Ctx, kind: string, fld: Fld): FormField[] {
           half: true,
         },
         { key: "first", label: i.S("pf_firstVisit"), type: "date", ...fld("first"), half: true },
+        {
+          key: "cstart",
+          label: i.S("pf_contractStart"),
+          type: "date",
+          ...fld("cstart"),
+          half: true,
+        },
+        { key: "cend", label: i.S("pf_contractEnd"), type: "date", ...fld("cend"), half: true },
+        {
+          key: "emps",
+          label: i.S("pf_employees"),
+          type: "text",
+          ...fld("emps"),
+          ltr: true,
+          half: true,
+          placeholder: "0",
+        },
       ];
     case "siteAdd":
     case "siteRename":
@@ -162,6 +183,65 @@ export function formFields(c: Ctx, kind: string, fld: Fld): FormField[] {
           ...fld("gacct"),
           opts: accountOptions(c, keep),
           hint: i.S("pf_accountHint"),
+        },
+      ];
+    }
+    case "scoringRules":
+      return [
+        {
+          key: "sevHigh",
+          label: i.S("sf_ded_high"),
+          type: "text",
+          ...fld("sevHigh"),
+          ltr: true,
+          half: true,
+          placeholder: "0–100",
+        },
+        {
+          key: "sevMed",
+          label: i.S("sf_ded_medium"),
+          type: "text",
+          ...fld("sevMed"),
+          ltr: true,
+          half: true,
+          placeholder: "0–100",
+        },
+        {
+          key: "sevLow",
+          label: i.S("sf_ded_low"),
+          type: "text",
+          ...fld("sevLow"),
+          ltr: true,
+          half: true,
+          placeholder: "0–100",
+        },
+        {
+          key: "items",
+          label: i.S("sf_ded_items"),
+          type: "textarea",
+          ...fld("items"),
+          ltr: true,
+          placeholder: "q9 = 12",
+          hint: i.S("sf_ded_itemsHint"),
+        },
+      ];
+    case "scoringDesignate": {
+      const have = new Set((c.data.scoring?.designees ?? []).map((d) => d.userId));
+      return [
+        {
+          key: "duser",
+          label: i.S("sf_ded_person"),
+          type: "select",
+          ...fld("duser"),
+          opts: [
+            { v: "", l: i.S("choose") },
+            ...(c.data.scoring?.candidates ?? [])
+              .filter((u) => !have.has(u.userId))
+              .map((u) => ({
+                v: u.userId,
+                l: `${i.L(u.name)} · ${i.L(ROLE_LABEL[u.role as RoleKey])}`,
+              })),
+          ],
         },
       ];
     }

@@ -16,5 +16,6 @@ export * from "./training";
 export * from "./analytics";
 export * from "./search";
 export * from "./confidential";
+export * from "./surveys";
 export * from "./audit";
 export * from "./onboarding";

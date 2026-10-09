@@ -50,11 +50,19 @@ export const ENDPOINTS = {
     reschedule: (id: string) => `/raqib/visits/${id}/reschedule`,
     cancel: (id: string) => `/raqib/visits/${id}/cancel`,
     inspectors: "/raqib/visits/inspectors/eligible",
+    shifts: "/raqib/visits/shifts",
+    schedule: (kind: "export" | "print", qs: string) => `/raqib/visits/${kind}?${qs}`,
+    formOptions: "/raqib/visits/forms/available",
   },
   notifications: {
     list: "/notifications",
     read: (id: string) => `/notifications/${id}/read`,
     readAll: "/notifications/read-all",
+  },
+  scoring: {
+    base: "/raqib/scoring",
+    designees: "/raqib/scoring/designees",
+    designee: (userId: string) => `/raqib/scoring/designees/${userId}`,
   },
   forms: {
     list: "/raqib/forms",
@@ -64,10 +72,12 @@ export const ENDPOINTS = {
     publish: (id: string) => `/raqib/forms/${id}/publish`,
     active: (id: string) => `/raqib/forms/${id}/active`,
     makeDefault: (id: string) => `/raqib/forms/${id}/default`,
+    blank: (id: string, lang: string) => `/raqib/forms/${id}/blank?lang=${lang}`,
   },
   inspection: {
     base: (visitId: string) => `/raqib/visits/${visitId}/inspection`,
     start: (visitId: string) => `/raqib/visits/${visitId}/inspection/start`,
+    forms: (visitId: string) => `/raqib/visits/${visitId}/inspection/forms`,
     answer: (visitId: string, itemId: string) =>
       `/raqib/visits/${visitId}/inspection/answers/${itemId}`,
     guardScore: (visitId: string, guardId: string, itemId: string) =>
@@ -106,6 +116,7 @@ export const ENDPOINTS = {
   conf: {
     base: "/raqib/confidential",
   },
+  surveys: { base: "/raqib/surveys" },
   audit: (qs: string) => `/raqib/audit?${qs}`,
   auditExport: (qs: string, ext: "" | ".xlsx" = "") => `/raqib/audit/export${ext}?${qs}`,
   accountRequests: {

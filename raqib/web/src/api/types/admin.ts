@@ -11,6 +11,8 @@ export interface OrgSettings {
     cityEn: string;
     lang: Lang;
     tz: string;
+    /** Core file id of the logo ("" until supplied). */
+    logo: string;
   };
   scoring: { high: number; mid: number; naExcluded: boolean; criticalFail: boolean };
   insp: {
@@ -42,6 +44,42 @@ export interface OrgSettings {
   };
   security: { session: number; mfa: string; pwLen: number; pwRotate: number; lockout: number };
   audit: { retention: number; exportRoles: string };
+  ranking: {
+    weights: { observations: number; improvement: number; complaints: number; contract: number };
+  };
+  training: { guardReviewBySupervisor: boolean };
+  escalation: {
+    enabled: boolean;
+    countFrom: "assigned" | "due";
+    weekend: number[];
+    levels: Array<{ days: number; roles: string[] }>;
+    highSeverity: { immediate: boolean; roles: string[] };
+  };
+  schedule: {
+    shifts: Array<{ key: string; nameAr: string; nameEn: string; start: string; end: string }>;
+    minRestHours: number;
+    maxConsecutiveDays: number;
+  };
+}
+
+/** The deduction rules and who may change them (`GET /raqib/scoring`). */
+export interface ScoringConfigView {
+  id: string;
+  version: number;
+  base: number;
+  bySeverity: Record<string, number>;
+  byItem: Record<string, number>;
+  reason: string;
+  createdAt: string;
+}
+export interface ScoringOverview {
+  /** `null` until the client's deduction values are entered; the previous weighted policy scores meanwhile. */
+  current: ScoringConfigView | null;
+  history: ScoringConfigView[];
+  canPublish: boolean;
+  designees: Array<{ userId: string; name: { ar: string; en: string }; at: string }>;
+  /** General Manager only: who could be named. */
+  candidates: Array<{ userId: string; name: { ar: string; en: string }; role: string }>;
 }
 
 export interface PermissionsOverview {

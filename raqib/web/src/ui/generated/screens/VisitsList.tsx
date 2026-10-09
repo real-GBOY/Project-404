@@ -65,6 +65,40 @@ export function VisitsList({ vm }: { vm: VM }) {
                 </Fragment>
               ))}
             </div>
+            {vl.canExport ? (
+              <button
+                onClick={vl.exportCsv}
+                style={{
+                  height: "36px",
+                  padding: "0 14px",
+                  border: `1px solid ${C.border.input}`,
+                  borderRadius: "4px",
+                  background: C.surface.white,
+                  color: C.text.body,
+                  fontSize: "13px",
+                  cursor: "pointer",
+                }}
+              >
+                {t.sch_export}
+              </button>
+            ) : null}
+            {vl.canPrint ? (
+              <button
+                onClick={vl.printSchedule}
+                style={{
+                  height: "36px",
+                  padding: "0 14px",
+                  border: `1px solid ${C.border.input}`,
+                  borderRadius: "4px",
+                  background: C.surface.white,
+                  color: C.text.body,
+                  fontSize: "13px",
+                  cursor: "pointer",
+                }}
+              >
+                {t.sch_print}
+              </button>
+            ) : null}
             {vl.canSchedule ? (
               <>
                 <button
@@ -437,9 +471,46 @@ export function VisitsList({ vm }: { vm: VM }) {
         ) : null}
         {vl.isWeek ? (
           <>
-            <div style={{ fontSize: "13px", color: C.text.secondary }}>
-              {vl.weekLabel}
-              {vl.canSchedule && notMobile ? ` · ${t.weekDragHint}` : ""}
+            <div
+              style={{
+                display: "flex",
+                gap: "10px",
+                alignItems: "center",
+                flexWrap: "wrap",
+                fontSize: "13px",
+                color: C.text.secondary,
+              }}
+            >
+              {vl.showNav ? (
+                <span style={{ display: "inline-flex", gap: "4px" }}>
+                  {[
+                    [vl.navLabels[0], vl.prev],
+                    [vl.navLabels[1], vl.todayGo],
+                    [vl.navLabels[2], vl.next],
+                  ].map(([label, go]: any, __n: number) => (
+                    <button
+                      key={__n}
+                      onClick={go}
+                      style={{
+                        height: "30px",
+                        padding: "0 10px",
+                        border: `1px solid ${C.border.input}`,
+                        borderRadius: "4px",
+                        background: C.surface.white,
+                        color: C.text.body,
+                        fontSize: "12.5px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </span>
+              ) : null}
+              <span>
+                {vl.weekLabel}
+                {vl.canSchedule && notMobile ? ` · ${t.weekDragHint}` : ""}
+              </span>
             </div>
             {notMobile ? (
               <>
@@ -447,6 +518,7 @@ export function VisitsList({ vm }: { vm: VM }) {
                   style={{
                     display: "grid",
                     gridTemplateColumns: "repeat(7,minmax(0,1fr))",
+                    alignContent: "start",
                     background: C.surface.white,
                     border: `1px solid ${C.border.hairline}`,
                     borderRadius: "6px",
@@ -607,7 +679,7 @@ export function VisitsList({ vm }: { vm: VM }) {
             {mobile ? (
               <>
                 <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                  {(vl.days || []).map((d: any, __i: number) => (
+                  {(vl.daysMobile || []).map((d: any, __i: number) => (
                     <Fragment key={__i}>
                       <div>
                         <div

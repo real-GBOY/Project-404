@@ -27,6 +27,8 @@ export const NON_BLOCKING: ReadonlySet<string> = new Set([
   QK.inspectors,
   QK.notifications,
   QK.responsibles,
+  QK.formOptions,
+  QK.visitForms,
   QK.searchHits,
   QK.confGrantees,
 ]);
@@ -66,6 +68,12 @@ export function queryDefs({
       fn: () => offline.withCache("visits", () => api.visits.list()),
     },
     {
+      key: QK.shifts,
+      enabled: want.shifts,
+      fn: () => offline.withCache("shifts", () => api.visits.shifts()),
+    },
+    { key: QK.scoring, enabled: want.scoring, fn: () => api.scoring.overview() },
+    {
       key: QK.forms,
       enabled: want.forms,
       fn: () =>
@@ -83,11 +91,25 @@ export function queryDefs({
       enabled: want.inspection,
       // the last copy seen is kept on the device, and changes still waiting to be sent are shown on top of whatever the server says
       fn: async () => {
-        const view = await offline.withCache(`inspection:${id}`, () => api.inspection.get(id));
+        const form = ui.formId;
+        const view = await offline.withCache(`inspection:${id}${form ? `:${form}` : ""}`, () =>
+          api.inspection.get(id, form || undefined),
+        );
         const waiting = (await offline.list()).filter((o) => o.visitId === id && !o.failed);
         return waiting.length ? applyOps(view, waiting) : view;
       },
+      extra: [id, ui.formId],
+    },
+    {
+      key: QK.visitForms,
+      enabled: want.inspection,
+      fn: () => api.inspection.forms(id),
       extra: [id],
+    },
+    {
+      key: QK.formOptions,
+      enabled: !!ui.modal && ui.modal.kind === "create",
+      fn: () => api.visits.formOptions(),
     },
     { key: QK.observations, enabled: want.observations, fn: () => api.observations.list() },
     { key: QK.actions, enabled: want.actions, fn: () => api.actions.list() },

@@ -142,7 +142,7 @@ export function reportDetail(c: Ctx, r: Report) {
         [S("rp_site"), L(s.site)],
         [S("rp_area"), s.area == null ? "—" : L(s.area)],
         [S("rp_inspector"), s.inspector ? L(s.inspector) : "—"],
-        [S("rp_date"), `${i.fd(s.date, "full", lang)} ${s.time}`],
+        [S("rp_date"), `${i.fd(s.date, "full", lang)} ${i.ft(s.time, lang)}`],
         [S("rp_signer_approver"), L(s.approvedBy.name)],
         [S("rp_score"), pct == null ? "—" : `${pct}%`],
       ].map(([k, v]) => ({ k, v })),

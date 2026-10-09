@@ -60,7 +60,7 @@ export interface Actions {
   cancelVisit(id: string, reason: string): Promise<void>;
   markNotificationRead(id: string): Promise<void>;
   markAllNotificationsRead(): Promise<void>;
-  startInspection(visitId: string): Promise<Inspection>;
+  startInspection(visitId: string, formId?: string): Promise<Inspection>;
   /** Text edits are saved after a short pause; choices are saved immediately. The cache updates at once either way. */
   saveAnswer(
     visitId: string,
@@ -100,7 +100,7 @@ export interface Actions {
   ): Promise<void>;
   removeActionEvidence(actionId: string, evidenceId: string): Promise<void>;
   requestTraining(input: {
-    guardId: string;
+    guardId?: string;
     reason: "low_score" | "repeat_issue" | "incident" | "refresher" | "new_assignment";
     course: string;
     related: string;
@@ -109,7 +109,7 @@ export interface Actions {
   }): Promise<TrainingRequest>;
   trainingStep(
     id: string,
-    step: "approve" | "return" | "reject" | "resubmit" | "schedule" | "complete",
+    step: "review" | "approve" | "return" | "reject" | "resubmit" | "schedule" | "complete",
     body?: Record<string, unknown>,
   ): Promise<void>;
   exportAnalytics(
@@ -123,7 +123,7 @@ export interface Actions {
     format: "csv" | "xlsx",
   ): Promise<void>;
   confSubmit(input: {
-    kind: "misconduct" | "violation" | "safety";
+    kind: "misconduct" | "violation" | "safety" | "survey";
     subject: string;
     body: string;
     place: string;
@@ -160,7 +160,19 @@ export interface Actions {
   rejectRequest(id: string, reason: string): Promise<void>;
   resendRequest(id: string): Promise<void>;
   /** The report as a print-ready page; the browser prints it to PDF. */
+  publishScoring(body: {
+    bySeverity: Record<string, number>;
+    byItem: Record<string, number>;
+    reason: string;
+  }): Promise<void>;
+  designateScoring(userId: string): Promise<void>;
+  revokeScoring(userId: string): Promise<void>;
   reportHtml(id: string, lang: "ar" | "en"): Promise<string>;
+  blankFormHtml(formId: string, lang: "ar" | "en"): Promise<string>;
+  scheduleFile(
+    kind: "export" | "print",
+    q: { from: string; to: string; lang: "ar" | "en" },
+  ): Promise<Blob | string>;
   evidenceBlob(id: string): Promise<Blob>;
   decideReview(
     visitId: string,

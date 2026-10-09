@@ -5,7 +5,8 @@ import { optional, refOf } from "./types";
 export const trainingHandlers: ModalHandlers = {
   async tr({ c, f }) {
     const t = await c.actions.requestTraining({
-      guardId: f.g as string,
+      // a guard asks for themselves: the server uses their own record
+      guardId: f.g === "self" ? undefined : (f.g as string),
       reason: (f.reason2 as never) || "low_score",
       course: String(f.course).trim(),
       related: String(f.related ?? "").trim(),

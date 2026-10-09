@@ -934,6 +934,48 @@ export function Analytics({ vm }: { vm: VM }) {
               </Fragment>
             ))}
           </section>
+          {(an.extra || []).map((blk: any, __b: number) => (
+            <Fragment key={__b}>
+              <section
+                style={{
+                  background: C.surface.white,
+                  border: `1px solid ${C.border.hairline}`,
+                  borderRadius: "6px",
+                }}
+              >
+                <h2
+                  style={{
+                    margin: "0",
+                    fontSize: "15px",
+                    fontWeight: "600",
+                    padding: "14px 18px",
+                    borderBottom: `1px solid ${C.surface.track}`,
+                  }}
+                >
+                  {blk.title}
+                </h2>
+                {(blk.rows || []).map((r: any, __r: number) => (
+                  <Fragment key={__r}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        gap: "12px",
+                        padding: "9px 18px",
+                        borderBottom: `1px solid ${C.surface.subtle}`,
+                        fontSize: "13px",
+                      }}
+                    >
+                      <span>{r.k}</span>
+                      <span style={{ fontWeight: "600", fontVariantNumeric: "tabular-nums" }}>
+                        {r.v}
+                      </span>
+                    </div>
+                  </Fragment>
+                ))}
+              </section>
+            </Fragment>
+          ))}
         </div>
       </div>
     </>

@@ -1,7 +1,7 @@
 /** Who is signed in: people, roles, the permission template, sign-in and account security. */
 import type { L10n } from "./common";
 
-export type RoleKey = "qm" | "qe" | "pm" | "ins" | "gs" | "guard" | "gm";
+export type RoleKey = "qm" | "qe" | "pm" | "ins" | "gs" | "guard" | "gm" | "adm";
 
 export type ModuleKey =
   | "projects"

@@ -1,7 +1,7 @@
 /** The confidential reporting area. */
 import type { L10n } from "./common";
 
-export type ConfKind = "misconduct" | "violation" | "safety";
+export type ConfKind = "misconduct" | "violation" | "safety" | "survey";
 
 export type ConfStatus = "new" | "under_review" | "closed";
 

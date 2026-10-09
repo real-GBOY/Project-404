@@ -4,7 +4,7 @@ import type { Ctx } from "../context";
 import { ROLE_LABEL } from "./users";
 import { C } from "@/styles/colors";
 
-const ROLES: RoleKey[] = ["qm", "qe", "pm", "ins", "gs", "guard", "gm"];
+const ROLES: RoleKey[] = ["qm", "qe", "pm", "ins", "gs", "guard", "gm", "adm"];
 
 type Matrix = Record<string, Record<string, string>>;
 

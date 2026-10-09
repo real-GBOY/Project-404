@@ -1,6 +1,12 @@
-import type { ProjectStatus, Template } from "@/api/types";
+import type { ProjectStatus, ShiftDef, Template } from "@/api/types";
 import type { I18n } from "@/i18n/i18n";
 import { C } from "@/styles/colors";
+
+/** A shift's display name: the organization's configured name, else the built-in string for the original three. */
+export function shiftLabel(c: { i: I18n; data: { shifts?: ShiftDef[] } }, key: string): string {
+  const def = c.data.shifts?.find((s) => s.key === key);
+  return def ? c.i.L(def.name) : c.i.S(`sh_${key}`);
+}
 
 /** Status tone → [foreground, background] (the approved design's palette). */
 export const TONE: Record<string, [string, string]> = {

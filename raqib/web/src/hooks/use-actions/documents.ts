@@ -4,7 +4,12 @@ import type { Slice } from "./shared";
 
 /** Downloads: exports, the printable report and the bytes of an evidence file. */
 export const documentActions = (): Slice<
-  "exportAnalytics" | "exportAudit" | "reportHtml" | "evidenceBlob"
+  | "exportAnalytics"
+  | "exportAudit"
+  | "reportHtml"
+  | "blankFormHtml"
+  | "scheduleFile"
+  | "evidenceBlob"
 > => ({
   async exportAnalytics(q, format) {
     saveBlob(await api.analytics.exportFile(q, format), `raqib-analytics.${format}`);
@@ -13,5 +18,7 @@ export const documentActions = (): Slice<
     saveBlob(await api.audit.exportFile(q, format), `raqib-audit.${format}`);
   },
   reportHtml: (id, lang) => api.reports.html(id, lang),
+  blankFormHtml: (formId, lang) => api.forms.blankHtml(formId, lang),
+  scheduleFile: (kind, q) => api.visits.schedule(kind, q),
   evidenceBlob: (id) => api.evidence.blob(id),
 });

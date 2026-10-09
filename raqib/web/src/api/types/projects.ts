@@ -23,6 +23,10 @@ export interface Project {
   manager: { id: string; name: L10n } | null;
   status: ProjectStatus;
   firstVisitDate: string | null;
+  /** The contract window and head-count: they feed the project ranking. */
+  contractStart: string | null;
+  contractEnd: string | null;
+  employeesAssigned: number | null;
   guardCount: number;
   sites: Site[];
 }
@@ -47,6 +51,9 @@ export interface ProjectInput {
   managerUserId: string | null;
   status: ProjectStatus;
   firstVisitDate: string | null;
+  contractStart: string | null;
+  contractEnd: string | null;
+  employeesAssigned: number | null;
 }
 
 export interface GuardInput {

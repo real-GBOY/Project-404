@@ -282,6 +282,26 @@ export function SettingsScreen({ vm }: { vm: VM }) {
                       <span style={{ fontSize: "13.5px", color: C.text.body }}>{f.val}</span>
                     </>
                   ) : null}
+                  {f.isBtn ? (
+                    <>
+                      <button
+                        onClick={f.onClick}
+                        disabled={f.btnDisabled}
+                        style={{
+                          height: "36px",
+                          padding: "0 16px",
+                          border: `1px solid ${C.border.input}`,
+                          borderRadius: "4px",
+                          background: C.surface.white,
+                          color: f.btnDisabled ? C.text.muted : C.text.body,
+                          fontSize: "13px",
+                          cursor: f.btnDisabled ? "not-allowed" : "pointer",
+                        }}
+                      >
+                        {f.btnLabel}
+                      </button>
+                    </>
+                  ) : null}
                   {f.isPair ? (
                     <>
                       <span style={{ display: "flex", gap: "14px" }}>

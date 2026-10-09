@@ -23,6 +23,7 @@ export const NEED_REASON = new Set([
   "settingsSave",
   "userMfaReset",
   "caReassign",
+  "scoringRules",
 ]);
 
 /** The fields a dialog cannot be confirmed without (besides the reason, which `NEED_REASON` covers). */
@@ -49,12 +50,18 @@ const REQUIRED: Record<string, string[]> = {
   obsNew: ["oproj", "osite", "otext"],
   userEdit: ["nameAr", "nameEn"],
   caReassign: ["resp", "due"],
+  scoringRules: ["sevHigh", "sevMed", "sevLow"],
+  scoringDesignate: ["duser"],
 };
 
 /** Shapes the backend would refuse anyway; checking them here just saves the round trip. An empty optional value passes. */
 const SHAPES: Record<string, { field: string; ok: (v: string) => boolean }[]> = {
   formNew: [{ field: "fcode", ok: (v) => /^[A-Za-z0-9-]{3,24}$/.test(v) }],
-  projNew: [{ field: "code", ok: (v) => /^[A-Za-z0-9-]{3,24}$/.test(v) }],
+  projNew: [
+    { field: "code", ok: (v) => /^[A-Za-z0-9-]{3,24}$/.test(v) },
+    { field: "emps", ok: (v) => v === "" || /^\d{1,6}$/.test(v) },
+  ],
+  projEdit: [{ field: "emps", ok: (v) => v === "" || /^\d{1,6}$/.test(v) }],
   guardNew: [{ field: "nid", ok: (v) => /^[0-9]{10}$/.test(v) }],
   guardEdit: [{ field: "nid", ok: (v) => !v || /^[0-9]{10}$/.test(v) }],
 };

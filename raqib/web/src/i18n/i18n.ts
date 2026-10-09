@@ -6,6 +6,7 @@ import { STRINGS_ONBOARDING } from "./strings.onboarding";
 import { STRINGS_CONFIDENTIAL } from "./strings.confidential";
 import { STRINGS_ANALYTICS } from "./strings.analytics";
 import { STRINGS_TRAINING } from "./strings.training";
+import { STRINGS_SURVEYS } from "./strings.surveys";
 import { STRINGS_REPORTS } from "./strings.reports";
 import { STRINGS_SCREENS } from "./strings.screens";
 import { STRINGS_ACCOUNT } from "./strings.account";
@@ -19,6 +20,7 @@ const STR: Table = {
   ...STRINGS_CONFIDENTIAL,
   ...STRINGS_ANALYTICS,
   ...STRINGS_TRAINING,
+  ...STRINGS_SURVEYS,
   ...STRINGS_CORE,
   ...STRINGS_ADMIN,
   ...STRINGS_SCREENS,
@@ -38,12 +40,19 @@ const OPTS: Record<DateStyle, Intl.DateTimeFormatOptions> = {
   d: { day: "numeric", month: "short" },
   dy: { weekday: "long", day: "numeric", month: "long" },
   full: { day: "numeric", month: "long", year: "numeric" },
-  dt: { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false },
+  dt: { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true },
   wd: { weekday: "short" },
   dn: { day: "numeric" },
-  t: { hour: "2-digit", minute: "2-digit", hour12: false },
+  t: { hour: "numeric", minute: "2-digit", hour12: true },
   my: { month: "long", year: "numeric" },
 };
+
+/** English clocks read "2:30 PM", not the locale default "2:30 pm". */
+const upperMeridiem = (s: string): string =>
+  s.replace(
+    /(^|[^A-Za-z])([ap])m(?![A-Za-z])/g,
+    (_m, pre: string, a: string) => `${pre}${a.toUpperCase()}M`,
+  );
 
 export interface I18n {
   lang: Lang;
@@ -56,6 +65,8 @@ export interface I18n {
   L(x: Localized, lang?: Lang): string;
   /** Locale-aware date/time. Western digits in both languages; Gregorian calendar. */
   fd(iso: string | null | undefined, style?: DateStyle, lang?: Lang): string;
+  /** A stored "HH:MM" as a 12-hour clock time (2:30 PM / 2:30 م). Times are stored 24-hour and shown 12-hour. */
+  ft(hhmm: string | null | undefined, lang?: Lang): string;
   /** Whole days from a to b (ISO dates or timestamps). */
   days(a: string, b: string): number;
 }
@@ -80,10 +91,22 @@ export function createI18n(lang: Lang): I18n {
     if (!iso) return "—";
     const d = new Date(iso.length === 10 ? `${iso}T00:00` : iso);
     if (Number.isNaN(d.getTime())) return "—";
-    return new Intl.DateTimeFormat(
-      l === "ar" ? "ar-SA-u-ca-gregory-nu-latn" : "en-GB",
-      OPTS[style],
-    ).format(d);
+    return upperMeridiem(
+      new Intl.DateTimeFormat(
+        l === "ar" ? "ar-SA-u-ca-gregory-nu-latn" : "en-GB",
+        OPTS[style],
+      ).format(d),
+    );
+  };
+  const ft: I18n["ft"] = (hhmm, l = lang) => {
+    const m = /^(\d{2}):(\d{2})$/.exec(hhmm ?? "");
+    if (!m) return hhmm || "—";
+    const d = new Date(2000, 0, 1, Number(m[1]), Number(m[2]));
+    return upperMeridiem(
+      new Intl.DateTimeFormat(l === "ar" ? "ar-SA-u-ca-gregory-nu-latn" : "en-GB", OPTS.t).format(
+        d,
+      ),
+    );
   };
   const days: I18n["days"] = (a, b) =>
     Math.round(
@@ -92,7 +115,7 @@ export function createI18n(lang: Lang): I18n {
         864e5,
     );
 
-  return { lang, dir: lang === "ar" ? "rtl" : "ltr", t, S, L, fd, days };
+  return { lang, dir: lang === "ar" ? "rtl" : "ltr", t, S, L, fd, ft, days };
 }
 
 const KEY = "raqib.lang";

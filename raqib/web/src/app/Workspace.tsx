@@ -6,6 +6,7 @@ import { EvidenceViewer } from "@/components/EvidenceViewer";
 import { Modal } from "@/components/Modal";
 import { Toast } from "@/components/Toast";
 import { AccountScreen } from "@/features/account/AccountScreen";
+import { SurveysScreen } from "@/features/surveys/SurveysScreen";
 import { useSyncState } from "@/hooks/use-sync-state";
 import { SyncStatus } from "@/components/SyncStatus";
 import { useOfflineSync } from "@/hooks/use-offline-sync";
@@ -131,6 +132,8 @@ export function Workspace({ me }: { me: Me }) {
                 <DataError i={i} error={error} onRetry={retry} pad={vm.pad} />
               ) : vm.loading ? (
                 <LoadingSkeleton vm={vm} />
+              ) : vm.is.surveys ? (
+                <SurveysScreen pad={vm.pad} title={vm.pageTitle} />
               ) : vm.is.account ? (
                 <AccountScreen me={me} pad={vm.pad} title={vm.pageTitle} />
               ) : (

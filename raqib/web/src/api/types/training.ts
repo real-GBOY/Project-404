@@ -3,7 +3,13 @@ import type { L10n } from "./common";
 import type { Severity } from "./quality";
 
 export type TrainingStatus =
-  "pending_pm" | "returned" | "rejected" | "approved" | "scheduled" | "completed";
+  | "pending_supervisor"
+  | "pending_pm"
+  | "returned"
+  | "rejected"
+  | "approved"
+  | "scheduled"
+  | "completed";
 
 export type TrainingReason =
   "low_score" | "repeat_issue" | "incident" | "refresher" | "new_assignment";
@@ -21,6 +27,8 @@ export interface TrainingRequest {
   priority: Severity;
   notes: string;
   status: TrainingStatus;
+  /** Who asked: a supervisor, or a guard for themselves (which decides the approval chain). */
+  requesterKind: "supervisor" | "guard";
   round: number;
   escalated: boolean;
   requestedBy: L10n | null;

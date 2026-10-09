@@ -35,7 +35,15 @@ export interface Observation {
 
 export interface ActionLogEntry {
   id: string;
-  kind: "created" | "started" | "submitted" | "comment" | "returned" | "closed" | "reassigned";
+  kind:
+    | "created"
+    | "started"
+    | "submitted"
+    | "comment"
+    | "returned"
+    | "closed"
+    | "reassigned"
+    | "escalated";
   from: string | null;
   to: string | null;
   text: string | null;

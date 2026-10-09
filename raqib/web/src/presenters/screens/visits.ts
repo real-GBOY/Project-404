@@ -1,5 +1,7 @@
 import type { DisplayStatus, Visit } from "@/api/types";
-import { TONE, badge, scoreColor, seg } from "../common";
+import { printHtml } from "@/services/print-html";
+import { saveBlob } from "./reports";
+import { TONE, badge, scoreColor, seg, shiftLabel } from "../common";
 import type { Ctx } from "../context";
 import { ROLE_LABEL } from "./users";
 import { C } from "@/styles/colors";
@@ -41,10 +43,10 @@ export function visitRow(c: Ctx, v: Visit) {
     area: areaOf(c, v),
     ins: v.inspector ? i.L(v.inspector.name) : i.S("unassigned"),
     type: i.S(`vt_${v.type}`),
-    shift: i.S(`sh_${v.shift}`),
+    shift: shiftLabel(c, v.shift),
     date: i.fd(v.date, "d"),
     wd: i.fd(v.date, "wd"),
-    time: v.time,
+    time: i.ft(v.time),
     st: badge(i.S(`vs_${v.status}`), VST[v.status]),
     score: v.scorePct == null ? "—" : `${v.scorePct}%`,
     scoreC: scoreColor(v.scorePct),
@@ -103,7 +105,7 @@ export function timeline(c: Ctx, v: Visit) {
 export function visitsList(c: Ctx) {
   const { i, ui, set, data, me } = c;
   const vis = data.visits ?? [];
-  const view = (ui.vview as "list" | "week") || "list";
+  const view = (ui.vview as "list" | "week" | "month") || "list";
   const filter = ui.vfilter in GROUPS ? ui.vfilter : "all";
   const g = GROUPS[filter];
   const rows = vis
@@ -122,11 +124,37 @@ export function visitsList(c: Ctx) {
       bd: on ? C.text.ink : C.border.input,
     };
   });
-  const start = new Date(`${me.today}T00:00`);
   const canSchedule = me.permissions.visits.includes("A");
-  const days = Array.from({ length: 7 }, (_, n) => {
+  const isoOf = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  // the window on screen: a week starting today (moved by whole weeks), or a whole calendar month (moved by months)
+  const today0 = new Date(`${me.today}T00:00`);
+  const month0 = new Date(
+    today0.getFullYear(),
+    today0.getMonth() + (view === "month" ? ui.voff : 0),
+    1,
+  );
+  const start = view === "month" ? month0 : new Date(today0.getTime() + ui.voff * 7 * 864e5);
+  const monthDays = new Date(month0.getFullYear(), month0.getMonth() + 1, 0).getDate();
+  const span = view === "month" ? monthDays : 7;
+  // a month is drawn as a calendar: blank cells first so the 1st sits under its weekday (weeks start on Sunday)
+  const lead = view === "month" ? month0.getDay() : 0;
+  const blanks = Array.from({ length: lead }, () => ({
+    iso: "",
+    canDrop: false,
+    dropVisit: () => undefined,
+    wd: "",
+    dn: "",
+    today: false,
+    hbg: "transparent",
+    hfg: C.text.ink,
+    items: [] as never[],
+    empty: false,
+    full: "",
+  }));
+  const days = Array.from({ length: span }, (_, n) => {
     const d = new Date(start.getTime() + n * 864e5);
-    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const iso = isoOf(d);
     const items = vis
       .filter((v) => v.date === iso)
       .sort((a, b) => a.time.localeCompare(b.time))
@@ -152,20 +180,59 @@ export function visitsList(c: Ctx) {
       full: i.fd(iso, "dy"),
     };
   });
-  const weekEnd = new Date(start.getTime() + 6 * 864e5);
-  const weekEndIso = `${weekEnd.getFullYear()}-${String(weekEnd.getMonth() + 1).padStart(2, "0")}-${String(weekEnd.getDate()).padStart(2, "0")}`;
+  const windowEnd = new Date(start.getTime() + (span - 1) * 864e5);
+  const windowEndIso = isoOf(windowEnd);
+  // what Export / Print cover: the window on screen, or the next twelve months from this month on the list
+  const docRange =
+    view === "list"
+      ? {
+          from: isoOf(new Date(today0.getFullYear(), today0.getMonth(), 1)),
+          to: isoOf(new Date(today0.getFullYear() + 1, today0.getMonth(), 0)),
+        }
+      : { from: isoOf(start), to: windowEndIso };
+  const canExport = me.permissions.visits.includes("X");
+  const canPrint = me.permissions.visits.includes("D");
+  const doc = (kind: "export" | "print") => {
+    c.toast(i.S("rp_preparing"));
+    c.actions
+      .scheduleFile(kind, { ...docRange, lang: i.lang })
+      .then(async (out) => {
+        if (kind === "export") saveBlob(out as Blob, `raqib-schedule-${docRange.from}.csv`);
+        else {
+          await printHtml(out as string, `raqib-schedule-${docRange.from}`);
+          c.toast(i.S("sch_pdfHint"));
+        }
+      })
+      .catch(() => c.toast(i.S("actionFailed")));
+  };
   return {
     vl: {
       rows,
       has: !!rows.length,
       none: !rows.length,
       chips,
-      days,
       count: me.role === "ins" ? i.S("visitsMine") : i.S("visitsAll", { n: vis.length }),
       isList: view === "list",
-      isWeek: view === "week",
-      weekLabel: `${i.fd(me.today, "d")} – ${i.fd(weekEndIso, "full")}`,
-      views: ["list", "week"].map((k) => seg(view, k, i.S(`view_${k}`), () => set({ vview: k }))),
+      isWeek: view === "week" || view === "month",
+      weekLabel:
+        view === "month"
+          ? i.fd(isoOf(month0), "my")
+          : `${i.fd(isoOf(start), "d")} – ${i.fd(windowEndIso, "full")}`,
+      /** In the month view the blank cells before the 1st make the days line up under their weekdays. */
+      days: view === "month" ? [...blanks, ...days] : days,
+      daysMobile: view === "month" ? days.filter((d) => d.items.length) : days,
+      showNav: view !== "list",
+      prev: () => set({ voff: ui.voff - 1 }),
+      next: () => set({ voff: ui.voff + 1 }),
+      todayGo: () => set({ voff: 0 }),
+      navLabels: [i.S("sch_prev"), i.S("sch_today"), i.S("sch_next")],
+      canExport,
+      canPrint,
+      exportCsv: () => doc("export"),
+      printSchedule: () => doc("print"),
+      views: ["list", "week", "month"].map((k) =>
+        seg(view, k, i.S(`view_${k}`), () => set({ vview: k, voff: 0 })),
+      ),
       canSchedule,
       create: () =>
         c.openModal("create", undefined, {
@@ -233,8 +300,8 @@ export function visitDetail(c: Ctx, v: Visit) {
         [i.S("f_site"), `${i.L(v.site.name)} · ${areaOf(c, v)}`],
         [i.S("f_inspector"), v.inspector ? i.L(v.inspector.name) : i.S("unassigned")],
         [i.S("f_type"), i.S(`vt_${v.type}`)],
-        [i.S("f_shift"), i.S(`sh_${v.shift}`)],
-        [i.S("f_datetime"), `${i.fd(v.date, "dy")} · ${v.time}`],
+        [i.S("f_shift"), shiftLabel(c, v.shift)],
+        [i.S("f_datetime"), `${i.fd(v.date, "dy")} · ${i.ft(v.time)}`],
       ].map(([k, val]) => ({ k, v: val })),
       guards: g.map((x) => ({
         name: i.L(x.name),
@@ -277,6 +344,16 @@ export function visitDetail(c: Ctx, v: Visit) {
         (me.permissions.inspections.includes("R") || me.permissions.inspections.includes("P")) &&
         !pend,
       result: () => c.go("review", v.id),
+      blankForms: v.forms.map((f) => ({
+        label: i.S("printBlank", { f: f.code }),
+        print: () => {
+          c.toast(i.S("rp_preparing"));
+          c.actions
+            .blankFormHtml(f.id, i.lang)
+            .then((html) => printHtml(html, `${f.code}-${i.lang}`))
+            .catch(() => c.toast(i.S("actionFailed")));
+        },
+      })),
       hasReport: !!report,
       report: () => c.go("report", v.id),
       isReturned: v.storedStatus === "returned",

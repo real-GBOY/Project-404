@@ -9,7 +9,14 @@ export function useGo(): Ctx["go"] {
   const navigate = useNavigate();
   return useCallback<Ctx["go"]>(
     (n, id, extra) => {
-      setUi({ ...(extra ?? {}), search: false, notif: false, more: false, modal: null });
+      setUi({
+        formId: "",
+        ...(extra ?? {}),
+        search: false,
+        notif: false,
+        more: false,
+        modal: null,
+      });
       navigate(pathFor(n, id));
     },
     [navigate],

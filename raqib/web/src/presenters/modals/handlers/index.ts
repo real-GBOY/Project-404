@@ -2,6 +2,7 @@ import { accessHandlers } from "./confidential";
 import { adminHandlers } from "./admin";
 import { formHandlers } from "./forms";
 import { projectHandlers } from "./projects";
+import { scoringHandlers } from "./scoring";
 import { setupHandlers } from "./setup";
 import { qualityHandlers } from "./quality";
 import { reviewHandlers } from "./review";
@@ -20,4 +21,5 @@ export const HANDLERS: ModalHandlers = {
   ...adminHandlers,
   ...projectHandlers,
   ...setupHandlers,
+  ...scoringHandlers,
 };

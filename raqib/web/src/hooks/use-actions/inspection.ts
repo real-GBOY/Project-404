@@ -3,6 +3,7 @@ import { uploadToStorage } from "@/api/uploads";
 import type { Inspection } from "@/api/types";
 import { isNetworkError, QueuedUpload, type Op } from "@/services/offline/outbox";
 import { offline } from "@/services/offline/session";
+import { getUi } from "@/state/ui-store";
 import { QK } from "../query-keys";
 import { invalidate, putInspection, type Qc, type Slice } from "./shared";
 
@@ -29,7 +30,7 @@ export const inspectionActions = (
 
   /** Show an edit at once, before the server has answered. */
   const optimistic = (visitId: string, fn: (v: Inspection) => Inspection) => {
-    const cur = qc.getQueryData<Inspection>([QK.inspection, visitId]);
+    const cur = qc.getQueryData<Inspection>([QK.inspection, visitId, getUi().formId]);
     if (cur) put(visitId, fn(cur));
   };
 
@@ -69,11 +70,11 @@ export const inspectionActions = (
   };
 
   return {
-    async startInspection(visitId) {
+    async startInspection(visitId, formId) {
       if (!offline.isOnline()) throw new Error("offline");
-      const v = await api.inspection.start(visitId);
+      const v = await api.inspection.start(visitId, formId);
       put(visitId, v);
-      await invalidate(qc, QK.visits);
+      await invalidate(qc, QK.visits, QK.visitForms);
       return v;
     },
 
@@ -163,12 +164,12 @@ export const inspectionActions = (
         offline.reportNetworkFailure();
         return keep();
       }
-      put(target.visitId, await api.inspection.get(target.visitId));
+      put(target.visitId, await api.inspection.get(target.visitId, getUi().formId || undefined));
     },
 
     async removeEvidence(visitId, evidenceId) {
       await api.evidence.remove(evidenceId);
-      put(visitId, await api.inspection.get(visitId));
+      put(visitId, await api.inspection.get(visitId, getUi().formId || undefined));
     },
   };
 };

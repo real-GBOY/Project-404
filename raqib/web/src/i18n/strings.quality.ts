@@ -30,6 +30,7 @@ export const STRINGS_QUALITY: Record<string, readonly [string, string]> = {
   cl_returned: ["أُعيد للمسؤول", "Returned to responsible"],
   cl_closed: ["أُغلق الإجراء", "Action closed"],
   cl_reassigned: ["أُعيد إسناده", "Reassigned"],
+  cl_escalated: ["تصعيد تلقائي", "Escalated automatically"],
   f_round: ["الجولة", "Round"],
   m_caClose_t: ["إغلاق {r}", "Close {r}"],
   m_caClose_s: [

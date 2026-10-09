@@ -51,12 +51,14 @@ export function InspectionWorkspace({ vm }: { vm: VM }) {
                 {ix.title}
               </div>
             </div>
-            <div style={{ textAlign: "end", lineHeight: "1.2" }}>
-              <div style={{ fontSize: "11.5px", color: C.text.secondary }}>{t.currentScore}</div>
-              <div style={{ fontWeight: "600", fontSize: "18px", color: ix.scoreC }}>
-                {ix.scoreTxt}
+            {ix.showScore ? (
+              <div style={{ textAlign: "end", lineHeight: "1.2" }}>
+                <div style={{ fontSize: "11.5px", color: C.text.secondary }}>{t.currentScore}</div>
+                <div style={{ fontWeight: "600", fontSize: "18px", color: ix.scoreC }}>
+                  {ix.scoreTxt}
+                </div>
               </div>
-            </div>
+            ) : null}
           </div>
           <div
             style={{

@@ -5,9 +5,10 @@ import { pickFiles } from "@/services/pick-files";
 import { QueuedUpload } from "@/services/offline/outbox";
 import { offline } from "@/services/offline/session";
 import type { UploadEntry } from "@/state/ui-store";
-import { scoreColor, seg } from "../common";
+import { scoreColor, seg, shiftLabel } from "../common";
 import type { Ctx } from "../context";
 import { openEvidence } from "../viewer";
+import { formSwitcher } from "./inspection-forms";
 import { C } from "@/styles/colors";
 
 type Target = { visitId: string; inspectionId: string; itemId?: string; guardId?: string };
@@ -151,6 +152,12 @@ export function inspectionWorkspace(c: Ctx, insp: Inspection, visit: Visit | und
   );
   const step = Math.min(ui.step, 6);
   const sc = insp.score;
+  // a visit may require several forms: they are listed first, the current one highlighted
+  const { hasGuardStep, order, switchTo, otherForms, othersReady, formRows } = formSwitcher(
+    c,
+    insp,
+    vid,
+  );
   const flaggedSection = (s: Inspection["sections"][number]) => s.items.some((q) => q.flagged);
   const gDone = insp.guards.filter((g) => g.done).length;
   const go = (n: number) => set({ step: n });
@@ -165,26 +172,32 @@ export function inspectionWorkspace(c: Ctx, insp: Inspection, visit: Visit | und
       warn: flaggedSection(sec),
     };
   });
-  steps.push({
-    label: i.S("guardEval"),
-    meta: `${gDone}/${insp.guards.length}`,
-    done: gDone === insp.guards.length,
-    i: 5,
-    warn: false,
-  });
+  if (hasGuardStep) {
+    steps.push({
+      label: i.S("guardEval"),
+      meta: `${gDone}/${insp.guards.length}`,
+      done: gDone === insp.guards.length,
+      i: 5,
+      warn: false,
+    });
+  }
   steps.push({ label: i.S("reviewSubmit"), meta: "", done: false, i: 6, warn: false });
-  const stepVM = steps.map((x) => ({
-    label: x.label,
-    meta: x.meta,
-    go: () => go(x.i),
-    bg: x.i === step ? C.brand.tintAlt : "transparent",
-    fg: x.i === step ? C.brand.primaryDark : C.text.ink,
-    mark: x.done ? C.status.success.fg : x.warn ? C.status.warning.mark : C.border.input,
-    markTxt: x.done ? "✓" : x.warn ? "!" : "",
-    cbg: x.i === step ? C.brand.primary : C.surface.white,
-    cfg: x.i === step ? C.surface.white : C.text.body,
-    cbd: x.i === step ? C.brand.primary : x.warn ? C.status.warning.mark : C.border.input,
-  }));
+  const formVM = formRows;
+  const stepVM = [
+    ...formVM,
+    ...steps.map((x) => ({
+      label: x.label,
+      meta: x.meta,
+      go: () => go(x.i),
+      bg: x.i === step ? C.brand.tintAlt : "transparent",
+      fg: x.i === step ? C.brand.primaryDark : C.text.ink,
+      mark: x.done ? C.status.success.fg : x.warn ? C.status.warning.mark : C.border.input,
+      markTxt: x.done ? "✓" : x.warn ? "!" : "",
+      cbg: x.i === step ? C.brand.primary : C.surface.white,
+      cfg: x.i === step ? C.surface.white : C.text.body,
+      cbd: x.i === step ? C.brand.primary : x.warn ? C.status.warning.mark : C.border.input,
+    })),
+  ];
 
   const isSec = step < 5;
   const sec = insp.sections[Math.min(step, insp.sections.length - 1)];
@@ -301,7 +314,7 @@ export function inspectionWorkspace(c: Ctx, insp: Inspection, visit: Visit | und
       note: g.note,
       onNote: (e: { target: { value: string } }) =>
         void c.actions.setGuardNote(vid, g.guardId, e.target.value),
-      shift: info ? i.S(`sh_${info.shift}`) : "",
+      shift: info ? shiftLabel(c, info.shift) : "",
       proj: visit ? i.L(visit.project.name) : "",
       ev: evs,
       hasEv: evs.length > 0,
@@ -313,7 +326,7 @@ export function inspectionWorkspace(c: Ctx, insp: Inspection, visit: Visit | und
   const returned = insp.status === "returned";
   const lastReturn = visit?.history.filter((h) => h.action === "returned").pop();
   const iss = insp.issues;
-  const ready = !iss.length && ui.decl && insp.editable;
+  const ready = !iss.length && othersReady && ui.decl && insp.editable;
   const save = () => {
     c.toast(i.S("toastDraft", { r: insp.ref }));
     c.go("overview");
@@ -325,6 +338,7 @@ export function inspectionWorkspace(c: Ctx, insp: Inspection, visit: Visit | und
         ? `${i.L(visit.project.name)} · ${i.L(visit.site.name)} · ${visit.area == null ? "—" : i.L(visit.area)}`
         : insp.ref,
       formTag: `${insp.form.code} v${insp.form.version}`,
+      showScore: sc.visible,
       scoreTxt: sc.pct == null ? "—" : `${sc.pct}%`,
       scoreC: scoreColor(sc.pct),
       progW: `${sc.total ? (sc.answered / sc.total) * 100 : 0}%`,
@@ -358,11 +372,11 @@ export function inspectionWorkspace(c: Ctx, insp: Inspection, visit: Visit | und
       retCount: i.S("retCount", {
         n: insp.sections.flatMap((s) => s.items).filter((q) => q.flagged || q.fixed).length,
       }),
-      prev: () => go(Math.max(0, step - 1)),
-      next: () => go(Math.min(6, step + 1)),
-      hasPrev: step > 0,
+      prev: () => go(order[Math.max(0, order.indexOf(step) - 1)] ?? 0),
+      next: () => go(order[Math.min(order.length - 1, order.indexOf(step) + 1)] ?? 6),
+      hasPrev: order.indexOf(step) > 0,
       hasNext: step < 6,
-      nextLabel: step === 5 ? i.S("toSummary") : i.S("nextSection"),
+      nextLabel: order[order.indexOf(step) + 1] === 6 ? i.S("toSummary") : i.S("nextSection"),
       saveDraft: save,
       back: () => c.go("visit", vid),
       stats: [
@@ -371,9 +385,19 @@ export function inspectionWorkspace(c: Ctx, insp: Inspection, visit: Visit | und
         [i.S("ans_n"), String(sc.nonCompliant)],
         [i.S("st_evidence"), String(sc.evidence)],
       ].map(([k, v]) => ({ k, v })),
-      issues: iss.map((x) => ({ txt: issueText(c, x, guardNames), go: () => go(x.step) })),
-      hasIssues: iss.length > 0,
-      noIssues: iss.length === 0,
+      issues: [
+        ...iss.map((x) => ({ txt: issueText(c, x, guardNames), go: () => go(x.step) })),
+        ...otherForms
+          .filter((f) => !f.started || f.blocking > 0)
+          .map((f) => ({
+            txt: f.started
+              ? i.S("iss_form", { f: f.code, n: f.blocking })
+              : i.S("iss_form_unstarted", { f: f.code }),
+            go: () => switchTo(f.formId, f.started),
+          })),
+      ],
+      hasIssues: iss.length > 0 || !othersReady,
+      noIssues: iss.length === 0 && othersReady,
       decl: ui.decl,
       onDecl: (e: { target: { checked: boolean } }) => set({ decl: e.target.checked }),
       submitDisabled: !ready,
@@ -384,7 +408,7 @@ export function inspectionWorkspace(c: Ctx, insp: Inspection, visit: Visit | und
           c.openModal("submit", {
             vid,
             ref: insp.ref,
-            summary: i.S("m_summary", {
+            summary: i.S(sc.visible ? "m_summary" : "m_summary_noscore", {
               p: sc.pct ?? "—",
               c: sc.compliant,
               n: sc.nonCompliant,

@@ -7,6 +7,7 @@ import { authApi } from "./resources/auth";
 import { meApi } from "./resources/me";
 import { accountApi } from "./resources/account";
 import { settingsApi } from "./resources/settings";
+import { scoringApi } from "./resources/scoring";
 import { permissionsApi } from "./resources/permissions";
 import { usersApi } from "./resources/users";
 import { projectsApi } from "./resources/projects";
@@ -23,6 +24,7 @@ import { guardsApi } from "./resources/guards";
 import { analyticsApi } from "./resources/analytics";
 import { searchApi } from "./resources/search";
 import { confidentialApi } from "./resources/confidential";
+import { surveysApi } from "./resources/surveys";
 import { auditApi } from "./resources/audit";
 import { accountRequestsApi } from "./resources/account-requests";
 import { reportsApi } from "./resources/reports";
@@ -34,6 +36,7 @@ export const api = {
   me: meApi,
   account: accountApi,
   settings: settingsApi,
+  scoring: scoringApi,
   permissions: permissionsApi,
   users: usersApi,
   projects: projectsApi,
@@ -52,6 +55,7 @@ export const api = {
   analytics: analyticsApi,
   search: searchApi,
   conf: confidentialApi,
+  surveys: surveysApi,
   audit: auditApi,
   accountRequests: accountRequestsApi,
   reports: reportsApi,

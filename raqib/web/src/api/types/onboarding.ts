@@ -10,7 +10,7 @@ export interface AccountRequest {
   nationalId: string;
   employeeNo: string;
   department: string;
-  requestedRole: "qe" | "pm" | "ins" | "gs" | "guard";
+  requestedRole: "qe" | "pm" | "ins" | "gs" | "guard" | "adm";
   requestedProjects: string;
   justification: string;
   declaration: { version: string; signedName: string; signedAt: string };

@@ -60,6 +60,7 @@ const FLAG: Record<string, string> = {
   permissions: "perms",
   settings: "settings",
   account: "account",
+  surveys: "surveys",
 };
 
 /** The denied screen (design: vmDenied). The backend produced the refusal; this only explains it. */
@@ -93,7 +94,8 @@ function denied(c: Ctx, d: Denial) {
  */
 export function buildVM(c: Ctx, opts: { pending: boolean; denial: Denial | null }): VM {
   const { i, me, route } = c;
-  const n = route.n;
+  // administrative staff work from the schedule, not from a management overview
+  const n = route.n === "overview" && me.role === "adm" ? "visits" : route.n;
   const nav = visibleNav(me);
 
   let scr = n;
@@ -135,6 +137,7 @@ export function buildVM(c: Ctx, opts: { pending: boolean; denial: Denial | null 
       ins: "ovIns",
       gs: "ovGs",
       guard: "ovGuard",
+      adm: "ovIns",
     }[me.role];
     is[flag] = true;
     if (flag === "ovMgmt") body = overviewQuality(c);

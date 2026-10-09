@@ -215,6 +215,14 @@ export function reviewDetail(c: Ctx, insp: Inspection, v: Visit) {
       title: `${i.L(v.site.name)} — ${v.area == null ? "—" : i.L(v.area)}`,
       submitted: sub ? i.S("submittedBy", { u: i.L(sub.actor.name), t: i.fd(sub.at, "dt") }) : "",
       formTag: `${insp.form.code} · v${insp.form.version}`,
+      formChips:
+        (c.data.visitForms?.length ?? 0) > 1
+          ? (c.data.visitForms ?? []).map((f) => ({
+              label: `${f.code}${f.issueNo ? ` · ${f.issueNo}` : ""}`,
+              on: f.formId === insp.formId,
+              go: () => f.started && set({ formId: f.formId }),
+            }))
+          : [],
       sections,
       guards: gv,
       hasGuards: gv.length > 0,
@@ -257,6 +265,10 @@ export function reviewDetail(c: Ctx, insp: Inspection, v: Visit) {
           vid: v.id,
           ref: v.ref,
           flags: flags.map((f) => ({ id: f.id, num: f.num, text: i.L(f.text) })),
+          // items flagged in any of the visit's forms (the list above shows the form on screen)
+          flagIds: Object.entries(ui.rflags)
+            .filter(([k, on]) => on && k.startsWith(`${v.id}:`))
+            .map(([k]) => k.slice(v.id.length + 1)),
         }),
       reject: () => c.openModal("reject", { vid: v.id, ref: v.ref }),
       timeline: timeline(c, v),

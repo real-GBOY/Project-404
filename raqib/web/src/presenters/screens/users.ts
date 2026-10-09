@@ -5,7 +5,7 @@ import type { Ctx } from "../context";
 import { requestRows } from "./requests";
 import { C } from "@/styles/colors";
 
-const ROLES: RoleKey[] = ["qm", "qe", "pm", "ins", "gs", "guard", "gm"];
+const ROLES: RoleKey[] = ["qm", "qe", "pm", "ins", "gs", "guard", "gm", "adm"];
 const US_TONE: Record<string, string> = { active: "ok", invited: "info", disabled: "neu" };
 
 /** Display label of a role — from the role-specific nav strings is not needed here; roles are fixed. */
@@ -13,10 +13,11 @@ export const ROLE_LABEL: Record<RoleKey, { ar: string; en: string }> = {
   qm: { ar: "إدارة الجودة", en: "Quality Management" },
   qe: { ar: "موظف جودة", en: "Quality Employee" },
   pm: { ar: "مدير مشروع", en: "Project Manager" },
-  ins: { ar: "مفتش", en: "Inspector" },
-  gs: { ar: "مشرف حراسات", en: "Guards Supervisor" },
+  ins: { ar: "مفتش جودة", en: "Quality Inspector" },
+  gs: { ar: "مشرف أمن", en: "Security Supervisor" },
   guard: { ar: "حارس أمن", en: "Security Guard" },
   gm: { ar: "الإدارة العليا", en: "Executive management" },
+  adm: { ar: "موظف إداري", en: "Administrative Staff" },
 };
 
 const scopeText = (c: Ctx, u: Person): string => {

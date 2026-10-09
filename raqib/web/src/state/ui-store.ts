@@ -58,8 +58,12 @@ export interface UiState {
   pstatus: string;
   ptab: string;
   vview: string;
+  /** Schedule: how many weeks (week view) or months (month view) away from today. */
+  voff: number;
   /** Inspection workspace: current step, expanded detail panels, observation toggles, in-flight uploads, declaration. */
   step: number;
+  /** The form being worked on in a visit with several forms ("" = the visit's lead form). */
+  formId: string;
   expanded: Record<string, boolean>;
   obsOn: Record<string, boolean>;
   decl: boolean;
@@ -130,7 +134,9 @@ const initial = (): UiState => ({
   pstatus: "all",
   ptab: "overview",
   vview: "list",
+  voff: 0,
   step: 0,
+  formId: "",
   expanded: {},
   obsOn: {},
   decl: false,

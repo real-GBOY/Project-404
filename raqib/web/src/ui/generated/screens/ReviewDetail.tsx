@@ -78,6 +78,24 @@ export function ReviewDetail({ vm }: { vm: VM }) {
           >
             <span style={{ fontFamily: FONT.mono }}>{rv.formTag}</span>
             <span>{t.versionLocked}</span>
+            {(rv.formChips || []).map((fc: any, __i: number) => (
+              <Fragment key={__i}>
+                <button
+                  onClick={fc.go}
+                  style={{
+                    border: `1px solid ${fc.on ? C.brand.primary : C.border.input}`,
+                    background: fc.on ? C.brand.primary : C.surface.white,
+                    color: fc.on ? C.surface.white : C.text.body,
+                    borderRadius: "3px",
+                    padding: "1px 8px",
+                    fontSize: "12px",
+                    cursor: "pointer",
+                  }}
+                >
+                  {fc.label}
+                </button>
+              </Fragment>
+            ))}
             {rv.canVer ? (
               <>
                 <button

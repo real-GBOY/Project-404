@@ -227,6 +227,76 @@ export function analytics(c: Ctx, result: AnalyticsResult | undefined) {
         avg: pct(x.avg),
         ret: x.returned,
       })),
+      extra: result
+        ? [
+            {
+              title: i.S("ax_obs"),
+              rows: [
+                [i.S("ax_obsTotal"), String(result.observationSummary.total)],
+                [i.S("ax_high"), String(result.observationSummary.bySeverity.high)],
+                [i.S("ax_medium"), String(result.observationSummary.bySeverity.medium)],
+                [i.S("ax_low"), String(result.observationSummary.bySeverity.low)],
+                [i.S("ax_withAction"), String(result.observationSummary.withAction)],
+                [i.S("ax_actionClosed"), String(result.observationSummary.closed)],
+              ],
+            },
+            {
+              title: i.S("ax_closure"),
+              rows: [
+                [i.S("ax_closedN"), String(result.closure.n)],
+                [
+                  i.S("ax_avgDays"),
+                  result.closure.avgDays == null ? "—" : String(result.closure.avgDays),
+                ],
+                [
+                  i.S("ax_maxDays"),
+                  result.closure.maxDays == null ? "—" : String(result.closure.maxDays),
+                ],
+              ],
+            },
+            {
+              title: i.S("ax_recurring"),
+              rows: result.recurring.length
+                ? result.recurring.map((r) => [`${i.L(r.title)} · ${i.L(r.site)}`, `×${r.times}`])
+                : [[i.S("ax_recurringNone"), ""]],
+            },
+            {
+              title: i.S("ax_training"),
+              rows: [
+                [i.S("ax_trReq"), String(result.training.requested)],
+                [i.S("ax_trApproved"), String(result.training.approved)],
+                [i.S("ax_trDone"), String(result.training.completed)],
+                [i.S("ax_trRejected"), String(result.training.rejected)],
+                [i.S("ax_trOpen"), String(result.training.open)],
+                [
+                  i.S("ax_trDays"),
+                  result.training.avgDaysToComplete == null
+                    ? "—"
+                    : String(result.training.avgDaysToComplete),
+                ],
+              ],
+            },
+            {
+              title: i.S("ax_ranking"),
+              rows: result.ranking.length
+                ? result.ranking.map((p) => [
+                    `${p.rank}. ${i.L(p.project)}`,
+                    [
+                      `${pct(p.avg)} · ${p.n}`,
+                      `${i.S("ax_rkObs")} ${p.observations}`,
+                      `${i.S("ax_rkImp")} ${p.improvement == null ? "—" : p.improvement > 0 ? `+${p.improvement}` : p.improvement}`,
+                      // complaint figures are only for holders of a confidential grant
+                      ...(p.complaints == null ? [] : [`${i.S("ax_rkCom")} ${p.complaints}`]),
+                      `${i.S("ax_rkEnd")} ${p.daysToContractEnd == null ? "—" : p.daysToContractEnd < 0 ? i.S("ax_rkEnded") : i.S("ax_rkDays", { n: p.daysToContractEnd })}`,
+                      ...(p.employeesAssigned == null
+                        ? []
+                        : [`${i.S("ax_rkEmp")} ${p.employeesAssigned}`]),
+                    ].join(" · "),
+                  ])
+                : [[i.S("ax_rankingNone"), ""]],
+            },
+          ].map((b) => ({ title: b.title, rows: b.rows.map(([k, v]) => ({ k, v })) }))
+        : [],
       rep: (result?.repeated ?? []).map((r) => ({
         ref: r.ref,
         t: i.L(r.title),

@@ -2,6 +2,7 @@ import type { OrgSettings, RoleKey } from "@/api/types";
 import { getUi } from "@/state/ui-store";
 import { pBadge } from "../common";
 import type { Ctx } from "../context";
+import { configFields } from "./settings-config";
 import { ROLE_LABEL } from "./users";
 import { C } from "@/styles/colors";
 
@@ -113,6 +114,8 @@ export function settingsScreen(c: Ctx) {
     return o;
   };
 
+  const { scheduleFields, escalationFields, deductionFields } = configFields(c, cur, saved, ro);
+
   const langOpts = [
     { v: "ar", l: "العربية" },
     { v: "en", l: "English" },
@@ -148,7 +151,11 @@ export function settingsScreen(c: Ctx) {
       F("num", "scoring", "mid", { unit: "%" }),
       F("tog", "scoring", "naExcluded"),
       F("tog", "scoring", "criticalFail"),
+      ...deductionFields,
     ],
+    schedule: scheduleFields,
+    escalation: escalationFields,
+    training: [F("tog", "training", "guardReviewBySupervisor")],
     forms: [
       F("tog", "insp", "latestOnStart"),
       F("tog", "insp", "publishNeedsApproval"),
@@ -208,7 +215,10 @@ export function settingsScreen(c: Ctx) {
     "org",
     "projects",
     "forms",
+    "training",
     "scoring",
+    "schedule",
+    "escalation",
     "notifications",
     "reports",
     "attachments",

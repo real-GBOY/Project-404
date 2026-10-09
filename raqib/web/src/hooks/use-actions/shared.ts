@@ -15,7 +15,12 @@ export const invalidate = (qc: Qc, ...keys: QueryKeyName[]) =>
 
 /** Replace the cached inspection with what the server (or an optimistic edit) says, and keep a copy on the device for offline use. */
 export function putInspection(qc: Qc, visitId: string, view: Inspection): void {
-  qc.setQueryData([QK.inspection, visitId], view);
-  void offline.cacheWrite(`inspection:${visitId}`, view);
+  // a form is cached under its own id; the lead form is also what a read without a form id shows
+  qc.setQueryData([QK.inspection, visitId, view.formId], view);
+  void offline.cacheWrite(`inspection:${visitId}:${view.formId}`, view);
+  if (view.position === 0) {
+    qc.setQueryData([QK.inspection, visitId, ""], view);
+    void offline.cacheWrite(`inspection:${visitId}`, view);
+  }
   setUi({ savedAt: new Date().toTimeString().slice(0, 5) });
 }

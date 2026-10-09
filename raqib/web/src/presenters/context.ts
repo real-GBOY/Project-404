@@ -25,7 +25,11 @@ import type {
   Person,
   Project,
   Report,
+  FormOption,
   ResponsibleOption,
+  ScoringOverview,
+  ShiftDef,
+  VisitFormProgress,
   Visit,
 } from "@/api/types";
 import type { I18n } from "@/i18n/i18n";
@@ -40,6 +44,12 @@ export interface Data {
   permissions?: PermissionsOverview;
   settings?: OrgSettings;
   visits?: Visit[];
+  shifts?: ShiftDef[];
+  scoring?: ScoringOverview;
+  /** The forms of the visit open in the inspection workspace, with progress. */
+  visitForms?: VisitFormProgress[];
+  /** Forms a scheduler can require (open schedule dialog only). */
+  formOptions?: FormOption[];
   forms?: { items: Form[]; capabilities: { add: boolean; edit: boolean; publish: boolean } };
   inspection?: Inspection;
   reports?: { items: Report[] };

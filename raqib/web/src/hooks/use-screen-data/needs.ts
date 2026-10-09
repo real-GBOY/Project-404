@@ -21,12 +21,14 @@ const GUARD_SCREENS = ["guards", "guard", "visit", "inspect", "review", "trainin
  */
 export function screenNeeds(route: Route, me: Me) {
   const p = me.permissions;
-  const n = route.n;
+  const n = route.n === "overview" && me.role === "adm" ? "visits" : route.n;
   // the quality / executive overview is computed from approved reports, observations and corrective actions
   const management = n === "overview" && ["qm", "qe", "gm"].includes(me.role);
   // the project list and page show scores, open issues and late actions
   const projectFigures = ["projects", "project"].includes(n);
-  const guardRecords = p.guardEval.includes("V") || p.training.includes("V");
+  // a guard sees their own training requests only: the roster and guard histories are not theirs to read
+  const guardRecords =
+    (p.guardEval.includes("V") || p.training.includes("V")) && me.role !== "guard";
   const want = {
     // the shell labels a person's scope with project names whenever the template allows reading projects
     projects: p.projects.includes("V"),
@@ -38,6 +40,8 @@ export function screenNeeds(route: Route, me: Me) {
       ["users", "user", "permissions", "projects", "project", "guards"].includes(n),
     permissions: p.permissions.includes("V") && ["user", "permissions"].includes(n),
     settings: p.settings.includes("V") && (n === "settings" || management || projectFigures),
+    shifts: p.visits.includes("V") && [...VISIT_SCREENS, "inspect"].includes(n),
+    scoring: p.settings.includes("V") && n === "settings",
     forms: p.forms.includes("V") && ["forms", "form"].includes(n),
     inspection: ["inspect", "review"].includes(n) && !!route.id,
     observations:
