@@ -11,7 +11,7 @@ import { ConfidentialService } from "../application/confidential-service.js";
 
 const submitSchema = z
   .object({
-    kind: z.enum(["misconduct", "violation", "safety"]),
+    kind: z.enum(["misconduct", "violation", "safety", "survey"]),
     subject: z.string().trim().min(3).max(200),
     body: z.string().trim().min(10).max(5000),
     place: z.string().trim().max(200).default(""),

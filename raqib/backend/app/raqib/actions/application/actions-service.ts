@@ -1,7 +1,8 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { readInTenant, type UnitOfWork } from "@core/kernel/db/db.js";
 import { Conflict, Forbidden, NotFound, ValidationError } from "@core/kernel/errors.js";
-import { AUDIT_LOGGER, EVENT_BUS, UNIT_OF_WORK } from "@core/kernel/tokens.js";
+import { AUDIT_LOGGER, CLOCK, EVENT_BUS, UNIT_OF_WORK } from "@core/kernel/tokens.js";
+import type { Clock } from "@core/kernel/clock.js";
 import type { IAuditLogger, IEventBus } from "@core/contracts/index.js";
 import { actorOf, can, inScope, requireCan, requireProject, type Access } from "@raqib/raqib/access/access.js";
 import { AccessService } from "@raqib/raqib/access/application/access-service.js";
@@ -42,6 +43,10 @@ export interface ActionView {
   visit: { id: string; ref: string } | null;
   createdAt: string;
   closedAt: string | null;
+  /** Days from assignment to closure (or to today while open). */
+  elapsedDays: number;
+  /** Highest escalation level announced so far (0 = none). */
+  escalationLevel: number;
   /** Detail only. */
   log?: ActionLogEntry[];
   evidence?: Array<{ id: string; name: string; kind: "photo" | "video" | "doc"; mime: string; sizeBytes: number; at: string; by: string | null }>;
@@ -71,6 +76,7 @@ export class ActionsService {
     private readonly counters: Counters,
     @Inject(AUDIT_LOGGER) private readonly audit: IAuditLogger,
     @Inject(EVENT_BUS) private readonly events: IEventBus,
+    @Inject(CLOCK) private readonly clock: Clock,
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
 
@@ -156,7 +162,7 @@ export class ActionsService {
       if ((step === "start" || step === "submit") && a.responsibleId !== who.userId)
         throw Forbidden("raqib.not_responsible", "Only the person responsible can do this.");
       if ((step === "return" || step === "close") && a.responsibleId === who.userId) throw Forbidden("raqib.self_review", "You cannot review your own action.");
-      const now = new Date();
+      const now = this.clock.now();
       if (step === "submit") {
         const events = await this.repo.events(a.id);
         const since = [...events].reverse().find((e) => e.kind === "returned" || e.kind === "created")?.at ?? a.createdAt;
@@ -290,6 +296,15 @@ export class ActionsService {
         visit: visit ? { id: visit.id, ref: visit.ref } : null,
         createdAt: r.createdAt.toISOString(),
         closedAt: r.closedAt?.toISOString() ?? null,
+        elapsedDays: Math.max(
+          0,
+          Math.round(
+            (Date.parse(`${(r.closedAt ? r.closedAt.toISOString() : who.today).slice(0, 10)}T00:00:00Z`) -
+              Date.parse(`${r.createdAt.toISOString().slice(0, 10)}T00:00:00Z`)) /
+              86_400_000,
+          ),
+        ),
+        escalationLevel: r.escalationLevel,
       };
       if (detail) {
         view.log = (await this.repo.events(r.id)).map((e) => ({

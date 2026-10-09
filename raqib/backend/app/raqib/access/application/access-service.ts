@@ -90,6 +90,17 @@ export class AccessService {
     });
   }
 
+  /** Active people who hold one of `roles` and cover `projectId` (every project for the all-project roles). */
+  async holdersOfRoles(roles: string[], projectId: string | null, today: string): Promise<string[]> {
+    return readInTenant(async () => {
+      const [profiles, assignments] = await Promise.all([this.repo.allProfiles(), this.repo.activeAssignments(today)]);
+      return profiles
+        .filter((p) => p.status === "active" && roles.includes(p.roleKey))
+        .filter((p) => !projectId || ALL_PROJECT_ROLES.includes(p.roleKey) || assignments.some((a) => a.userId === p.userId && a.projectId === projectId))
+        .map((p) => p.userId);
+    });
+  }
+
   /** A person's profile (names and role) for snapshots and message text. */
   async profileOf(userId: string) {
     return readInTenant(() => this.repo.profile(userId));

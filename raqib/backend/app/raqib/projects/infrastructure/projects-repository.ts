@@ -16,6 +16,10 @@ export interface ProjectRecord {
   managerUserId: string | null;
   status: ProjectStatus;
   firstVisitDate: string | null;
+  contractStart: string | null;
+  contractEnd: string | null;
+  /** Employees assigned to the project under its contract (a stored figure; the roster count is shown beside it). */
+  employeesAssigned: number | null;
 }
 export interface SiteRecord {
   id: string;
@@ -49,6 +53,9 @@ export interface ProjectInput {
   managerUserId?: string | null;
   status?: ProjectStatus;
   firstVisitDate?: string | null;
+  contractStart?: string | null;
+  contractEnd?: string | null;
+  employeesAssigned?: number | null;
 }
 export interface GuardInput {
   projectId: string;
@@ -78,6 +85,9 @@ type ProjectRow = {
   manager_user_id: string | null;
   status: ProjectStatus;
   first_visit_date: string | null;
+  contract_start: string | null;
+  contract_end: string | null;
+  employees_assigned: number | null;
 };
 
 const toProject = (r: ProjectRow): ProjectRecord => ({
@@ -89,6 +99,9 @@ const toProject = (r: ProjectRow): ProjectRecord => ({
   managerUserId: r.manager_user_id,
   status: r.status,
   firstVisitDate: r.first_visit_date,
+  contractStart: r.contract_start,
+  contractEnd: r.contract_end,
+  employeesAssigned: r.employees_assigned,
 });
 
 type GuardRow = {
@@ -134,6 +147,9 @@ export class ProjectsRepository {
         "manager_user_id",
         "status",
         sql<string | null>`first_visit_date::text`.as("first_visit_date"),
+        sql<string | null>`contract_start::text`.as("contract_start"),
+        sql<string | null>`contract_end::text`.as("contract_end"),
+        "employees_assigned",
       ])
       .where("archived_at", "is", null);
   }
@@ -164,6 +180,9 @@ export class ProjectsRepository {
         manager_user_id: input.managerUserId ?? null,
         status: input.status ?? "active",
         first_visit_date: input.firstVisitDate ? (sql`${input.firstVisitDate}::date` as never) : null,
+        contract_start: input.contractStart ? (sql`${input.contractStart}::date` as never) : null,
+        contract_end: input.contractEnd ? (sql`${input.contractEnd}::date` as never) : null,
+        employees_assigned: input.employeesAssigned ?? null,
       })
       .execute();
     return id;
@@ -188,6 +207,9 @@ export class ProjectsRepository {
     if (patch.firstVisitDate !== undefined) {
       set.first_visit_date = patch.firstVisitDate ? sql`${patch.firstVisitDate}::date` : null;
     }
+    if (patch.contractStart !== undefined) set.contract_start = patch.contractStart ? sql`${patch.contractStart}::date` : null;
+    if (patch.contractEnd !== undefined) set.contract_end = patch.contractEnd ? sql`${patch.contractEnd}::date` : null;
+    if (patch.employeesAssigned !== undefined) set.employees_assigned = patch.employeesAssigned;
     if (!Object.keys(set).length) return;
     await raqibDb()
       .updateTable("raqib_projects")

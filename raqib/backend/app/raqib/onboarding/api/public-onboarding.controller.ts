@@ -17,7 +17,7 @@ const schema = z
       .regex(/^[0-9]{10}$/),
     employeeNo: z.string().trim().max(40).default(""),
     department: z.string().trim().max(120).default(""),
-    role: z.enum(["qe", "pm", "ins", "gs", "guard"]),
+    role: z.enum(["qe", "pm", "ins", "gs", "guard", "adm"]),
     projects: z.string().trim().max(500).default(""),
     justification: z.string().trim().min(10).max(2000),
     signature: z.string().trim().min(3).max(120),

@@ -7,7 +7,8 @@ import type { VisitStatus } from "../domain/visit-state.js";
 import { fetchSize, type Page } from "@raqib/raqib/shared/paging.js";
 
 export type VisitType = "routine" | "surprise" | "follow" | "night";
-export type Shift = "morning" | "evening" | "night";
+/** A configured shift key (settings.schedule.shifts); the first three are the ones visits started with. */
+export type Shift = string;
 
 export interface VisitRecord {
   id: string;
@@ -152,6 +153,16 @@ export class VisitsRepository {
     return r ? toRecord(r) : null;
   }
 
+  /** Live assignments of one inspector in a date window (the visits that count towards rest and consecutive-day rules). */
+  async liveSlots(inspectorId: string, from: string, to: string, excludeId?: string): Promise<Array<{ date: string; time: string; shift: string }>> {
+    let q = this.base()
+      .where("inspector_id", "=", inspectorId)
+      .where("status", "in", ["scheduled", "assigned", "in_progress", "returned"])
+      .where(sql<boolean>`scheduled_date between ${from}::date and ${to}::date`);
+    if (excludeId) q = q.where("id", "<>", excludeId);
+    return (await q.execute()).map((r) => ({ date: r.scheduled_date, time: r.scheduled_time, shift: r.shift }));
+  }
+
   async findByRef(ref: string): Promise<VisitRecord | null> {
     const r = await this.base().where("ref", "=", ref).executeTakeFirst();
     return r ? toRecord(r) : null;
@@ -219,16 +230,53 @@ export class VisitsRepository {
       .execute();
   }
 
-  /** Stored inspection scores by visit (set at submission) - a read model for lists; the inspection module owns the data. */
+  /** The forms each visit requires, in order. A visit with none uses the default site form. */
+  async formIds(visitIds: string[]): Promise<Map<string, string[]>> {
+    const out = new Map<string, string[]>();
+    if (!visitIds.length) return out;
+    const rows = await raqibDb()
+      .selectFrom("raqib_visit_forms")
+      .select(["visit_id", "form_id"])
+      .where("visit_id", "in", visitIds)
+      .orderBy("position")
+      .execute();
+    for (const r of rows) out.set(r.visit_id, [...(out.get(r.visit_id) ?? []), r.form_id]);
+    return out;
+  }
+
+  async setForms(visitId: string, formIds: string[]): Promise<void> {
+    await raqibDb().deleteFrom("raqib_visit_forms").where("visit_id", "=", visitId).execute();
+    if (!formIds.length) return;
+    await raqibDb()
+      .insertInto("raqib_visit_forms")
+      .values(formIds.map((f, position) => ({ organization_id: org(), visit_id: visitId, form_id: f, position })))
+      .execute();
+  }
+
+  /**
+   * Stored inspection scores by visit (set at submission) - a read model for lists; the inspection module owns the data.
+   * A visit with several forms shows the mean of its forms' scores; `inspectionId` is the lead inspection.
+   */
   async scores(visitIds: string[]): Promise<Map<string, { scorePct: number | null; submittedAt: Date | null; inspectionId: string }>> {
     const out = new Map<string, { scorePct: number | null; submittedAt: Date | null; inspectionId: string }>();
     if (!visitIds.length) return out;
     const rows = await raqibDb()
       .selectFrom("raqib_inspections")
-      .select(["id", "visit_id", "score_pct", "submitted_at"])
+      .select(["id", "visit_id", "score_pct", "submitted_at", "guard_form_version_id"])
       .where("visit_id", "in", visitIds)
+      .orderBy(sql`guard_form_version_id is null`)
+      .orderBy("started_at")
       .execute();
-    for (const r of rows) out.set(r.visit_id, { scorePct: r.score_pct, submittedAt: r.submitted_at, inspectionId: r.id });
+    const byVisit = new Map<string, typeof rows>();
+    for (const r of rows) byVisit.set(r.visit_id, [...(byVisit.get(r.visit_id) ?? []), r]);
+    for (const [visitId, group] of byVisit) {
+      const scored = group.map((g) => g.score_pct).filter((n): n is number => n != null);
+      out.set(visitId, {
+        scorePct: scored.length ? Math.round(scored.reduce((a, b) => a + b, 0) / scored.length) : null,
+        submittedAt: group.every((g) => g.submitted_at) ? group[0]!.submitted_at : null,
+        inspectionId: group[0]!.id,
+      });
+    }
     return out;
   }
 

@@ -15,9 +15,10 @@ const META: Record<RoleKey, { name: string; description: string; permissionKeys:
   qm: { name: "Quality Management", description: "Operational control across projects, reviews, approvals and forms.", permissionKeys: [...FILE_KEYS] },
   qe: { name: "Quality Employee", description: "Reviews, returns and follows up inspections within assigned projects.", permissionKeys: FILE_KEYS },
   pm: { name: "Project Manager", description: "Results, observations and corrective actions of assigned projects.", permissionKeys: FILE_KEYS },
-  ins: { name: "Inspector", description: "Performs assigned visits and submits inspections.", permissionKeys: FILE_KEYS },
-  gs: { name: "Guards Supervisor", description: "Guard evaluations, observations and training requests in scope.", permissionKeys: FILE_KEYS },
+  ins: { name: "Quality Inspector", description: "Performs assigned visits and submits inspections.", permissionKeys: FILE_KEYS },
+  gs: { name: "Security Supervisor", description: "Guard evaluations, observations and training requests in scope.", permissionKeys: FILE_KEYS },
   guard: { name: "Security Guard", description: "Own submissions: surveys, complaints and confidential reports.", permissionKeys: FILE_KEYS },
+  adm: { name: "Administrative Staff", description: "Maintains and prints the visit schedule within assigned projects.", permissionKeys: [] },
   gm: { name: "General Manager", description: "Executive indicators and confidential-report grant administration.", permissionKeys: [] },
 };
 

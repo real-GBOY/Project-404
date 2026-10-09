@@ -9,9 +9,12 @@ import type { Answer } from "../domain/scoring.js";
 export interface InspectionRecord {
   id: string;
   visitId: string;
+  formId: string;
+  issueNo: string;
   formVersionId: string;
   guardFormVersionId: string | null;
   scoringPolicy: string;
+  scoringConfigId: string | null;
   startedBy: string | null;
   startedAt: Date;
   submittedAt: Date | null;
@@ -55,9 +58,12 @@ export class InspectionsRepository {
   private toInspection(r: {
     id: string;
     visit_id: string;
+    form_id: string;
+    issue_no: string;
     form_version_id: string;
     guard_form_version_id: string | null;
     scoring_policy: string;
+    scoring_config_id: string | null;
     started_by: string | null;
     started_at: Date;
     submitted_at: Date | null;
@@ -67,9 +73,12 @@ export class InspectionsRepository {
     return {
       id: r.id,
       visitId: r.visit_id,
+      formId: r.form_id,
+      issueNo: r.issue_no,
       formVersionId: r.form_version_id,
       guardFormVersionId: r.guard_form_version_id,
       scoringPolicy: r.scoring_policy,
+      scoringConfigId: r.scoring_config_id,
       startedBy: r.started_by,
       startedAt: r.started_at,
       submittedAt: r.submitted_at,
@@ -78,11 +87,31 @@ export class InspectionsRepository {
     };
   }
 
+  /** The visit's lead inspection: the one carrying the guard evaluation, else the earliest started. */
   async findByVisit(visitId: string, lock = false): Promise<InspectionRecord | null> {
-    let q = raqibDb().selectFrom("raqib_inspections").selectAll().where("visit_id", "=", visitId);
+    let q = raqibDb()
+      .selectFrom("raqib_inspections")
+      .selectAll()
+      .where("visit_id", "=", visitId)
+      .orderBy(sql`guard_form_version_id is null`)
+      .orderBy("started_at")
+      .limit(1);
     if (lock) q = q.forUpdate();
     const r = await q.executeTakeFirst();
     return r ? this.toInspection(r) : null;
+  }
+
+  async findByVisitForm(visitId: string, formId: string, lock = false): Promise<InspectionRecord | null> {
+    let q = raqibDb().selectFrom("raqib_inspections").selectAll().where("visit_id", "=", visitId).where("form_id", "=", formId);
+    if (lock) q = q.forUpdate();
+    const r = await q.executeTakeFirst();
+    return r ? this.toInspection(r) : null;
+  }
+
+  /** The inspection a checklist item belongs to. */
+  async ofItem(itemId: string): Promise<InspectionRecord | null> {
+    const it = await raqibDb().selectFrom("raqib_inspection_items").select("inspection_id").where("id", "=", itemId).executeTakeFirst();
+    return it ? this.find(it.inspection_id) : null;
   }
 
   async find(id: string): Promise<InspectionRecord | null> {
@@ -95,7 +124,16 @@ export class InspectionsRepository {
     return (await raqibDb().selectFrom("raqib_inspections").selectAll().where("visit_id", "in", visitIds).execute()).map((r) => this.toInspection(r));
   }
 
-  async insert(i: { visitId: string; formVersionId: string; guardFormVersionId: string | null; scoringPolicy: string; startedBy: string }): Promise<string> {
+  async insert(i: {
+    visitId: string;
+    formId: string;
+    issueNo: string;
+    formVersionId: string;
+    guardFormVersionId: string | null;
+    scoringPolicy: string;
+    scoringConfigId: string | null;
+    startedBy: string;
+  }): Promise<string> {
     const id = raqibId("ins");
     await raqibDb()
       .insertInto("raqib_inspections")
@@ -103,13 +141,30 @@ export class InspectionsRepository {
         id,
         organization_id: org(),
         visit_id: i.visitId,
+        form_id: i.formId,
+        issue_no: i.issueNo,
         form_version_id: i.formVersionId,
         guard_form_version_id: i.guardFormVersionId,
         scoring_policy: i.scoringPolicy,
+        scoring_config_id: i.scoringConfigId,
         started_by: i.startedBy,
       })
       .execute();
     return id;
+  }
+
+  /** The inspection issue numbers of each visit (a visit with several forms has several). */
+  async issueNosByVisit(visitIds: string[]): Promise<Map<string, string[]>> {
+    const out = new Map<string, string[]>();
+    if (!visitIds.length) return out;
+    const rows = await raqibDb()
+      .selectFrom("raqib_inspections")
+      .select(["visit_id", "issue_no"])
+      .where("visit_id", "in", visitIds)
+      .orderBy("issue_no")
+      .execute();
+    for (const r of rows) out.set(r.visit_id, [...(out.get(r.visit_id) ?? []), r.issue_no]);
+    return out;
   }
 
   async insertItems(inspectionId: string, items: NewItem[]): Promise<void> {
@@ -252,6 +307,20 @@ export class InspectionsRepository {
       .values(itemIds.map((itemId) => ({ id: raqibId("dec"), organization_id: org(), inspection_id: inspectionId, item_id: itemId, round, created_by: by })))
       .onConflict((oc) => oc.doNothing())
       .execute();
+  }
+
+  /** Authorised correction of a system timestamp (only the corrections service calls this). */
+  async setTime(inspectionId: string, field: "started_at" | "submitted_at", at: Date): Promise<void> {
+    await raqibDb()
+      .updateTable("raqib_inspections")
+      .set({ [field]: at })
+      .where("id", "=", inspectionId)
+      .execute();
+  }
+
+  /** Authorised correction of the stored result (only the corrections service calls this). */
+  async setScore(inspectionId: string, scorePct: number): Promise<void> {
+    await raqibDb().updateTable("raqib_inspections").set({ score_pct: scorePct }).where("id", "=", inspectionId).execute();
   }
 
   async markSubmitted(inspectionId: string, scorePct: number | null, counts: Record<string, number>, at: Date): Promise<void> {

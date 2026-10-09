@@ -1,4 +1,5 @@
 import type { L10n } from "@raqib/raqib/shared/l10n.js";
+import { rankProjects, type RankedProject, type RankSort, type RankWeights } from "./project-ranking.js";
 
 /**
  * Analytics computed from persisted data — issued report snapshots, visits, observations and corrective actions —
@@ -35,6 +36,12 @@ export interface AObservation {
   site: L10n;
   repeatCount: number;
   createdDate: string;
+  /** The form item the finding came from (links the same violation across visits); null for a direct observation. */
+  itemKey: string | null;
+  severity: "low" | "medium" | "high";
+  hasAction: boolean;
+  /** The corrective action is closed. */
+  actionClosed: boolean;
 }
 export interface AAction {
   id: string;
@@ -43,6 +50,22 @@ export interface AAction {
   title: L10n;
   status: string;
   dueDate: string;
+  createdDate: string;
+  /** Day the action was closed, once it is. */
+  closedDate: string | null;
+}
+export interface AProject {
+  projectId: string;
+  name: L10n;
+  contractEnd: string | null;
+  employeesAssigned: number | null;
+}
+export interface ATraining {
+  id: string;
+  projectId: string;
+  status: string;
+  createdDate: string;
+  completedDate: string | null;
 }
 
 export interface AnalyticsInput {
@@ -53,6 +76,13 @@ export interface AnalyticsInput {
   visits: AVisit[];
   observations: AObservation[];
   actions: AAction[];
+  training: ATraining[];
+  /** Every project the caller may see, with its contract data (a project with no report in the range still ranks). */
+  projects: AProject[];
+  /** Complaints per project, or `null` when the caller holds no confidential grant (the figures then do not exist for them). */
+  complaints: Map<string, number> | null;
+  rankSort: RankSort;
+  rankWeights: RankWeights;
   /** Inspector id -> name, for the activity table. */
   inspectors: Map<string, L10n>;
   /** Visit id -> report, to join visits with their outcome. */
@@ -84,10 +114,21 @@ export interface AnalyticsResult {
   guardBuckets: Array<{ bucket: "low" | "mid" | "high"; n: number }>;
   inspectors: Array<{ id: string; name: L10n; done: number; missed: number; avg: number | null; returned: number }>;
   repeated: Array<{ ref: string; id: string; title: L10n; site: L10n; times: number }>;
+  /** Observations recorded in the range by severity, and how many have a corrective action or are fully closed. */
+  observationSummary: { total: number; bySeverity: { low: number; medium: number; high: number }; withAction: number; closed: number };
+  /** Days from creating a corrective action to closing it, for actions closed in the range. */
+  closure: { n: number; avgDays: number | null; maxDays: number | null; byProject: Array<{ projectId: string; avgDays: number | null; n: number }> };
+  /** The same form item failing again and again at a site (two or more findings in the range). */
+  recurring: Array<{ key: string; title: L10n; site: L10n; times: number; lastDate: string }>;
+  training: { requested: number; approved: number; completed: number; rejected: number; open: number; avgDaysToComplete: number | null };
+  /** Projects ranked by the average score of their reports in the range (best first). */
+  ranking: RankedProject[];
 }
 
 const inRange = (d: string, from: string, to: string): boolean => d >= from && d <= to;
 const mean = (xs: number[]): number | null => (xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : null);
+/** Mean to one decimal place (day counts read better as 2.5 than 3). */
+const avgOf = (xs: number[]): number | null => (xs.length ? Math.round((xs.reduce((a, b) => a + b, 0) / xs.length) * 10) / 10 : null);
 
 export function daysBetween(a: string, b: string): number {
   return Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86_400_000);
@@ -230,5 +271,87 @@ export function computeAnalytics(i: AnalyticsInput): AnalyticsResult {
     .slice(0, 8)
     .map((o) => ({ ref: o.ref, id: o.id, title: o.title, site: o.site, times: o.repeatCount + 1 }));
 
-  return { range: { from: i.from, to: i.to, bucket }, kpis, trend, sections, sites, actionStages, guardBuckets, inspectors, repeated };
+  const closedActions = i.actions.filter((a) => a.closedDate && inRange(a.closedDate, i.from, i.to));
+  const durations = closedActions.map((a) => Math.max(0, daysBetween(a.createdDate, a.closedDate!)));
+  const closureProjects = [...new Set(closedActions.map((a) => a.projectId))].map((projectId) => {
+    const ds = closedActions.filter((a) => a.projectId === projectId).map((a) => Math.max(0, daysBetween(a.createdDate, a.closedDate!)));
+    return { projectId, avgDays: avgOf(ds), n: ds.length };
+  });
+  const observationSummary = {
+    total: observations.length,
+    bySeverity: {
+      low: observations.filter((o) => o.severity === "low").length,
+      medium: observations.filter((o) => o.severity === "medium").length,
+      high: observations.filter((o) => o.severity === "high").length,
+    },
+    withAction: observations.filter((o) => o.hasAction).length,
+    closed: observations.filter((o) => o.hasAction && o.actionClosed).length,
+  };
+
+  const recurMap = new Map<string, { title: L10n; site: L10n; times: number; lastDate: string }>();
+  for (const o of observations) {
+    if (!o.itemKey) continue;
+    const k = `${o.projectId}|${o.site.en}|${o.itemKey}`;
+    const cur = recurMap.get(k) ?? { title: o.title, site: o.site, times: 0, lastDate: o.createdDate };
+    cur.times += 1;
+    if (o.createdDate > cur.lastDate) cur.lastDate = o.createdDate;
+    recurMap.set(k, cur);
+  }
+  const recurring = [...recurMap.entries()]
+    .filter(([, v]) => v.times >= 2)
+    .map(([key, v]) => ({ key, ...v }))
+    .sort((a, b) => b.times - a.times || b.lastDate.localeCompare(a.lastDate))
+    .slice(0, 10);
+
+  const trainingInRange = i.training.filter((t) => inRange(t.createdDate, i.from, i.to));
+  const completedTraining = trainingInRange.filter((t) => t.status === "completed" && t.completedDate);
+  const training = {
+    requested: trainingInRange.length,
+    approved: trainingInRange.filter((t) => ["approved", "scheduled", "completed"].includes(t.status)).length,
+    completed: trainingInRange.filter((t) => t.status === "completed").length,
+    rejected: trainingInRange.filter((t) => t.status === "rejected").length,
+    open: trainingInRange.filter((t) => ["pending", "approved", "scheduled", "returned"].includes(t.status)).length,
+    avgDaysToComplete: avgOf(completedTraining.map((t) => Math.max(0, daysBetween(t.createdDate, t.completedDate!)))),
+  };
+
+  // ── project ranking: observations, improvement, complaints and contract proximity ──
+  const half = addDaysIso(i.from, Math.floor(daysBetween(i.from, i.to) / 2));
+  const facts = i.projects.map((p) => {
+    const mine = reports.filter((r) => r.projectId === p.projectId);
+    const scores = (rs: AReport[]) => rs.map((r) => r.scorePct).filter((x): x is number => x != null);
+    const early = scores(mine.filter((r) => r.date <= half));
+    const late = scores(mine.filter((r) => r.date > half));
+    const avgEarly = mean(early);
+    const avgLate = mean(late);
+    return {
+      projectId: p.projectId,
+      project: p.name,
+      avg: mean(scores(mine)),
+      n: mine.length,
+      observations: observations.filter((o) => o.projectId === p.projectId).length,
+      improvement: avgEarly != null && avgLate != null ? avgLate - avgEarly : null,
+      complaints: i.complaints ? (i.complaints.get(p.projectId) ?? 0) : null,
+      contractEnd: p.contractEnd,
+      employeesAssigned: p.employeesAssigned,
+      daysToContractEnd: p.contractEnd ? daysBetween(i.today, p.contractEnd) : null,
+    };
+  });
+  const ranking = rankProjects(facts, i.rankSort, i.rankWeights);
+
+  return {
+    range: { from: i.from, to: i.to, bucket },
+    kpis,
+    trend,
+    sections,
+    sites,
+    actionStages,
+    guardBuckets,
+    inspectors,
+    repeated,
+    observationSummary,
+    closure: { n: durations.length, avgDays: avgOf(durations), maxDays: durations.length ? Math.max(...durations) : null, byProject: closureProjects },
+    recurring,
+    training,
+    ranking,
+  };
 }

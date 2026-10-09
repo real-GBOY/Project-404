@@ -1,8 +1,9 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { readInTenant, type UnitOfWork } from "@core/kernel/db/db.js";
 import { Forbidden, NotFound, ValidationError } from "@core/kernel/errors.js";
-import { AUDIT_LOGGER, UNIT_OF_WORK } from "@core/kernel/tokens.js";
-import type { IAuditLogger } from "@core/contracts/index.js";
+import { AUDIT_LOGGER, EVENT_BUS, UNIT_OF_WORK } from "@core/kernel/tokens.js";
+import type { IAuditLogger, IEventBus } from "@core/contracts/index.js";
+import { observationHigh } from "../events.js";
 import { can, inScope, requireCan, requireProject, type Access } from "@raqib/raqib/access/access.js";
 import { AccessService } from "@raqib/raqib/access/application/access-service.js";
 import type { InspectionView } from "@raqib/raqib/inspections/application/inspections-service.js";
@@ -27,6 +28,8 @@ export interface ObservationView {
   site: L10n;
   visit: { id: string; ref: string } | null;
   itemNum: string | null;
+  /** The form (and form inspection) the finding came from; null for a directly reported observation. */
+  form: { id: string; code: string; name: L10n; issueNo: string } | null;
   /** The form item's stable key (links repeat findings of the same item). */
   itemKey: string | null;
   reportedBy: L10n;
@@ -51,6 +54,7 @@ export class ObservationsService {
     private readonly access: AccessService,
     private readonly counters: Counters,
     @Inject(AUDIT_LOGGER) private readonly audit: IAuditLogger,
+    @Inject(EVENT_BUS) private readonly events: IEventBus,
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
 
@@ -96,6 +100,7 @@ export class ObservationsService {
         resourceId: id,
         after: { ref, severity: input.severity, projectId: input.projectId },
       });
+      if (input.severity === "high") await this.events.publish(observationHigh({ observationId: id }));
       return id;
     });
     // the reporter may be allowed to add observations without being allowed to browse them: answer from the new row directly
@@ -114,7 +119,7 @@ export class ObservationsService {
       if (item.answer !== "n" || existing.has(item.id)) continue;
       const repeatCount = await this.repo.priorCount(visit.site.id, item.key);
       const ref = await this.counters.next("OBS", Number(visit.date.slice(0, 4)));
-      await this.repo.insert({
+      const obsId = await this.repo.insert({
         ref,
         kind: "violation",
         projectId: visit.project.id,
@@ -131,6 +136,7 @@ export class ObservationsService {
         reportedBy: visit.inspector?.id ?? who.userId,
         reportedByName: visit.inspector?.name ?? { ar: who.nameAr, en: who.nameEn },
       });
+      if ((item.severity ?? "medium") === "high") await this.events.publish(observationHigh({ observationId: obsId }));
       n++;
     }
     if (n)
@@ -148,6 +154,7 @@ export class ObservationsService {
     const projects = new Map((await this.projects.list()).map((p) => [p.id, p]));
     const sites = new Map((await this.projects.sites()).map((s) => [s.id, s]));
     const actions = await this.repo.actionSummaries(rows.map((r) => r.id));
+    const forms = await this.repo.formsOf(rows.map((r) => r.inspectionId).filter((x): x is string => !!x));
     const names = new Map<string, L10n>();
     const nameOf = async (userId: string): Promise<L10n> => {
       if (!names.has(userId)) {
@@ -174,6 +181,15 @@ export class ObservationsService {
         site: sites.get(r.siteId)?.name ?? { ar: "—", en: "—" },
         visit: r.visitId ? { id: r.visitId, ref: visitRefs.get(r.visitId) ?? "" } : null,
         itemNum: r.itemNum,
+        form:
+          r.inspectionId && forms.get(r.inspectionId)
+            ? {
+                id: forms.get(r.inspectionId)!.formId,
+                code: forms.get(r.inspectionId)!.code,
+                name: forms.get(r.inspectionId)!.name,
+                issueNo: forms.get(r.inspectionId)!.issueNo,
+              }
+            : null,
         itemKey: r.itemKey,
         reportedBy: r.reportedByName,
         createdAt: r.createdAt.toISOString(),

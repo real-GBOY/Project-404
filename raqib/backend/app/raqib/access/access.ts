@@ -26,6 +26,13 @@ export interface Access {
 
 export const can = (a: Access, module: ModuleKey, letter: string): boolean => a.template[module].includes(letter);
 
+/**
+ * Scores and management analytics are for reviewers, approvers and managers. A role that only performs inspections
+ * (the inspector) never receives them from the API, whatever the web does with the response.
+ */
+export const canSeeScore = (a: Access): boolean =>
+  can(a, "inspections", "R") || can(a, "inspections", "P") || can(a, "analytics", "V") || can(a, "reports", "V");
+
 export function requireCan(a: Access, module: ModuleKey, letter: string): void {
   if (!can(a, module, letter)) {
     throw Forbidden("raqib.forbidden", `Your role is not permitted to do this (${module}:${letter}).`);

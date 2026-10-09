@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { AuditModule } from "@core/index.js";
+import { AuditModule, FilesModule } from "@core/index.js";
 import { SettingsService } from "./application/settings-service.js";
 import { SettingsRepository } from "./infrastructure/settings-repository.js";
 
@@ -9,7 +9,7 @@ import { SettingsRepository } from "./infrastructure/settings-repository.js";
  * this module avoids a circular module import.
  */
 @Module({
-  imports: [AuditModule],
+  imports: [AuditModule, FilesModule],
   providers: [SettingsRepository, SettingsService],
   exports: [SettingsService],
 })

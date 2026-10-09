@@ -69,10 +69,22 @@ export class ReviewService {
 
       let itemIds: string[] = [];
       if (action === "return") {
-        const items = new Set((await this.inspections.items(inspection.id)).filter((x) => x.kind === "site").map((x) => x.id));
+        // a visit may hold several form inspections: each flagged item is recorded against the one that owns it
+        const owner = new Map<string, string>();
+        for (const f of await this.inspectionService.requiredForms(visitId)) {
+          const i = await this.inspections.findByVisitForm(visitId, f.id, true);
+          if (i) for (const it of (await this.inspections.items(i.id)).filter((x) => x.kind === "site")) owner.set(it.id, i.id);
+        }
         itemIds = [...new Set(input.itemIds ?? [])];
-        if (itemIds.some((id) => !items.has(id))) throw ValidationError("raqib.item_not_found", "A flagged item does not belong to this inspection.");
-        await this.inspections.addFlags(inspection.id, itemIds, v.round, who.userId);
+        if (itemIds.some((id) => !owner.has(id))) throw ValidationError("raqib.item_not_found", "A flagged item does not belong to this inspection.");
+        for (const inspectionId of new Set(itemIds.map((id) => owner.get(id)!))) {
+          await this.inspections.addFlags(
+            inspectionId,
+            itemIds.filter((id) => owner.get(id) === inspectionId),
+            v.round,
+            who.userId,
+          );
+        }
       }
 
       await this.visits.update(visitId, { status: to });
@@ -102,8 +114,9 @@ export class ReviewService {
       if (action === "approve") {
         // The report is frozen in the same transaction as the approval: no approved inspection without its report.
         const visitView = await this.visitsService.get(visitId, who);
-        const inspectionView = await this.inspectionService.get(visitId, who);
-        await this.observations.recordViolations(visitView, inspectionView, who);
+        for (const inspectionView of await this.inspectionService.getAll(visitId, who)) {
+          await this.observations.recordViolations(visitView, inspectionView, who);
+        }
         await this.reports.issue(visitId, who);
         await this.events.publish(inspectionApproved(base));
       }

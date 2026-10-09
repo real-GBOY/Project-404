@@ -8,8 +8,11 @@ import type { IAuditLogger } from "@core/contracts/index.js";
 import { can, requireCan, type Access } from "@raqib/raqib/access/access.js";
 import { isUniqueViolation } from "@raqib/raqib/shared/pg-errors.js";
 import type { L10n } from "@raqib/raqib/shared/l10n.js";
+import { BrandingService } from "@raqib/raqib/shared/branding.js";
 import { PeopleRepository } from "@raqib/raqib/people/infrastructure/people-repository.js";
 import { SettingsService } from "@raqib/raqib/settings/application/settings-service.js";
+import { renderBlankFormHtml } from "../domain/blank-form-html.js";
+import type { Lang } from "@raqib/raqib/reports/domain/print-kit.js";
 import { diffVersions, nextVersionLabel, publishIssues, ITEM_TYPES, type FormChange, type FormSection } from "../domain/form.js";
 import { FormsRepository, type FormCategory, type FormRecord, type VersionRecord } from "../infrastructure/forms-repository.js";
 
@@ -43,10 +46,45 @@ export class FormsService {
     private readonly repo: FormsRepository,
     private readonly people: PeopleRepository,
     private readonly settings: SettingsService,
+    private readonly branding: BrandingService,
     @Inject(AUDIT_LOGGER) private readonly audit: IAuditLogger,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
+
+  /**
+   * A blank, printable copy of a form (the published version; a specific version needs the forms right). Anyone who may
+   * view visits can print the published form to carry on paper. Audited like a report download.
+   */
+  async blank(formId: string, lang: Lang, versionId: string | undefined, who: Access): Promise<{ name: string; html: string }> {
+    return readInTenant(async () => {
+      const form = await this.repo.form(formId);
+      if (!form) throw NotFound("raqib.form_not_found", "Form not found.");
+      let version: VersionRecord | null;
+      if (versionId) {
+        requireCan(who, "forms", "V");
+        version = await this.repo.version(versionId);
+        if (version && version.formId !== formId) version = null;
+      } else {
+        requireCan(who, "visits", "V");
+        version = await this.repo.publishedVersion(formId);
+      }
+      if (!version) throw NotFound("raqib.version_not_found", "That form has no published version to print.");
+      await this.uow.transaction(() =>
+        this.audit.record({
+          actorId: who.userId,
+          action: "raqib.form.blank_printed",
+          resourceType: "raqib_form",
+          resourceId: formId,
+          metadata: { lang, version: version!.version },
+        }),
+      );
+      return {
+        name: `${form.code}-v${version.version}-${lang}`,
+        html: renderBlankFormHtml({ code: form.code, name: form.name, version: version.version }, version.sections, lang, await this.branding.current()),
+      };
+    });
+  }
 
   private async assemble(forms: FormRecord[]): Promise<FormView[]> {
     if (!forms.length) return [];

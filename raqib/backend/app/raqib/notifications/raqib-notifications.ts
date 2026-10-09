@@ -7,6 +7,7 @@ import { AccessService } from "@raqib/raqib/access/application/access-service.js
 import { SettingsService } from "@raqib/raqib/settings/application/settings-service.js";
 import { ProjectsRepository } from "@raqib/raqib/projects/infrastructure/projects-repository.js";
 import { ActionsRepository, type ActionRecord } from "@raqib/raqib/actions/infrastructure/actions-repository.js";
+import { ObservationsRepository } from "@raqib/raqib/observations/infrastructure/observations-repository.js";
 import { TrainingRepository, type TrainingRecord } from "@raqib/raqib/training/infrastructure/training-repository.js";
 import { VisitsRepository, type VisitRecord } from "@raqib/raqib/visits/infrastructure/visits-repository.js";
 
@@ -42,6 +43,7 @@ export class RaqibNotifications implements OnModuleInit {
     private readonly visits: VisitsRepository,
     private readonly actions: ActionsRepository,
     private readonly training: TrainingRepository,
+    private readonly observations: ObservationsRepository,
     private readonly projects: ProjectsRepository,
     private readonly access: AccessService,
     private readonly settings: SettingsService,
@@ -65,7 +67,13 @@ export class RaqibNotifications implements OnModuleInit {
     );
     on("raqib.action_returned", (p) => this.action(p, "raqib.action_returned", async () => []));
     on("raqib.action_closed", (p) => this.action(p, "raqib.action_closed", async (a) => (a.createdBy ? [a.createdBy] : [])));
+    // a request waits first with a supervisor (a guard's request) or with the project manager (a supervisor's)
     on("raqib.training_requested", (p) =>
+      this.trainingTo(p, "raqib.training_requested", (t, today) =>
+        this.access.holders("training", t.status === "pending_supervisor" ? "S" : "P", t.projectId, today, String(p.actorId)),
+      ),
+    );
+    on("raqib.training_reviewed", (p) =>
       this.trainingTo(p, "raqib.training_requested", (t, today) => this.access.holders("training", "P", t.projectId, today, String(p.actorId))),
     );
     on("raqib.training_approved", (p) =>
@@ -81,6 +89,8 @@ export class RaqibNotifications implements OnModuleInit {
     );
     on("raqib.training_scheduled", (p) => this.trainingTo(p, "raqib.training_scheduled", async (t) => (t.requestedBy ? [t.requestedBy] : [])));
     on("raqib.training_completed", (p) => this.trainingTo(p, "raqib.training_completed", async (t) => (t.requestedBy ? [t.requestedBy] : [])));
+    on("raqib.action_escalated", (p) => this.escalated(p));
+    on("raqib.observation_high", (p) => this.highSeverity(p));
     on("raqib.action_overdue", (p) => this.action(p, "raqib.action_overdue", (a, today) => this.access.holders("actions", "R", a.projectId, today), true));
   }
 
@@ -198,6 +208,51 @@ export class RaqibNotifications implements OnModuleInit {
           actor: p.actorId ? await this.actorName(p, lang) : "",
           go: ["action", a.id],
         },
+      });
+    }
+  }
+
+  /** The configured people for the level reached (in-app and email). "responsible" is the person the action is assigned to. */
+  private async escalated(p: Payload): Promise<void> {
+    const a = await this.actions.find(String(p.actionId));
+    if (!a) return;
+    const rules = (await this.settings.current()).escalation;
+    const level = Number(p.level);
+    const sorted = [...rules.levels].sort((x, y) => x.days - y.days);
+    const roles = sorted[level - 1]?.roles ?? [];
+    const today = await this.settings.today();
+    const to = new Set<string>(await this.access.holdersOfRoles(roles, a.projectId, today));
+    if (roles.includes("responsible")) to.add(a.responsibleId);
+    for (const r of to) {
+      const lang = await this.lang(r);
+      await this.notify.send({
+        userId: r,
+        templateKey: "raqib.action_escalated",
+        type: "raqib.action_escalated",
+        locale: lang,
+        channels: ["in_app", "email"],
+        data: { ref: a.ref, title: a.title[lang], due: a.dueDate, days: Number(p.days), level, go: ["action", a.id] },
+      });
+    }
+  }
+
+  /** A high-severity finding: told at once, in-app and by email, whoever the organization configured. */
+  private async highSeverity(p: Payload): Promise<void> {
+    const rules = (await this.settings.current()).escalation;
+    if (!rules.highSeverity.immediate) return;
+    const o = await this.observations.find(String(p.observationId));
+    if (!o) return;
+    const to = new Set<string>(await this.access.holdersOfRoles(rules.highSeverity.roles, o.projectId, await this.settings.today()));
+    const site = await this.projects.findSite(o.siteId);
+    for (const r of to) {
+      const lang = await this.lang(r);
+      await this.notify.send({
+        userId: r,
+        templateKey: "raqib.observation_high",
+        type: "raqib.observation_high",
+        locale: lang,
+        channels: ["in_app", "email"],
+        data: { ref: o.ref, title: o.title[lang], site: site ? site.name[lang] : "", go: ["observations", o.id] },
       });
     }
   }

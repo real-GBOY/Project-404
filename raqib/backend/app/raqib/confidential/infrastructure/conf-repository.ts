@@ -6,7 +6,7 @@ import { raqibDb } from "@raqib/raqib/db/executor.js";
 import { raqibId } from "@raqib/raqib/shared/ids.js";
 import type { L10n } from "@raqib/raqib/shared/l10n.js";
 
-export type ConfKind = "misconduct" | "violation" | "safety";
+export type ConfKind = "misconduct" | "violation" | "safety" | "survey";
 export type Sensitivity = "standard" | "high";
 export type IdentityMode = "named" | "confidential" | "anonymous";
 export type ConfStatus = "new" | "under_review" | "closed";
@@ -24,6 +24,10 @@ export interface ConfReportRecord {
   body: string;
   place: string;
   identityMode: IdentityMode;
+  /** The survey this report answers (kind "survey"), if any. */
+  surveyId: string | null;
+  /** The project the report concerns, set only when the reporter is not anonymous (from their own roster record). */
+  projectId: string | null;
   status: ConfStatus;
   response: string | null;
   respondedAt: Date | null;
@@ -82,6 +86,8 @@ const toReport = (r: any): ConfReportRecord => ({
   subject: r.subject,
   body: r.body,
   place: r.place,
+  surveyId: r.survey_id ?? null,
+  projectId: r.project_id ?? null,
   identityMode: r.identity_mode,
   status: r.status,
   response: r.response,
@@ -105,7 +111,12 @@ const toGrant = (r: any): ConfGrantRecord => ({
 
 @Injectable()
 export class ConfRepository {
-  async insertReport(r: Pick<ConfReportRecord, "ref" | "kind" | "sensitivity" | "subject" | "body" | "place" | "identityMode">): Promise<string> {
+  async insertReport(
+    r: Pick<ConfReportRecord, "ref" | "kind" | "sensitivity" | "subject" | "body" | "place" | "identityMode"> & {
+      surveyId?: string | null;
+      projectId?: string | null;
+    },
+  ): Promise<string> {
     const id = raqibId("cnf");
     await raqibDb()
       .insertInto("raqib_conf_reports")
@@ -119,6 +130,8 @@ export class ConfRepository {
         body: r.body,
         place: r.place,
         identity_mode: r.identityMode,
+        survey_id: r.surveyId ?? null,
+        project_id: r.projectId ?? null,
       })
       .execute();
     return id;
@@ -175,6 +188,18 @@ export class ConfRepository {
     let q = raqibDb().selectFrom("raqib_conf_reports").selectAll();
     if (scope === "standard") q = q.where("sensitivity", "=", "standard");
     return (await q.orderBy("created_at", "desc").execute()).map(toReport);
+  }
+
+  /** Complaints (not survey answers) per project, for the project indicators. Counts only: nothing about any report. */
+  async complaintCounts(scope: GrantScope): Promise<Map<string, number>> {
+    let q = raqibDb()
+      .selectFrom("raqib_conf_reports")
+      .select(["project_id", sql<number>`count(*)::int`.as("n")])
+      .where("project_id", "is not", null)
+      .where("kind", "<>", "survey");
+    if (scope === "standard") q = q.where("sensitivity", "=", "standard");
+    const rows = await q.groupBy("project_id").execute();
+    return new Map(rows.map((r) => [r.project_id as string, r.n]));
   }
 
   async find(id: string, lock = false): Promise<ConfReportRecord | null> {

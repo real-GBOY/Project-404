@@ -1,5 +1,6 @@
-import { Body, Controller, Get, HttpCode, Param, Post, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Param, Post, Query, Res, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import type { FastifyReply } from "fastify";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
 import { ZodBody, ZodQuery } from "@core/http/zod.pipe.js";
 import { Allow, AccessGuard, Caller } from "@raqib/raqib/access/access.guard.js";
@@ -10,10 +11,12 @@ import {
   createVisitSchema,
   listVisitsQuery,
   rescheduleVisitSchema,
+  scheduleQuery,
   type CancelVisitBody,
   type CreateVisitBody,
   type ListVisitsQuery,
   type RescheduleVisitBody,
+  type ScheduleQuery,
 } from "../validation/visits.schema.js";
 import { parsePage, toPage } from "@raqib/raqib/shared/paging.js";
 
@@ -37,6 +40,42 @@ export class VisitsController {
   @Allow("visits", "A")
   async inspectors(@Query("projectId") projectId: string, @Query("date") date: string | undefined, @Caller() who: Access) {
     return { items: await this.service.eligibleInspectors(projectId, date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : who.today, who) };
+  }
+
+  /** The schedule for a period as CSV (`from`, `to`, optional `projectId`, `inspectorId`, `lang`). */
+  @Get("export")
+  @Allow("visits", "X")
+  async exportCsv(@Query(ZodQuery(scheduleQuery)) q: ScheduleQuery, @Caller() who: Access, @Res() reply: FastifyReply) {
+    const { lang, ...filter } = q;
+    reply
+      .header("Content-Type", "text/csv; charset=utf-8")
+      .header("Content-Disposition", 'attachment; filename="raqib-schedule.csv"')
+      .header("Cache-Control", "private, no-store")
+      .send(await this.service.scheduleCsv(who, filter, lang));
+  }
+
+  /** The schedule for a period as a print-ready A4 page, grouped by inspector. */
+  @Get("print")
+  @Allow("visits", "D")
+  async print(@Query(ZodQuery(scheduleQuery)) q: ScheduleQuery, @Caller() who: Access, @Res() reply: FastifyReply) {
+    const { lang, ...filter } = q;
+    reply
+      .header("Content-Type", "text/html; charset=utf-8")
+      .header("Cache-Control", "private, no-store")
+      .send(await this.service.schedulePrint(who, filter, lang));
+  }
+
+  @Get("forms/available")
+  @Allow("visits", "A")
+  async availableForms(@Caller() who: Access) {
+    return { items: await this.service.availableForms(who) };
+  }
+
+  /** The organization's configured shifts (names and hours, not the scheduling rules) - what a schedule picker offers. */
+  @Get("shifts")
+  @Allow("visits", "V")
+  async shifts() {
+    return { items: await this.service.shifts() };
   }
 
   @Get(":id")

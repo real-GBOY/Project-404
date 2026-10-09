@@ -24,9 +24,10 @@ const ROLE_TITLES: Record<RoleKey, { ar: string; en: string }> = {
   qe: { ar: "أخصائي جودة", en: "Quality Specialist" },
   pm: { ar: "مدير مشروع", en: "Project Manager" },
   ins: { ar: "مفتش جودة", en: "Quality Inspector" },
-  gs: { ar: "مشرف حراسات", en: "Guards Supervisor" },
+  gs: { ar: "مشرف أمن", en: "Security Supervisor" },
   guard: { ar: "حارس أمن", en: "Security Guard" },
   gm: { ar: "المدير العام", en: "General Manager" },
+  adm: { ar: "موظف إداري", en: "Administrative Staff" },
 };
 
 @Injectable()

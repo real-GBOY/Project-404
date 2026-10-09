@@ -1,4 +1,6 @@
 import { Injectable } from "@nestjs/common";
+import { readInTenant } from "@core/kernel/db/db.js";
+import { InspectionsRepository } from "@raqib/raqib/inspections/infrastructure/inspections-repository.js";
 import { ActionsService } from "@raqib/raqib/actions/application/actions-service.js";
 import type { Access } from "@raqib/raqib/access/access.js";
 import { ObservationsService } from "@raqib/raqib/observations/application/observations-service.js";
@@ -37,6 +39,7 @@ export class SearchService {
     private readonly actions: ActionsService,
     private readonly training: TrainingService,
     private readonly people: PeopleService,
+    private readonly inspections: InspectionsRepository,
   ) {}
 
   async run(q: string, who: Access): Promise<SearchHit[]> {
@@ -46,6 +49,8 @@ export class SearchService {
       fields.some((f) => (typeof f === "object" && f ? Object.values(f as object) : [f]).some((x) => norm(x).includes(needle)));
     // each source silently contributes nothing when the person lacks the permission for it
     const safe = async <T>(fn: () => Promise<T[]>): Promise<T[]> => fn().catch(() => []);
+    // a full 10-digit national ID finds that employee (exact match, inside the caller's own projects)
+    const byNationalId = /^\d{10}$/.test(q.trim()) ? await safe(() => this.projects.guardsByNationalId(q.trim(), who)) : [];
     const [projects, guards, visits, reports, observations, actions, training, users] = await Promise.all([
       safe(() => this.projects.list(who)),
       safe(() => this.projects.guards(who)),
@@ -56,6 +61,9 @@ export class SearchService {
       safe(() => this.training.list(who)),
       safe(() => this.people.list(who)),
     ]);
+    // inspection issue numbers of the visits the caller can already see
+    const issueNos = await safe(async () => [...(await readInTenant(() => this.inspections.issueNosByVisit(visits.map((v) => v.id)))).entries()]);
+    const issuesOf = new Map(issueNos as Array<[string, string[]]>);
     const top = <T>(xs: T[], pred: (x: T) => boolean): T[] => xs.filter(pred).slice(0, MAX_PER_KIND);
     const hits: SearchHit[] = [
       ...top(projects, (p) => match(p.code, p.name, p.city)).map((p) => ({
@@ -66,12 +74,12 @@ export class SearchService {
         sub: "",
         go: ["project", p.id] as [string, string],
       })),
-      ...top(visits, (v) => match(v.ref, v.project.name, v.site.name)).map((v) => ({
+      ...top(visits, (v) => match(v.ref, v.project.name, v.site.name, issuesOf.get(v.id) ?? [])).map((v) => ({
         kind: "visit" as const,
         id: v.id,
         ref: v.ref,
         title: v.site.name,
-        sub: v.project.code,
+        sub: [v.project.code, ...(issuesOf.get(v.id) ?? []).filter((n) => n.toLowerCase().includes(needle))].join(" · "),
         go: ["visit", v.id] as [string, string],
       })),
       ...top(reports, (r) => match(r.ref, r.snapshot.visitRef, r.snapshot.project.name, r.snapshot.site)).map((r) => ({
@@ -106,14 +114,16 @@ export class SearchService {
         sub: t.guard.employeeNo,
         go: ["trainingD", t.id] as [string, string],
       })),
-      ...top(guards, (g) => match(g.employeeNo, g.name)).map((g) => ({
-        kind: "guard" as const,
-        id: g.id,
-        ref: g.employeeNo,
-        title: g.name,
-        sub: "",
-        go: ["guard", g.id] as [string, string],
-      })),
+      ...[...byNationalId, ...top(guards, (g) => match(g.employeeNo, g.name))]
+        .filter((g, idx, all) => all.findIndex((x) => x.id === g.id) === idx)
+        .map((g) => ({
+          kind: "guard" as const,
+          id: g.id,
+          ref: g.employeeNo,
+          title: g.name,
+          sub: "",
+          go: ["guard", g.id] as [string, string],
+        })),
       ...top(users, (u) => match(u.name, u.email)).map((u) => ({
         kind: "user" as const,
         id: u.id,

@@ -537,6 +537,9 @@ export class DemoSeeder {
             managerUserId: userIds.get(pr.manager) ?? null,
             status: pr.status,
             firstVisitDate: pr.firstVisit ?? null,
+            contractStart: addDays(today, -540),
+            contractEnd: addDays(today, pr.contractEndInDays),
+            employeesAssigned: pr.guards || 12,
           });
           projectIds.set(pr.key, id);
           for (const [si, site] of pr.sites.entries()) {

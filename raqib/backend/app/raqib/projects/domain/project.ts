@@ -20,6 +20,9 @@ export interface ProjectView {
   manager: { id: string; name: L10n } | null;
   status: ProjectStatus;
   firstVisitDate: string | null;
+  contractStart: string | null;
+  contractEnd: string | null;
+  employeesAssigned: number | null;
   guardCount: number;
   sites: SiteView[];
 }

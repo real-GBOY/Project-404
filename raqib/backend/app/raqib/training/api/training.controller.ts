@@ -12,7 +12,8 @@ import { parsePage, toPage } from "@raqib/raqib/shared/paging.js";
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const createSchema = z
   .object({
-    guardId: z.string().min(1).max(80),
+    /** A supervisor names the guard; a guard asks for themselves, so it is ignored for them. */
+    guardId: z.string().min(1).max(80).optional(),
     reason: z.enum(["low_score", "repeat_issue", "incident", "refresher", "new_assignment"]),
     course: z.string().trim().min(2).max(200),
     related: z.string().trim().max(200).default(""),
@@ -63,16 +64,25 @@ export class TrainingController {
     return this.service.step(id, "approve", { text: b.comment }, who);
   }
 
+  /** The supervisor's stage of a guard's request: forward it to the project manager. */
+  @Post("training/:id/review")
+  @HttpCode(200)
+  @Allow("training", "S")
+  review(@Param("id") id: string, @Body(ZodBody(noteSchema)) b: z.infer<typeof noteSchema>, @Caller() who: Access) {
+    return this.service.step(id, "review", { text: b.comment }, who);
+  }
+
+  /** Supervisor or project manager, depending on the stage: the service checks the letter for that stage. */
   @Post("training/:id/return")
   @HttpCode(200)
-  @Allow("training", "P")
+  @Allow("training")
   return(@Param("id") id: string, @Body(ZodBody(reasonSchema)) b: z.infer<typeof reasonSchema>, @Caller() who: Access) {
     return this.service.step(id, "return", { text: b.reason }, who);
   }
 
   @Post("training/:id/reject")
   @HttpCode(200)
-  @Allow("training", "P")
+  @Allow("training")
   reject(@Param("id") id: string, @Body(ZodBody(reasonSchema)) b: z.infer<typeof reasonSchema>, @Caller() who: Access) {
     return this.service.step(id, "reject", { text: b.reason }, who);
   }

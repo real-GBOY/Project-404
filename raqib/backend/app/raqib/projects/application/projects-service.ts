@@ -43,6 +43,9 @@ export class ProjectsService {
         manager: m ? { id: m.userId, name: { ar: m.nameAr, en: m.nameEn } } : null,
         status: p.status,
         firstVisitDate: p.firstVisitDate,
+        contractStart: p.contractStart,
+        contractEnd: p.contractEnd,
+        employeesAssigned: p.employeesAssigned,
         guardCount: counts.get(p.id) ?? 0,
         sites: mySites,
       };
@@ -65,9 +68,14 @@ export class ProjectsService {
     });
   }
 
+  private requireContractOrder(start: string | null | undefined, end: string | null | undefined): void {
+    if (start && end && end < start) throw ValidationError("raqib.contract_dates", "The contract cannot end before it starts.");
+  }
+
   async create(input: ProjectInput, who: Access): Promise<ProjectView> {
     requireCan(who, "projects", "A");
     if (!who.allProjects) throw Forbidden("raqib.out_of_scope", "Only roles covering every project can create projects.");
+    this.requireContractOrder(input.contractStart, input.contractEnd);
     try {
       return await this.uow.transaction(async () => {
         const id = await this.repo.create(input);
@@ -86,6 +94,10 @@ export class ProjectsService {
       const before = await this.repo.find(id);
       if (!before) throw NotFound("raqib.project_not_found", "Project not found.");
       requireProject(who, id);
+      this.requireContractOrder(
+        patch.contractStart === undefined ? before.contractStart : patch.contractStart,
+        patch.contractEnd === undefined ? before.contractEnd : patch.contractEnd,
+      );
       await this.repo.update(id, patch);
       await this.audit.record({ actorId: who.userId, action: "raqib.project.updated", resourceType: "raqib_project", resourceId: id, before, after: patch });
       return (await this.assemble([(await this.repo.find(id))!]))[0]!;
@@ -276,6 +288,18 @@ export class ProjectsService {
     return readInTenant(async () => {
       const all = await this.repo.guards(who.allProjects ? undefined : [...who.projectIds]);
       return all.map((g) => this.guardView(g));
+    });
+  }
+
+  /**
+   * Guards whose full national ID equals `nationalId`, within the caller's own projects. An exact 10-digit match only (there is
+   * no partial or prefix search on national IDs), and the result is masked like every other guard view.
+   */
+  async guardsByNationalId(nationalId: string, who: Access): Promise<GuardView[]> {
+    this.requireGuardAccess(who);
+    return readInTenant(async () => {
+      const all = await this.repo.guards(who.allProjects ? undefined : [...who.projectIds]);
+      return all.filter((g) => g.nationalId === nationalId).map((g) => this.guardView(g));
     });
   }
 

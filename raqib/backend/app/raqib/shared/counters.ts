@@ -9,7 +9,7 @@ import { raqibDb } from "@raqib/raqib/db/executor.js";
  */
 @Injectable()
 export class Counters {
-  async next(kind: "VIS" | "CA" | "OBS" | "TR" | "ACR" | "RPT" | "CNF", year: number): Promise<string> {
+  async next(kind: "VIS" | "INS" | "CA" | "OBS" | "TR" | "ACR" | "RPT" | "CNF", year: number): Promise<string> {
     const orgId = getContext()?.organizationId;
     if (!orgId) throw new Error("counter used outside a tenant context");
     const row = await raqibDb()

@@ -6,16 +6,18 @@ import { AUDIT_LOGGER, CLOCK, EVENT_BUS, UNIT_OF_WORK } from "@core/kernel/token
 import type { Clock } from "@core/kernel/clock.js";
 import type { IAuditLogger, IEventBus } from "@core/contracts/index.js";
 import { defineEvent } from "@core/contracts/domain-event.js";
-import { actorOf, can, inScope, requireCan, type Access } from "@raqib/raqib/access/access.js";
+import { actorOf, can, canSeeScore, inScope, requireCan, type Access } from "@raqib/raqib/access/access.js";
 import type { L10n } from "@raqib/raqib/shared/l10n.js";
 import { EvidenceRepository, type EvidenceRecord } from "@raqib/raqib/evidence/infrastructure/evidence-repository.js";
-import { FormsRepository } from "@raqib/raqib/forms/infrastructure/forms-repository.js";
+import { FormsRepository, type FormRecord } from "@raqib/raqib/forms/infrastructure/forms-repository.js";
+import { Counters } from "@raqib/raqib/shared/counters.js";
 import { PeopleRepository } from "@raqib/raqib/people/infrastructure/people-repository.js";
 import { ProjectsRepository } from "@raqib/raqib/projects/infrastructure/projects-repository.js";
 import { SettingsService } from "@raqib/raqib/settings/application/settings-service.js";
 import { next as visitNext } from "@raqib/raqib/visits/domain/visit-state.js";
 import { VisitsRepository, type VisitRecord } from "@raqib/raqib/visits/infrastructure/visits-repository.js";
-import { DEFAULT_POLICY, guardScore, policyFor, type Answer, type ScoreResult } from "../domain/scoring.js";
+import { DEDUCTION_POLICY, DEFAULT_POLICY, guardScore, policyFor, visitScore, type Answer, type DeductionConfig, type ScoreResult } from "../domain/scoring.js";
+import { ScoringRepository } from "@raqib/raqib/scoring/infrastructure/scoring-repository.js";
 import { submissionIssues, type Issue, type ItemFacts } from "../domain/submission.js";
 import { InspectionsRepository, type AnswerRecord, type InspectionRecord, type ItemRecord, type NewItem } from "../infrastructure/inspections-repository.js";
 
@@ -57,17 +59,40 @@ export interface GuardEvalView {
   done: boolean;
   answered: number;
 }
+export interface VisitFormView {
+  formId: string;
+  code: string;
+  name: L10n;
+  position: number;
+  /** The inspection issue number once the form has been started. */
+  issueNo: string | null;
+  inspectionId: string | null;
+  started: boolean;
+  answered: number;
+  total: number;
+  /** Items still blocking submission (0 when complete). */
+  blocking: number;
+  submitted: boolean;
+}
 export interface InspectionView {
   id: string;
   visitId: string;
   ref: string;
+  /** The unique number of this form inspection (a visit with several forms has one per form). */
+  issueNo: string;
+  formId: string;
+  /** Index of this form among the visit's required forms (0 = the lead form). */
+  position: number;
   status: string;
   round: number;
   form: { versionId: string; code: string; version: string; name: L10n };
   sections: Array<{ key: string; title: L10n; items: ItemView[] }>;
   guardCriteria: Array<{ id: string; key: string; text: L10n }>;
   guards: GuardEvalView[];
-  score: ScoreResult & { evidence: number };
+  /** Roles that only inspect get counts but never the percentage or the deductions. */
+  score: ScoreResult & { evidence: number; visible: boolean };
+  /** The rules this inspection is scored under (a deduction configuration is pinned at start). */
+  scoring: { policy: string; version: number | null };
   issues: Issue[];
   /** Items sent back in earlier submission rounds (for the resubmission comparison). */
   previous: Array<{ round: number; itemIds: string[] }>;
@@ -88,6 +113,8 @@ export class InspectionsService {
     private readonly projects: ProjectsRepository,
     private readonly people: PeopleRepository,
     private readonly settings: SettingsService,
+    private readonly scoring: ScoringRepository,
+    private readonly counters: Counters,
     @Inject(AUDIT_LOGGER) private readonly audit: IAuditLogger,
     @Inject(EVENT_BUS) private readonly events: IEventBus,
     @Inject(CLOCK) private readonly clock: Clock,
@@ -113,6 +140,30 @@ export class InspectionsService {
   }
 
   // ── view ────────────────────────────────────────────────────────────────
+
+  // ── scoring ─────────────────────────────────────────────────────────────
+
+  /** The configuration an inspection was pinned to when it started (null for the earlier weighted policy). */
+  private async configOf(i: InspectionRecord): Promise<DeductionConfig | null> {
+    return i.scoringConfigId ? this.scoring.byId(i.scoringConfigId) : null;
+  }
+
+  private async versionOf(i: InspectionRecord): Promise<number | null> {
+    return (await this.configOf(i))?.version ?? null;
+  }
+
+  private async scoreOf(i: InspectionRecord, items: ItemRecord[], answers: Map<string, AnswerRecord>): Promise<ScoreResult> {
+    const policy = policyFor(i.scoringPolicy, await this.configOf(i));
+    return policy.score(
+      items.map((it) => ({
+        weight: it.weight,
+        id: it.id,
+        key: it.key,
+        answer: answers.get(it.id)?.value ?? null,
+        severity: answers.get(it.id)?.severity ?? null,
+      })),
+    );
+  }
 
   private async assemble(i: InspectionRecord, v: VisitRecord, who: Access): Promise<InspectionView> {
     const [items, answers, flags, ev, scores, notes] = await Promise.all([
@@ -210,12 +261,19 @@ export class InspectionsService {
       guards.map((g) => ({ name: guardNames.get(g.guardId) ?? g.guardId, done: g.done || criteria.length === 0 })),
       { ncNote: s.insp.ncNote, ncEvidence: s.insp.ncEvidence },
     );
-    const result = policyFor(i.scoringPolicy).score(siteItems.map((it) => ({ weight: it.weight, answer: answers.get(it.id)?.value ?? null })));
+    const result = await this.scoreOf(i, siteItems, answers);
+    const visible = canSeeScore(who);
 
     return {
       id: i.id,
       visitId: v.id,
       ref: v.ref,
+      issueNo: i.issueNo,
+      formId: i.formId,
+      position: Math.max(
+        0,
+        (await this.requiredForms(v.id)).findIndex((f) => f.id === i.formId),
+      ),
       status: v.status,
       round: v.round,
       form: { versionId: i.formVersionId, code: form?.code ?? "", version: version?.version ?? "", name: form?.name ?? { ar: "", en: "" } },
@@ -223,10 +281,13 @@ export class InspectionsService {
       guardCriteria: criteria.map((c) => ({ id: c.id, key: c.key, text: c.text })),
       guards,
       score: {
-        ...result,
-        pct: i.submittedAt && returned === false ? (i.scorePct ?? result.pct) : result.pct,
+        // an inspector keeps the answer counts (progress) but never the percentage or the deductions
+        ...(visible ? result : { ...result, deductions: undefined, unpriced: undefined }),
+        pct: !visible ? null : i.submittedAt && returned === false ? (i.scorePct ?? result.pct) : result.pct,
         evidence: ev.filter((e) => e.context === "answer").length,
+        visible,
       },
+      scoring: { policy: i.scoringPolicy, version: visible ? await this.versionOf(i) : null },
       previous: [...new Set(flags.filter((f) => f.round < v.round).map((f) => f.round))]
         .sort()
         .map((round) => ({ round, itemIds: flags.filter((f) => f.round === round).map((f) => f.itemId) })),
@@ -237,41 +298,121 @@ export class InspectionsService {
     };
   }
 
-  async get(visitId: string, who: Access): Promise<InspectionView> {
+  // ── the forms of a visit ────────────────────────────────────────────────
+
+  /** The forms a visit requires, in order. A visit scheduled without any uses the organization default site form. */
+  async requiredForms(visitId: string): Promise<FormRecord[]> {
+    const ids = (await this.visits.formIds([visitId])).get(visitId) ?? [];
+    if (ids.length) {
+      const out: FormRecord[] = [];
+      for (const id of ids) {
+        const f = await this.forms.form(id);
+        if (f) out.push(f);
+      }
+      return out;
+    }
+    const d = await this.forms.defaultForm("site");
+    return d ? [d] : [];
+  }
+
+  /** The inspection of one required form (the first one by default); `formId` that the visit does not require is a 404. */
+  private async inspectionFor(visitId: string, formId: string | undefined, lock = false): Promise<InspectionRecord | null> {
+    const required = await this.requiredForms(visitId);
+    const target = formId ?? required[0]?.id;
+    if (formId && !required.some((f) => f.id === formId)) throw NotFound("raqib.form_not_required", "This visit does not require that form.");
+    return target ? this.repo.findByVisitForm(visitId, target, lock) : this.repo.findByVisit(visitId, lock);
+  }
+
+  async get(visitId: string, who: Access, formId?: string): Promise<InspectionView> {
     return readInTenant(async () => {
       const v = await this.requireVisit(visitId);
       if (!this.canRead(who, v)) throw Forbidden("raqib.out_of_scope", "This resource is outside your scope.");
-      const i = await this.repo.findByVisit(visitId);
-      if (!i) throw NotFound("raqib.inspection_not_started", "This visit has not been started.");
+      const i = await this.inspectionFor(visitId, formId);
+      if (!i) throw NotFound("raqib.inspection_not_started", "This form has not been started.");
       return this.assemble(i, v, who);
+    });
+  }
+
+  /** Every started inspection of the visit, in the order its forms are required (used by review, observations and the report). */
+  async getAll(visitId: string, who: Access): Promise<InspectionView[]> {
+    return readInTenant(async () => {
+      const v = await this.requireVisit(visitId);
+      if (!this.canRead(who, v)) throw Forbidden("raqib.out_of_scope", "This resource is outside your scope.");
+      const out: InspectionView[] = [];
+      for (const f of await this.requiredForms(visitId)) {
+        const i = await this.repo.findByVisitForm(visitId, f.id);
+        if (i) out.push(await this.assemble(i, v, who));
+      }
+      return out;
+    });
+  }
+
+  /** The visit's forms with how far each has got (the inspector's checklist of forms, and the reviewer's overview). */
+  async formsOf(visitId: string, who: Access): Promise<VisitFormView[]> {
+    return readInTenant(async () => {
+      const v = await this.requireVisit(visitId);
+      if (!this.canRead(who, v) && !(inScope(who, v.projectId) && can(who, "visits", "V"))) {
+        throw Forbidden("raqib.out_of_scope", "This resource is outside your scope.");
+      }
+      const out: VisitFormView[] = [];
+      const required = await this.requiredForms(visitId);
+      for (const [position, f] of required.entries()) {
+        const i = await this.repo.findByVisitForm(visitId, f.id);
+        const base = { formId: f.id, code: f.code, name: f.name, position, issueNo: i?.issueNo ?? null, inspectionId: i?.id ?? null };
+        if (!i || !this.canRead(who, v)) {
+          out.push({ ...base, started: !!i, answered: 0, total: 0, blocking: 0, submitted: !!i?.submittedAt });
+          continue;
+        }
+        const view = await this.assemble(i, v, who);
+        out.push({ ...base, started: true, answered: view.score.answered, total: view.score.total, blocking: view.issues.length, submitted: !!i.submittedAt });
+      }
+      return out;
     });
   }
 
   // ── start ───────────────────────────────────────────────────────────────
 
   /**
-   * Start (or continue) the inspection. Starting snapshots the published default form — and the guard form — into
-   * the inspection, so later edits to a form can never change what this inspection means.
+   * Start (or continue) the inspection of one of the visit's forms (the first by default). Starting snapshots the
+   * published form - and, on the first form, the guard form - into the inspection, so later edits to a form can never
+   * change what this inspection means. Each inspection gets its own issue number.
    */
-  async start(visitId: string, who: Access): Promise<InspectionView> {
+  async start(visitId: string, who: Access, formId?: string): Promise<InspectionView> {
     requireCan(who, "inspections", "S");
     return this.uow.transaction(async () => {
       const v = await this.requireVisit(visitId, true);
       if (v.inspectorId !== who.userId) throw Forbidden("raqib.out_of_scope", "This visit is not assigned to you.");
-      let i = await this.repo.findByVisit(visitId, true);
+      const required = await this.requiredForms(visitId);
+      if (!required.length) throw Conflict("raqib.no_form", "No inspection form is published. Ask Quality Management to publish one.");
+      const form = formId ? required.find((f) => f.id === formId) : required[0];
+      if (!form) throw NotFound("raqib.form_not_required", "This visit does not require that form.");
+      let i = await this.repo.findByVisitForm(visitId, form.id, true);
       if (!i) {
-        const to = visitNext(v.status, "start", true);
-        if (!to) throw Conflict("raqib.cannot_start", "This visit cannot be started in its current state.");
-        const siteForm = await this.forms.defaultForm("site");
-        const siteVersion = siteForm ? await this.forms.publishedVersion(siteForm.id) : null;
-        if (!siteForm || !siteVersion) throw Conflict("raqib.no_form", "No inspection form is published. Ask Quality Management to publish one.");
-        const guardForm = await this.forms.defaultForm("guard");
+        // the first form moves the visit into progress; the others may be started while it is under way
+        let to = v.status;
+        if (v.status === "scheduled" || v.status === "assigned") {
+          const moved = visitNext(v.status, "start", true);
+          if (!moved) throw Conflict("raqib.cannot_start", "This visit cannot be started in its current state.");
+          to = moved;
+        } else if (v.status !== "in_progress") {
+          throw Conflict("raqib.cannot_start", "This visit cannot be started in its current state.");
+        }
+        const siteVersion = await this.forms.publishedVersion(form.id);
+        if (!siteVersion) throw Conflict("raqib.no_form", "No inspection form is published. Ask Quality Management to publish one.");
+        const isFirst = form.id === required[0]!.id;
+        const guardForm = isFirst ? await this.forms.defaultForm("guard") : null;
         const guardVersion = guardForm ? await this.forms.publishedVersion(guardForm.id) : null;
+        // Deduction scoring applies once the client values are published; until then the earlier policy scores.
+        const cfg = await this.scoring.latest();
+        const issueNo = await this.counters.next("INS", Number(who.today.slice(0, 4)));
         const id = await this.repo.insert({
           visitId,
+          formId: form.id,
+          issueNo,
           formVersionId: siteVersion.id,
           guardFormVersionId: guardVersion?.id ?? null,
-          scoringPolicy: DEFAULT_POLICY,
+          scoringPolicy: cfg ? DEDUCTION_POLICY : DEFAULT_POLICY,
+          scoringConfigId: cfg?.id ?? null,
           startedBy: who.userId,
         });
         const snapshot: NewItem[] = [];
@@ -312,23 +453,25 @@ export class InspectionsService {
           ),
         );
         await this.repo.insertItems(id, snapshot);
-        await this.visits.update(visitId, { status: to });
-        await this.visits.appendEvent({
-          visitId,
-          ...actorOf(who),
-          action: "started",
-          fromStatus: v.status,
-          toStatus: to,
-          detail: { formVersionId: siteVersion.id, form: `${siteForm.code} v${siteVersion.version}` },
-        });
+        if (to !== v.status) {
+          await this.visits.update(visitId, { status: to });
+          await this.visits.appendEvent({
+            visitId,
+            ...actorOf(who),
+            action: "started",
+            fromStatus: v.status,
+            toStatus: to,
+            detail: { formVersionId: siteVersion.id, form: `${form.code} v${siteVersion.version}`, issueNo },
+          });
+        }
         await this.audit.record({
           actorId: who.userId,
           action: "raqib.inspection.started",
           resourceType: "raqib_inspection",
           resourceId: id,
-          after: { visitId, form: `${siteForm.code} v${siteVersion.version}` },
+          after: { visitId, issueNo, form: `${form.code} v${siteVersion.version}` },
         });
-        i = (await this.repo.findByVisit(visitId))!;
+        i = (await this.repo.find(id))!;
       } else if (v.status !== "in_progress" && v.status !== "returned") {
         throw Conflict("raqib.cannot_start", "This inspection can no longer be edited.");
       }
@@ -338,12 +481,20 @@ export class InspectionsService {
 
   // ── answering ───────────────────────────────────────────────────────────
 
-  private async editable(visitId: string, who: Access): Promise<{ v: VisitRecord; i: InspectionRecord }> {
+  /** The visit, locked, once the caller has been shown to own it and it is open for editing. */
+  private async editableVisit(visitId: string, who: Access): Promise<VisitRecord> {
     const v = await this.requireVisit(visitId, true);
     if (!this.isInspector(who, v)) throw Forbidden("raqib.out_of_scope", "This inspection is not yours to edit.");
-    const i = await this.repo.findByVisit(visitId, true);
-    if (!i) throw NotFound("raqib.inspection_not_started", "This visit has not been started.");
     if (v.status !== "in_progress" && v.status !== "returned") throw Conflict("raqib.inspection_locked", "This inspection can no longer be edited.");
+    return v;
+  }
+
+  /** The inspection that owns `itemId` (when given), else the visit's first. */
+  private async editable(visitId: string, who: Access, itemId?: string): Promise<{ v: VisitRecord; i: InspectionRecord }> {
+    const v = await this.editableVisit(visitId, who);
+    const i = itemId ? await this.repo.ofItem(itemId) : await this.repo.findByVisit(visitId, true);
+    if (!i || i.visitId !== visitId)
+      throw NotFound(itemId ? "raqib.item_not_found" : "raqib.inspection_not_started", itemId ? "Item not found." : "This visit has not been started.");
     return { v, i };
   }
 
@@ -355,7 +506,7 @@ export class InspectionsService {
   ): Promise<InspectionView> {
     requireCan(who, "inspections", "S");
     return this.uow.transaction(async () => {
-      const { v, i } = await this.editable(visitId, who);
+      const { v, i } = await this.editable(visitId, who, itemId);
       const item = (await this.repo.items(i.id)).find((x) => x.id === itemId && x.kind === "site");
       if (!item) throw NotFound("raqib.item_not_found", "Item not found.");
       if (v.status === "returned") {
@@ -371,7 +522,7 @@ export class InspectionsService {
   async setGuardScore(visitId: string, guardId: string, itemId: string, score: number, who: Access): Promise<InspectionView> {
     requireCan(who, "guardEval", "S");
     return this.uow.transaction(async () => {
-      const { v, i } = await this.editable(visitId, who);
+      const { v, i } = await this.editable(visitId, who, itemId);
       await this.requireGuardOnVisit(v, guardId);
       const item = (await this.repo.items(i.id)).find((x) => x.id === itemId && x.kind === "guard");
       if (!item) throw NotFound("raqib.item_not_found", "Criterion not found.");
@@ -397,24 +548,52 @@ export class InspectionsService {
 
   // ── submit ──────────────────────────────────────────────────────────────
 
-  /** Submit (or resubmit) for review. The backend recomputes every blocking issue; the score is stored at this moment. */
+  /**
+   * Submit (or resubmit) the whole visit for review: every required form must be started and complete. The backend
+   * recomputes every blocking issue; each inspection is scored and stored at this moment.
+   */
   async submit(visitId: string, who: Access): Promise<InspectionView> {
     requireCan(who, "inspections", "S");
     return this.uow.transaction(async () => {
-      const { v, i } = await this.editable(visitId, who);
-      const view = await this.assemble(i, v, who);
-      if (view.issues.length) throw Conflict("raqib.cannot_submit", "The inspection is not complete.", { issues: view.issues });
+      const v = await this.editableVisit(visitId, who);
+      const required = await this.requiredForms(visitId);
+      const records: InspectionRecord[] = [];
+      const missing: string[] = [];
+      for (const f of required) {
+        const i = await this.repo.findByVisitForm(visitId, f.id, true);
+        if (i) records.push(i);
+        else missing.push(f.code);
+      }
+      if (!records.length) throw NotFound("raqib.inspection_not_started", "This visit has not been started.");
+      if (missing.length) throw Conflict("raqib.form_not_started", "Every required form must be started before submitting.", { forms: missing });
+      const views = await Promise.all(records.map((i) => this.assemble(i, v, who)));
+      const issues = views.flatMap((view) => view.issues.map((x) => ({ ...x, form: view.form.code })));
+      if (issues.length) throw Conflict("raqib.cannot_submit", "The inspection is not complete.", { issues });
       const resubmission = v.status === "returned";
       const now = this.clock.now();
-      const siteItems = (await this.repo.items(i.id)).filter((x) => x.kind === "site");
-      const answers = await this.repo.answers(i.id);
-      const result = policyFor(i.scoringPolicy).score(siteItems.map((it) => ({ weight: it.weight, answer: answers.get(it.id)?.value ?? null })));
-      await this.repo.markSubmitted(
-        i.id,
-        result.pct,
-        { compliant: result.compliant, nonCompliant: result.nonCompliant, na: result.na, total: result.total },
-        now,
-      );
+      const pcts: Array<number | null> = [];
+      for (const i of records) {
+        const siteItems = (await this.repo.items(i.id)).filter((x) => x.kind === "site");
+        const answers = await this.repo.answers(i.id);
+        const result = await this.scoreOf(i, siteItems, answers);
+        // one deduction per recorded violation (the table key enforces it); a resubmission recomputes the set
+        if (i.scoringConfigId) await this.scoring.replaceDeductions(i.id, i.scoringConfigId, result.deductions ?? []);
+        await this.repo.markSubmitted(
+          i.id,
+          result.pct,
+          { compliant: result.compliant, nonCompliant: result.nonCompliant, na: result.na, total: result.total },
+          now,
+        );
+        pcts.push(result.pct);
+        await this.audit.record({
+          actorId: who.userId,
+          action: resubmission ? "raqib.inspection.resubmitted" : "raqib.inspection.submitted",
+          resourceType: "raqib_inspection",
+          resourceId: i.id,
+          after: { scorePct: result.pct, ...result, scoringConfigId: i.scoringConfigId, issueNo: i.issueNo },
+        });
+      }
+      const scorePct = visitScore(pcts);
       await this.visits.update(visitId, { status: "pending_review", ...(resubmission ? { round: v.round + 1 } : {}) });
       await this.visits.appendEvent({
         visitId,
@@ -422,17 +601,10 @@ export class InspectionsService {
         action: resubmission ? "resubmitted" : "submitted",
         fromStatus: v.status,
         toStatus: "pending_review",
-        detail: { scorePct: result.pct },
-      });
-      await this.audit.record({
-        actorId: who.userId,
-        action: resubmission ? "raqib.inspection.resubmitted" : "raqib.inspection.submitted",
-        resourceType: "raqib_inspection",
-        resourceId: i.id,
-        after: { scorePct: result.pct, ...result },
+        detail: { scorePct, forms: records.map((i) => i.issueNo) },
       });
       await this.events.publish(inspectionSubmitted({ visitId, actorId: who.userId, resubmission }));
-      return this.assemble((await this.repo.findByVisit(visitId))!, (await this.visits.find(visitId))!, who);
+      return this.assemble((await this.repo.find(records[0]!.id))!, (await this.visits.find(visitId))!, who);
     });
   }
 
@@ -445,7 +617,7 @@ export class InspectionsService {
   async assertEditable(inspectionId: string, who: Access, itemId?: string | null): Promise<{ v: VisitRecord; i: InspectionRecord; item: ItemRecord | null }> {
     const i = await this.repo.find(inspectionId);
     if (!i) throw NotFound("raqib.inspection_not_found", "Inspection not found.");
-    const { v } = await this.editable(i.visitId, who);
+    const v = await this.editableVisit(i.visitId, who);
     let item: ItemRecord | null = null;
     if (itemId) {
       item = (await this.repo.items(inspectionId)).find((x) => x.id === itemId) ?? null;

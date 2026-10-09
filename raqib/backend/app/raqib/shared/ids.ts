@@ -30,6 +30,9 @@ export type RaqibIdPrefix =
   | "acr" // account request
   | "rep" // report
   | "rjb" // report job
+  | "scf" // scoring configuration
+  | "svy" // survey
+  | "cor" // correction
   | "cnf" // confidential report
   | "cgr" // confidential grant
   | "cal2"; // confidential access log

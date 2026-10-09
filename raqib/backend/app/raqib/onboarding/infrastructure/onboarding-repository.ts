@@ -8,7 +8,7 @@ import type { L10n } from "@raqib/raqib/shared/l10n.js";
 import { fetchSize, type Page } from "@raqib/raqib/shared/paging.js";
 
 export type RequestStatus = "pending" | "approved" | "rejected";
-export type RequestedRole = "qe" | "pm" | "ins" | "gs" | "guard";
+export type RequestedRole = "qe" | "pm" | "ins" | "gs" | "guard" | "adm";
 
 export interface AccountRequestRecord {
   id: string;

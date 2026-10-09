@@ -74,7 +74,7 @@ export const DEMO_PEOPLE: DemoPerson[] = [
     email: "m.alharbi@raqib.sa",
     role: "gs",
     name: T("ماجد الحربي", "Majed Al-Harbi"),
-    title: T("مشرف حراسات", "Guards Supervisor"),
+    title: T("مشرف أمن", "Security Supervisor"),
     projects: ["p1"],
   },
   {
@@ -93,6 +93,14 @@ export const DEMO_PEOPLE: DemoPerson[] = [
     name: T("أ. منصور السديري", "Mansour Al-Sudairi"),
     title: T("المدير العام", "General Manager"),
     projects: [],
+  },
+  {
+    key: "adm",
+    email: "h.alzahrani@raqib.sa",
+    role: "adm",
+    name: T("هند الزهراني", "Hind Al-Zahrani"),
+    title: T("موظفة إدارية", "Administrative Staff"),
+    projects: ["p1", "p2"],
   },
   {
     key: "sultan",
@@ -123,7 +131,7 @@ export const DEMO_PEOPLE: DemoPerson[] = [
     email: "n.alqarni@raqib.sa",
     role: "gs",
     name: T("نايف القرني", "Naif Al-Qarni"),
-    title: T("مشرف حراسات", "Guards Supervisor"),
+    title: T("مشرف أمن", "Security Supervisor"),
     status: "invited",
     projects: ["p2"],
   },
@@ -165,6 +173,8 @@ export interface DemoProject {
   status: "active" | "attention" | "mobilizing";
   firstVisit?: string;
   guards: number;
+  /** Days from today until the contract ends (the demo is always current), and how long ago it started. */
+  contractEndInDays: number;
   sites: Array<{ key: string; name: L10n; areas: L10n[] }>;
 }
 
@@ -178,6 +188,7 @@ export const DEMO_PROJECTS: DemoProject[] = [
     manager: "pm",
     status: "active",
     guards: 46,
+    contractEndInDays: 120,
     sites: [
       { key: "s1", name: T("البوابة الرئيسية", "Main Gate"), areas: [T("بوابة المشاة", "Pedestrian gate"), T("بوابة المركبات", "Vehicle gate")] },
       {
@@ -203,6 +214,7 @@ export const DEMO_PROJECTS: DemoProject[] = [
     manager: "sultan",
     status: "attention",
     guards: 64,
+    contractEndInDays: 400,
     sites: [
       { key: "s6", name: T("المستودع 3", "Warehouse 3"), areas: [T("منطقة التخزين", "Storage"), T("الأرصفة 4–9", "Docks 4–9")] },
       { key: "s7", name: T("بوابة الشاحنات", "Truck gate"), areas: [T("نقطة التفتيش", "Checkpoint"), T("الميزان", "Weighbridge")] },
@@ -219,6 +231,7 @@ export const DEMO_PROJECTS: DemoProject[] = [
     manager: "buqami",
     status: "active",
     guards: 38,
+    contractEndInDays: 60,
     sites: [
       { key: "s10", name: T("المدخل الرئيسي", "Main entrance"), areas: [T("الاستقبال", "Reception"), T("البوابات", "Gates")] },
       { key: "s11", name: T("قسم الطوارئ", "Emergency department"), areas: [T("مدخل الإسعاف", "Ambulance bay")] },
@@ -235,6 +248,7 @@ export const DEMO_PROJECTS: DemoProject[] = [
     status: "mobilizing",
     firstVisit: "2026-10-19",
     guards: 0,
+    contractEndInDays: 700,
     sites: [],
   },
 ];

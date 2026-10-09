@@ -5,6 +5,8 @@ import { EvidenceRepository } from "@raqib/raqib/evidence/infrastructure/evidenc
 import { FormsModule } from "@raqib/raqib/forms/forms.module.js";
 import { PeopleModule } from "@raqib/raqib/people/people.module.js";
 import { ProjectsModule } from "@raqib/raqib/projects/projects.module.js";
+import { SharedModule } from "@raqib/raqib/shared/shared.module.js";
+import { ScoringModule } from "@raqib/raqib/scoring/scoring.module.js";
 import { SettingsModule } from "@raqib/raqib/settings/settings.module.js";
 import { VisitsModule } from "@raqib/raqib/visits/visits.module.js";
 import { InspectionsController } from "./api/inspections.controller.js";
@@ -12,7 +14,7 @@ import { InspectionsService } from "./application/inspections-service.js";
 import { InspectionsRepository } from "./infrastructure/inspections-repository.js";
 
 @Module({
-  imports: [AuditModule, EventsModule, AccessModule, FormsModule, PeopleModule, ProjectsModule, SettingsModule, VisitsModule],
+  imports: [AuditModule, EventsModule, AccessModule, FormsModule, PeopleModule, ProjectsModule, ScoringModule, SettingsModule, SharedModule, VisitsModule],
   controllers: [InspectionsController],
   providers: [InspectionsRepository, EvidenceRepository, InspectionsService],
   exports: [InspectionsRepository, EvidenceRepository, InspectionsService],

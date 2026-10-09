@@ -7,7 +7,12 @@ import { ObservationsRepository } from "@raqib/raqib/observations/infrastructure
 import { AccessRepository } from "@raqib/raqib/access/infrastructure/access-repository.js";
 import { ProjectsRepository } from "@raqib/raqib/projects/infrastructure/projects-repository.js";
 import { ReportsRepository } from "@raqib/raqib/reports/infrastructure/reports-repository.js";
+import { ConfidentialService } from "@raqib/raqib/confidential/application/confidential-service.js";
+import { SettingsService } from "@raqib/raqib/settings/application/settings-service.js";
+import type { RankSort } from "../domain/project-ranking.js";
+import { TrainingRepository } from "@raqib/raqib/training/infrastructure/training-repository.js";
 import { VisitsRepository } from "@raqib/raqib/visits/infrastructure/visits-repository.js";
+import { csvField } from "@raqib/raqib/shared/csv.js";
 import type { L10n } from "@raqib/raqib/shared/l10n.js";
 import { addDaysIso, computeAnalytics, type AnalyticsResult } from "../domain/analytics.js";
 
@@ -18,16 +23,13 @@ export interface AnalyticsQuery {
   to?: string;
   projectId?: string;
   siteId?: string;
+  /** How the project ranking is ordered (default: needs attention first). */
+  sort?: RankSort;
 }
 
 const SPAN: Record<Exclude<Period, "custom">, number> = { week: 7, month: 30, quarter: 90, year: 365 };
 
-/** Quote a CSV field, and neutralize spreadsheet formula injection by prefixing a quote. */
-export function csvField(v: unknown): string {
-  let s = String(v ?? "");
-  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
+export { csvField };
 
 /** Analytics over what the caller may see: the project scope is applied before any number is computed. */
 @Injectable()
@@ -37,7 +39,10 @@ export class AnalyticsService {
     private readonly visits: VisitsRepository,
     private readonly observations: ObservationsRepository,
     private readonly actions: ActionsRepository,
+    private readonly training: TrainingRepository,
     private readonly projects: ProjectsRepository,
+    private readonly confidential: ConfidentialService,
+    private readonly settings: SettingsService,
     private readonly access: AccessRepository,
   ) {}
 
@@ -58,15 +63,21 @@ export class AnalyticsService {
     const projectIds = q.projectId ? [q.projectId] : who.allProjects ? undefined : [...who.projectIds];
     return readInTenant(async () => {
       const siteName = q.siteId ? (await this.projects.findSite(q.siteId))?.name : undefined;
-      const [reports, visits, observations, actions, allSites, profiles] = await Promise.all([
+      const [reports, visits, observations, actions, training, allSites, profiles, projectRows, weights, complaints] = await Promise.all([
         this.reports.list(projectIds),
         this.visits.list({ projectIds, from, to }),
         this.observations.list(projectIds),
         this.actions.list(projectIds),
+        this.training.list(projectIds),
         this.projects.sites(),
         this.access.allProfiles(),
+        this.projects.list(),
+        this.settings.current().then((s) => s.ranking.weights),
+        // counts exist only for a person holding a confidential grant; for everyone else the figure is absent, not zero
+        this.confidential.complaintCounts(who),
       ]);
       const sites = new Map(allSites.map((s) => [s.id, s.name]));
+      const actionByObservation = new Map(actions.map((a) => [a.observationId, a]));
       const names = new Map<string, L10n>(profiles.map((p) => [p.userId, { ar: p.nameAr, en: p.nameEn }]));
       return computeAnalytics({
         from,
@@ -106,9 +117,35 @@ export class AnalyticsService {
             site: sites.get(o.siteId) ?? { ar: "—", en: "—" },
             repeatCount: o.repeatCount,
             createdDate: o.createdAt.toISOString().slice(0, 10),
+            itemKey: o.itemKey,
+            severity: o.severity,
+            hasAction: actionByObservation.has(o.id),
+            actionClosed: actionByObservation.get(o.id)?.status === "closed",
           })),
-        actions: actions.map((a) => ({ id: a.id, ref: a.ref, projectId: a.projectId, title: a.title, status: a.status, dueDate: a.dueDate })),
+        actions: actions.map((a) => ({
+          id: a.id,
+          ref: a.ref,
+          projectId: a.projectId,
+          title: a.title,
+          status: a.status,
+          dueDate: a.dueDate,
+          createdDate: a.createdAt.toISOString().slice(0, 10),
+          closedDate: a.closedAt ? a.closedAt.toISOString().slice(0, 10) : null,
+        })),
+        training: training.map((t) => ({
+          id: t.id,
+          projectId: t.projectId,
+          status: t.status,
+          createdDate: t.createdAt.toISOString().slice(0, 10),
+          completedDate: t.completedDate,
+        })),
         inspectors: names,
+        projects: projectRows
+          .filter((p) => !projectIds || projectIds.includes(p.id))
+          .map((p) => ({ projectId: p.id, name: p.name, contractEnd: p.contractEnd, employeesAssigned: p.employeesAssigned })),
+        complaints,
+        rankSort: q.sort ?? "attention",
+        rankWeights: weights,
       });
     });
   }
@@ -134,6 +171,53 @@ export class AnalyticsService {
       [],
       ["Repeated issue", "Reference", "Site", "Times"],
       ...r.repeated.map((x) => [x.title.en, x.ref, x.site.en, x.times]),
+      [],
+      ["Observations", "Total", "Low", "Medium", "High", "With action", "Closed"],
+      [
+        "",
+        r.observationSummary.total,
+        r.observationSummary.bySeverity.low,
+        r.observationSummary.bySeverity.medium,
+        r.observationSummary.bySeverity.high,
+        r.observationSummary.withAction,
+        r.observationSummary.closed,
+      ],
+      [],
+      ["Corrective-action closure", "Closed", "Average days", "Longest days"],
+      ["", r.closure.n, r.closure.avgDays ?? "", r.closure.maxDays ?? ""],
+      [],
+      ["Recurring violation", "Site", "Times", "Last seen"],
+      ...r.recurring.map((x) => [x.title.en, x.site.en, x.times, x.lastDate]),
+      [],
+      ["Training", "Requested", "Approved", "Completed", "Rejected", "Open", "Average days to complete"],
+      ["", r.training.requested, r.training.approved, r.training.completed, r.training.rejected, r.training.open, r.training.avgDaysToComplete ?? ""],
+      [],
+      [
+        "Rank",
+        "Project",
+        "Attention",
+        "Observations",
+        "Improvement",
+        "Complaints",
+        "Contract ends",
+        "Days to contract end",
+        "Employees assigned",
+        "Average score %",
+        "Inspections",
+      ],
+      ...r.ranking.map((x) => [
+        x.rank,
+        x.project.en,
+        x.attention,
+        x.observations,
+        x.improvement ?? "",
+        x.complaints ?? "",
+        x.contractEnd ?? "",
+        x.daysToContractEnd ?? "",
+        x.employeesAssigned ?? "",
+        x.avg ?? "",
+        x.n,
+      ]),
     ];
     return `${String.fromCharCode(0xfeff)}${rows.map((row) => row.map(csvField).join(",")).join("\r\n")}\r\n`;
   }

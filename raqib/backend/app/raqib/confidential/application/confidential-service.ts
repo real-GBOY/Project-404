@@ -30,7 +30,7 @@ const MAX_GRANT_DAYS = 365;
 const MIN_GRANT_HOURS = 1;
 const ENTRY_REASONS = ["investigation", "follow_up", "audit", "grant_review"] as const;
 
-const SENSITIVITY: Record<ConfKind, Sensitivity> = { misconduct: "high", violation: "standard", safety: "standard" };
+const SENSITIVITY: Record<ConfKind, Sensitivity> = { misconduct: "high", violation: "standard", safety: "standard", survey: "standard" };
 
 export interface SubmitInput {
   kind: ConfKind;
@@ -39,6 +39,8 @@ export interface SubmitInput {
   place: string;
   identity: IdentityMode;
   fileIds: string[];
+  /** Set by the surveys module when the report is the answer to a survey. */
+  surveyId?: string;
 }
 
 export interface ConfAccessView {
@@ -119,7 +121,12 @@ export class ConfidentialService {
     const result = await confidentially(async () => {
       const now = this.clock.now();
       const ref = await this.counters.next("CNF", now.getUTCFullYear());
+      // the project is recorded only for a reporter who is not anonymous, from their own roster record: it feeds the project
+      // indicators of people who hold a grant, and it is never shown with the report to anyone else
+      const reporterGuard = input.identity !== "anonymous" ? (await this.projects.guards()).find((g) => g.userId === who.userId) : undefined;
       const id = await this.repo.insertReport({
+        surveyId: input.surveyId ?? null,
+        projectId: reporterGuard?.projectId ?? null,
         ref,
         kind: input.kind,
         sensitivity: SENSITIVITY[input.kind],
@@ -158,6 +165,18 @@ export class ConfidentialService {
     });
     for (const done of afterCommits) await done();
     return result;
+  }
+
+  /**
+   * Complaints per project, as plain counts, for the project indicators. Only a person holding an active grant receives
+   * anything (and only within their grant's scope); everyone else gets `null`, so the existence of complaints is not visible
+   * on dashboards, rankings, exports or searches. No report, text or identity is ever part of this.
+   */
+  async complaintCounts(who: Access): Promise<Map<string, number> | null> {
+    return confidentially(async () => {
+      const grant = await this.repo.activeGrant(who.userId, this.clock.now());
+      return grant ? this.repo.complaintCounts(grant.scope) : null;
+    });
   }
 
   async mine(who: Access): Promise<MineView[]> {

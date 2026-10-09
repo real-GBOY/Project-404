@@ -27,6 +27,8 @@ export interface ActionRecord {
   submittedAt: Date | null;
   closedAt: Date | null;
   overdueNotifiedAt: Date | null;
+  /** Highest escalation level announced so far (0 = none). */
+  escalationLevel: number;
 }
 
 export interface NewAction {
@@ -44,7 +46,7 @@ export interface NewAction {
 export interface ActionEventRecord {
   id: string;
   actionId: string;
-  kind: "created" | "started" | "submitted" | "comment" | "returned" | "closed" | "reassigned";
+  kind: "created" | "started" | "submitted" | "comment" | "returned" | "closed" | "reassigned" | "escalated";
   fromStatus: string | null;
   toStatus: string | null;
   text: string | null;
@@ -82,6 +84,7 @@ type Row = {
   submitted_at: Date | null;
   closed_at: Date | null;
   overdue_notified_at: Date | null;
+  escalation_level: number;
 };
 const toRecord = (r: Row): ActionRecord => ({
   id: r.id,
@@ -101,6 +104,7 @@ const toRecord = (r: Row): ActionRecord => ({
   submittedAt: r.submitted_at,
   closedAt: r.closed_at,
   overdueNotifiedAt: r.overdue_notified_at,
+  escalationLevel: r.escalation_level,
 });
 
 const columns = () =>
@@ -123,6 +127,7 @@ const columns = () =>
     "submitted_at",
     "closed_at",
     "overdue_notified_at",
+    "escalation_level",
   ] as const;
 
 @Injectable()
@@ -178,6 +183,7 @@ export class ActionsRepository {
       submittedAt: Date;
       closedAt: Date;
       overdueNotifiedAt: Date | null;
+      escalationLevel: number;
       responsibleId: string;
       dueDate: string;
     }>,
@@ -189,6 +195,7 @@ export class ActionsRepository {
     if (patch.submittedAt) set.submitted_at = patch.submittedAt;
     if (patch.closedAt) set.closed_at = patch.closedAt;
     if (patch.overdueNotifiedAt !== undefined) set.overdue_notified_at = patch.overdueNotifiedAt;
+    if (patch.escalationLevel !== undefined) set.escalation_level = patch.escalationLevel;
     if (patch.responsibleId) set.responsible_id = patch.responsibleId;
     if (patch.dueDate) set.due_date = patch.dueDate;
     await raqibDb()
@@ -206,6 +213,16 @@ export class ActionsRepository {
       .where("status", "in", ["assigned", "in_progress", "returned"])
       .where("overdue_notified_at", "is", null)
       .where(sql<boolean>`due_date < ${today}::date`)
+      .execute();
+    return rows.map((r) => toRecord(r as unknown as Row));
+  }
+
+  /** Work still with the responsible person (not yet handed to quality review or closed): the actions that can escalate. */
+  async openForEscalation(): Promise<ActionRecord[]> {
+    const rows = await raqibDb()
+      .selectFrom("raqib_corrective_actions")
+      .select(columns())
+      .where("status", "in", ["assigned", "in_progress", "returned"])
       .execute();
     return rows.map((r) => toRecord(r as unknown as Row));
   }

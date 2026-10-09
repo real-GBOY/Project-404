@@ -16,6 +16,7 @@ const schema = z.object({
   to: date.optional(),
   projectId: z.string().min(1).max(80).optional(),
   siteId: z.string().min(1).max(80).optional(),
+  sort: z.enum(["attention", "observations", "improvement", "complaints", "contract", "score"]).optional(),
 });
 
 function parse(q: unknown): AnalyticsQuery {

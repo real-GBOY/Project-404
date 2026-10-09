@@ -129,7 +129,9 @@ describe.skipIf(!hasTestDb)("Raqib forms & inspections", () => {
       expect(res.body.form).toMatchObject({ code: "FRM-SEC-01", version: "2.1" });
       expect(res.body.sections).toHaveLength(5);
       expect(res.body.sections.flatMap((s: Json) => s.items)).toHaveLength(16);
-      expect(res.body.score).toMatchObject({ pct: 67, answered: 4, compliant: 3, nonCompliant: 1 }); // 6 of 9 weight
+      // the inspector sees how far along they are, never the percentage
+      expect(res.body.score).toMatchObject({ pct: null, visible: false, answered: 4, compliant: 3, nonCompliant: 1 });
+      expect((await call("qe", "GET", `/raqib/visits/${v.id}/inspection`)).body.score).toMatchObject({ pct: 67, visible: true }); // 6 of 9 weight
       expect(res.body.editable).toBe(true);
       const codes = (res.body.issues as Json[]).map((i) => i.code);
       expect(codes).toContain("unanswered");
@@ -235,7 +237,10 @@ describe.skipIf(!hasTestDb)("Raqib forms & inspections", () => {
       cur = (await call("insA", "GET", `/raqib/visits/${visitId}/inspection`)).body;
       expect(cur.issues).toEqual([]);
       expect(cur.guards[0]).toMatchObject({ done: true, pct: 80 });
-      expect(cur.score.pct).toBe(92); // 35 of 38 weight in v2.2 (q9 is non-compliant, weight 3)
+      expect(cur.score.pct).toBeNull(); // an inspector never receives the percentage
+      expect(cur.score.visible).toBe(false);
+      const asReviewer = (await call("qe", "GET", `/raqib/visits/${visitId}/inspection`)).body;
+      expect(asReviewer.score.pct).toBe(92); // 35 of 38 weight in v2.2 (q9 is non-compliant, weight 3)
     });
 
     it("keeps evidence private: only people who may read the inspection can read it, never by file id", async () => {

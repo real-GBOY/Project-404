@@ -21,7 +21,7 @@ import { OnboardingRepository, type AccountRequestRecord, type RequestedRole } f
 import type { Page } from "@raqib/raqib/shared/paging.js";
 
 export const DECLARATION_VERSION = "2026-1";
-export const REQUESTABLE_ROLES: RequestedRole[] = ["qe", "pm", "ins", "gs", "guard"];
+export const REQUESTABLE_ROLES: RequestedRole[] = ["qe", "pm", "ins", "gs", "guard", "adm"];
 /** Owner-level roles are provisioned, never approved from a public request. */
 const APPROVABLE: ReadonlySet<string> = new Set(REQUESTABLE_ROLES);
 
@@ -29,8 +29,9 @@ const ROLE_TITLES: Record<RequestedRole, L10n> = {
   qe: { ar: "أخصائي جودة", en: "Quality Specialist" },
   pm: { ar: "مدير مشروع", en: "Project Manager" },
   ins: { ar: "مفتش جودة", en: "Quality Inspector" },
-  gs: { ar: "مشرف حراسات", en: "Guards Supervisor" },
+  gs: { ar: "مشرف أمن", en: "Security Supervisor" },
   guard: { ar: "حارس أمن", en: "Security Guard" },
+  adm: { ar: "موظف إداري", en: "Administrative Staff" },
 };
 
 export interface PublicInfo {

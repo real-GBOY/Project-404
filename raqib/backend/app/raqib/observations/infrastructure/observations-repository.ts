@@ -166,6 +166,18 @@ export class ObservationsRepository {
     );
   }
 
+  /** The form inspection each finding came from (code, name and issue number), for findings that came from an inspection. */
+  async formsOf(inspectionIds: string[]): Promise<Map<string, { formId: string; code: string; name: L10n; issueNo: string }>> {
+    if (!inspectionIds.length) return new Map();
+    const rows = await raqibDb()
+      .selectFrom("raqib_inspections as i")
+      .innerJoin("raqib_forms as f", (j) => j.onRef("f.id", "=", "i.form_id").onRef("f.organization_id", "=", "i.organization_id"))
+      .select(["i.id as inspection_id", "i.issue_no", "f.id as form_id", "f.code", "f.name_ar", "f.name_en"])
+      .where("i.id", "in", inspectionIds)
+      .execute();
+    return new Map(rows.map((r) => [r.inspection_id, { formId: r.form_id, code: r.code, name: { ar: r.name_ar, en: r.name_en }, issueNo: r.issue_no }]));
+  }
+
   /** Earlier findings of the same form item at the same site (the repeat count a new finding starts with). */
   async priorCount(siteId: string, itemKey: string): Promise<number> {
     const r = await raqibDb()

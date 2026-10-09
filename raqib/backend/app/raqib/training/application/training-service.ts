@@ -8,8 +8,9 @@ import { AccessService } from "@raqib/raqib/access/application/access-service.js
 import { ProjectsRepository } from "@raqib/raqib/projects/infrastructure/projects-repository.js";
 import { Counters } from "@raqib/raqib/shared/counters.js";
 import type { L10n } from "@raqib/raqib/shared/l10n.js";
-import { isEscalated, letterForTraining, nextTraining, type TrainingStep } from "../domain/training-state.js";
-import { trainingApproved, trainingCompleted, trainingDecided, trainingRequested, trainingScheduled } from "../events.js";
+import { initialStatus, isEscalated, letterForTraining, nextTraining, type TrainingStep } from "../domain/training-state.js";
+import { trainingApproved, trainingCompleted, trainingDecided, trainingRequested, trainingReviewed, trainingScheduled } from "../events.js";
+import { SettingsService } from "@raqib/raqib/settings/application/settings-service.js";
 import { TrainingRepository, type Priority, type TrainingReason, type TrainingRecord, type TrainingResult } from "../infrastructure/training-repository.js";
 import type { Page } from "@raqib/raqib/shared/paging.js";
 
@@ -33,6 +34,8 @@ export interface TrainingView {
   priority: Priority;
   notes: string;
   status: TrainingRecord["status"];
+  /** Who asked, which decides the approval chain: a supervisor, or a guard for themselves. */
+  requesterKind: TrainingRecord["requesterKind"];
   round: number;
   escalated: boolean;
   requestedBy: L10n | null;
@@ -47,7 +50,7 @@ export interface TrainingView {
 }
 
 export interface CreateTrainingInput {
-  guardId: string;
+  guardId?: string;
   reason: TrainingReason;
   course: string;
   related: string;
@@ -66,8 +69,10 @@ export interface StepInput {
 const PROVIDERS = ["internal", "academy", "external"];
 
 /**
- * Training requests. A guards supervisor asks, the project manager decides, quality schedules and records the
- * result. Every step is one transaction writing the immutable event, audit entry and domain event.
+ * Training requests. A supervisor's request goes to the project manager; a guard's request is reviewed by a supervisor
+ * first (switchable in settings) and then goes to the project manager. Once approved it is with Quality Management,
+ * which schedules the training and records the result. Every step is one transaction writing the immutable event, audit
+ * entry and domain event. A guard sees and asks only for themselves.
  */
 @Injectable()
 export class TrainingService {
@@ -76,14 +81,26 @@ export class TrainingService {
     private readonly projects: ProjectsRepository,
     private readonly access: AccessService,
     private readonly counters: Counters,
+    private readonly settings: SettingsService,
     @Inject(AUDIT_LOGGER) private readonly audit: IAuditLogger,
     @Inject(EVENT_BUS) private readonly events: IEventBus,
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
 
+  /** A guard account's own roster record (the only employee a guard may ask training for). */
+  private async ownGuard(who: Access) {
+    return (await this.projects.guards()).find((g) => g.userId === who.userId) ?? null;
+  }
+
   async list(who: Access, guardId?: string, page?: Page): Promise<TrainingView[]> {
     requireCan(who, "training", "V");
-    return readInTenant(async () => this.views(await this.repo.list(who.allProjects ? undefined : [...who.projectIds], guardId, page), who, false));
+    return readInTenant(async () => {
+      if (who.role === "guard") {
+        const mine = await this.ownGuard(who);
+        return mine ? this.views(await this.repo.list(undefined, mine.id, page), who, false) : [];
+      }
+      return this.views(await this.repo.list(who.allProjects ? undefined : [...who.projectIds], guardId, page), who, false);
+    });
   }
 
   async get(id: string, who: Access): Promise<TrainingView> {
@@ -95,10 +112,13 @@ export class TrainingService {
     const course = input.course.trim();
     if (!course) throw ValidationError("raqib.course_required", "Name the course.");
     const id = await this.uow.transaction(async () => {
-      const g = await this.projects.findGuard(input.guardId);
-      if (!g) throw NotFound("raqib.guard_not_found", "Guard not found.");
-      requireProject(who, g.projectId);
+      const kind = who.role === "guard" ? ("guard" as const) : ("supervisor" as const);
+      // a guard asks for themselves: the employee is their own roster record, never one they name
+      const g = kind === "guard" ? await this.ownGuard(who) : input.guardId ? await this.projects.findGuard(input.guardId) : null;
+      if (!g) throw NotFound("raqib.guard_not_found", kind === "guard" ? "Your account is not linked to a guard record." : "Guard not found.");
+      if (kind === "supervisor") requireProject(who, g.projectId);
       if (g.status !== "active") throw ValidationError("raqib.guard_inactive", "This guard is not active.");
+      const start = initialStatus(kind, (await this.settings.current()).training.guardReviewBySupervisor);
       const ref = await this.counters.next("TR", Number(who.today.slice(0, 4)));
       const id = await this.repo.insert({
         ref,
@@ -110,12 +130,14 @@ export class TrainingService {
         priority: input.priority,
         notes: input.notes.trim(),
         requestedBy: who.userId,
+        requesterKind: kind,
+        status: start,
       });
       await this.repo.appendEvent({
         requestId: id,
         kind: "requested",
         fromStatus: null,
-        toStatus: "pending_pm",
+        toStatus: start,
         text: input.notes.trim() || null,
         ...actorOf(who),
       });
@@ -124,7 +146,7 @@ export class TrainingService {
         action: "raqib.training.requested",
         resourceType: "raqib_training",
         resourceId: id,
-        after: { ref, guardId: g.id, course },
+        after: { ref, guardId: g.id, course, requesterKind: kind, status: start },
       });
       await this.events.publish(trainingRequested({ requestId: id, actorId: who.userId }));
       return id;
@@ -139,11 +161,12 @@ export class TrainingService {
       const t = await this.repo.find(id, true);
       if (!t) throw NotFound("raqib.training_not_found", "Training request not found.");
       requireProject(who, t.projectId);
-      const to = nextTraining(t.status, step);
+      const start = initialStatus(t.requesterKind, (await this.settings.current()).training.guardReviewBySupervisor);
+      const to = nextTraining(t.status, step, start);
       if (!to) throw Conflict("raqib.invalid_transition", "This is not possible in the request's current state.");
-      requireCan(who, "training", letterForTraining(step));
+      requireCan(who, "training", letterForTraining(step, t.status));
       if (step === "resubmit" && t.requestedBy !== who.userId) throw Forbidden("raqib.not_requester", "Only the person who asked can resubmit.");
-      if ((step === "approve" || step === "return" || step === "reject") && t.requestedBy === who.userId)
+      if ((step === "review" || step === "approve" || step === "return" || step === "reject") && t.requestedBy === who.userId)
         throw Forbidden("raqib.self_review", "You cannot decide your own request.");
       const patch: Parameters<TrainingRepository["update"]>[1] = { status: to };
       if (step === "resubmit") {
@@ -165,7 +188,15 @@ export class TrainingService {
       }
       await this.repo.update(t.id, patch);
       const kind = (
-        { approve: "approved", return: "returned", reject: "rejected", resubmit: "resubmitted", schedule: "scheduled", complete: "completed" } as const
+        {
+          review: "reviewed",
+          approve: "approved",
+          return: "returned",
+          reject: "rejected",
+          resubmit: "resubmitted",
+          schedule: "scheduled",
+          complete: "completed",
+        } as const
       )[step];
       await this.repo.appendEvent({
         requestId: t.id,
@@ -185,6 +216,7 @@ export class TrainingService {
       });
       const base = { requestId: t.id, actorId: who.userId };
       if (step === "resubmit") await this.events.publish(trainingRequested(base));
+      if (step === "review") await this.events.publish(trainingReviewed(base));
       if (step === "approve") await this.events.publish(trainingApproved(base));
       if (step === "return" || step === "reject") await this.events.publish(trainingDecided({ ...base, decision: kind, reason: text }));
       if (step === "schedule") await this.events.publish(trainingScheduled(base));
@@ -197,6 +229,11 @@ export class TrainingService {
     if (!can(who, "training", "V")) throw Forbidden("raqib.forbidden", "Your role is not permitted to do this (training:V).");
     const t = await this.repo.find(id);
     if (!t) throw NotFound("raqib.training_not_found", "Training request not found.");
+    if (who.role === "guard") {
+      // a guard reads only their own requests
+      if (t.requestedBy !== who.userId) throw Forbidden("raqib.out_of_scope", "This request is not yours.");
+      return t;
+    }
     if (!inScope(who, t.projectId)) throw Forbidden("raqib.out_of_scope", "This request belongs to a project outside your scope.");
     return t;
   }
@@ -227,6 +264,7 @@ export class TrainingService {
         priority: r.priority,
         notes: r.notes,
         status: r.status,
+        requesterKind: r.requesterKind,
         round: r.round,
         escalated: isEscalated(r.status, r.updatedAt.toISOString(), who.today),
         requestedBy: r.requestedBy ? await nameOf(r.requestedBy) : null,

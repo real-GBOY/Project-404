@@ -10,7 +10,7 @@ import { parsePage, toPage } from "@raqib/raqib/shared/paging.js";
 
 const approveSchema = z
   .object({
-    role: z.enum(["qe", "pm", "ins", "gs", "guard"]),
+    role: z.enum(["qe", "pm", "ins", "gs", "guard", "adm"]),
     projectIds: z.array(z.string().min(1).max(80)).max(50).default([]),
     comment: z.string().trim().max(500).optional(),
   })

@@ -9,6 +9,11 @@ const t = (key: string, ar: [string, string], en: [string, string]): TemplateSee
   { key, locale: "en", channel: "in_app", subject: en[0], body: en[1] },
 ];
 
+const email = (key: string, ar: [string, string], en: [string, string]): TemplateSeed[] => [
+  { key, locale: "ar", channel: "email", subject: ar[0], body: ar[1] },
+  { key, locale: "en", channel: "email", subject: en[0], body: en[1] },
+];
+
 export const RAQIB_TEMPLATES: TemplateSeed[] = [
   ...t("raqib.visit_assigned", ["زيارة جديدة مسندة إليك: {{ref}}", "{{site}} — {{when}}"], ["New visit assigned: {{ref}}", "{{site}} — {{when}}"]),
   ...t("raqib.visit_rescheduled", ["تغيير موعد {{ref}}", "{{site}} — الموعد الجديد {{when}}"], ["{{ref}} rescheduled", "{{site}} — now {{when}}"]),
@@ -46,6 +51,28 @@ export const RAQIB_TEMPLATES: TemplateSeed[] = [
   ...t("raqib.action_returned", ["أُعيد الإجراء {{ref}}", "{{reason}}"], ["{{ref}} returned", "{{reason}}"]),
   ...t("raqib.action_closed", ["أُغلق الإجراء {{ref}}", "{{title}} — أغلقه {{actor}}"], ["{{ref}} closed", "{{title}} — closed by {{actor}}"]),
   ...t("raqib.action_overdue", ["إجراء متأخر: {{ref}}", "{{title}} — كان موعده {{due}}"], ["Action overdue: {{ref}}", "{{title}} — was due {{due}}"]),
+  ...t(
+    "raqib.action_escalated",
+    ["تصعيد: الإجراء {{ref}} لم يُحل منذ {{days}} أيام", "{{title}} — المستوى {{level}}"],
+    ["Escalation: action {{ref}} unresolved for {{days}} days", "{{title}} — level {{level}}"],
+  ),
+  ...t("raqib.observation_high", ["ملاحظة عالية الخطورة {{ref}}", "{{title}} — {{site}}"], ["High-severity observation {{ref}}", "{{title}} — {{site}}"]),
+  ...email(
+    "raqib.action_escalated",
+    [
+      "تصعيد: الإجراء {{ref}} لم يُحل منذ {{days}} أيام",
+      "الإجراء التصحيحي {{ref}} ({{title}}) ما زال دون حل بعد {{days}} أيام. مستوى التصعيد {{level}}. الموعد النهائي: {{due}}.",
+    ],
+    [
+      "Escalation: action {{ref}} unresolved for {{days}} days",
+      "Corrective action {{ref}} ({{title}}) is still unresolved after {{days}} days. Escalation level {{level}}. Due date: {{due}}.",
+    ],
+  ),
+  ...email(
+    "raqib.observation_high",
+    ["ملاحظة عالية الخطورة {{ref}}", "سُجلت ملاحظة عالية الخطورة: {{title}} ({{site}}). المرجع {{ref}}. يرجى الاطلاع عليها فورًا."],
+    ["High-severity observation {{ref}}", "A high-severity observation was recorded: {{title}} ({{site}}). Reference {{ref}}. Please review it now."],
+  ),
   ...t(
     "raqib.training_requested",
     ["طلب تدريب {{ref}} بانتظار قرارك", "{{course}} — {{guard}}"],

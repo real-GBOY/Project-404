@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Param, Post, Put, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Param, Post, Put, Query, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
 import { ZodBody } from "@core/http/zod.pipe.js";
@@ -16,15 +16,22 @@ export class InspectionsController {
 
   @Get()
   @Allow("inspections", "V")
-  get(@Param("visitId") visitId: string, @Caller() who: Access) {
-    return this.service.get(visitId, who);
+  get(@Param("visitId") visitId: string, @Query("formId") formId: string | undefined, @Caller() who: Access) {
+    return this.service.get(visitId, who, formId);
+  }
+
+  /** The forms this visit requires and how far each has got. */
+  @Get("forms")
+  @Allow("visits", "V")
+  async forms(@Param("visitId") visitId: string, @Caller() who: Access) {
+    return { items: await this.service.formsOf(visitId, who) };
   }
 
   @Post("start")
   @HttpCode(200)
   @Allow("inspections", "S")
-  start(@Param("visitId") visitId: string, @Caller() who: Access) {
-    return this.service.start(visitId, who);
+  start(@Param("visitId") visitId: string, @Query("formId") formId: string | undefined, @Caller() who: Access) {
+    return this.service.start(visitId, who, formId);
   }
 
   @Put("answers/:itemId")

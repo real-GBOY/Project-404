@@ -11,6 +11,7 @@ import { ObservationsRepository } from "@raqib/raqib/observations/infrastructure
 import { ProjectsRepository } from "@raqib/raqib/projects/infrastructure/projects-repository.js";
 import { VisitsService } from "@raqib/raqib/visits/application/visits-service.js";
 import { renderReportHtml, type Lang } from "../domain/report-html.js";
+import { BrandingService } from "@raqib/raqib/shared/branding.js";
 import { buildSnapshot, type ReportSnapshot } from "../domain/report-snapshot.js";
 import { ReportsRepository, type ReportRecord } from "../infrastructure/reports-repository.js";
 import type { Page } from "@raqib/raqib/shared/paging.js";
@@ -47,6 +48,7 @@ export class ReportsService {
     private readonly inspections: InspectionsService,
     private readonly projects: ProjectsRepository,
     private readonly evidence: EvidenceRepository,
+    private readonly branding: BrandingService,
     private readonly observations: ObservationsRepository,
     @Inject(FILE_STORAGE) private readonly files: IFileStorage,
     @Inject(AUDIT_LOGGER) private readonly audit: IAuditLogger,
@@ -60,19 +62,33 @@ export class ReportsService {
       const existing = await this.repo.findByVisit(visitId);
       if (existing) return toView(existing);
       const visit = await this.visits.get(visitId, who);
-      const inspection = await this.inspections.get(visitId, who);
+      const all = await this.inspections.getAll(visitId, who);
+      if (!all.length) throw NotFound("raqib.inspection_not_started", "This visit has no inspection.");
+      const inspection = all[0]!;
       const guards = new Map(
         (await this.projects.guards()).filter((g) => visit.guardIds.includes(g.id)).map((g) => [g.id, { employeeNo: g.employeeNo, name: g.name }]),
       );
       const ref = `RPT-${visit.ref.replace(/^VIS-/, "")}`;
-      const violations = await this.observations.forInspection(inspection.id);
-      const snapshot = buildSnapshot({ ref, issuedAt: this.clock.now(), visit, inspection, guards, violations, approver: who });
+      const parts = await Promise.all(all.map(async (i) => ({ inspection: i, violations: await this.observations.forInspection(i.id) })));
+      const shiftName = (await this.visits.shifts()).find((s) => s.key === visit.shift)?.name;
+      const brand = await this.branding.current();
+      const snapshot = buildSnapshot({
+        ref,
+        issuedAt: this.clock.now(),
+        visit,
+        inspections: parts,
+        guards,
+        approver: who,
+        shiftName,
+        org: { name: brand.name, logoFileId: brand.logoFileId },
+      });
+      const scorePct = snapshot.overallPct !== undefined ? snapshot.overallPct : inspection.score.pct;
       const id = await this.repo.insert({
         visitId,
         inspectionId: inspection.id,
         projectId: visit.project.id,
         ref,
-        scorePct: inspection.score.pct,
+        scorePct,
         snapshot,
         approvedBy: who.userId,
         approvedByNameAr: who.nameAr,
@@ -83,7 +99,7 @@ export class ReportsService {
         action: "raqib.report.issued",
         resourceType: "raqib_report",
         resourceId: id,
-        after: { ref, visitId, scorePct: inspection.score.pct },
+        after: { ref, visitId, scorePct, issueNos: all.map((i) => i.issueNo) },
       });
       return toView((await this.repo.find(id))!);
     });
@@ -118,7 +134,8 @@ export class ReportsService {
     const r = await this.readable(id, who);
     const images = new Map<string, string>();
     let n = 0;
-    for (const e of r.snapshot.sections.flatMap((s) => s.items.flatMap((it) => it.evidence))) {
+    const parts = [r.snapshot, ...(r.snapshot.extraForms ?? [])];
+    for (const e of parts.flatMap((p) => p.sections.flatMap((s) => s.items.flatMap((it) => it.evidence)))) {
       if (e.kind !== "photo" || n >= MAX_IMAGES) continue;
       try {
         const rec = await this.evidenceFile(e.id);
@@ -129,6 +146,8 @@ export class ReportsService {
         // an evidence file that cannot be read is simply not embedded
       }
     }
+    const logo = await this.branding.logoOf(r.snapshot.org?.logoFileId);
+    if (logo) images.set("__logo__", logo);
     const html = renderReportHtml(r.snapshot, lang, images);
     await this.auditDownload(r.id, who, lang, Buffer.byteLength(html), false);
     return { name: `${r.ref}-${lang}`, html };

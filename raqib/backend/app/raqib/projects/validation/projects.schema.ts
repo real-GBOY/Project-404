@@ -18,6 +18,9 @@ export const createProjectSchema = z
     managerUserId: z.string().min(1).max(60).nullish(),
     status: z.enum(["active", "attention", "mobilizing", "closed"]).default("mobilizing"),
     firstVisitDate: isoDate.nullish(),
+    contractStart: isoDate.nullish(),
+    contractEnd: isoDate.nullish(),
+    employeesAssigned: z.number().int().min(0).max(100000).nullish(),
   })
   .strict();
 
@@ -29,6 +32,9 @@ export const updateProjectSchema = z
     managerUserId: z.string().min(1).max(60).nullable(),
     status: z.enum(["active", "attention", "mobilizing", "closed"]),
     firstVisitDate: isoDate.nullable(),
+    contractStart: isoDate.nullable(),
+    contractEnd: isoDate.nullable(),
+    employeesAssigned: z.number().int().min(0).max(100000).nullable(),
   })
   .partial()
   .strict();

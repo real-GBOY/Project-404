@@ -3,7 +3,7 @@ import { sql } from "kysely";
 import { getContext } from "@core/kernel/logging/context.js";
 import { raqibDb } from "@raqib/raqib/db/executor.js";
 import { raqibId } from "@raqib/raqib/shared/ids.js";
-import type { TrainingStatus } from "../domain/training-state.js";
+import type { RequesterKind, TrainingStatus } from "../domain/training-state.js";
 import { fetchSize, type Page } from "@raqib/raqib/shared/paging.js";
 
 export type TrainingReason = "low_score" | "repeat_issue" | "incident" | "refresher" | "new_assignment";
@@ -23,6 +23,8 @@ export interface TrainingRecord {
   status: TrainingStatus;
   round: number;
   requestedBy: string | null;
+  /** Who asked: a supervisor, or a guard for themselves (which decides the approval chain). */
+  requesterKind: RequesterKind;
   scheduledDate: string | null;
   provider: string | null;
   completedDate: string | null;
@@ -42,12 +44,14 @@ export interface NewTraining {
   priority: Priority;
   notes: string;
   requestedBy: string | null;
+  requesterKind: RequesterKind;
+  status: TrainingStatus;
 }
 
 export interface TrainingEventRecord {
   id: string;
   requestId: string;
-  kind: "requested" | "returned" | "resubmitted" | "approved" | "rejected" | "scheduled" | "completed";
+  kind: "requested" | "reviewed" | "returned" | "resubmitted" | "approved" | "rejected" | "scheduled" | "completed";
   fromStatus: string | null;
   toStatus: string;
   text: string | null;
@@ -80,6 +84,7 @@ const columns = () =>
     "status",
     "round",
     "requested_by",
+    "requester_kind",
     sql<string | null>`scheduled_date::text`.as("scheduled_date"),
     "provider",
     sql<string | null>`completed_date::text`.as("completed_date"),
@@ -103,6 +108,7 @@ const toRecord = (r: any): TrainingRecord => ({
   status: r.status,
   round: r.round,
   requestedBy: r.requested_by,
+  requesterKind: r.requester_kind,
   scheduledDate: r.scheduled_date,
   provider: r.provider,
   completedDate: r.completed_date,
@@ -130,6 +136,8 @@ export class TrainingRepository {
         priority: t.priority,
         notes: t.notes,
         requested_by: t.requestedBy,
+        requester_kind: t.requesterKind,
+        status: t.status,
       })
       .execute();
     return id;

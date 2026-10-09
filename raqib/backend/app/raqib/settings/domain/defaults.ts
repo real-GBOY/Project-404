@@ -3,7 +3,16 @@
  * organization that has not saved settings yet runs on. Pure data + a merge, no I/O.
  */
 export interface OrgSettings {
-  org: { nameAr: string; nameEn: string; cr: string; cityAr: string; cityEn: string; lang: "ar" | "en"; tz: string };
+  org: {
+    nameAr: string;
+    nameEn: string;
+    cr: string;
+    cityAr: string;
+    cityEn: string;
+    lang: "ar" | "en";
+    tz: string;
+    /** Core file id of the organization logo ("" until the client supplies one). */ logo: string;
+  };
   scoring: { high: number; mid: number; naExcluded: boolean; criticalFail: boolean };
   insp: { latestOnStart: boolean; publishNeedsApproval: boolean; ncNote: boolean; ncEvidence: boolean; lockAfterSubmit: boolean; overdueHours: number };
   attach: { photo: number; video: number; doc: number; types: string; videoProtected: boolean; linkMinutes: number; retention: number; compress: boolean };
@@ -11,6 +20,30 @@ export interface OrgSettings {
   report: { lang: "both" | "ar" | "en"; branding: boolean; evidence: boolean; signatures: boolean; history: boolean; watermark: boolean };
   security: { session: number; mfa: string; pwLen: number; pwRotate: number; lockout: number };
   audit: { retention: number; exportRoles: string };
+  /**
+   * Shifts and scheduling rules. The shift keys below are the ones visits already use; their hours are empty because
+   * the client has not supplied them, and both rules are 0 (off) until the client confirms the approved values.
+   */
+  /** Project ranking weights (0 switches an indicator off). Equal until the client chooses. */
+  ranking: { weights: { observations: number; improvement: number; complaints: number; contract: number } };
+  /** Training request chain. A guard's request is reviewed by a supervisor before the project manager unless this is off. */
+  training: { guardReviewBySupervisor: boolean };
+  /**
+   * Corrective-action escalation. The day thresholds (3, 6, 9), the counting rule and who is told at each level are the
+   * client's to confirm: these defaults count calendar days from assignment and are ASSUMED until they do.
+   */
+  escalation: {
+    enabled: boolean;
+    countFrom: "assigned" | "due";
+    weekend: number[];
+    levels: Array<{ days: number; roles: string[] }>;
+    highSeverity: { immediate: boolean; roles: string[] };
+  };
+  schedule: {
+    shifts: Array<{ key: string; nameAr: string; nameEn: string; start: string; end: string }>;
+    minRestHours: number;
+    maxConsecutiveDays: number;
+  };
 }
 
 export const DEFAULT_SETTINGS: OrgSettings = {
@@ -22,6 +55,7 @@ export const DEFAULT_SETTINGS: OrgSettings = {
     cityEn: "Riyadh",
     lang: "ar",
     tz: "Asia/Riyadh",
+    logo: "",
   },
   scoring: { high: 85, mid: 75, naExcluded: true, criticalFail: false },
   insp: { latestOnStart: true, publishNeedsApproval: true, ncNote: true, ncEvidence: true, lockAfterSubmit: true, overdueHours: 24 },
@@ -40,6 +74,28 @@ export const DEFAULT_SETTINGS: OrgSettings = {
   report: { lang: "both", branding: true, evidence: true, signatures: true, history: true, watermark: true },
   security: { session: 30, mfa: "qm,qe,pm,gm", pwLen: 12, pwRotate: 90, lockout: 5 },
   audit: { retention: 7, exportRoles: "qm,gm" },
+  ranking: { weights: { observations: 1, improvement: 1, complaints: 1, contract: 1 } },
+  training: { guardReviewBySupervisor: true },
+  escalation: {
+    enabled: true,
+    countFrom: "assigned",
+    weekend: [],
+    levels: [
+      { days: 3, roles: ["responsible", "pm"] },
+      { days: 6, roles: ["pm", "qm"] },
+      { days: 9, roles: ["qm", "gm"] },
+    ],
+    highSeverity: { immediate: true, roles: ["pm", "qm"] },
+  },
+  schedule: {
+    shifts: [
+      { key: "morning", nameAr: "صباحية", nameEn: "Morning", start: "", end: "" },
+      { key: "evening", nameAr: "مسائية", nameEn: "Evening", start: "", end: "" },
+      { key: "night", nameAr: "ليلية", nameEn: "Night", start: "", end: "" },
+    ],
+    minRestHours: 0,
+    maxConsecutiveDays: 0,
+  },
 };
 
 type Json = Record<string, unknown>;

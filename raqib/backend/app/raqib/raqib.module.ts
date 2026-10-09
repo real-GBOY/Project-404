@@ -23,6 +23,9 @@ import { ReportsModule } from "@raqib/raqib/reports/reports.module.js";
 import { ReviewModule } from "@raqib/raqib/review/review.module.js";
 import { AccountModule } from "@raqib/raqib/account/account.module.js";
 import { SettingsModule } from "@raqib/raqib/settings/settings.module.js";
+import { CorrectionsModule } from "@raqib/raqib/corrections/corrections.module.js";
+import { ScoringModule } from "@raqib/raqib/scoring/scoring.module.js";
+import { SurveysModule } from "@raqib/raqib/surveys/surveys.module.js";
 import { ProvisioningModule } from "@raqib/raqib/provisioning/provisioning.module.js";
 
 /**
@@ -44,6 +47,9 @@ import { ProvisioningModule } from "@raqib/raqib/provisioning/provisioning.modul
     RaqibNotificationsModule,
     JobsModule,
     FormsModule,
+    ScoringModule,
+    CorrectionsModule,
+    SurveysModule,
     InspectionsModule,
     EvidenceModule,
     ReviewModule,

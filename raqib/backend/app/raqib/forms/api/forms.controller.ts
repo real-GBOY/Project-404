@@ -1,4 +1,6 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Query, Res, UseGuards } from "@nestjs/common";
+import type { FastifyReply } from "fastify";
+import { ValidationError } from "@core/kernel/errors.js";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
 import { ZodBody } from "@core/http/zod.pipe.js";
@@ -29,6 +31,21 @@ export class FormsController {
   @Allow("forms", "V")
   async list(@Caller() who: Access) {
     return { items: await this.service.list(who), capabilities: this.service.capabilities(who) };
+  }
+
+  /** A blank, print-ready copy of the form (`?lang=ar|en`, optional `versionId` for a specific version). */
+  @Get(":id/blank")
+  @Allow("visits", "V")
+  async blank(
+    @Param("id") id: string,
+    @Query("lang") lang: string | undefined,
+    @Query("versionId") versionId: string | undefined,
+    @Caller() who: Access,
+    @Res() reply: FastifyReply,
+  ) {
+    if (lang !== undefined && lang !== "ar" && lang !== "en") throw ValidationError("raqib.invalid_language", "Language must be ar or en.");
+    const f = await this.service.blank(id, lang ?? "en", versionId, who);
+    reply.header("Content-Type", "text/html; charset=utf-8").header("Cache-Control", "private, no-store").send(f.html);
   }
 
   @Get(":id")

@@ -45,7 +45,7 @@ export const APPLICABLE: Record<ModuleKey, string> = {
   settings: "VE",
 };
 
-export const ROLE_KEYS = ["qm", "qe", "pm", "ins", "gs", "guard", "gm"] as const;
+export const ROLE_KEYS = ["qm", "qe", "pm", "ins", "gs", "guard", "gm", "adm"] as const;
 export type RoleKey = (typeof ROLE_KEYS)[number];
 
 export type Template = Record<ModuleKey, string>;
@@ -62,7 +62,7 @@ export const DEFAULT_TEMPLATES: Record<RoleKey, Template> = {
     guardEval: "VRPX",
     observations: "VAEX",
     actions: "VAERPX",
-    training: "VERPX",
+    training: "VERX",
     reports: "VADX",
     analytics: "VX",
     forms: "VAEPX",
@@ -87,8 +87,13 @@ export const DEFAULT_TEMPLATES: Record<RoleKey, Template> = {
   pm: { ...none(), projects: "VD", visits: "V", inspections: "VD", observations: "V", actions: "VES", training: "VP", reports: "VADX", analytics: "VX" },
   ins: { ...none(), visits: "V", inspections: "VAES", guardEval: "VAES", observations: "A" },
   gs: { ...none(), guardEval: "V", observations: "V", training: "VAES" },
-  guard: none(),
-  gm: { ...none(), projects: "V", reports: "VDX", analytics: "VX", audit: "VX" },
+  // Administrative staff keep the schedule and print/export it. Assumed default (confirm with the client); the
+  // organization can change it in the permission templates like any other role.
+  adm: { ...none(), projects: "V", visits: "VAEDX" },
+  // a guard asks for training for themselves and reads only their own requests (an object rule in the service)
+  guard: { ...none(), training: "VAE" },
+  // settings are read-only for the General Manager: enough to open the scoring rules and name the scoring manager
+  gm: { ...none(), projects: "V", reports: "VDX", analytics: "VX", audit: "VX", settings: "V" },
 };
 
 /** Roles whose project scope is every project in the organization (no assignment rows needed). */
