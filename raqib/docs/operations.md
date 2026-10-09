@@ -200,3 +200,17 @@ depends on a Chromium or a rendering service.
 
 Uploads nobody attached are cleaned up by the nightly job: a file (or a started upload) older than 48 hours that is not referenced by
 evidence, a confidential attachment or a message is deleted from the database and from R2 (audited as `raqib.retention.uploads_purged`).
+
+## Checking a live deployment
+
+`web/e2e/90-live-smoke.spec.ts` is a read-only check you can run against the live demo (it signs in as each demo role, opens the main
+screens, reads the key API figures and checks the Arabic phone layout; it writes nothing). The rest of the e2e suite **creates data**: never
+point it at a showcase server.
+
+```bash
+cd raqib/web
+E2E_WEB=https://raqib-web.vercel.app E2E_API=https://raqib.162-35-28-116.sslip.io npx playwright test e2e/90-live-smoke.spec.ts
+```
+
+To bring an already seeded demo up to date without resetting it (and check it is consistent), run `npm run demo:upgrade` in `raqib/backend`
+with the server's environment (`-- --check` only checks).

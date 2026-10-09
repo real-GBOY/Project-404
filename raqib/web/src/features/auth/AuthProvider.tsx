@@ -5,7 +5,7 @@ import type { Me, SecurityStatus } from "@/api/types";
 import { isNetworkError } from "@/services/offline/outbox";
 import { offline } from "@/services/offline/session";
 import { useSyncState } from "@/hooks/use-sync-state";
-import { ApiError, setSessionExpiredHandler, tokenStore } from "@/services/http";
+import { ApiError, http, setSessionExpiredHandler, tokenStore } from "@/services/http";
 import { AuthContext, type AuthContextValue, type AuthStatus } from "./auth-context";
 import { useIdleSignout } from "./use-idle-signout";
 
@@ -73,8 +73,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [online, loadMe]);
 
   useEffect(() => {
-    if (tokenStore.getRefresh()) void loadMe().catch(() => undefined);
-    else setStatus("unauthenticated");
+    if (!tokenStore.getRefresh()) return void setStatus("unauthenticated");
+    void (async () => {
+      // a reload starts without an access token: renew it first, rather than send a request that is certain to be refused
+      if (!tokenStore.getAccess()) await http.refresh().catch(() => undefined);
+      await loadMe().catch(() => undefined);
+    })();
   }, [loadMe]);
 
   useEffect(() => {
