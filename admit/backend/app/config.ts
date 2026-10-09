@@ -42,6 +42,8 @@ const schema = z.object({
     .refine((v) => v === "" || Buffer.from(v, "base64").length === 32, "must be 32 bytes, base64 encoded"),
   /** Origin the customer web app is served from; magic links in emails and tickets point here. */
   publicUrl: z.string().trim().default(""),
+  /** Public origin of this API, used for the QR image URLs inside emails (an email client cannot reach localhost). */
+  apiUrl: z.string().trim().default(""),
   /** How long a magic link (booking status / tickets) stays valid. */
   accessLinkDays: z.coerce.number().int().min(1).max(365).default(30),
   /** Largest payment-proof file, in bytes. */
@@ -59,6 +61,7 @@ export function readAdmitConfig(env: NodeJS.ProcessEnv = process.env): AdmitConf
     trustedProxyHops: env.ADMIT_TRUSTED_PROXY_HOPS,
     ticketKey: env.ADMIT_TICKET_KEY,
     publicUrl: env.ADMIT_PUBLIC_URL,
+    apiUrl: env.ADMIT_API_URL,
     accessLinkDays: env.ADMIT_ACCESS_LINK_DAYS,
     proofMaxBytes: env.ADMIT_PROOF_MAX_BYTES,
   });
