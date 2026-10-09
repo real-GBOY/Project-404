@@ -234,7 +234,8 @@ export function inspectionWorkspace(c: Ctx, insp: Inspection, visit: Visit | und
             canEdit: !q.locked,
             lockTxt: i.S("lockedItem"),
             text: i.L(q.text),
-            wTxt: i.S("weight", { w: q.weight }),
+            // weights belong to the scoring rules, which the inspector does not see
+            wTxt: c.me.role === "ins" ? "" : i.S("weight", { w: q.weight }),
             border: q.flagged
               ? C.status.warning.borderStrong
               : nc

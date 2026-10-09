@@ -141,7 +141,7 @@ export function overviewGuard(c: Ctx) {
       actions: [
         { label: i.S("ck_confidential"), sub: i.S("ck_confidential_sub"), go: preset() },
         { label: i.S("ck_complaint"), sub: i.S("ck_complaint_sub"), go: preset() },
-        { label: i.S("ck_survey"), sub: i.S("ck_survey_sub"), go: preset() },
+        { label: i.S("ck_survey"), sub: i.S("ck_survey_sub"), go: () => c.go("surveys") },
       ],
       responses: [],
       hasResp: false,

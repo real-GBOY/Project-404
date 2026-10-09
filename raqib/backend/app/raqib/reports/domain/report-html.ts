@@ -82,6 +82,8 @@ export function renderReportHtml(s: ReportSnapshot, lang: Lang, images: Map<stri
   const headline = s.overallPct !== undefined ? s.overallPct : s.score.pct;
 
   const renderPart = (p: FormPart, index: number): string => {
+    // item weights belong to the earlier scoring; under deduction scoring the severity amounts decide, so no weight column
+    const showW = !p.scoring;
     const sections = p.sections
       .map((sec, si) => {
         const rows = sec.items
@@ -96,10 +98,10 @@ export function renderReportHtml(s: ReportSnapshot, lang: Lang, images: Map<stri
               .filter((e) => !(e.kind === "photo" && images.has(e.id)))
               .map((e) => `<span class="chip">${esc(e.name)}</span>`)
               .join("");
-            return `<tr><td class="c-num">${esc(it.num)}</td><td><div>${L(it.text)}</div>${it.note ? `<div class="note">${T(COMMON.note)}: ${esc(it.note)}</div>` : ""}${imgs ? `<div class="imgs">${imgs}</div>` : ""}${other ? `<div>${other}</div>` : ""}</td><td class="c-ans" style="color:${color}">${esc(ans)}</td><td class="c-w">${it.weight}</td></tr>`;
+            return `<tr><td class="c-num">${esc(it.num)}</td><td><div>${L(it.text)}</div>${it.note ? `<div class="note">${T(COMMON.note)}: ${esc(it.note)}</div>` : ""}${imgs ? `<div class="imgs">${imgs}</div>` : ""}${other ? `<div>${other}</div>` : ""}</td><td class="c-ans" style="color:${color}">${esc(ans)}</td>${showW ? `<td class="c-w">${it.weight}</td>` : ""}</tr>`;
           })
           .join("");
-        return `<h3>${si + 1}. ${L(sec.title)}</h3><table><thead><tr><th class="c-num">${T(COMMON.no)}</th><th>${T(COMMON.requirement)}</th><th class="c-ans">${T(COMMON.result)}</th><th class="c-w">${T(COMMON.weight)}</th></tr></thead><tbody>${rows}</tbody></table>`;
+        return `<h3>${si + 1}. ${L(sec.title)}</h3><table><thead><tr><th class="c-num">${T(COMMON.no)}</th><th>${T(COMMON.requirement)}</th><th class="c-ans">${T(COMMON.result)}</th>${showW ? `<th class="c-w">${T(COMMON.weight)}</th>` : ""}</tr></thead><tbody>${rows}</tbody></table>`;
       })
       .join("");
 

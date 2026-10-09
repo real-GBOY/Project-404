@@ -31,6 +31,8 @@ export const STRINGS_PROJECTS: Record<string, readonly [string, string]> = {
   pf_regionEn: ["المنطقة بالإنجليزية", "Region (English)"],
   pf_manager: ["مدير المشروع", "Project manager"],
   pf_status: ["الحالة", "Status"],
+  projContract: ["العقد: {a} ← {b}", "Contract: {a} → {b}"],
+  projEmployees: ["{n} موظفًا مسندًا", "{n} employees assigned"],
   pf_contractStart: ["بداية العقد", "Contract start"],
   pf_contractEnd: ["نهاية العقد", "Contract end"],
   pf_employees: ["عدد الموظفين المسندين", "Employees assigned"],

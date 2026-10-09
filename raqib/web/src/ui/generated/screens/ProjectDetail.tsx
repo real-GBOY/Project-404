@@ -80,6 +80,7 @@ export function ProjectDetail({ vm }: { vm: VM }) {
               <span>{pd.city}</span>
               <span>{pd.sites}</span>
               <span>{pd.guards}</span>
+              {pd.contract ? <span>{pd.contract}</span> : null}
             </div>
           </div>
           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>

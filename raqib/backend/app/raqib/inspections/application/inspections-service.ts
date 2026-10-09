@@ -514,7 +514,13 @@ export class InspectionsService {
         if (!flagged) throw Conflict("raqib.item_locked", "Only the items the reviewer sent back can be changed.");
       }
       if (patch.value === "x" && !item.na) throw ValidationError("raqib.na_not_allowed", "Not applicable is not allowed for this item.");
-      await this.repo.upsertAnswer(i.id, itemId, patch, v.status === "returned" ? v.round + 1 : v.round, who.userId);
+      // The screen shows "Medium" until the inspector picks another level, so a violation is stored as Medium unless a level
+      // was chosen: otherwise the screen and the deduction disagree (a violation that deducts nothing).
+      let applied = patch;
+      if (patch.value === "n" && patch.severity === undefined && !(await this.repo.answers(i.id)).get(itemId)?.severity) {
+        applied = { ...patch, severity: "medium" };
+      }
+      await this.repo.upsertAnswer(i.id, itemId, applied, v.status === "returned" ? v.round + 1 : v.round, who.userId);
       return this.assemble(i, v, who);
     });
   }

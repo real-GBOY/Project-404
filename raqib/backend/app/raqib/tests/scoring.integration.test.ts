@@ -110,6 +110,11 @@ describe.skipIf(!hasTestDb)("Raqib deduction scoring", () => {
       const items: Json[] = started.sections.flatMap((s: Json) => s.items);
       for (const it of items) await call("insA", "PUT", `/raqib/visits/${visitId}/inspection/answers/${it.id}`, { value: it.key === "q9" ? "n" : "c" });
       const q9 = items.find((i) => i.key === "q9")!;
+      // a violation the inspector has not graded is stored as Medium, which is what the screen shows, so it never deducts nothing
+      const graded = ((await call("insA", "GET", `/raqib/visits/${visitId}/inspection`)).body.sections as Json[])
+        .flatMap((x) => x.items as Json[])
+        .find((i) => i.key === "q9")!;
+      expect(graded.severity).toBe("medium");
       await call("insA", "PUT", `/raqib/visits/${visitId}/inspection/answers/${q9.id}`, { note: "3 of 14 checkpoints were not scanned", severity: "high" });
       const fileId = await upload("insA");
       expect((await call("insA", "POST", "/raqib/evidence", { fileId, inspectionId, itemId: q9.id })).status).toBe(201);

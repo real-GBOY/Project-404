@@ -96,6 +96,18 @@ export function projectDetail(c: Ctx, p: Project) {
       mgr: p.manager ? i.L(p.manager.name) : "—",
       city: i.L(p.city) + " · " + i.L(p.region),
       guards: i.S("nGuards", { n: p.guardCount }),
+      // the contract window and head-count the client keeps for ranking
+      contract: [
+        p.contractStart && p.contractEnd
+          ? i.S("projContract", {
+              a: i.fd(p.contractStart, "full"),
+              b: i.fd(p.contractEnd, "full"),
+            })
+          : "",
+        p.employeesAssigned == null ? "" : i.S("projEmployees", { n: p.employeesAssigned }),
+      ]
+        .filter(Boolean)
+        .join(" · "),
       sites: i.S("nSites", { n: p.sites.length }),
       tabs,
       // Sites and visits are real data and always show; the figures tabs wait for the inspection results
