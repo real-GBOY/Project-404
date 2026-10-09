@@ -13,7 +13,17 @@ const VISIT_SCREENS = [
   "review",
   "report",
 ];
-const GUARD_SCREENS = ["guards", "guard", "visit", "inspect", "review", "training", "trainingD"];
+const GUARD_SCREENS = [
+  "guards",
+  "guard",
+  "visits",
+  "project",
+  "visit",
+  "inspect",
+  "review",
+  "training",
+  "trainingD",
+];
 
 /**
  * Which server resources a screen needs. A resource is wanted only when the person's template can read it AND the screen

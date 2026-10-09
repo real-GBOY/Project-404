@@ -52,6 +52,9 @@ export interface VisitView {
   forms: Array<{ id: string; code: string; name: L10n }>;
   /** Stored score of the submitted inspection (null until submitted, or when not scoreable). */
   scorePct: number | null;
+  /** Violations and evidence on the visit's inspections (null until an inspection has started). */
+  nonCompliant: number | null;
+  evidence: number | null;
   inspectionId: string | null;
   history: Array<{
     action: string;
@@ -111,7 +114,7 @@ export class VisitsService {
     if (!records.length) return [];
     const s = await this.settings.current();
     const now = this.clock.now();
-    const [projects, sites, areas, guards, events, profiles, scores, formIds, allForms] = await Promise.all([
+    const [projects, sites, areas, guards, events, profiles, scores, counts, formIds, allForms] = await Promise.all([
       this.projects.list(),
       this.projects.sites(),
       this.projects.areasBySite(),
@@ -119,6 +122,7 @@ export class VisitsService {
       this.repo.events(records.map((r) => r.id)),
       this.people.findMany([...new Set(records.map((r) => r.inspectorId).filter((x): x is string => !!x))]),
       this.repo.scores(records.map((r) => r.id)),
+      this.repo.findingCounts(records.map((r) => r.id)),
       this.repo.formIds(records.map((r) => r.id)),
       this.forms.forms(),
     ]);
@@ -153,6 +157,8 @@ export class VisitsService {
           return f ? [{ id, code: f.code, name: f.name }] : [];
         }),
         scorePct: canSeeScore(who) ? (scores.get(r.id)?.scorePct ?? null) : null,
+        nonCompliant: scores.has(r.id) ? (counts.get(r.id)?.nonCompliant ?? 0) : null,
+        evidence: scores.has(r.id) ? (counts.get(r.id)?.evidence ?? 0) : null,
         inspectionId: scores.get(r.id)?.inspectionId ?? null,
         history: (events.get(r.id) ?? []).map((e: VisitEventRecord) => ({
           action: e.action,

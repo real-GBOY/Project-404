@@ -40,9 +40,13 @@ export function reviewDetail(c: Ctx, insp: Inspection, v: Visit) {
   const last = (a: string) => v.history.filter((h) => h.action === a).pop();
   const roleName = (r: string | null) => (r ? i.L(ROLE_LABEL[r as keyof typeof ROLE_LABEL]) : "");
 
+  // under deduction scoring the severity amounts decide the score, so the old per-item weights and section percentages do not apply
+  const deductionMode = insp.score.deductions !== undefined;
+  const cost = new Map((insp.score.deductions ?? []).map((d) => [d.itemKey, d.amount]));
   const sections = insp.sections.map((sec, si) => {
     let num = 0;
     let den = 0;
+    let secCost = 0;
     const items = sec.items.map((it) => {
       if (it.answer === "c") {
         num += it.weight;
@@ -60,12 +64,16 @@ export function reviewDetail(c: Ctx, insp: Inspection, v: Visit) {
       const obs = (c.data.observations ?? []).find(
         (o) => o.visit?.id === v.id && o.itemKey === it.key,
       );
+      if (deductionMode && it.answer === "n") secCost += cost.get(it.key) ?? 0;
       return {
         num: it.num,
         text: i.L(it.text),
-        w: i.S("weight", { w: it.weight }),
-        pts:
-          it.answer === "c"
+        w: deductionMode ? "" : i.S("weight", { w: it.weight }),
+        pts: deductionMode
+          ? it.answer === "n"
+            ? `−${cost.get(it.key) ?? 0}`
+            : "—"
+          : it.answer === "c"
             ? `${it.weight}/${it.weight}`
             : it.answer === "n"
               ? `0/${it.weight}`
@@ -106,8 +114,8 @@ export function reviewDetail(c: Ctx, insp: Inspection, v: Visit) {
     const pct = den ? Math.round((num / den) * 100) : null;
     return {
       title: `${si + 1}. ${i.L(sec.title)}`,
-      scoreTxt: pct == null ? "—" : `${pct}%`,
-      scoreC: scoreColor(pct),
+      scoreTxt: deductionMode ? (secCost ? `−${secCost}` : "") : pct == null ? "—" : `${pct}%`,
+      scoreC: deductionMode ? C.status.danger.fg : scoreColor(pct),
       items,
     };
   });
@@ -252,12 +260,16 @@ export function reviewDetail(c: Ctx, insp: Inspection, v: Visit) {
         c.openModal("approve", {
           vid: v.id,
           ref: v.ref,
-          summary: i.S("m_summary", {
-            p: sc.pct ?? "—",
-            c: sc.compliant,
-            n: sc.nonCompliant,
-            e: sc.evidence,
-          }),
+          // several forms: the figures of the form on screen would misstate the visit, so give the visit's own score
+          summary:
+            v.forms.length > 1
+              ? i.S("m_summary_visit", { p: v.scorePct ?? "—", f: v.forms.length })
+              : i.S("m_summary", {
+                  p: sc.pct ?? "—",
+                  c: sc.compliant,
+                  n: sc.nonCompliant,
+                  e: sc.evidence,
+                }),
         }),
       forward: () => c.openModal("forward", { vid: v.id, ref: v.ref }),
       ret: () =>

@@ -46,8 +46,8 @@ export function reviewQueue(c: Ctx, mine: boolean) {
       const ago = last ? i.days(last.at, `${me.today}T00:00`) : 0;
       return {
         ...visitRow(c, v),
-        nc: "—",
-        ev: "—",
+        nc: v.nonCompliant == null ? "—" : String(v.nonCompliant),
+        ev: v.evidence == null ? "—" : String(v.evidence),
         score: v.scorePct == null ? "—" : `${v.scorePct}%`,
         scoreC: scoreColor(v.scorePct),
         at: last ? i.fd(last.at, "dt") : "—",

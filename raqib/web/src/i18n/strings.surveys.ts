@@ -49,5 +49,11 @@ export const STRINGS_SURVEYS: Record<string, readonly [string, string]> = {
   sf_org_logo: ["الشعار (PNG أو JPEG)", "Logo (PNG or JPEG)"],
   logoUpload: ["رفع الشعار", "Upload logo"],
   logoReplace: ["استبدال الشعار", "Replace logo"],
+  m_summary_visit: ["درجة الزيارة {p}% عبر {f} نماذج", "Visit score {p}% across {f} forms"],
+  f_guardsOnShift: ["الحراس على الوردية", "Guards on shift"],
+  f_guardsOnShiftHint: [
+    "اختياري: يُقيَّمون أثناء التفتيش.",
+    "Optional: they are evaluated during the inspection.",
+  ],
   sv_remove: ["إزالة", "Remove"],
 };

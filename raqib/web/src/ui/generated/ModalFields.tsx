@@ -281,6 +281,46 @@ export function ModalFields({ vm }: { vm: VM }) {
               ))}
             </div>
           ) : null}
+          {md.hasGuardChecks ? (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "4px",
+                fontSize: "13px",
+                fontWeight: "500",
+              }}
+            >
+              {t.f_guardsOnShift}
+              <span style={{ fontWeight: "400", color: C.text.secondary, fontSize: "12px" }}>
+                {t.f_guardsOnShiftHint}
+              </span>
+              <div style={{ maxHeight: "150px", overflowY: "auto" }}>
+                {(md.guardChecks || []).map((gc: any, __i: number) => (
+                  <Fragment key={__i}>
+                    <label
+                      style={{
+                        display: "flex",
+                        gap: "10px",
+                        alignItems: "center",
+                        minHeight: "32px",
+                        fontWeight: "400",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={gc.on}
+                        onChange={gc.toggle}
+                        style={{ width: "18px", height: "18px", accentColor: C.brand.primary }}
+                      />
+                      {gc.label}
+                    </label>
+                  </Fragment>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </>
       ) : null}
       {md.isSched ? (

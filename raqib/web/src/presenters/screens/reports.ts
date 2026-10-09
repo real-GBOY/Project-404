@@ -1,4 +1,4 @@
-import type { Report } from "@/api/types";
+import type { Report, SnapshotFormPart } from "@/api/types";
 import { scoreColor } from "../common";
 import type { Ctx } from "../context";
 import { ROLE_LABEL } from "./users";
@@ -61,7 +61,22 @@ export function reportDetail(c: Ctx, r: Report) {
   const S = (k: string, v?: Record<string, string | number>) => i.S(k, v, lang);
   const L = (x: Parameters<typeof i.L>[0]) => i.L(x, lang);
   const s = r.snapshot;
-  const pct = s.score.pct;
+  // a visit can have several forms: the first is described by the top-level fields, the others by `extraForms`
+  const parts: SnapshotFormPart[] = [
+    {
+      issueNo: s.issueNo ?? "",
+      form: s.form,
+      round: s.round,
+      score: s.score,
+      ...(s.scoring ? { scoring: s.scoring } : {}),
+      sections: s.sections,
+      violations: s.violations ?? [],
+    },
+    ...(s.extraForms ?? []),
+  ];
+  const cur = parts[Math.min(Math.max(ui.rptForm, 0), parts.length - 1)]!;
+  const pct = cur.score.pct;
+  const visitPct = s.overallPct ?? s.score.pct;
   const rating =
     pct == null
       ? S("rp_rating_none")
@@ -70,14 +85,16 @@ export function reportDetail(c: Ctx, r: Report) {
         : pct >= 75
           ? S("rp_rating_mid")
           : S("rp_rating_low");
-  const rows = s.sections.flatMap((sec, si) => [
+  const deductionOf = (num: string) => cur.scoring?.deductions.find((d) => d.num === num)?.amount;
+  const rows = cur.sections.flatMap((sec, si) => [
     { isSec: true, isQ: false, label: `${si + 1}. ${L(sec.title)}` },
     ...sec.items.map((it) => ({
       isSec: false,
       isQ: true,
       num: it.num,
       text: L(it.text),
-      w: it.weight,
+      // under deduction scoring the severity amounts decide, so there is no item weight to show
+      w: cur.scoring ? "" : it.weight,
       res: it.answer ? S(`ans_${it.answer}`) : "—",
       resC:
         it.answer === "c"
@@ -85,11 +102,19 @@ export function reportDetail(c: Ctx, r: Report) {
           : it.answer === "n"
             ? C.status.danger.fg
             : C.text.secondary,
-      pts: it.answer === "c" ? it.weight : it.answer === "n" ? 0 : "—",
+      pts: cur.scoring
+        ? it.answer === "n"
+          ? `−${deductionOf(it.num) ?? 0}`
+          : "—"
+        : it.answer === "c"
+          ? it.weight
+          : it.answer === "n"
+            ? 0
+            : "—",
       note: it.note,
     })),
   ]);
-  const evid = s.sections.flatMap((sec) =>
+  const evid = cur.sections.flatMap((sec) =>
     sec.items.flatMap((it) =>
       it.evidence.map((e) => ({
         kind: e.kind,
@@ -144,23 +169,35 @@ export function reportDetail(c: Ctx, r: Report) {
         [S("rp_inspector"), s.inspector ? L(s.inspector) : "—"],
         [S("rp_date"), `${i.fd(s.date, "full", lang)} ${i.ft(s.time, lang)}`],
         [S("rp_signer_approver"), L(s.approvedBy.name)],
-        [S("rp_score"), pct == null ? "—" : `${pct}%`],
+        [S("rp_score"), visitPct == null ? "—" : `${visitPct}%`],
       ].map(([k, v]) => ({ k, v })),
       shiftLabel: S("rp_shift"),
       shift: S(`sh_${s.shift}`),
-      versionNote: S("rp_version", { f: s.form.code, v: s.form.version }),
+      versionNote: S("rp_version", { f: cur.form.code, v: cur.form.version }),
+      hasForms: parts.length > 1,
+      formTabs: parts.map((p, k) => ({
+        label: `${p.form.code}${p.issueNo ? ` · ${p.issueNo}` : ""}`,
+        set: () => c.set({ rptForm: k }),
+        bg: cur === p ? C.brand.primary : C.surface.white,
+        fg: cur === p ? C.surface.white : C.text.ink,
+      })),
       score: pct == null ? "—" : `${pct}%`,
       scoreC: scoreColor(pct),
       rating,
       counts: S("rp_counts", {
-        c: s.score.compliant,
-        n: s.score.nonCompliant,
-        x: s.score.na,
-        e: s.score.evidence,
+        c: cur.score.compliant,
+        n: cur.score.nonCompliant,
+        x: cur.score.na,
+        e: cur.score.evidence,
       }),
       rows,
-      hasViol: false,
-      viol: [],
+      hasViol: cur.violations.length > 0,
+      viol: cur.violations.map((v) => ({
+        num: v.num,
+        text: L(v.text),
+        note: v.note,
+        sev: S(`sev_${v.severity}`),
+      })),
       hasCas: false,
       cas: [],
       noCas: false,

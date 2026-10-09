@@ -64,6 +64,8 @@ export interface Visit {
   /** Forms this visit requires, in order (empty = the default site form). */
   forms: Array<{ id: string; code: string; name: L10n }>;
   scorePct: number | null;
+  nonCompliant: number | null;
+  evidence: number | null;
   inspectionId: string | null;
   history: VisitHistoryEntry[];
   createdAt: string;
@@ -80,6 +82,8 @@ export interface CreateVisitInput {
   date: string;
   time: string;
   formIds?: string[];
+  /** The guards on shift, who are then evaluated during the inspection (they must belong to the project). */
+  guardIds?: string[];
   reason: string;
 }
 

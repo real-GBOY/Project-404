@@ -95,6 +95,8 @@ export interface Inspection {
     evidence: number;
     /** False for roles that only inspect: the percentage is withheld by the server. */
     visible: boolean;
+    /** Under deduction scoring: what each violation costs (only for roles that may see the score). */
+    deductions?: Array<{ itemKey: string; severity: string | null; amount: number }>;
   };
   issues: InspectionIssue[];
   editable: boolean;

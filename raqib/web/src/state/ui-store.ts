@@ -94,6 +94,7 @@ export interface UiState {
   anDd: string;
   recentQ: string[];
   rlang: "ar" | "en";
+  rptForm: number;
   rtab: string;
   fb: { ver?: string; sec?: number };
   /** Unsaved edits to a form draft (shown immediately, sent after a pause). */
@@ -163,6 +164,7 @@ const initial = (): UiState => ({
   anDd: "",
   recentQ: [],
   rlang: "en",
+  rptForm: 0,
   rtab: "pending_review",
   fb: {},
   fbDraft: null,

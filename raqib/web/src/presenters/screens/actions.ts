@@ -424,8 +424,8 @@ export function actionDetail(c: Ctx, a: CorrectiveAction) {
         !canReview && stored !== "closed" && (stored === "quality_review" || isResp === false),
       waitTxt:
         stored === "quality_review"
-          ? i.S("waitReview")
-          : i.S("waitResp", { u: i.L(a.responsible.name) }),
+          ? i.S("ca_waitReview")
+          : i.S("ca_waitResp", { u: i.L(a.responsible.name) }),
       hasDecisions: log.some((l) => l.kind === "returned" || l.kind === "closed"),
       decisions: log
         .filter((l) => l.kind === "returned" || l.kind === "closed")

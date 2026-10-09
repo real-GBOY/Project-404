@@ -66,6 +66,22 @@ export function modalVM(c: Ctx) {
         })),
     };
   });
+  const guardChecks = (c.data.guards ?? [])
+    .filter((g) => g.projectId === f.p && g.status === "active")
+    .map((g) => {
+      const cur = (f.gds as string[] | undefined) ?? [];
+      return {
+        label: `${i.L(g.name)} · ${g.employeeNo}`,
+        on: cur.includes(g.id),
+        toggle: () =>
+          set((s) => ({
+            mf: {
+              ...s.mf,
+              gds: cur.includes(g.id) ? cur.filter((x) => x !== g.id) : cur.concat([g.id]),
+            },
+          })),
+      };
+    });
   const diff = ((m.diff as Array<{ t: string; c?: string }> | undefined) ?? []).map((d) => ({
     t: d.t,
     c: d.c ?? C.text.body,
@@ -218,6 +234,8 @@ export function modalVM(c: Ctx) {
     projChecks,
     formChecks,
     hasFormChecks: formChecks.length > 1,
+    guardChecks,
+    hasGuardChecks: K === "create" && guardChecks.length > 0,
     isDiff: ["permSave", "scopeSave", "settingsSave", "publish"].includes(K) && !!diff.length,
     diff,
   };

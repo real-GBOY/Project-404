@@ -14,6 +14,10 @@ export const visitHandlers: ModalHandlers = {
       date: f.date as string,
       time: f.time as string,
       formIds: (f.forms as string[] | undefined) ?? [],
+      // only guards of the chosen project (the choice may predate a change of project)
+      guardIds: ((f.gds as string[] | undefined) ?? []).filter((id) =>
+        (c.data.guards ?? []).some((g) => g.id === id && g.projectId === f.p),
+      ),
       reason,
     });
     c.toast(c.i.S("toastCreated", { r: v.ref }), {

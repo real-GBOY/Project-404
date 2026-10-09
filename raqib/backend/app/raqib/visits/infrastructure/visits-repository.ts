@@ -280,6 +280,31 @@ export class VisitsRepository {
     return out;
   }
 
+  /** How many violations and how much evidence a visit's inspections hold (a read model for the review queue). */
+  async findingCounts(visitIds: string[]): Promise<Map<string, { nonCompliant: number; evidence: number }>> {
+    const out = new Map<string, { nonCompliant: number; evidence: number }>();
+    if (!visitIds.length) return out;
+    const nc = await raqibDb()
+      .selectFrom("raqib_answers as a")
+      .innerJoin("raqib_inspections as i", "i.id", "a.inspection_id")
+      .select(["i.visit_id", sql<number>`count(*)::int`.as("n")])
+      .where("i.visit_id", "in", visitIds)
+      .where("a.value", "=", "n")
+      .groupBy("i.visit_id")
+      .execute();
+    const ev = await raqibDb()
+      .selectFrom("raqib_evidence as e")
+      .innerJoin("raqib_inspections as i", "i.id", "e.inspection_id")
+      .select(["i.visit_id", sql<number>`count(*)::int`.as("n")])
+      .where("i.visit_id", "in", visitIds)
+      .groupBy("i.visit_id")
+      .execute();
+    for (const id of visitIds) out.set(id, { nonCompliant: 0, evidence: 0 });
+    for (const r of nc) out.get(r.visit_id)!.nonCompliant = r.n;
+    for (const r of ev) out.get(r.visit_id)!.evidence = r.n;
+    return out;
+  }
+
   // ── events ──────────────────────────────────────────────────────────────
 
   async appendEvent(e: {

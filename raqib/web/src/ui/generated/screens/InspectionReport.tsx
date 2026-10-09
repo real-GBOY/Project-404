@@ -76,19 +76,6 @@ export function InspectionReport({ vm }: { vm: VM }) {
             ))}
           </div>
           <button
-            onClick={rp.excel}
-            style={{
-              height: "38px",
-              padding: "0 14px",
-              border: `1px solid ${C.border.input}`,
-              borderRadius: "4px",
-              background: C.surface.white,
-              cursor: "pointer",
-            }}
-          >
-            {t.exportExcel}
-          </button>
-          <button
             onClick={rp.download}
             style={{
               height: "38px",
@@ -236,6 +223,25 @@ export function InspectionReport({ vm }: { vm: VM }) {
                 {rp.shiftLabel}: {rp.shift}
               </span>
               <span>{rp.versionNote}</span>
+              {rp.hasForms
+                ? (rp.formTabs || []).map((f: any, __i: number) => (
+                    <button
+                      key={__i}
+                      onClick={f.set}
+                      style={{
+                        border: `1px solid ${C.border.input}`,
+                        borderRadius: "4px",
+                        padding: "2px 8px",
+                        fontSize: "11px",
+                        background: f.bg,
+                        color: f.fg,
+                        cursor: "pointer",
+                      }}
+                    >
+                      {f.label}
+                    </button>
+                  ))
+                : null}
             </div>
             <div
               style={{

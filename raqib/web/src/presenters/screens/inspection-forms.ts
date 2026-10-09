@@ -36,7 +36,12 @@ export function formSwitcher(c: Ctx, insp: Inspection, vid: string) {
         const done = f.started && f.blocking === 0;
         return {
           label: `${f.code}${f.issueNo ? ` · ${f.issueNo}` : ""}`,
-          meta: f.started ? `${f.answered}/${f.total}` : i.S("notStarted"),
+          // the form on screen is counted from its own live figures; the list of forms is fetched separately and lags behind
+          meta: current
+            ? `${insp.score.answered}/${insp.score.total}`
+            : f.started
+              ? `${f.answered}/${f.total}`
+              : i.S("notStarted"),
           go: () => switchTo(f.formId, f.started),
           bg: current ? C.brand.tint : "transparent",
           fg: current ? C.brand.primaryDark : C.text.ink,
