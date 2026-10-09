@@ -520,6 +520,26 @@ describe.skipIf(!hasTestDb)("Admit journey", () => {
       expect((await call("GET", "/admit/reports/overview", { token: door })).status).toBe(403);
     });
 
+    it("tells the dashboard who is signed in and how far their reach goes", async () => {
+      const me = await call("GET", "/admit/me", { token: owner });
+      expect(me.body).toMatchObject({ organizer: { slug: org.slug, name: "Journey Org" }, eventReach: "all" });
+      expect(me.body.permissions).toContain("approve:payment");
+      const d = await call("GET", "/admit/me", { token: door });
+      expect(d.body.eventReach).toBe("assigned");
+      expect(d.body.permissions).not.toContain("approve:payment");
+      expect((await call("GET", "/admit/me")).status).toBe(401);
+    });
+
+    it("groups bookings into customers with verified spend and attendance", async () => {
+      const c = await call("GET", "/admit/bookings/customers/list?search=cust", { token: owner });
+      expect(c.status).toBe(200);
+      expect(c.body.total).toBeGreaterThan(3);
+      const withSpend = c.body.items.filter((i: Json) => i.spendMinor > 0);
+      expect(withSpend.length).toBeGreaterThan(0);
+      expect(c.body.items.some((i: Json) => i.attended >= 1)).toBe(true);
+      expect((await call("GET", "/admit/bookings/customers/list", { token: door })).status).toBe(403);
+    });
+
     it("assigns only organizer members to an event and lists them with their gate", async () => {
       const dr = await ownerQuery<{ id: string }>(`SELECT id FROM users WHERE email = $1`, [doorEmail]);
       const list = await call("GET", `/admit/events/${eventId}/staff`, { token: owner });

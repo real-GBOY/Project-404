@@ -1,6 +1,8 @@
 import { Inject, Injectable } from "@nestjs/common";
 import type { UnitOfWork } from "@core/kernel/db/db.js";
 import { readInTenant } from "@core/kernel/db/db.js";
+import { sql } from "kysely";
+import { admitDb } from "@admit/admit/db/executor.js";
 import { Conflict, Forbidden, NotFound, ValidationError } from "@core/kernel/errors.js";
 import { AUDIT_LOGGER, CLOCK, UNIT_OF_WORK } from "@core/kernel/tokens.js";
 import type { Clock } from "@core/kernel/clock.js";
@@ -280,6 +282,42 @@ export class BookingsService {
           totalMinor: b.totalMinor, currency: b.currency, ticketCount: b.status === "CONFIRMED" ? tickets.filter((t) => t.bookingId === b.id && t.status !== "REVOKED").length : lines.filter((l) => l.bookingId === b.id).reduce((n, l) => n + l.quantity, 0),
           holdExpiresAt: b.holdExpiresAt, version: b.version, createdAt: b.createdAt,
         })),
+      };
+    });
+  }
+
+  /** People who booked, grouped by email, limited to the caller's events. Verified spend counts CONFIRMED bookings only. */
+  async customers(who: Principal, f: { search?: string; limit: number; offset: number }) {
+    return readInTenant(async () => {
+      const scope = await this.access.scope(who);
+      if (scope && !scope.length) return { items: [], total: 0 };
+      let q = admitDb().selectFrom("admit_bookings as b").leftJoin("admit_tickets as t", (j) => j.onRef("t.booking_id", "=", "b.id").on("t.status", "=", "USED"));
+      if (scope) q = q.where("b.event_id", "in", scope);
+      if (f.search) {
+        const like = `%${f.search.replace(/[%_\\]/g, (m) => `\\${m}`)}%`;
+        q = q.where((eb) => eb.or([eb("b.customer_name", "ilike", like), eb("b.email", "ilike", like), eb("b.phone", "ilike", like)]));
+      }
+      const grouped = q
+        .select([
+          sql<string>`lower(b.email)`.as("email"),
+          sql<string>`(array_agg(b.customer_name order by b.created_at desc))[1]`.as("name"),
+          sql<string>`(array_agg(b.phone order by b.created_at desc))[1]`.as("phone"),
+          sql<string>`count(distinct b.id)`.as("bookings"),
+          sql<string>`count(distinct t.event_id)`.as("attended"),
+          sql<string>`coalesce(sum(distinct case when b.status = 'CONFIRMED' then b.total_minor end), 0)`.as("spend"),
+          sql<string>`(array_agg(b.status order by b.created_at desc))[1]`.as("latest"),
+          sql<Date>`max(b.created_at)`.as("last_at"),
+        ])
+        .groupBy(sql`lower(b.email)`);
+      const rows = await grouped.orderBy(sql`max(b.created_at)`, "desc").limit(f.limit).offset(f.offset).execute();
+      const total = await admitDb()
+        .selectFrom("admit_bookings as b")
+        .select(sql<string>`count(distinct lower(b.email))`.as("n"))
+        .$if(!!scope, (qq) => qq.where("b.event_id", "in", scope!))
+        .executeTakeFirstOrThrow();
+      return {
+        total: Number(total.n),
+        items: rows.map((r) => ({ email: r.email, name: r.name, phone: r.phone, bookings: Number(r.bookings), attended: Number(r.attended), spendMinor: Number(r.spend), latestStatus: r.latest, lastBookingAt: r.last_at })),
       };
     });
   }

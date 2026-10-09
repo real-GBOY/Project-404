@@ -2,9 +2,10 @@ import { Inject, Injectable } from "@nestjs/common";
 import { z } from "zod";
 import type { UnitOfWork } from "@core/kernel/db/db.js";
 import { currentExecutor, readInTenant } from "@core/kernel/db/db.js";
-import { AUDIT_LOGGER, UNIT_OF_WORK } from "@core/kernel/tokens.js";
+import { AUDIT_LOGGER, UNIT_OF_WORK, USER_PROVIDER } from "@core/kernel/tokens.js";
 import { requireOrganizationId } from "@core/kernel/tenant.js";
-import type { IAuditLogger } from "@core/contracts/index.js";
+import type { IAuditLogger, IUserProvider } from "@core/contracts/index.js";
+import type { Principal } from "@core/http/principal.js";
 import { admitDb } from "@admit/admit/db/executor.js";
 
 export const settingsPatchSchema = z
@@ -30,6 +31,7 @@ export interface OrganizerProfile {
 export class SettingsService {
   constructor(
     @Inject(AUDIT_LOGGER) private readonly audit: IAuditLogger,
+    @Inject(USER_PROVIDER) private readonly users: IUserProvider,
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
 
@@ -47,6 +49,24 @@ export class SettingsService {
       logoUrl: d.logoUrl ?? null,
       timeZone: d.timeZone ?? "Africa/Cairo",
     };
+  }
+
+  async me(who: Principal) {
+    return readInTenant(async () => {
+      const orgId = requireOrganizationId();
+      const [user, profile, org] = await Promise.all([
+        this.users.getUser(who.userId),
+        this.profile(),
+        currentExecutor().selectFrom("organizations").select(["id", "slug", "name"]).where("id", "=", orgId).executeTakeFirstOrThrow(),
+      ]);
+      const readsAll = who.permissions.some((p) => p === "read_all:event" || p === "*:*" || p === "*:event" || p === "read_all:*");
+      return {
+        user: { id: who.userId, email: user?.email ?? who.email, name: user?.displayName ?? user?.email ?? who.email },
+        organizer: { id: org.id, slug: org.slug, name: profile.organizerName, supportEmail: profile.supportEmail, logoUrl: profile.logoUrl, timeZone: profile.timeZone },
+        permissions: who.permissions,
+        eventReach: readsAll ? ("all" as const) : ("assigned" as const),
+      };
+    });
   }
 
   get(): Promise<OrganizerProfile> {

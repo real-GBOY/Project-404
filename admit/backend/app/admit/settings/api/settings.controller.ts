@@ -7,6 +7,20 @@ import { ZodBody } from "@core/http/zod.pipe.js";
 import type { Principal } from "@core/http/principal.js";
 import { SettingsService, settingsPatchSchema, type SettingsPatch } from "../application/settings-service.js";
 
+/** Who is signed in and what they can reach: everything the dashboard needs to draw its shell, from the server. */
+@ApiTags("admit · me")
+@ApiBearerAuth("access-token")
+@Controller("admit/me")
+@UseGuards(JwtAuthGuard)
+export class AdmitMeController {
+  constructor(private readonly service: SettingsService) {}
+
+  @Get()
+  get(@CurrentUser() who: Principal) {
+    return this.service.me(who);
+  }
+}
+
 @ApiTags("admit · settings")
 @ApiBearerAuth("access-token")
 @Controller("admit/settings")
