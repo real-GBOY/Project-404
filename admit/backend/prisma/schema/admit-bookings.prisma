@@ -1,0 +1,159 @@
+// app/admit - bookings, lines, payment submissions, tickets, scan attempts, timeline, email outbox.
+// Mirrors migration 20261020120100_admit_bookings for Kysely type generation only.
+
+model admit_bookings {
+  id               String    @id
+  organization_id  String
+  event_id         String
+  ref              String
+  access_hash      String
+  /// @kyselyType('AWAITING_PAYMENT' | 'IN_REVIEW' | 'CONFIRMED' | 'REJECTED' | 'EXPIRED' | 'CANCELLED')
+  status           String    @default("AWAITING_PAYMENT")
+  customer_name    String
+  email            String
+  phone            String
+  total_minor      Int
+  currency         String
+  hold_expires_at  DateTime  @db.Timestamptz(6)
+  policy_ack       Boolean   @default(false)
+  rejection_reason String?
+  version          Int       @default(1)
+  idempotency_key  String?
+  confirmed_at     DateTime? @db.Timestamptz(6)
+  cancelled_at     DateTime? @db.Timestamptz(6)
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "admit_bookings_org_id_uq")
+  @@unique([organization_id, ref], map: "admit_bookings_ref_uq")
+  @@map("admit_bookings")
+}
+
+model admit_booking_lines {
+  id               String @id
+  organization_id  String
+  booking_id       String
+  ticket_type_id   String
+  quantity         Int
+  unit_price_minor Int
+  /// @kyselyType(Json<string[]>)
+  holder_names     Json   @default("[]")
+
+  @@unique([booking_id, ticket_type_id], map: "admit_booking_lines_uq")
+  @@map("admit_booking_lines")
+}
+
+model admit_payment_submissions {
+  id              String    @id
+  organization_id String
+  booking_id      String
+  method_id       String?
+  file_id         String
+  txn_id          String?
+  sent_from       String?
+  amount_minor    Int?
+  /// @kyselyType('SUBMITTED' | 'APPROVED' | 'REJECTED' | 'SUPERSEDED')
+  status          String    @default("SUBMITTED")
+  version         Int       @default(1)
+  claimed_by      String?
+  claimed_at      DateTime? @db.Timestamptz(6)
+  decided_by      String?
+  decided_at      DateTime? @db.Timestamptz(6)
+  customer_reason String?
+  internal_note   String?
+  decision_key    String?
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "admit_payment_submissions_org_id_uq")
+  @@map("admit_payment_submissions")
+}
+
+model admit_tickets {
+  id              String    @id
+  organization_id String
+  booking_id      String
+  event_id        String
+  ticket_type_id  String
+  seq             Int
+  holder_name     String
+  token_hash      String    @unique(map: "admit_tickets_token_uq")
+  /// @kyselyType('VALID' | 'USED' | 'REVOKED')
+  status          String    @default("VALID")
+  checked_in_at   DateTime? @db.Timestamptz(6)
+  checked_in_gate String?
+  checked_in_by   String?
+  revoked_at      DateTime? @db.Timestamptz(6)
+  revoked_by      String?
+  revoked_reason  String?
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "admit_tickets_org_id_uq")
+  @@unique([booking_id, seq], map: "admit_tickets_seq_uq")
+  @@map("admit_tickets")
+}
+
+model admit_scan_attempts {
+  id              String   @id
+  organization_id String
+  event_id        String
+  ticket_id       String?
+  /// @kyselyType('ADMITTED' | 'ALREADY_USED' | 'INVALID')
+  result          String
+  gate            String   @default("")
+  staff_id        String?
+  scanned_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("admit_scan_attempts")
+}
+
+model admit_booking_timeline {
+  id              String   @id
+  organization_id String
+  booking_id      String
+  step            String
+  /// @kyselyType('done' | 'pending' | 'failed')
+  state           String   @default("done")
+  actor_id        String?
+  note            String?
+  at              DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("admit_booking_timeline")
+}
+
+model admit_email_messages {
+  id                  String    @id
+  organization_id     String
+  booking_id          String?
+  /// @kyselyType('INSTRUCTIONS' | 'PROOF_RECEIVED' | 'TICKETS' | 'REJECTED' | 'EXPIRED' | 'CANCELLED' | 'MAGIC_LINK')
+  type                String
+  to_email            String
+  /// @kyselyType(Json<Record<string, unknown>>)
+  payload             Json      @default("{}")
+  /// @kyselyType('QUEUED' | 'ACCEPTED' | 'DELIVERED' | 'RETRYING' | 'FAILED')
+  status              String    @default("QUEUED")
+  attempts            Int       @default(0)
+  max_attempts        Int       @default(3)
+  next_attempt_at     DateTime  @default(now()) @db.Timestamptz(6)
+  claimed_by          String?
+  claimed_at          DateTime? @db.Timestamptz(6)
+  last_error          String?
+  provider_message_id String?
+  dedupe_key          String?
+  sent_at             DateTime? @db.Timestamptz(6)
+  created_at          DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@map("admit_email_messages")
+}
+
+model admit_rate_limits {
+  bucket       String
+  window_start DateTime @db.Timestamptz(6)
+  hits         Int      @default(0)
+
+  @@id([bucket, window_start], map: "admit_rate_limits_pkey")
+  @@index([window_start], map: "admit_rate_limits_window_idx")
+  @@map("admit_rate_limits")
+}

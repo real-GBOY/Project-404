@@ -1,0 +1,111 @@
+// app/admit - foundation: settings, venues, events, ticket types, payment methods, event staff.
+// Mirrors migration 20261020120000_admit_foundation for Kysely type generation only; the SQL is the
+// source of truth for constraints, triggers and RLS.
+
+model admit_settings {
+  organization_id String   @id
+  /// @kyselyType(Json<Record<string, unknown>>)
+  data            Json     @default("{}")
+  updated_by      String?
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("admit_settings")
+}
+
+model admit_venues {
+  id              String   @id
+  organization_id String
+  name            String
+  area            String   @default("")
+  address         String   @default("")
+  map_url         String?
+  capacity        Int
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "admit_venues_org_id_uq")
+  @@map("admit_venues")
+}
+
+model admit_events {
+  id                 String    @id
+  organization_id    String
+  slug               String
+  title              String
+  category           String    @default("")
+  description        String    @default("")
+  venue_id           String
+  starts_at          DateTime  @db.Timestamptz(6)
+  ends_at            DateTime  @db.Timestamptz(6)
+  cover_url          String?
+  /// @kyselyType('draft' | 'published' | 'cancelled' | 'archived')
+  status             String    @default("draft")
+  max_per_booking    Int       @default(6)
+  named_tickets      Boolean   @default(false)
+  hold_hours         Int       @default(24)
+  allow_resubmission Boolean   @default(true)
+  currency           String    @default("EGP")
+  support_email      String?
+  /// @kyselyType(Json<Record<string, string>>)
+  policies           Json      @default("{}")
+  /// @kyselyType(Json<Array<{ time: string; title: string; detail?: string }>>)
+  program            Json      @default("[]")
+  published_at       DateTime? @db.Timestamptz(6)
+  created_by         String?
+  created_at         DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "admit_events_org_id_uq")
+  @@unique([organization_id, slug], map: "admit_events_slug_uq")
+  @@map("admit_events")
+}
+
+model admit_ticket_types {
+  id              String   @id
+  organization_id String
+  event_id        String
+  name            String
+  description     String   @default("")
+  price_minor     Int
+  quantity        Int
+  max_per_booking Int      @default(6)
+  on_sale         Boolean  @default(true)
+  sort_order      Int      @default(0)
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "admit_ticket_types_org_id_uq")
+  @@map("admit_ticket_types")
+}
+
+model admit_payment_methods {
+  id              String   @id
+  organization_id String
+  event_id        String
+  /// @kyselyType('instapay' | 'wallet' | 'bank' | 'cash_deposit' | 'other')
+  type            String
+  label           String
+  recipient_name  String
+  identifier      String
+  /// @kyselyType(Json<string[]>)
+  instructions    Json     @default("[]")
+  enabled         Boolean  @default(true)
+  sort_order      Int      @default(0)
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "admit_payment_methods_org_id_uq")
+  @@map("admit_payment_methods")
+}
+
+model admit_event_staff {
+  organization_id String
+  event_id        String
+  user_id         String
+  gate            String   @default("")
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@id([organization_id, event_id, user_id])
+  @@map("admit_event_staff")
+}
