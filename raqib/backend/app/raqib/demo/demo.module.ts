@@ -15,6 +15,7 @@ import { OnboardingModule } from "@raqib/raqib/onboarding/onboarding.module.js";
 import { ReviewModule } from "@raqib/raqib/review/review.module.js";
 import { SettingsModule } from "@raqib/raqib/settings/settings.module.js";
 import { SettingsRepository } from "@raqib/raqib/settings/infrastructure/settings-repository.js";
+import { SurveysRepository } from "@raqib/raqib/surveys/infrastructure/surveys-repository.js";
 import { DemoSeeder } from "./demo-seeder.js";
 
 @Module({
@@ -36,7 +37,7 @@ import { DemoSeeder } from "./demo-seeder.js";
     OnboardingModule,
     FilesModule,
   ],
-  providers: [DemoSeeder, SettingsRepository],
+  providers: [DemoSeeder, SettingsRepository, SurveysRepository],
   exports: [DemoSeeder],
 })
 export class DemoModule {}

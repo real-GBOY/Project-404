@@ -13,6 +13,7 @@ export function analyticsQuery(c: Ctx): {
   to: string;
   projectId: string;
   siteId: string;
+  sort: string;
 } {
   const { ui } = c;
   return {
@@ -23,6 +24,7 @@ export function analyticsQuery(c: Ctx): {
     to: ui.anTo,
     projectId: ui.anP,
     siteId: ui.anS,
+    sort: ui.anRank,
   };
 }
 
@@ -151,6 +153,15 @@ export function analytics(c: Ctx, result: AnalyticsResult | undefined) {
       pOpts: [{ v: "", l: i.S("allProjects") }].concat(
         projects.map((p) => ({ v: p.id, l: i.L(p.name) })),
       ),
+      rank: q.sort,
+      onRank: (e: { target: { value: string } }) => set({ anRank: e.target.value }),
+      rankOpts: [
+        { v: "", l: i.S("ax_sortAttention") },
+        ...["observations", "improvement", "complaints", "contract", "score"].map((k) => ({
+          v: k,
+          l: i.S(`ax_sort_${k}`),
+        })),
+      ],
       showSite: !!project,
       s: q.siteId,
       onS: (e: { target: { value: string } }) => set({ anS: e.target.value }),

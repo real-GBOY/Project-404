@@ -79,4 +79,6 @@ export interface AnalyticsQueryParams {
   to: string;
   projectId: string;
   siteId: string;
+  /** How the project ranking is ordered (empty = needs attention first). */
+  sort?: string;
 }

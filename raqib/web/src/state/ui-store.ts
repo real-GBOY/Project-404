@@ -90,6 +90,7 @@ export interface UiState {
   anTo: string;
   anP: string;
   anS: string;
+  anRank: string;
   anDd: string;
   recentQ: string[];
   rlang: "ar" | "en";
@@ -158,6 +159,7 @@ const initial = (): UiState => ({
   anTo: "",
   anP: "",
   anS: "",
+  anRank: "",
   anDd: "",
   recentQ: [],
   rlang: "en",

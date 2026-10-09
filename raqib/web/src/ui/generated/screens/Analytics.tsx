@@ -205,6 +205,25 @@ export function Analytics({ vm }: { vm: VM }) {
                   </select>
                 </>
               ) : null}
+              <select
+                value={an.rank}
+                onChange={an.onRank}
+                aria-label={t.ax_ranking}
+                style={{
+                  height: "36px",
+                  border: `1px solid ${C.border.input}`,
+                  borderRadius: "4px",
+                  padding: "0 10px",
+                  background: C.surface.white,
+                  fontSize: "13.5px",
+                }}
+              >
+                {(an.rankOpts || []).map((o: any, __i: number) => (
+                  <Fragment key={__i}>
+                    <option value={o.v}>{o.l}</option>
+                  </Fragment>
+                ))}
+              </select>
             </div>
           </>
         ) : null}
@@ -321,6 +340,25 @@ export function Analytics({ vm }: { vm: VM }) {
                   </select>
                 </>
               ) : null}
+              <select
+                value={an.rank}
+                onChange={an.onRank}
+                aria-label={t.ax_ranking}
+                style={{
+                  height: "46px",
+                  border: `1px solid ${C.border.input}`,
+                  borderRadius: "4px",
+                  padding: "0 10px",
+                  background: C.surface.white,
+                  fontSize: "15px",
+                }}
+              >
+                {(an.rankOpts || []).map((o: any, __i: number) => (
+                  <Fragment key={__i}>
+                    <option value={o.v}>{o.l}</option>
+                  </Fragment>
+                ))}
+              </select>
               <button
                 onClick={closeSheet}
                 style={{

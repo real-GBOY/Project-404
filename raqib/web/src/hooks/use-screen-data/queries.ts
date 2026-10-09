@@ -140,6 +140,7 @@ export function queryDefs({
         analytics.to,
         analytics.projectId,
         analytics.siteId,
+        analytics.sort,
       ],
     },
     {

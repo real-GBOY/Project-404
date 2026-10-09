@@ -68,13 +68,15 @@ describe.skipIf(!hasTestDb)("Raqib surveys and the confidential boundary", () =>
       expect(made.status).toBe(201);
       surveyId = made.body.id;
       expect(made.body.questions.map((q: Json) => q.key)).toEqual(["q1", "q2"]);
-      expect(((await call("guard", "GET", "/raqib/surveys")).body.items as Json[]).length).toBe(0); // a draft is not shown
+      // the demo already has one open survey; a draft of ours is not shown
+      expect(((await call("guard", "GET", "/raqib/surveys")).body.items as Json[]).map((s) => s.id)).not.toContain(surveyId);
       expect((await call("guard", "POST", `/raqib/surveys/${surveyId}/answers`, { answers: { q1: 4 }, identity: "anonymous" })).status).toBe(409); // not open yet
       expect((await call("guard", "POST", `/raqib/surveys/${surveyId}/publish`)).status).toBe(403);
       expect((await call("qe", "POST", `/raqib/surveys/${surveyId}/publish`)).body.status).toBe("active");
       expect((await call("qe", "POST", `/raqib/surveys/${surveyId}/publish`)).status).toBe(409);
       const seen = (await call("guard", "GET", "/raqib/surveys")).body;
-      expect(seen.items.map((s: Json) => s.id)).toEqual([surveyId]);
+      expect(seen.items.map((s: Json) => s.id)).toContain(surveyId);
+      expect(seen.items.every((s: Json) => s.status === "active")).toBe(true);
       expect(seen.canManage).toBe(false);
     });
   });

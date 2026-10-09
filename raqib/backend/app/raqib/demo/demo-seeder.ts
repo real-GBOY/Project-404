@@ -33,6 +33,7 @@ import { EvidenceService } from "@raqib/raqib/evidence/application/evidence-serv
 import { FILE_STORAGE } from "@core/kernel/tokens.js";
 import type { IFileStorage } from "@core/contracts/index.js";
 import { readRaqibConfig } from "@raqib/config.js";
+import { SurveysRepository } from "@raqib/raqib/surveys/infrastructure/surveys-repository.js";
 import { DEFAULT_SETTINGS } from "@raqib/raqib/settings/domain/defaults.js";
 import { DEMO_NAMED_GUARDS, DEMO_ORG, DEMO_PASSWORD, DEMO_PEOPLE, DEMO_PROJECTS, fillerGuards } from "./demo-data.js";
 
@@ -62,6 +63,7 @@ export class DemoSeeder {
     private readonly actions: ActionsService,
     private readonly training: TrainingService,
     private readonly confidential: ConfidentialService,
+    private readonly surveys: SurveysRepository,
     private readonly onboarding: OnboardingService,
     @Inject(FILE_STORAGE) private readonly files: IFileStorage,
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
@@ -279,7 +281,7 @@ export class DemoSeeder {
     const step = (
       key: string,
       id: string,
-      s: "approve" | "return" | "reject" | "resubmit" | "schedule" | "complete",
+      s: "review" | "approve" | "return" | "reject" | "resubmit" | "schedule" | "complete",
       input: Parameters<TrainingService["step"]>[2],
       ago = 0,
     ) => as(key, ago, (who) => this.training.step(id, s, input, who));
@@ -322,6 +324,41 @@ export class DemoSeeder {
     await step("qe", done.id, "complete", { date: addDays(today, -3), result: "passed", text: "Passed the assessment with 90%." }, 0);
     const rejected = await ask("G-10288", "Advanced surveillance", "refresher", "low", "", "Not needed this quarter.", 12);
     await step("pm", rejected.id, "reject", { text: "Not justified by any finding; revisit next quarter." }, 11);
+
+    // a guard asks for themselves: the first waits for the supervisor, the second was reviewed and now waits for the project manager
+    const byGuard = (course: string, reason: "low_score" | "refresher", notes: string, ago: number) =>
+      as("guard", ago, (who) => this.training.create({ course, reason, priority: "medium", related: "", notes }, who));
+    await byGuard("First aid essentials", "refresher", "I would like to renew my first-aid certificate.", 1);
+    const reviewed = await byGuard("Radio communication procedure", "low_score", "My last score on radio procedure was low.", 4);
+    await step("gs", reviewed.id, "review", { text: "Agreed: the score was low and he asked for it." }, 3);
+  }
+
+  /** One open and one draft survey. The General Manager still names who manages surveys, as in real use. */
+  private async seedSurveys(orgId: string, userIds: Map<string, string>, today: string): Promise<void> {
+    const createdBy = userIds.get("qm")!;
+    await withContext({ userId: createdBy, organizationId: orgId }, () =>
+      runAsOf(addDays(today, -3), () =>
+        this.uow.transaction(async () => {
+          const open = await this.surveys.insert({
+            title: { ar: "استبيان رضا الحراس", en: "Guard welfare survey" },
+            intro: { ar: "", en: "" },
+            createdBy,
+            questions: [
+              { key: "q1", type: "rating", text: { ar: "ما مدى رضاك عن بيئة العمل؟", en: "How satisfied are you with your working conditions?" } },
+              { key: "q2", type: "rating", text: { ar: "هل تتلقى التدريب الكافي؟", en: "Do you receive enough training?" } },
+              { key: "q3", type: "text", text: { ar: "ما الذي تقترح تحسينه؟", en: "What would you improve?" } },
+            ],
+          });
+          await this.surveys.setStatus(open, "active", new Date());
+          await this.surveys.insert({
+            title: { ar: "استبيان المعدات والزي", en: "Equipment and uniform survey" },
+            intro: { ar: "", en: "" },
+            createdBy,
+            questions: [{ key: "q1", type: "text", text: { ar: "هل ينقصك أي معدات؟", en: "Is any equipment missing?" } }],
+          });
+        }),
+      ),
+    );
   }
 
   /**
@@ -575,6 +612,7 @@ export class DemoSeeder {
     await this.seedVisits(orgId, userIds, today);
     await this.seedQuality(orgId, userIds, today);
     await this.seedTraining(orgId, userIds, today);
+    await this.seedSurveys(orgId, userIds, today);
     await this.seedConfidential(orgId, userIds, today);
     await this.seedRequests(orgId, userIds, today);
     // a year of ordinary approved inspections, so the overview and analytics have something to show (RAQIB_DEMO_HISTORY_DAYS)

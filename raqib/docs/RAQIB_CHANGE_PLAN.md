@@ -102,6 +102,5 @@ Assumptions, flagged: the guard-chain stages and who may skip them are configura
 ### Status of the addendum
 
 Steps 1-5 and 7 are implemented in the backend and covered by tests; the web side of R15 (contract fields, indicator line), R16
-(supervisor stage, guard self-request) and R17 (survey panel) is built. Still open: a logo-upload control and a ranking sort/weights
-screen in the web, e2e coverage for the new screens, and a demo seed with a survey and a guard-origin training request. The matrix
+(supervisor stage, guard self-request) and R17 (survey panel) is built. Added since: a logo-upload control, a ranking sort selector, e2e for surveys and the guard training chain, and demo data with surveys and guard-origin requests. Still open: a ranking-weights screen. The matrix
 is the authority on each requirement's status.

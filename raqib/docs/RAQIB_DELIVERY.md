@@ -61,16 +61,14 @@ on a phone and a desktop, in Arabic and English.
 4. Shift names and hours; the consecutive-shift rule.
 5. The escalation counting rule and recipients; what counts as high severity.
 6. MOI requirements and quality standards to embed.
-7. The organization's name and logo (the product is configurable until then: Settings → organization; the logo is set through
-   the API with an uploaded file, a Settings upload control is still to be built).
+7. The organization's name and logo (the product is configurable until then: Settings → organization has the name and a logo upload control).
 8. Ranking weights, if equal weights are not what the client wants.
 9. Acceptance dates, stage durations, and the bug-fix period.
 
 ## 6. Demo
 
 The demo organization (`RAQIB_ALLOW_DEMO_IN_PRODUCTION`) shows scheduling, multi-form inspections, scoring, corrective actions,
-review and approval, PDFs, analytics with project ranking, and training requests. A seeded **survey** and a **guard-origin
-training request** are not in the demo data yet. Because the client's original forms are not supplied, the demo forms are
+review and approval, PDFs, analytics with project ranking, and training requests. It also has an open and a draft survey and guard-origin training requests (the General Manager names the survey manager, as in real use). Because the client's original forms are not supplied, the demo forms are
 placeholders.
 
 Final acceptance depends on verification against the matrix with the client's real content; this document is not itself an

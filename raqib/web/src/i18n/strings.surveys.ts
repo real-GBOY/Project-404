@@ -46,5 +46,8 @@ export const STRINGS_SURVEYS: Record<string, readonly [string, string]> = {
   ],
   sv_nameOne: ["تسمية", "Name"],
   sv_pick: ["اختر شخصًا", "Choose a person"],
+  sf_org_logo: ["الشعار (PNG أو JPEG)", "Logo (PNG or JPEG)"],
+  logoUpload: ["رفع الشعار", "Upload logo"],
+  logoReplace: ["استبدال الشعار", "Replace logo"],
   sv_remove: ["إزالة", "Remove"],
 };

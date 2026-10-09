@@ -46,7 +46,8 @@ describe.skipIf(!hasTestDb)("Raqib training requests", () => {
   it("seeds a request in every state", async () => {
     const all = await list();
     const count = (s: string) => all.filter((t) => t.status === s).length;
-    for (const s of ["pending_pm", "returned", "approved", "scheduled", "completed", "rejected"]) expect(count(s)).toBe(1);
+    for (const s of ["pending_supervisor", "returned", "approved", "scheduled", "completed", "rejected"]) expect(count(s)).toBe(1);
+    expect(count("pending_pm")).toBe(2); // the supervisor's own request, and a guard's request the supervisor has reviewed
     const done = all.find((t) => t.status === "completed")!;
     const full = (await call("qm", "GET", `/raqib/training/${done.id}`)).body;
     expect(full.log.map((l: Json) => l.kind)).toEqual(["requested", "approved", "scheduled", "completed"]);
@@ -55,7 +56,7 @@ describe.skipIf(!hasTestDb)("Raqib training requests", () => {
 
   it("is scoped by project and permission", async () => {
     expect((await list("sultan")).length).toBe(0); // Jeddah has none
-    expect((await list("pm")).length).toBe(6);
+    expect((await list("pm")).length).toBe(8);
     expect((await call("insA", "GET", "/raqib/training")).status).toBe(403);
   });
 

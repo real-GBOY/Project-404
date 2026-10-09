@@ -11,6 +11,7 @@ function analyticsQs(q: AnalyticsQueryParams): string {
   }
   if (q.projectId) p.set("projectId", q.projectId);
   if (q.siteId) p.set("siteId", q.siteId);
+  if (q.sort) p.set("sort", q.sort);
   return p.toString();
 }
 

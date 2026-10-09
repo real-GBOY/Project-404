@@ -1,9 +1,11 @@
+import { useI18n } from "@/hooks/use-i18n";
 import { C } from "@/styles/colors";
 import { FORM } from "@/styles/form-styles";
 import type { FormField } from "@/ui/form-field";
 
 /** The inputs of a data-entry dialog, laid out two to a row where a field is marked `half`. */
 export function ModalForm({ fields }: { fields: FormField[] }) {
+  const { lang } = useI18n();
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
       {fields.map((f) => (
@@ -35,6 +37,8 @@ export function ModalForm({ fields }: { fields: FormField[] }) {
             ) : f.type === "textarea" ? (
               <textarea
                 rows={3}
+                lang={lang}
+                spellCheck
                 value={f.val}
                 onChange={f.on}
                 aria-invalid={f.err}
@@ -56,6 +60,8 @@ export function ModalForm({ fields }: { fields: FormField[] }) {
                 aria-invalid={f.err}
                 placeholder={f.placeholder}
                 dir={f.ltr ? "ltr" : undefined}
+                lang={f.ltr ? undefined : "ar"}
+                spellCheck={f.type === "text" && !f.ltr}
                 style={{
                   ...FORM.input,
                   height: 40,

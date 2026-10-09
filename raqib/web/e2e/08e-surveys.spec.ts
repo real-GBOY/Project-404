@@ -42,7 +42,8 @@ test.describe("surveys", () => {
     await qm.getByLabel(/Numbers of the questions answered/).fill("1");
     await qm.getByRole("button", { name: "Save as draft" }).click();
     await expect(qm.getByText(title)).toBeVisible();
-    await qm.getByRole("button", { name: "Publish", exact: true }).click();
+    const mine = qm.getByText(title, { exact: true }).locator("xpath=ancestor::div[2]");
+    await mine.getByRole("button", { name: "Publish", exact: true }).click();
     await expect(qm.getByText(/Open · 2 questions/).first()).toBeVisible();
 
     // the guard answers it, choosing to stay anonymous
@@ -50,11 +51,12 @@ test.describe("surveys", () => {
     await guard.goto("/surveys");
     await expect(guard.getByText(title)).toBeVisible();
     await expect(guard.getByRole("button", { name: "Save as draft" })).toHaveCount(0); // not a manager
-    await guard.getByRole("button", { name: "Answer", exact: true }).last().click();
-    await guard.locator("select").last().selectOption("4");
-    await guard.locator("textarea").last().fill("All good");
-    await guard.getByLabel("Fully anonymous").check();
-    await guard.getByRole("button", { name: "Send answers" }).click();
+    const card = guard.getByText(title, { exact: true }).locator("xpath=ancestor::div[2]");
+    await card.getByRole("button", { name: "Answer", exact: true }).click();
+    await card.locator("select").selectOption("4");
+    await card.locator("textarea").fill("All good");
+    await card.getByLabel("Fully anonymous").check();
+    await card.getByRole("button", { name: "Send answers" }).click();
     await expect(guard.getByText(/Thank you\. Reference:/)).toBeVisible();
   });
 });

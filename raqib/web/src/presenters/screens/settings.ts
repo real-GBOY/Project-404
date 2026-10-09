@@ -1,5 +1,6 @@
 import type { OrgSettings, RoleKey } from "@/api/types";
 import { getUi } from "@/state/ui-store";
+import { pickFiles } from "@/services/pick-files";
 import { pBadge } from "../common";
 import type { Ctx } from "../context";
 import { configFields } from "./settings-config";
@@ -145,6 +146,23 @@ export function settingsScreen(c: Ctx) {
       F("sel", "org", "lang", { opts: langOpts }),
       F("info", "org", "tz"),
       F("info", "org", "cal", { val: i.S("gregorian") }),
+      {
+        ...F("info", "org", "logo", { labelKey: "sf_org_logo" }),
+        isInfo: false,
+        isBtn: true,
+        btnLabel: i.S(cur.org?.logo ? "logoReplace" : "logoUpload"),
+        btnDisabled: ro,
+        // the logo is a stored file; its id is saved with the other settings (and printed on every document)
+        onClick: () =>
+          pickFiles("image/png,image/jpeg", false, (picked) => {
+            const file = picked[0];
+            if (!file) return;
+            c.actions
+              .confUpload(file, () => undefined)
+              .then((id) => upd("org", "logo", id))
+              .catch(() => c.toast(i.S("actionFailed")));
+          }),
+      },
     ],
     scoring: [
       F("num", "scoring", "high", { unit: "%" }),
