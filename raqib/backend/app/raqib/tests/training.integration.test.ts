@@ -48,6 +48,8 @@ describe.skipIf(!hasTestDb)("Raqib training requests", () => {
     const count = (s: string) => all.filter((t) => t.status === s).length;
     for (const s of ["pending_supervisor", "returned", "approved", "scheduled", "completed", "rejected"]) expect(count(s)).toBe(1);
     expect(count("pending_pm")).toBe(2); // the supervisor's own request, and a guard's request the supervisor has reviewed
+    // the demo's requests happened over several weeks, so their dates differ and their history agrees with them
+    expect(new Set(all.map((t) => String(t.createdAt).slice(0, 10))).size).toBeGreaterThan(3);
     const done = all.find((t) => t.status === "completed")!;
     const full = (await call("qm", "GET", `/raqib/training/${done.id}`)).body;
     expect(full.log.map((l: Json) => l.kind)).toEqual(["requested", "approved", "scheduled", "completed"]);

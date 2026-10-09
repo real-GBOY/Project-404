@@ -3,6 +3,7 @@ import { sql } from "kysely";
 import { getContext } from "@core/kernel/logging/context.js";
 import { raqibDb } from "@raqib/raqib/db/executor.js";
 import { raqibId } from "@raqib/raqib/shared/ids.js";
+import { pinnedBusinessDate } from "@raqib/raqib/shared/business-date.js";
 import type { RequesterKind, TrainingStatus } from "../domain/training-state.js";
 import { fetchSize, type Page } from "@raqib/raqib/shared/paging.js";
 
@@ -194,6 +195,8 @@ export class TrainingRepository {
       .values({
         id: raqibId("cal"),
         organization_id: org(),
+        // the demo seeder pins a business date so its history reads as it would have happened; real requests are never pinned
+        ...(pinnedBusinessDate() ? { at: sql<Date>`(${pinnedBusinessDate()!}::date + time '09:00')::timestamptz` } : {}),
         request_id: e.requestId,
         kind: e.kind,
         from_status: e.fromStatus,

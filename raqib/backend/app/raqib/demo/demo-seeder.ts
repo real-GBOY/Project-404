@@ -32,6 +32,8 @@ import { InspectionsService } from "@raqib/raqib/inspections/application/inspect
 import { EvidenceService } from "@raqib/raqib/evidence/application/evidence-service.js";
 import { FILE_STORAGE } from "@core/kernel/tokens.js";
 import type { IFileStorage } from "@core/contracts/index.js";
+import { sql } from "kysely";
+import { raqibDb } from "@raqib/raqib/db/executor.js";
 import { readRaqibConfig } from "@raqib/config.js";
 import { ScoringRepository } from "@raqib/raqib/scoring/infrastructure/scoring-repository.js";
 import { SurveysRepository } from "@raqib/raqib/surveys/infrastructure/surveys-repository.js";
@@ -285,6 +287,8 @@ export class DemoSeeder {
         ),
       );
     const guard = (no: string) => this.ids.guardIds.get(no)!;
+    // when each request and each of its steps happened (days ago), so the dates shown are not all "today"
+    const agos = new Map<string, number[]>();
     const ask = (
       g: string,
       course: string,
@@ -293,14 +297,24 @@ export class DemoSeeder {
       related: string,
       notes: string,
       ago: number,
-    ) => as("gs", ago, (who) => this.training.create({ guardId: guard(g), course, reason, priority, related, notes }, who));
+    ) =>
+      as("gs", ago, async (who) => {
+        const r = await this.training.create({ guardId: guard(g), course, reason, priority, related, notes }, who);
+        agos.set(r.id, [ago]);
+        return r;
+      });
     const step = (
       key: string,
       id: string,
       s: "review" | "approve" | "return" | "reject" | "resubmit" | "schedule" | "complete",
       input: Parameters<TrainingService["step"]>[2],
       ago = 0,
-    ) => as(key, ago, (who) => this.training.step(id, s, input, who));
+    ) =>
+      as(key, ago, async (who) => {
+        const r = await this.training.step(id, s, input, who);
+        agos.get(id)?.push(ago);
+        return r;
+      });
 
     await ask(
       "G-10251",
@@ -343,10 +357,28 @@ export class DemoSeeder {
 
     // a guard asks for themselves: the first waits for the supervisor, the second was reviewed and now waits for the project manager
     const byGuard = (course: string, reason: "low_score" | "refresher", notes: string, ago: number) =>
-      as("guard", ago, (who) => this.training.create({ course, reason, priority: "medium", related: "", notes }, who));
+      as("guard", ago, async (who) => {
+        const r = await this.training.create({ course, reason, priority: "medium", related: "", notes }, who);
+        agos.set(r.id, [ago]);
+        return r;
+      });
     await byGuard("First aid essentials", "refresher", "I would like to renew my first-aid certificate.", 1);
     const reviewed = await byGuard("Radio communication procedure", "low_score", "My last score on radio procedure was low.", 4);
     await step("gs", reviewed.id, "review", { text: "Agreed: the score was low and he asked for it." }, 3);
+
+    // the database stamps rows with the real time, so move each request back to when it "happened" (its history entries are stamped by the pinned date and cannot be edited)
+    await withContext({ userId: userIds.get("qm")!, organizationId: orgId }, () =>
+      this.uow.transaction(async () => {
+        for (const [id, days] of agos) {
+          const at = (n: number) => sql<Date>`now() - ${n} * interval '1 day'`;
+          await raqibDb()
+            .updateTable("raqib_training_requests")
+            .set({ created_at: at(days[0]!), updated_at: at(days[days.length - 1]!) })
+            .where("id", "=", id)
+            .execute();
+        }
+      }),
+    );
   }
 
   /** One open and one draft survey. The General Manager still names who manages surveys, as in real use. */
@@ -550,6 +582,8 @@ export class DemoSeeder {
             reason: "Demo placeholder values (not the client's approved table)",
             createdBy: ownerId,
           });
+          // the quality manager is named as scoring manager, so Settings → Scoring rules is editable in the demo
+          await this.scoring.addDesignee(userIds.get("qm")!, "scoring_admin", ownerId);
         }
 
         for (const f of DEMO_FORMS) {
