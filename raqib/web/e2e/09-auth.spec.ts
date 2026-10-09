@@ -21,7 +21,7 @@ test.describe("sign-in and account security", () => {
     await expect(page.getByRole("alert")).toContainText("Email or password is incorrect");
     await page.getByLabel("Password").fill(PASSWORD);
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
-    await expect(page.getByText("Guards Supervisor").first()).toBeVisible();
+    await expect(page.getByText("Security Supervisor").first()).toBeVisible();
     await signedIn(page);
   });
 

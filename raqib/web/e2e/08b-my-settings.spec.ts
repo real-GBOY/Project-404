@@ -40,7 +40,7 @@ test.describe("my settings", () => {
 
     // the demo account switcher: a real sign-in as another role
     await page.getByLabel("Signed in as").selectOption(ACCOUNTS.gs);
-    await expect(page.getByText("Guards Supervisor").first()).toBeVisible();
+    await expect(page.getByText("Security Supervisor").first()).toBeVisible();
     await page.locator("aside button", { hasText: "My settings" }).click();
     await expect(page.getByText(ACCOUNTS.gs, { exact: true })).toBeVisible();
 
