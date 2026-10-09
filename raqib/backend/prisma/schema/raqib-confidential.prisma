@@ -2,10 +2,12 @@ model raqib_conf_reports {
   id              String    @id
   organization_id String
   ref             String
-  /// @kyselyType('misconduct' | 'violation' | 'safety')
+  /// @kyselyType('misconduct' | 'violation' | 'safety' | 'survey')
   kind            String
   /// @kyselyType('standard' | 'high')
   sensitivity     String
+  survey_id       String?
+  project_id      String?
   subject         String
   body            String
   place           String    @default("")

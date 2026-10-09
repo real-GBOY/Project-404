@@ -48,6 +48,8 @@ model raqib_inspections {
   id                    String    @id
   organization_id       String
   visit_id              String
+  form_id               String
+  issue_no              String
   form_version_id       String
   guard_form_version_id String?
   scoring_policy        String    @default("weighted_compliance_v1")
@@ -55,11 +57,13 @@ model raqib_inspections {
   started_at            DateTime  @default(now()) @db.Timestamptz(6)
   submitted_at          DateTime? @db.Timestamptz(6)
   score_pct             Int?
+  scoring_config_id     String?
   /// @kyselyType(Json<Record<string, unknown>> | null)
   counts                Json?
 
   @@unique([organization_id, id], map: "raqib_inspections_org_id_uq")
-  @@unique([organization_id, visit_id], map: "raqib_inspections_visit_uq")
+  @@unique([organization_id, visit_id, form_id], map: "raqib_inspections_visit_form_uq")
+  @@unique([organization_id, issue_no], map: "raqib_inspections_issue_uq")
   @@map("raqib_inspections")
 }
 
@@ -165,4 +169,71 @@ model raqib_evidence {
   @@unique([organization_id, id], map: "raqib_evidence_org_id_uq")
   @@unique([organization_id, file_id], map: "raqib_evidence_file_uq")
   @@map("raqib_evidence")
+}
+
+model raqib_scoring_configs {
+  id              String   @id
+  organization_id String
+  version         Int
+  base_score      Int      @default(100)
+  /// @kyselyType(Json<Record<string, number>>)
+  by_severity     Json     @default("{}")
+  /// @kyselyType(Json<Record<string, number>>)
+  by_item         Json     @default("{}")
+  reason          String
+  created_by      String?
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "raqib_scoring_configs_org_id_uq")
+  @@unique([organization_id, version], map: "raqib_scoring_configs_version_uq")
+  @@map("raqib_scoring_configs")
+}
+
+model raqib_inspection_deductions {
+  organization_id String
+  inspection_id   String
+  item_id         String
+  item_key        String
+  /// @kyselyType('low' | 'medium' | 'high' | null)
+  severity        String?
+  amount          Int
+  config_id       String
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@id([organization_id, inspection_id, item_id])
+  @@map("raqib_inspection_deductions")
+}
+
+model raqib_designations {
+  organization_id String
+  user_id         String
+  /// @kyselyType('scoring_admin' | 'survey_manager')
+  kind            String
+  granted_by      String?
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@id([organization_id, user_id, kind])
+  @@map("raqib_designations")
+}
+
+model raqib_corrections {
+  id              String   @id
+  organization_id String
+  seq             BigInt   @default(autoincrement())
+  inspection_id   String
+  visit_id        String
+  project_id      String
+  /// @kyselyType('started_at' | 'submitted_at' | 'deduction_amount')
+  field           String
+  item_key        String?
+  previous_value  String?
+  new_value       String
+  reason          String
+  actor_id        String?
+  actor_name_ar   String
+  actor_name_en   String
+  actor_role      String?
+  at              DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("raqib_corrections")
 }

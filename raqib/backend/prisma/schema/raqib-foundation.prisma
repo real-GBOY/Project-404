@@ -16,7 +16,7 @@ model raqib_settings {
 model raqib_role_templates {
   id              String   @id
   organization_id String
-  /// @kyselyType('qm' | 'qe' | 'pm' | 'ins' | 'gs' | 'guard' | 'gm')
+  /// @kyselyType('qm' | 'qe' | 'pm' | 'ins' | 'gs' | 'guard' | 'gm' | 'adm')
   role_key        String
   module          String
   actions         String   @default("")
@@ -31,7 +31,7 @@ model raqib_role_templates {
 model raqib_profiles {
   organization_id String
   user_id         String
-  /// @kyselyType('qm' | 'qe' | 'pm' | 'ins' | 'gs' | 'guard' | 'gm')
+  /// @kyselyType('qm' | 'qe' | 'pm' | 'ins' | 'gs' | 'guard' | 'gm' | 'adm')
   role_key        String
   name_ar         String
   name_en         String
@@ -63,6 +63,9 @@ model raqib_projects {
   /// @kyselyType('active' | 'attention' | 'mobilizing' | 'closed')
   status           String    @default("active")
   first_visit_date DateTime? @db.Date
+  contract_start   DateTime? @db.Date
+  contract_end     DateTime? @db.Date
+  employees_assigned Int?
   archived_at      DateTime? @db.Timestamptz(6)
   created_at       DateTime  @default(now()) @db.Timestamptz(6)
   updated_at       DateTime  @default(now()) @db.Timestamptz(6)
@@ -161,4 +164,24 @@ model raqib_auth_throttle {
   updated_at       DateTime  @default(now()) @db.Timestamptz(6)
 
   @@map("raqib_auth_throttle")
+}
+
+model raqib_surveys {
+  id              String    @id
+  organization_id String
+  title_ar        String
+  title_en        String
+  intro_ar        String    @default("")
+  intro_en        String    @default("")
+  /// @kyselyType(Json<Array<{ key: string; type: 'rating' | 'text'; text: { ar: string; en: string } }>>)
+  questions       Json      @default("[]")
+  /// @kyselyType('draft' | 'active' | 'closed')
+  status          String    @default("draft")
+  created_by      String?
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  published_at    DateTime? @db.Timestamptz(6)
+  closed_at       DateTime? @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "raqib_surveys_org_id_uq")
+  @@map("raqib_surveys")
 }

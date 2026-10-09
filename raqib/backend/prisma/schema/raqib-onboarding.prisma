@@ -8,7 +8,7 @@ model raqib_account_requests {
   national_id          String
   employee_no          String    @default("")
   department           String    @default("")
-  /// @kyselyType('qe' | 'pm' | 'ins' | 'gs' | 'guard')
+  /// @kyselyType('qe' | 'pm' | 'ins' | 'gs' | 'guard' | 'adm')
   requested_role       String
   requested_projects   String    @default("")
   justification        String

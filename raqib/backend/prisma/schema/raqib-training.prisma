@@ -11,8 +11,10 @@ model raqib_training_requests {
   /// @kyselyType('low' | 'medium' | 'high')
   priority        String
   notes           String    @default("")
-  /// @kyselyType('pending_pm' | 'returned' | 'rejected' | 'approved' | 'scheduled' | 'completed')
+  /// @kyselyType('pending_supervisor' | 'pending_pm' | 'returned' | 'rejected' | 'approved' | 'scheduled' | 'completed')
   status          String    @default("pending_pm")
+  /// @kyselyType('supervisor' | 'guard')
+  requester_kind  String    @default("supervisor")
   round           Int       @default(1)
   requested_by    String?
   scheduled_date  DateTime? @db.Date
@@ -34,7 +36,7 @@ model raqib_training_events {
   organization_id String
   request_id      String
   seq             BigInt   @default(autoincrement())
-  /// @kyselyType('requested' | 'returned' | 'resubmitted' | 'approved' | 'rejected' | 'scheduled' | 'completed')
+  /// @kyselyType('requested' | 'reviewed' | 'returned' | 'resubmitted' | 'approved' | 'rejected' | 'scheduled' | 'completed')
   kind            String
   from_status     String?
   to_status       String
