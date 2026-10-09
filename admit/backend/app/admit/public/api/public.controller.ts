@@ -28,7 +28,7 @@ export const PUBLIC_RATE_POLICIES = {
 const slugParam = z.string().regex(/^[a-z0-9-]{2,64}$/);
 const refParam = z.string().regex(/^[A-Za-z0-9-]{6,20}$/);
 const keyParam = z.string().min(16).max(64).regex(/^[A-Za-z0-9_-]+$/);
-const idParam = z.string().regex(/^[A-Za-z0-9_]{3,64}$/);
+const idParam = z.string().regex(/^[A-Za-z0-9_-]{3,64}$/);
 const IDEM = /^[A-Za-z0-9_-]{16,100}$/;
 
 const accessQuery = z.object({ k: keyParam });

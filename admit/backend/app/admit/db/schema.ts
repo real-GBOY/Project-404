@@ -193,6 +193,14 @@ export type admit_scan_attempts = {
    * @kyselyType('ADMITTED' | 'ALREADY_USED' | 'INVALID')
    */
   result: "ADMITTED" | "ALREADY_USED" | "INVALID";
+  /**
+   * @kyselyType('unknown' | 'revoked' | 'other_event' | 'event_closed')
+   */
+  reason: "unknown" | "revoked" | "other_event" | "event_closed" | null;
+  /**
+   * @kyselyType('QR' | 'MANUAL')
+   */
+  method: Generated<"QR" | "MANUAL">;
   gate: Generated<string>;
   staff_id: string | null;
   scanned_at: Generated<Timestamp>;

@@ -6,8 +6,7 @@ import { AUDIT_LOGGER, CLOCK, UNIT_OF_WORK } from "@core/kernel/tokens.js";
 import type { Clock } from "@core/kernel/clock.js";
 import type { IAuditLogger } from "@core/contracts/index.js";
 import type { Principal } from "@core/http/principal.js";
-import { admitId } from "@admit/admit/shared/ids.js";
-import { ticketTokenHash, ticketToken } from "@admit/admit/shared/secrets.js";
+import { newTicketId, ticketTokenHash, ticketToken } from "@admit/admit/shared/secrets.js";
 import { EventAccess } from "@admit/admit/events/application/event-access.js";
 import { EventsRepository } from "@admit/admit/events/infrastructure/events-repository.js";
 import { BookingsRepository, type BookingRecord } from "@admit/admit/bookings/infrastructure/bookings-repository.js";
@@ -51,7 +50,7 @@ export class TicketsService {
     let seq = 1;
     for (const line of [...lines].sort((a, b) => a.ticketTypeId.localeCompare(b.ticketTypeId))) {
       for (let i = 0; i < line.quantity; i++) {
-        const id = admitId("tix");
+        const id = newTicketId();
         rows.push({
           id, bookingId: booking.id, eventId: booking.eventId, ticketTypeId: line.ticketTypeId, seq: seq++,
           holderName: line.holderNames[i] || booking.customerName, tokenHash: ticketTokenHash(id),

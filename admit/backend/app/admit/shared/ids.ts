@@ -14,7 +14,6 @@ export type AdmitIdPrefix =
   | "bkg" // booking
   | "bkl" // booking line
   | "sub" // payment submission
-  | "tix" // issued ticket
   | "scn" // scan attempt
   | "tln" // booking timeline entry
   | "eml"; // email message

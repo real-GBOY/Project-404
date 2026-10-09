@@ -101,6 +101,10 @@ model admit_scan_attempts {
   ticket_id       String?
   /// @kyselyType('ADMITTED' | 'ALREADY_USED' | 'INVALID')
   result          String
+  /// @kyselyType('unknown' | 'revoked' | 'other_event' | 'event_closed')
+  reason          String?
+  /// @kyselyType('QR' | 'MANUAL')
+  method          String   @default("QR")
   gate            String   @default("")
   staff_id        String?
   scanned_at      DateTime @default(now()) @db.Timestamptz(6)

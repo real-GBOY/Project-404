@@ -162,7 +162,7 @@ describe.skipIf(!hasTestDb)("Admit journey", () => {
     it("books, holds the seats and queues the payment-instructions email in the same transaction", async () => {
       const r = await book([{ ticketTypeId: generalId, quantity: 2 }], 1);
       expect(r.status).toBe(201);
-      expect(r.body.ref).toMatch(/^ADM-[A-Z2-9]{8}$/);
+      expect(r.body.ref).toMatch(/^ADM-[A-Z2-9]{4}-[A-Z2-9]{4}$/);
       expect(r.body.totalMinor).toBe(50000);
       const d = await call("GET", pub("/events/jazz-night"));
       expect(d.body.ticketTypes[0].remaining).toBe(28);
@@ -235,14 +235,14 @@ describe.skipIf(!hasTestDb)("Admit journey", () => {
     it("rate-limits repeated requests from one address with 429 and Retry-After", async () => {
       const pinned = { "x-forwarded-for": "203.0.113.9" };
       const codes: number[] = [];
-      for (let i = 0; i < 5; i++) codes.push((await call("POST", pub("/links/resend"), { body: { ref: "ADM-ZZZZZZZZ", email: "x@example.com" }, headers: pinned })).status);
+      for (let i = 0; i < 5; i++) codes.push((await call("POST", pub("/links/resend"), { body: { ref: "ADM-ZZZZ-ZZZZ", email: "x@example.com" }, headers: pinned })).status);
       expect(codes).toEqual([202, 202, 202, 429, 429]);
-      const limited = await call("POST", pub("/links/resend"), { body: { ref: "ADM-ZZZZZZZZ", email: "x@example.com" }, headers: pinned });
+      const limited = await call("POST", pub("/links/resend"), { body: { ref: "ADM-ZZZZ-ZZZZ", email: "x@example.com" }, headers: pinned });
       expect(limited.headers["retry-after"]).toBeTruthy();
     });
 
     it("answers a link-resend request identically for unknown bookings", async () => {
-      const a = await call("POST", pub("/links/resend"), { body: { ref: "ADM-ZZZZZZZZ", email: "x@example.com" } });
+      const a = await call("POST", pub("/links/resend"), { body: { ref: "ADM-ZZZZ-ZZZZ", email: "x@example.com" } });
       expect(a.status).toBe(202);
       expect(a.body).toEqual({ accepted: true });
     });
@@ -377,9 +377,34 @@ describe.skipIf(!hasTestDb)("Admit journey", () => {
     });
 
     it("answers INVALID alike for unknown, malformed and foreign tokens", async () => {
-      expect((await scan("x".repeat(22))).body).toEqual({ result: "INVALID" });
-      expect((await scan("short")).body).toEqual({ result: "INVALID" });
-      expect((await scan(ticketToken("tix_doesnotexist"))).body).toEqual({ result: "INVALID" });
+      for (const t of ["x".repeat(22), "short", ticketToken("TKT-NOPE-NOPE")]) {
+        expect((await scan(t)).body).toMatchObject({ result: "INVALID", reason: "unknown" });
+      }
+      const typed = await call("POST", "/admit/checkin", { token: door, body: { ticketId: "TKT-ZZZZ-ZZZZ", eventId } });
+      expect(typed.body).toMatchObject({ result: "INVALID", reason: "unknown" });
+    });
+
+    it("admits by typed ticket ID too, logs it as manual, and says when a ticket belongs to another event", async () => {
+      const r = await book([{ ticketTypeId: generalId, quantity: 1 }], 61);
+      await uploadProof(r.body.ref, keyOf(r.body.links));
+      const item = await queueItem(r.body.ref);
+      await approve(item!.submissionId, item!.version);
+      const t = await ownerQuery<{ id: string }>(`SELECT t.id FROM admit_tickets t JOIN admit_bookings b ON b.id = t.booking_id WHERE b.ref = $1`, [r.body.ref]);
+      expect(t[0]!.id).toMatch(/^TKT-[A-Z2-9]{4}-[A-Z2-9]{4}$/);
+
+      // the owner works another event: this ticket is valid, but not here
+      const venue = (await call("POST", "/admit/venues", { token: owner, body: { name: "Other Hall", capacity: 50 } })).body.id;
+      const other = await call("POST", "/admit/events", { token: owner, body: { slug: "other-night", title: "Other Night", venueId: venue, startsAt: inDays(30), endsAt: inDays(30.1) } });
+      const foreign = await call("POST", "/admit/checkin", { token: owner, body: { ticketId: t[0]!.id, eventId: other.body.id } });
+      expect(foreign.body).toEqual({ result: "INVALID", reason: "other_event", at: expect.any(String) });
+
+      const manual = await call("POST", "/admit/checkin", { token: door, body: { ticketId: t[0]!.id.toLowerCase(), eventId } });
+      expect(manual.body).toMatchObject({ result: "ADMITTED", ticket: { id: t[0]!.id } });
+      const log = await ownerQuery<{ method: string }>(`SELECT method FROM admit_scan_attempts WHERE ticket_id = $1 AND result = 'ADMITTED'`, [t[0]!.id]);
+      expect(log[0]!.method).toBe("MANUAL");
+      const again = await call("POST", "/admit/checkin", { token: door, body: { ticketId: t[0]!.id, eventId } });
+      expect(again.body).toMatchObject({ result: "ALREADY_USED", firstCheckInBy: "Door" });
+      expect((await call("POST", "/admit/checkin", { token: door, body: { token: "x".repeat(22), ticketId: t[0]!.id, eventId } })).status).toBe(400);
     });
 
     it("keeps scanning within the staff member's events", async () => {
@@ -392,7 +417,8 @@ describe.skipIf(!hasTestDb)("Admit journey", () => {
     it("reports attendance for the dashboard", async () => {
       const o = await call("GET", `/admit/checkin/events/${eventId}/overview`, { token: owner });
       expect(o.status).toBe(200);
-      expect(o.body.totals).toMatchObject({ validTickets: 2, checkedIn: 2, remaining: 0 });
+      expect(o.body.totals).toMatchObject({ validTickets: 3, checkedIn: 3, remaining: 0 });
+      expect(o.body.scans[0]).toMatchObject({ staff: "Door", method: "QR" });
       expect(o.body.scans.length).toBeGreaterThan(3);
       expect(o.body.arrivals.length).toBeGreaterThan(0);
       expect((await call("GET", `/admit/checkin/events/${eventId}/overview`, { token: door })).status).toBe(403);
@@ -408,7 +434,7 @@ describe.skipIf(!hasTestDb)("Admit journey", () => {
       const t = await ownerQuery<{ id: string }>(`SELECT t.id FROM admit_tickets t JOIN admit_bookings b ON b.id = t.booking_id WHERE b.ref = $1`, [refB]);
       const rev = await call("POST", `/admit/tickets/${t[0]!.id}/revoke`, { token: owner, body: { reason: "Refunded" } });
       expect(rev.body.status).toBe("REVOKED");
-      expect((await scan(ticketToken(t[0]!.id))).body.result).toBe("INVALID");
+      expect((await scan(ticketToken(t[0]!.id))).body).toMatchObject({ result: "INVALID", reason: "revoked" });
       expect((await call("POST", `/admit/tickets/${t[0]!.id}/revoke`, { token: owner, body: { reason: "again" } })).status).toBe(409);
     });
   });
@@ -509,7 +535,7 @@ describe.skipIf(!hasTestDb)("Admit journey", () => {
       expect((await call("PUT", `/admit/events/${eventId}/staff/${dr[0]!.id}`, { token: door, body: { gate: "C" } })).status).toBe(403);
 
       expect((await call("DELETE", `/admit/events/${eventId}/staff/${dr[0]!.id}`, { token: owner })).status).toBe(204);
-      expect((await call("GET", "/admit/checkin/events", { token: door })).body.items).toEqual([]);
+      expect((await call("GET", "/admit/checkin/events", { token: door })).body.events).toEqual([]);
     });
   });
 

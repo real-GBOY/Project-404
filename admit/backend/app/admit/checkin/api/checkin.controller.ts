@@ -9,8 +9,14 @@ import type { Principal } from "@core/http/principal.js";
 import { CheckinService } from "../application/checkin-service.js";
 
 const scanSchema = z
-  .object({ token: z.string().trim().min(1).max(200), eventId: z.string().min(1).max(64), gate: z.string().trim().max(40).optional() })
-  .strict();
+  .object({
+    token: z.string().trim().min(1).max(200).optional(),
+    ticketId: z.string().trim().min(6).max(24).optional(),
+    eventId: z.string().min(1).max(64),
+    gate: z.string().trim().max(40).optional(),
+  })
+  .strict()
+  .refine((b) => !!b.token !== !!b.ticketId, { message: "Send either the scanned token or a typed ticket ID.", path: ["token"] });
 
 @ApiTags("admit · check-in")
 @ApiBearerAuth("access-token")
@@ -29,8 +35,8 @@ export class CheckinController {
 
   @Get("events")
   @RequirePermission("scan", "checkin")
-  async myEvents(@CurrentUser() who: Principal) {
-    return { items: await this.service.myEvents(who) };
+  myEvents(@CurrentUser() who: Principal) {
+    return this.service.myEvents(who);
   }
 
   @Get("events/:eventId/overview")

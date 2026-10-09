@@ -16,11 +16,23 @@ import { readAdmitConfig } from "@admit/config.js";
 /** No 0/O/1/I/L - read aloud and typed from a screenshot without mistakes. */
 const REF_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 
-export function newBookingRef(): string {
+function block(n: number): string {
   let out = "";
-  for (let i = 0; i < 8; i++) out += REF_ALPHABET[randomInt(REF_ALPHABET.length)];
-  return `ADM-${out}`;
+  for (let i = 0; i < n; i++) out += REF_ALPHABET[randomInt(REF_ALPHABET.length)];
+  return out;
 }
+
+/** ADM-7K4Q-2931 style: shown to customers, typed into transfer notes, quoted to the organizer. */
+export function newBookingRef(): string {
+  return `ADM-${block(4)}-${block(4)}`;
+}
+
+/** TKT-8F3D-K29Q style: printed under the QR code so door staff can type it. Not the QR token (that is derived from it, see ticketToken). */
+export function newTicketId(): string {
+  return `TKT-${block(4)}-${block(4)}`;
+}
+
+export const TICKET_ID_SHAPE = /^TKT-[A-HJ-KM-NP-Z2-9]{4}-[A-HJ-KM-NP-Z2-9]{4}$/;
 
 export const sha256Hex = (value: string): string => createHash("sha256").update(value).digest("hex");
 

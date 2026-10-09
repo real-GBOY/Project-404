@@ -157,13 +157,17 @@ CREATE TABLE "admit_scan_attempts" (
   "event_id"        TEXT NOT NULL,
   "ticket_id"       TEXT,
   "result"          TEXT NOT NULL,
+  "reason"          TEXT,
+  "method"          TEXT NOT NULL DEFAULT 'QR',
   "gate"            TEXT NOT NULL DEFAULT '',
   "staff_id"        TEXT,
   "scanned_at"      TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT "admit_scan_attempts_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "admit_scan_attempts_event_fk" FOREIGN KEY ("organization_id", "event_id")
     REFERENCES "admit_events" ("organization_id", "id") ON DELETE CASCADE,
-  CONSTRAINT "admit_scan_attempts_result_check" CHECK ("result" IN ('ADMITTED', 'ALREADY_USED', 'INVALID'))
+  CONSTRAINT "admit_scan_attempts_result_check" CHECK ("result" IN ('ADMITTED', 'ALREADY_USED', 'INVALID')),
+  CONSTRAINT "admit_scan_attempts_method_check" CHECK ("method" IN ('QR', 'MANUAL')),
+  CONSTRAINT "admit_scan_attempts_reason_check" CHECK ("reason" IS NULL OR "reason" IN ('unknown', 'revoked', 'other_event', 'event_closed'))
 );
 CREATE INDEX "admit_scan_attempts_event_idx" ON "admit_scan_attempts" ("organization_id", "event_id", "scanned_at" DESC);
 
