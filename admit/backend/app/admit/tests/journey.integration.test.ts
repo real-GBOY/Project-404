@@ -540,6 +540,27 @@ describe.skipIf(!hasTestDb)("Admit journey", () => {
       expect((await call("GET", "/admit/bookings/customers/list", { token: door })).status).toBe(403);
     });
 
+    it("lists the team with roles, and adds only existing accounts with an Admit role", async () => {
+      const team = await call("GET", "/admit/team", { token: owner });
+      expect(team.status).toBe(200);
+      expect(team.body.members.some((m: Json) => m.roles.some((r: Json) => r.key === "owner"))).toBe(true);
+      expect(team.body.roles.map((r: Json) => r.key)).toEqual(["owner", "event_manager", "finance_reviewer", "door_staff", "viewer"]);
+      expect(team.body.roles[0].permissions).toContain("approve:payment");
+      expect((await call("GET", "/admit/team", { token: door })).status).toBe(403);
+
+      expect((await call("POST", "/admit/team", { token: owner, body: { email: "nobody@nowhere.test", roleKey: "viewer" } })).body.error.code).toBe("admit.no_account");
+      expect((await call("POST", "/admit/team", { token: owner, body: { email: "x@y.test", roleKey: "root" } })).body.error.code).toBe("admit.unknown_role");
+      const guest = await seedOrganizer(app, "Team Guest Org");
+      expect((await call("POST", "/admit/team", { token: owner, body: { email: guest.ownerEmail, roleKey: "viewer" } })).status).toBe(204);
+      const after = await call("GET", "/admit/team", { token: owner });
+      const added = after.body.members.find((m: Json) => m.email === guest.ownerEmail);
+      expect(added.roles.map((r: Json) => r.key)).toEqual(["viewer"]);
+      expect((await call("DELETE", `/admit/team/${added.userId}/roles/viewer`, { token: owner })).status).toBe(204);
+      const me = (await call("GET", "/admit/team", { token: owner })).body.members.find((m: Json) => m.roles.some((r: Json) => r.key === "owner"));
+      expect((await call("DELETE", `/admit/team/${me.userId}/roles/owner`, { token: owner })).body.error.code).toBe("admit.last_owner");
+      expect((await call("POST", "/admit/team", { token: door, body: { email: guest.ownerEmail, roleKey: "owner" } })).status).toBe(403);
+    });
+
     it("assigns only organizer members to an event and lists them with their gate", async () => {
       const dr = await ownerQuery<{ id: string }>(`SELECT id FROM users WHERE email = $1`, [doorEmail]);
       const list = await call("GET", `/admit/events/${eventId}/staff`, { token: owner });
