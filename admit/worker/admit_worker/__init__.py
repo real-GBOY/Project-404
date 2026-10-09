@@ -1,0 +1,1 @@
+"""Admit email worker."""

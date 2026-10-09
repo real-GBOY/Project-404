@@ -1,0 +1,7 @@
+.venv/
+outbox/
+__pycache__/
+*.egg-info/
+.env
+.pytest_cache/
+build/

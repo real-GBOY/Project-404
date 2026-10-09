@@ -1,0 +1,22 @@
+{% extends "base.html.j2" %}
+{% from "_macros.html.j2" import paragraph, button with context %}
+{% block title %}Action needed - {{ event_name }}{% endblock %}
+{% block preheader %}We couldn't verify your payment for {{ event_name }}.{% endblock %}
+{% block pill_bg %}#FBE4E1{% endblock %}
+{% block pill_fg %}#A3201A{% endblock %}
+{% block pill %}&#10005; Not verified{% endblock %}
+{% block headline %}We couldn't verify your payment.{% endblock %}
+{% block content %}
+{% call paragraph() %}Hi {{ customer_name }}, the organizer reviewed your proof for {{ booking_reference }} and couldn't confirm it.{% if can_resubmit %} Your seats are still held, so you can send a new proof.{% else %} The hold on your seats has ended, so they were released.{% endif %}{% endcall %}
+  <tr><td class="px" style="padding:0 32px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FFFFFF;border-left:4px solid #B42318;">
+      <tr><td style="padding:14px 16px;font-size:14px;line-height:1.5;color:#16140F;"><strong>Reason:</strong> {{ rejection_reason }}</td></tr>
+    </table>
+  </td></tr>
+  <tr><td style="padding:12px 0 0;"></td></tr>
+{% if can_resubmit %}
+{{ button(upload_url, "Upload new proof", 240) }}
+{% else %}
+  <tr><td class="px" style="padding:12px 32px 0;font-size:14px;color:#2E2A24;">If you already paid, contact the organizer with your reference <strong>{{ booking_reference }}</strong>.</td></tr>
+{% endif %}
+{% endblock %}

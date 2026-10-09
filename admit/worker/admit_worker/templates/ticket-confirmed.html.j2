@@ -1,0 +1,52 @@
+{% extends "base.html.j2" %}
+{% from "_macros.html.j2" import paragraph, button, event_card with context %}
+{% block title %}Your ticket is confirmed - {{ event_name }}{% endblock %}
+{% block preheader %}{{ ticket_count }} ticket(s) for {{ event_date }}, {{ event_time }} at {{ event_venue }}. Show the QR code at the door.{% endblock %}
+{% block pill_bg %}#E1F1E7{% endblock %}
+{% block pill_fg %}#1E6B44{% endblock %}
+{% block pill %}&#10003; Payment verified{% endblock %}
+{% block headline %}Your ticket is confirmed.{% endblock %}
+{% block content %}
+{% call paragraph() %}Hi {{ customer_name }}, your payment has been verified, and your ticket is ready. We look forward to seeing you at {{ event_name }}.{% endcall %}
+{{ event_card() }}
+
+  <tr><td class="px t-ink2" style="padding:24px 32px 8px;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#4A463F;">Your tickets &middot; {{ ticket_count }}</td></tr>
+
+  <!-- One block per issued ticket (1-6). Never combine tickets into one QR. -->
+  {% for t in tickets %}
+  <tr><td class="px" style="padding:0 32px 16px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#FFFFFF" style="background:#FFFFFF;border:2px solid #16140F;border-radius:12px;">
+      <tr><td colspan="2" style="padding:16px 20px;border-bottom:2px dashed #CFC8BC;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+          <td style="font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#C73A20;">Ticket {{ loop.index }} of {{ ticket_count }}</td>
+          <td align="right" style="font-family:'Courier New',Courier,monospace;font-size:13px;font-weight:700;color:#16140F;">{{ t.ticket_id }}</td>
+        </tr></table>
+      </td></tr>
+      <tr>
+        <td class="stack qr-cell" width="232" bgcolor="#FFFFFF" style="padding:20px;vertical-align:top;background:#FFFFFF;">
+          <!-- 400x400 PNG, black on white, 4-module quiet zone baked in, ECC M -->
+          <img src="{{ t.ticket_qr_code_url }}" width="200" height="200" alt="QR code for ticket {{ t.ticket_id }}" style="width:200px;height:200px;background:#FFFFFF;color:#16140F;font-family:'Courier New',monospace;font-size:16px;">
+        </td>
+        <td class="stack" style="padding:20px 20px 20px 4px;vertical-align:top;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#77716A;">Holder</div>
+          <div style="font-size:17px;font-weight:700;padding:2px 0 12px;color:#16140F;">{{ t.ticket_holder_name or customer_name }}</div>
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#77716A;">Type</div>
+          <div style="font-size:15px;font-weight:600;padding:2px 0 12px;color:#16140F;">{{ t.ticket_type }}</div>
+          <div style="font-size:13px;line-height:1.5;color:#4A463F;">Admits one person, once. If the code doesn't show, <a href="{{ t.ticket_url }}" style="color:#16140F;">open this ticket</a>.</div>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+  {% endfor %}
+
+{{ button(ticket_page_url, "View my tickets") }}
+  <tr><td class="px t-ink2" style="padding:10px 32px 0;text-align:center;font-size:13px;color:#4A463F;">Opens a secure page with all {{ ticket_count }} ticket{{ "" if ticket_count == 1 else "s" }}.</td></tr>
+
+  <!-- Entry instructions -->
+  <tr><td class="px" style="padding:28px 32px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #CFC8BC;">
+      <tr><td class="t-ink2" style="padding:16px 0 8px;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#4A463F;">At the entrance</td></tr>
+      <tr><td class="t-ink2" style="font-size:14px;line-height:1.7;color:#2E2A24;">1. Present your QR code at the entrance.<br>2. Each ticket can be used once.<br>3. Keep your ticket accessible on your phone, with brightness up.<br>4. Contact the organizer if you need assistance.</td></tr>
+    </table>
+  </td></tr>
+{% endblock %}

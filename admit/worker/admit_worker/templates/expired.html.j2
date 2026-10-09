@@ -1,0 +1,10 @@
+{% extends "base.html.j2" %}
+{% from "_macros.html.j2" import paragraph, outline_button with context %}
+{% block title %}Your booking has expired - {{ event_name }}{% endblock %}
+{% block preheader %}We didn't receive proof of payment in time, so the seats were released.{% endblock %}
+{% block pill %}&mdash; Expired{% endblock %}
+{% block headline %}Your booking has expired.{% endblock %}
+{% block content %}
+{% call paragraph() %}Hi {{ customer_name }}, we didn't receive proof of payment for {{ booking_reference }} in time, so the seats were released. <strong>If you already sent money</strong>, contact the organizer with your reference and they'll sort it out.{% endcall %}
+{{ outline_button(status_url, "See this booking") }}
+{% endblock %}

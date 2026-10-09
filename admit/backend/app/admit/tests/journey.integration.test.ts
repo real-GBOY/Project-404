@@ -478,6 +478,41 @@ describe.skipIf(!hasTestDb)("Admit journey", () => {
     });
   });
 
+  describe("reports and staff reach", () => {
+    it("reports revenue only for confirmed bookings, with per-type sales and the payment backlog", async () => {
+      await refreshTokens();
+      const r = await call("GET", "/admit/reports/overview?days=30", { token: owner });
+      expect(r.status).toBe(200);
+      const confirmed = await ownerQuery<{ sum: string }>(`SELECT coalesce(sum(total_minor),0)::text sum FROM admit_bookings WHERE status = 'CONFIRMED'`);
+      expect(r.body.revenueMinor[0]).toEqual({ currency: "EGP", amountMinor: Number(confirmed[0]!.sum) });
+      expect(r.body.bookingsByStatus.CONFIRMED).toBeGreaterThanOrEqual(2);
+      expect(r.body.bookingsByStatus.EXPIRED).toBeGreaterThanOrEqual(1);
+      const general = r.body.byTicketType.find((t: Json) => t.name === "General");
+      expect(general).toMatchObject({ capacity: 30 });
+      expect(general.sold).toBeGreaterThanOrEqual(3);
+      expect(r.body.paymentsWaiting.count).toBeGreaterThanOrEqual(1);
+      expect((await call("GET", "/admit/reports/overview", { token: door })).status).toBe(403);
+    });
+
+    it("assigns only organizer members to an event and lists them with their gate", async () => {
+      const dr = await ownerQuery<{ id: string }>(`SELECT id FROM users WHERE email = $1`, [doorEmail]);
+      const list = await call("GET", `/admit/events/${eventId}/staff`, { token: owner });
+      expect(list.body.items.some((s: Json) => s.userId === dr[0]!.id && s.gate === "A")).toBe(true);
+      const moved = await call("PUT", `/admit/events/${eventId}/staff/${dr[0]!.id}`, { token: owner, body: { gate: "B" } });
+      expect(moved.body.items.find((s: Json) => s.userId === dr[0]!.id).gate).toBe("B");
+
+      const stranger = await seedOrganizer(app, "Stranger Org");
+      const strangerUser = await ownerQuery<{ id: string }>(`SELECT id FROM users WHERE email = $1`, [stranger.ownerEmail]);
+      const bad = await call("PUT", `/admit/events/${eventId}/staff/${strangerUser[0]!.id}`, { token: owner, body: { gate: "" } });
+      expect(bad.status).toBe(400);
+      expect(bad.body.error.code).toBe("admit.not_a_member");
+      expect((await call("PUT", `/admit/events/${eventId}/staff/${dr[0]!.id}`, { token: door, body: { gate: "C" } })).status).toBe(403);
+
+      expect((await call("DELETE", `/admit/events/${eventId}/staff/${dr[0]!.id}`, { token: owner })).status).toBe(204);
+      expect((await call("GET", "/admit/checkin/events", { token: door })).body.items).toEqual([]);
+    });
+  });
+
   describe("email visibility and tenant isolation", () => {
     it("lists delivery status and only lets FAILED messages be retried", async () => {
       await refreshTokens();

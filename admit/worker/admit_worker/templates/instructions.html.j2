@@ -1,0 +1,37 @@
+{% extends "base.html.j2" %}
+{% from "_macros.html.j2" import paragraph, button with context %}
+{% block title %}Complete your payment - {{ event_name }}{% endblock %}
+{% block preheader %}Send {{ total }} before {{ hold_expires }} to hold your seats for {{ event_name }}.{% endblock %}
+{% block pill_bg %}#FFFFFF{% endblock %}
+{% block pill_fg %}#16140F{% endblock %}
+{% block pill %}&rarr; Payment due{% endblock %}
+{% block headline %}Your seats are held.{% endblock %}
+{% block content %}
+{% call paragraph() %}Hi {{ customer_name }}, we're holding your seats for {{ event_name }} until <strong>{{ hold_expires }}</strong>. Send <strong>{{ total }}</strong> using one of the methods below, then upload a screenshot or photo of the receipt. <strong>This email is not a ticket.</strong>{% endcall %}
+  <tr><td class="px" style="padding:0 32px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FFFFFF;border:1px solid #E2DDD4;font-size:14px;">
+      {% for i in items %}
+      <tr><td style="padding:12px 16px;color:#4A463F;{% if not loop.first %}border-top:1px solid #E2DDD4;{% endif %}">{{ i.quantity }} &times; {{ i.name }}</td><td align="right" style="padding:12px 16px;font-weight:700;color:#16140F;{% if not loop.first %}border-top:1px solid #E2DDD4;{% endif %}">{{ i.line_total }}</td></tr>
+      {% endfor %}
+      <tr><td style="padding:12px 16px;font-weight:700;border-top:2px solid #16140F;">Total to send</td><td align="right" style="padding:12px 16px;font-weight:800;font-size:16px;border-top:2px solid #16140F;">{{ total }}</td></tr>
+    </table>
+  </td></tr>
+
+  <tr><td class="px t-ink2" style="padding:24px 32px 8px;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#4A463F;">How to pay</td></tr>
+  {% for m in payment_methods %}
+  <tr><td class="px" style="padding:0 32px 12px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FFFFFF;border:1px solid #E2DDD4;">
+      <tr><td style="padding:14px 16px;">
+        <div style="font-size:15px;font-weight:700;color:#16140F;">{{ m.label }}</div>
+        <div style="font-size:14px;padding-top:6px;color:#2E2A24;">Send to <strong>{{ m.recipient }}</strong></div>
+        <div style="font-family:'Courier New',Courier,monospace;font-size:15px;font-weight:700;padding-top:4px;color:#16140F;">{{ m.identifier }}</div>
+        {% if m.instructions %}<div style="font-size:13px;line-height:1.6;padding-top:8px;color:#4A463F;">{% for step in m.instructions %}{{ loop.index }}. {{ step }}<br>{% endfor %}</div>{% endif %}
+      </td></tr>
+    </table>
+  </td></tr>
+  {% endfor %}
+
+  <tr><td style="padding:12px 0 0;"></td></tr>
+{{ button(upload_url, "Upload payment proof", 280) }}
+  <tr><td class="px t-ink2" style="padding:12px 32px 0;text-align:center;font-size:13px;color:#4A463F;">Or <a href="{{ status_url }}" style="color:#16140F;">check this booking's status</a> at any time.</td></tr>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends "base.html.j2" %}
+{% from "_macros.html.j2" import paragraph, button with context %}
+{% block title %}Your tickets link - {{ event_name }}{% endblock %}
+{% block preheader %}Your secure link to booking {{ booking_reference }}.{% endblock %}
+{% block pill %}Secure link{% endblock %}
+{% block headline %}Here's your link.{% endblock %}
+{% block content %}
+{% call paragraph() %}Hi {{ customer_name }}, you asked for a new link to booking {{ booking_reference }} for {{ event_name }}. Anyone with this link can open the booking, so keep it to yourself.{% endcall %}
+{{ button(ticket_page_url, "Open my booking", 240) }}
+{% endblock %}

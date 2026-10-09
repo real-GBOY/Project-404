@@ -1,0 +1,12 @@
+{% extends "base.html.j2" %}
+{% from "_macros.html.j2" import paragraph, outline_button with context %}
+{% block title %}We received your payment proof - {{ event_name }}{% endblock %}
+{% block preheader %}We're verifying your transfer for {{ event_name }}. This is not a ticket yet.{% endblock %}
+{% block pill_bg %}#EEE9FA{% endblock %}
+{% block pill_fg %}#5B3FB0{% endblock %}
+{% block pill %}&#9719; In review{% endblock %}
+{% block headline %}We're verifying your transfer.{% endblock %}
+{% block content %}
+{% call paragraph() %}Hi {{ customer_name }}, we received your proof of payment for {{ booking_reference }}. The organizer checks transfers against their account. <strong>This email is not a ticket.</strong> We'll send your tickets as soon as the payment is verified.{% endcall %}
+{{ outline_button(status_url, "Check booking status") }}
+{% endblock %}

@@ -1,0 +1,28 @@
+[project]
+name = "admit-worker"
+version = "0.1.0"
+description = "Admit email worker - drains the admit_email_messages outbox written by the NestJS API and delivers it."
+requires-python = ">=3.11"
+dependencies = [
+  "psycopg[binary]>=3.2",
+  "jinja2>=3.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+admit-worker = "admit_worker.__main__:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["admit_worker*"]
+
+[tool.setuptools.package-data]
+admit_worker = ["templates/*.j2"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -8,6 +8,8 @@ import { TicketsModule } from "@admit/admit/tickets/tickets.module.js";
 import { CheckinModule } from "@admit/admit/checkin/checkin.module.js";
 import { EmailsModule } from "@admit/admit/emails/emails.module.js";
 import { PublicModule } from "@admit/admit/public/public.module.js";
+import { StaffModule } from "@admit/admit/staff/staff.module.js";
+import { ReportsModule } from "@admit/admit/reports/reports.module.js";
 import { JobsModule } from "@admit/admit/jobs/jobs.module.js";
 
 /**
@@ -16,6 +18,6 @@ import { JobsModule } from "@admit/admit/jobs/jobs.module.js";
  * services; Admit behaviour never moves into Core. Architecture: `admit/docs/architecture.md`.
  */
 @Module({
-  imports: [AdmitSharedModule, SettingsModule, AdmitEventsModule, BookingsModule, PaymentsModule, TicketsModule, CheckinModule, EmailsModule, PublicModule, JobsModule],
+  imports: [AdmitSharedModule, SettingsModule, AdmitEventsModule, BookingsModule, PaymentsModule, TicketsModule, CheckinModule, EmailsModule, PublicModule, JobsModule, StaffModule, ReportsModule],
 })
 export class AdmitModule {}

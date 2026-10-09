@@ -1,0 +1,10 @@
+{% extends "base.html.j2" %}
+{% from "_macros.html.j2" import paragraph, outline_button with context %}
+{% block title %}Your booking was cancelled - {{ event_name }}{% endblock %}
+{% block preheader %}Booking {{ booking_reference }} for {{ event_name }} was cancelled.{% endblock %}
+{% block pill %}&mdash; Cancelled{% endblock %}
+{% block headline %}Your booking was cancelled.{% endblock %}
+{% block content %}
+{% call paragraph() %}Hi {{ customer_name }}, booking {{ booking_reference }} for {{ event_name }} has been cancelled and any tickets on it no longer work. If you paid and this is unexpected, contact the organizer with your reference.{% endcall %}
+{{ outline_button(status_url, "See this booking") }}
+{% endblock %}

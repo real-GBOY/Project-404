@@ -1,0 +1,50 @@
+{# Shared pieces of the transactional emails (approved design: Emails.dc.html). #}
+
+{% macro paragraph() %}
+  <tr><td class="px t-ink2" style="padding:12px 32px 24px;font-size:16px;line-height:1.55;color:#2E2A24;">{{ caller() }}</td></tr>
+{% endmacro %}
+
+{# Solid vermilion call to action; Outlook gets a VML rounded rectangle. #}
+{% macro button(href, label, width=240) %}
+  <tr><td align="center" class="px" style="padding:8px 32px 0;">
+    <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="{{ href }}" style="height:52px;v-text-anchor:middle;width:{{ width }}px;" arcsize="12%" stroke="f" fillcolor="#E0472B"><w:anchorlock/><center style="color:#FFFFFF;font-family:Arial,sans-serif;font-size:16px;font-weight:bold;">{{ label }}</center></v:roundrect><![endif]-->
+    <!--[if !mso]><!--><a href="{{ href }}" style="display:inline-block;background:#E0472B;color:#FFFFFF;font-size:16px;font-weight:700;text-decoration:none;padding:16px 32px;border-radius:6px;">{{ label }}</a><!--<![endif]-->
+  </td></tr>
+{% endmacro %}
+
+{# Quiet secondary action. #}
+{% macro outline_button(href, label) %}
+  <tr><td class="px" style="padding:20px 32px 8px;">
+    <a href="{{ href }}" style="display:inline-block;border:2px solid #16140F;color:#16140F;font-size:15px;font-weight:700;text-decoration:none;padding:12px 22px;border-radius:6px;">{{ label }}</a>
+  </td></tr>
+{% endmacro %}
+
+{# The event card: title, date, time, venue (+ optional image above it). #}
+{% macro event_card() %}
+  {% if event_image_url %}
+  <tr><td class="px" style="padding:0 32px;">
+    <img src="{{ event_image_url }}" width="536" alt="{{ event_name }}" style="width:100%;max-width:536px;height:auto;background:#2A251F;color:#FFFFFF;font-size:14px;">
+  </td></tr>
+  {% endif %}
+  <tr><td class="px" style="padding:0 32px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#FFFFFF" style="background:#FFFFFF;border:1px solid #E2DDD4;{% if not event_image_url %}border-top:2px solid #16140F;{% endif %}">
+      <tr><td colspan="2" style="padding:18px 20px 6px;font-size:22px;line-height:1.15;font-weight:800;text-transform:uppercase;color:#16140F;">{{ event_name }}</td></tr>
+      <tr>
+        <td class="stack" width="50%" style="padding:10px 20px 0;vertical-align:top;"><div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#77716A;">Date</div><div style="font-size:15px;font-weight:600;padding-top:4px;color:#16140F;">{{ event_date }}</div></td>
+        <td class="stack" style="padding:10px 20px 0;vertical-align:top;"><div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#77716A;">Time</div><div style="font-size:15px;font-weight:600;padding-top:4px;color:#16140F;">{{ event_time }}</div></td>
+      </tr>
+      <tr><td colspan="2" style="padding:12px 20px 18px;"><div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#77716A;">Venue</div><div style="font-size:15px;line-height:1.45;padding-top:4px;color:#16140F;"><strong>{{ event_venue }}</strong>{% if event_address %}<br>{{ event_address }}{% endif %}{% if event_map_url %} &middot; <a href="{{ event_map_url }}" style="color:#16140F;">Map</a>{% endif %}</div></td></tr>
+    </table>
+  </td></tr>
+{% endmacro %}
+
+{# Label / value rows in a white card (amount, method, event ...). #}
+{% macro facts(rows) %}
+  <tr><td class="px" style="padding:0 32px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FFFFFF;border:1px solid #E2DDD4;font-size:14px;">
+      {% for label, value in rows %}
+      <tr><td style="padding:12px 16px;color:#4A463F;{% if not loop.first %}border-top:1px solid #E2DDD4;{% endif %}">{{ label }}</td><td align="right" style="padding:12px 16px;font-weight:700;color:#16140F;{% if not loop.first %}border-top:1px solid #E2DDD4;{% endif %}">{{ value }}</td></tr>
+      {% endfor %}
+    </table>
+  </td></tr>
+{% endmacro %}
