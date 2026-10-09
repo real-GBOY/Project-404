@@ -33,7 +33,7 @@ decision or asset). Where the *mechanism* is verified but the client's *values* 
 | P8 | Roles incl. Administrative Staff, Security Supervisor, Quality Inspector, confidential personnel | `adm` role; naming of `gs`/`ins`; confidential access is a GM grant | **Verified** (the `adm` template is an assumption) | `admin-role.integration`, e2e role tour |
 | P9 | Backend-enforced permissions, isolation; search/exports/URLs cannot bypass | Template → scope → object rule; every route declares a permission (static test) | **Verified** | `foundation`, `hardening`, `journey` |
 | P10 | Inspectors cannot alter system data; authorised corrections are logged | `raqib_corrections` (append-only) | **Verified** | `scoring.integration`, `journey.integration` |
-| P11 | Annual / monthly / weekly scheduling, conflict prevention, filters, print, export | List, week, month views; CSV and A4 print | **Verified** | `scheduling-rules.integration`, e2e |
+| P11 | Annual / monthly / weekly scheduling, conflict prevention, filters, print, export | List, week, month views; CSV and A4 print; guards on shift chosen in the schedule dialog; a visit starts on its scheduled day unless `settings.insp.allowEarlyStart` is on | **Verified** | `scheduling-rules.integration`, e2e |
 | P12 | Configurable shifts, 12-hour display, consecutive-shift rule | `settings.schedule`, `schedule-rules.ts` | **Verified (mechanism) · Blocked (values)** | `schedule-rules.test`, `scheduling-rules.integration` |
 | P13 | Observation → classification → assignment → action → evidence → verification → closure; history | Existing lifecycle plus form/issue number, elapsed days, escalation level | **Verified** | `quality.integration`, `journey.integration` |
 | P14 | Escalation at 3/6/9 days with e-mail; immediate high-severity notice | `settings.escalation`, `RaqibJobs.escalateActions` | **Verified (mechanism) · Blocked (counting rule and recipients are assumptions)** | `escalation.test`, `escalation.integration` |
@@ -58,12 +58,14 @@ decision or asset). Where the *mechanism* is verified but the client's *values* 
 
 ## Results
 
-Final run, 2026-10-09:
+Final run, 2026-10-09 (after the browser walk-through fixes, the start-on-the-day rule and the answer rules):
 
 | Suite | Result |
 |---|---|
 | `raqib/backend` `tsc`, ESLint, Prettier | pass (0 lint errors; 4 older warnings in test files) |
-| `raqib/backend` Vitest (Postgres `raqib_test`) | **370 tests / 47 files, all pass** |
+| `raqib/backend` Vitest (Postgres `raqib_test`) | **373 tests / 48 files, all pass** |
 | `raqib/web` `tsc -b`, ESLint, Prettier | pass (0 errors; 5 older landing-page warnings) |
-| `raqib/web` Vitest | **57 tests / 11 files, all pass** |
-| `raqib/web` Playwright (real Chrome, real backend) | **56 passed, 1 skipped (pre-existing), 0 failed** (includes `08e-surveys`, `08f-guard-training-chain`, `08g-ranking-weights`) |
+| `raqib/web` Vitest | **58 tests / 12 files, all pass** (includes the check that every string key exists) |
+| `raqib/web` Playwright (real Chrome, real backend) | **57 tests: 56 passed, 1 skipped (pre-existing), 0 failed** (includes surveys, the guard training chain, ranking weights) |
+| Live deployment, read-only (`e2e/90-live-smoke.spec.ts`) | **8 / 8 passed** against `raqib-web.vercel.app` and the live API: every role opens its screens without errors, key figures read correctly, a project manager is refused the confidential reports, Arabic on a phone is right-to-left with no sideways scroll |
+| Full workflow by hand in Chrome | schedule (two forms, guards) → inspect → review → approve and issue → observation → corrective action → verify and close, including the early-start refusal and the note/evidence rule |

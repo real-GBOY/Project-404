@@ -9,7 +9,7 @@ with owners and deadlines, guards are scored and trained, and managers read comp
 fourth product on Project-404 Core, built around an approved design in Arabic and English with full right-to-left
 support.
 
-**Live demo:** [raqib-web.vercel.app](https://raqib-web.vercel.app) (sign in with any account from the demo list below; the API runs on the shared VPS, files on Cloudflare R2). How it is deployed: [docs/raqib-deployment.md](../raqib-deployment.md).
+**Live demo:** [raqib-web.vercel.app](https://raqib-web.vercel.app) (sign in with any account from the demo list below; the API runs on its own VPS, files on Cloudflare R2). How it is deployed: [docs/raqib-deployment.md](../raqib-deployment.md).
 
 Inspectors work **offline** in the field: answers, notes and photos queue on the device and sync in order when
 the signal returns. Everything else, from who may open a record to which form version an inspection used, is
@@ -39,12 +39,12 @@ All data shown is synthetic demo data.
 |---|---|
 | **Quality Management** (director) | Everything: schedules visits, approves inspections, closes actions, manages forms, people and permission templates, reads the audit log |
 | **Quality Employee** | Reviews submitted inspections, flags items, returns or forwards them, reviews corrective-action closures |
-| **Project Manager** | Sees their projects, owns and works corrective actions, approves training requests for their guards |
+| **Project Manager** | Sees their projects, owns and works corrective actions, approves training requests (supervisors' and, after the supervisor's review, guards') for their projects |
 | **Quality Inspector** | Runs assigned inspections (one or several forms per visit) in the field, offline if needed, with notes, photos, video and guard scores. Never sees a score |
-| **Security Supervisor** | Evaluates and develops guards, raises training requests |
+| **Security Supervisor** | Evaluates and develops guards, raises training requests, reviews the requests their guards make for themselves |
 | **Administrative Staff** | Keeps the visit schedule and prints or exports it for the projects they are assigned; nothing else by default |
-| **Security Guard** | Sees their own record and can file a confidential report |
-| **General Manager** | Executive view of compliance and audit, and issues the time-limited grants that open the confidential area |
+| **Security Guard** | Sees their own record and training requests, can ask for training for themselves, answers surveys and can file a confidential report |
+| **General Manager** | Executive view of compliance and audit; issues the time-limited grants that open the confidential area; names who manages scoring rules and who manages surveys |
 
 ## Lifecycles
 
@@ -55,9 +55,10 @@ when and why:
 |---|---|
 | Visit | Scheduled → Assigned → In progress → Pending review → Pending approval → Approved · Returned (back to the inspector) · Rejected · Cancelled. *Overdue* is derived from dates, never stored. |
 | Corrective action | Assigned → In progress → Quality review → Closed. Returned actions go back to work. Open actions can be reassigned or re-dated with a reason. |
-| Training request | Pending → Approved → Scheduled → Completed · Returned · Rejected |
+| Training request | A guard's own request starts **At the supervisor**, then **Pending** (project manager) → Approved → Scheduled → Completed · Returned · Rejected. A supervisor's request starts at Pending. The supervisor-review step can be switched off in Settings. |
 | Account request | Pending → Approved (a password-setup link is sent) · Rejected |
 | Confidential report | New → Under review → Closed |
+| Survey | Draft → Open → Closed (answers go to the confidential area, never back through the survey) |
 
 ## Highlights
 
@@ -104,30 +105,47 @@ training and ranking analytics. The client's own values (deductions, shift hours
 code: see [raqib/docs/RAQIB_REQUIREMENTS_MATRIX.md](../../raqib/docs/RAQIB_REQUIREMENTS_MATRIX.md) for what is verified and what is still
 waiting on the client.
 
+### Client requirements 15–20 (October 2026)
+
+The second brief added, again in place: **project ranking** by observations, improvement, complaints and contract-expiry proximity
+(with contract dates and employees assigned on each project, an order selector, and editable weights; complaint figures show only to
+people holding a confidential grant); **search** by national ID and inspection issue number as well as name, employee number, case
+number and project code, always within the caller's permissions; **training approval chains** for supervisors' and guards' requests;
+**confidential surveys** for guards, managed by people the General Manager names and answered through the confidential channel;
+**branding** (name and logo) on every printed document; the **quality department's responsibility model** (quality verifies, the project
+manager remediates) tested; and the delivery, cost and acceptance documents. The report page shows every form of a visit with its
+deductions, the schedule dialog can name the guards on shift, a visit is started on its scheduled day unless the organization allows
+early starts, and a violation's note and evidence cannot stay behind when an item is changed back to compliant.
+
+For the client: [requirement checklist (Arabic)](../../raqib/docs/RAQIB_CLIENT_CHECKLIST_AR.md) ·
+[(English)](../../raqib/docs/RAQIB_CLIENT_CHECKLIST_EN.md) · [what we still need from them](../../raqib/docs/RAQIB_MATERIALS_REQUEST.md) ·
+[costs, stages and handover](../../raqib/docs/RAQIB_DELIVERY.md).
+
 ### By the numbers
 
 | | |
 |---|---|
-| HTTP routes, all behind a declared permission | **121** |
-| Tenant tables with forced row-level security | **35** `raqib_*` tables, 11 migrations of hand-written SQL |
-| Roles · permission modules · rights | **7 · 14 · 8** |
-| Backend tests (unit, integration over real HTTP, authorization, RLS) | **245** in 30 files |
-| Browser tests (real Chrome, real backend, offline, sign-in, MFA, downloads) | **28** |
-| Web unit tests, including architecture rules that fail the build on a layer violation | **41** |
-| Interface strings, each in Arabic and English | **1,772** |
-| Screens from the approved design | **38**, with full right-to-left layout |
+| HTTP routes, each behind a declared permission or explicitly public | **141** |
+| Tenant tables with forced row-level security | **41** `raqib_*` tables, 27 migrations of hand-written SQL |
+| Roles · permission modules · rights | **8 · 14 · 8** |
+| Backend tests (unit, integration over real HTTP, authorization, RLS) | **373** in 48 files |
+| Browser tests (real Chrome, real backend, offline, sign-in, MFA, downloads, a full inspection-to-closure workflow) | **57** (plus 8 read-only checks for a live deployment) |
+| Web unit tests, including architecture rules and a check that every string key exists | **58** |
+| Interface strings, each in Arabic and English | **1,977** |
+| Screens from the approved design | **38**, plus the account and survey screens, with full right-to-left layout |
 
 ## How it's built
 
 ```
 raqib/
 ├── backend/        NestJS on Core, its own `raqib` database, port 3300
-│   └── app/raqib/  access · projects · visits · forms · inspections · review · observations · actions
-│                   training · evidence · reports · analytics · audit · confidential · onboarding
-│                   account · lifecycle · jobs · observability · provisioning · demo
+│   └── app/raqib/  access · projects · visits · forms · inspections · scoring · corrections · review
+│                   observations · actions · training · evidence · reports · analytics · search · audit
+│                   confidential · surveys · onboarding · settings · account · lifecycle · jobs
+│                   observability · provisioning · demo
 ├── web/            React 19 + Vite + Tailwind 4, port 4500, installable and offline-capable
 │   └── src/        services → api → presenters → hooks → components → features → app
-└── docs/           architecture.md · security.md · operations.md
+└── docs/           architecture.md · security.md · operations.md · the client requirement documents
 ```
 
 The web app is layered, and the layers are enforced by a test: low layers (config, services, the API client)
@@ -148,6 +166,11 @@ cd ../web && npm install && npm run dev        # http://localhost:4500
 The first boot plays the demo history through the real workflows, which takes about a minute. To use Cloudflare R2 instead of local disk,
 see the file-storage section of [raqib/docs/operations.md](../../raqib/docs/operations.md).
 
+The client's own values (deduction table, shift hours, rest rules) are not known yet. To show the whole workflow anyway, start the server with
+`RAQIB_DEMO_SAMPLE_VALUES=true`: it seeds clearly labelled **placeholder** values (high 10 / medium 5 / low 2 deductions, three 8-hour shifts, a
+6-day limit). Put it on the command line rather than in `.env`, because the test suite reads `.env` too. An already seeded demo can be brought
+up to date without a reset by `npm run demo:upgrade` (it only adds what is missing and checks consistency).
+
 ## Demo accounts
 
 The password is `demo-password-2026` for every account.
@@ -159,6 +182,7 @@ The password is `demo-password-2026` for every account.
 | `f.aldosari@raqib.sa` | Project Manager |
 | `k.alshehri@raqib.sa` · `r.alzahrani@raqib.sa` | Inspector |
 | `m.alharbi@raqib.sa` | Security Supervisor |
+| `h.alzahrani@raqib.sa` | Administrative Staff |
 | `g-10302@raqib.sa` | Security Guard |
 | `m.alsudairi@raqib.sa` | General Manager |
 
@@ -166,9 +190,10 @@ The password is `demo-password-2026` for every account.
 
 | Suite | Command | What it covers |
 |---|---|---|
-| Backend | `cd raqib/backend && npm run ci` | typecheck · lint · format · 245 tests (real HTTP, authorization, tenant isolation, security, retention) · build |
-| Web | `cd raqib/web && npm run typecheck && npm run lint && npm run format:check && npm test && npm run build` | 41 tests including the architecture rules, then the production build |
-| End to end | `cd raqib/web && npm run e2e` | Playwright in real Chrome against the real backend on a throw-away database: every role opens every screen, offline field work, sign-in lockout, two-step verification, setup and upkeep flows, CSV, Excel and PDF downloads |
+| Backend | `cd raqib/backend && npm run ci` | typecheck · lint · format · 373 tests (real HTTP, authorization, tenant isolation, security, retention, scoring, surveys, training chains) · build |
+| Web | `cd raqib/web && npm run typecheck && npm run lint && npm run format:check && npm test && npm run build` | 58 tests including the architecture rules and the string-key check, then the production build |
+| End to end | `cd raqib/web && npm run e2e` | Playwright in real Chrome against the real backend on a throw-away database: every role opens every screen, offline field work, sign-in lockout, two-step verification, setup and upkeep flows, CSV, Excel and PDF downloads, surveys, training approval chains |
+| Live site | `E2E_WEB=… E2E_API=… npx playwright test e2e/90-live-smoke.spec.ts` | Read-only: signs in as each role on a running deployment and checks the screens and key figures. The rest of the e2e suite creates data and must never be pointed at a showcase server |
 
 ## Known limitations
 
@@ -177,8 +202,11 @@ The password is `demo-password-2026` for every account.
   jobs are already safe to run in several processes.
 - **Video evidence streams through the API**, not a time-limited storage URL.
 - **Roles are global per deployment**, because Core roles are not per-tenant yet.
+- **No outgoing e-mail on the live server.** Escalation and set-up e-mails go as far as Core's outbox; real delivery needs an SMTP server configured (`AURIC_SMTP_URL`).
+- **Client-owned content is still pending.** The original inspection forms, the approved deduction table, shift hours, the escalation counting rule, MOI/quality standards and the organization's name and logo are configuration the client supplies. Until then the demo uses placeholders ([what we still need](../../raqib/docs/RAQIB_MATERIALS_REQUEST.md)).
+- **Screenshots predate the October client rounds.** They show the product before deduction scoring, multi-form visits, surveys and the ranking indicators.
 
 ## More
 
-[raqib/web/README.md](../../raqib/web/README.md) · [raqib/docs/architecture.md](../../raqib/docs/architecture.md) ·
+[raqib/README.md](../../raqib/README.md) · [raqib/web/README.md](../../raqib/web/README.md) · [raqib/docs/architecture.md](../../raqib/docs/architecture.md) ·
 [docs/raqib-deployment.md](../raqib-deployment.md) · [raqib/docs/security.md](../../raqib/docs/security.md) · [raqib/docs/operations.md](../../raqib/docs/operations.md)

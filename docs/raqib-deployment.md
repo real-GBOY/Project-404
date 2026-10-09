@@ -59,6 +59,26 @@ because Raqib refuses to seed the demo company in production on its own (so it c
 deployment: set the first two to `false`, set `RAQIB_ENFORCE_ACCOUNT_POLICY=true`, use a fresh database, provision the customer with
 `npm run provision` (see [raqib/docs/operations.md](../raqib/docs/operations.md)), and drop `VITE_DEMO` from Vercel.
 
+### Keeping the demo current without resetting it
+
+A reset (new empty database, three-minute seed) erases whatever has been entered on the demo. To bring the existing demo up to date instead, run
+the upgrade routine **on the box**, with the live environment, from a copy of the current build:
+
+```bash
+cd /opt/raqib   # or a scratch directory holding the new dist/ with node_modules linked to /opt/raqib/node_modules
+set -a; . /opt/raqib/.env; set +a; export RAQIB_SEED_DEMO=false
+node dist/raqib/backend/scripts/demo-upgrade.js           # adds what is missing, then checks consistency
+node dist/raqib/backend/scripts/demo-upgrade.js --check   # only checks
+```
+
+It adds only what is missing (a clearly labelled placeholder deduction table and its scoring manager, shift hours, contract dates and head-counts,
+the surveys, the guards' own training requests), never re-scores issued work, is safe to run twice, and lists anything that is not part of the demo
+(for example leftovers from a test run). Take a backup first (`sudo bash /opt/raqib/raqib-backup.sh`); it was last run this way on 2026-10-09 after a
+dry run on a copy of the database.
+
+`RAQIB_DEMO_SAMPLE_VALUES=true` in the box's `.env` would make a **fresh** demo seed with those placeholder values; the upgrade routine is for the
+database that already exists.
+
 ## Backups
 
 `scripts/raqib-backup.sh` runs nightly at 02:30 UTC from `/etc/cron.d/raqib-backup` (installed by hand once; the deploy script keeps the script and
@@ -87,9 +107,17 @@ host ever changes, update `connect-src` there**, or the app will stop reaching i
 
 ## Testing the live site
 
-The browser suite can run against production: `E2E_WEB=https://raqib-web.vercel.app E2E_API=https://raqib.162-35-28-116.sslip.io npx playwright test`
-with the specs that are safe on shared demo data (`01` to `08`). **Never run `09-auth`** there: it locks accounts and changes
-passwords. The confidential-report workflow is rate limited on purpose (5 submissions and 20 entries per person per hour), so run it about once an hour against the demo guard. The create-data specs leave test records behind; take a backup first and restore it afterwards if you want the demo exactly as seeded.
+For the live demo use the **read-only smoke test**, which signs in as each role, opens the main screens and checks the key figures but writes
+nothing:
+
+```bash
+cd raqib/web
+E2E_WEB=https://raqib-web.vercel.app E2E_API=https://raqib.162-35-28-116.sslip.io npx playwright test e2e/90-live-smoke.spec.ts
+```
+
+The rest of the browser suite **creates data** (projects, forms, accounts, visits). Running it against the showcase leaves test records behind: an earlier
+run left an "E2E Project" in the live ranking. Do not run it there; if you ever must, take a backup first. **Never run `09-auth`** against a live server: it
+locks accounts and changes passwords. The confidential-report workflow is rate limited on purpose (5 submissions and 20 entries per person per hour).
 
 ## Report PDFs
 

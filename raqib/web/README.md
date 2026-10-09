@@ -8,6 +8,7 @@ npm run dev          # Vite on :4500, /api proxied to the backend on :3300
 npm run typecheck && npm run lint && npm test
 npm run build        # tsc -b && vite build
 npm run e2e          # real Chrome against the real backend on a throw-away database (see ../docs/operations.md)
+#   e2e/90-live-smoke.spec.ts is a READ-ONLY check of a live deployment; it is skipped unless E2E_WEB and E2E_API are set
 npm run colors:sync  # regenerate src/styles/tokens.css after editing src/styles/colors.ts
 ```
 
@@ -22,6 +23,7 @@ src/
     account/            account security: two-step verification, password, sessions, forgot password
     onboarding/         the public account-request page and the emailed password-setup page
     demo/               the presenter bar and one-click demo accounts (demo deployments only)
+    surveys/            the surveys screen: answer, create, publish and close surveys; the General Manager names who manages them
   ui/generated/         the design's screens (screens/, chrome); ui/vm.ts is their view-model type
   presenters/           view-model builders (state in, view-model out) + the Ctx / Actions contracts; modals/ = dialogs
   hooks/                React hooks: use-screen-data (what a screen reads), use-actions (every command), use-offline-sync,
@@ -44,6 +46,15 @@ Nothing outside `api/` and `services/` calls `fetch`.
 - **Colors**: no hex or rgba literal anywhere except `src/styles/colors.ts` (`import { C } from "@/styles/colors"`; `C.text.secondary`,
   `C.status.danger.fg`, …). `tokens.css` is generated from it. Fonts are named only in `styles/typography.ts` (`FONT.sans`).
 - **Layering** and **no raw fetch** (above), and no source file over 450 lines (generated screens and string tables excepted).
+- **Strings**: every literal `i.S("key")` in the code must exist in `src/i18n/strings*.ts` (`i18n/keys.test.ts`), so a screen can never show a raw key.
+
+## Build-time switches
+
+| Variable | Effect |
+|---|---|
+| `VITE_API_BASE` | The API base URL, including the `/api` suffix (production). In development `/api` is proxied to :3300 |
+| `VITE_DEMO=true` | Shows the demo-accounts panel on the sign-in page (always on in development) |
+| `VITE_DEMO_SCOPE=client` | A trimmed sidebar (the inspection story only: no guards, training, users, settings, confidential or surveys). Used for the walkthrough video; **off for the real product** |
 
 ## How to add things
 

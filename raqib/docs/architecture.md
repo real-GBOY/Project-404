@@ -25,7 +25,7 @@ Every tenant table: `organization_id` + FORCE RLS + `tenant_isolation` policy (a
 | Layer | Owns |
 |---|---|
 | **Core** (unchanged, imported by source) | identity/JWT/argon2, organizations (tenant), RBAC primitives, audit trail, files (presign → PUT → confirm, local + R2), events/outbox, notifications engine, http bootstrap/guards/zod pipes, config, request context |
-| **`app/raqib`** | everything Raqib: projects/sites, assignments & scope, visits, forms/versions, inspections, answers, scoring, guard evaluations, workflow & decisions, observations, corrective actions, training, evidence linking, reports/PDF, analytics, search, notifications content, confidential system, onboarding (account requests) |
+| **`app/raqib`** | everything Raqib: projects/sites, assignments & scope, visits, forms/versions, inspections, answers, deduction scoring, corrections, guard evaluations, workflow & decisions, observations, corrective actions, training (approval chains), evidence linking, reports/PDF, analytics and project ranking, search, notifications content, confidential system and surveys, onboarding (account requests), settings, demo seeding |
 | **`web/`** | presentation + view-models + a typed HTTP client. No business rules, no authorization truth |
 
 ## 3. Domain model (tables, all `raqib_*`)
@@ -200,3 +200,7 @@ server. The web app's structure, layering rules and where to add things are in `
 - **Surveys** (`app/raqib/surveys`): definitions only; answers are filed through `ConfidentialService.submit` with a `survey_id`.
 - **Branding** (`shared/branding.ts`): organization name and logo from settings, printed on blank forms, the schedule and reports,
   and frozen into a report's snapshot when it is issued.
+- **Report page and review screen** show every form of a visit (the snapshot's `extraForms`), and under deduction scoring show what each violation cost instead of the old item weights and section percentages. The review queue's violation and evidence counts come from `VisitsRepository.findingCounts`.
+- **Visit rules**: guards on shift are chosen when scheduling (they must belong to the project); an inspector starts a visit on its scheduled day unless `settings.insp.allowEarlyStart` is on (off by default; the demo organization turns it on).
+- **Answer rules**: a non-compliant answer with no chosen severity is stored as Medium, matching what the screen shows, so it always deducts; moving an item away from non-compliant drops its note and is refused while its evidence is still attached (`raqib.remove_evidence_first`), so a violation photo never sits under a compliant item and nothing is deleted automatically. A refused change reverts on screen with the reason.
+- **Demo data tooling** (`demo/demo-seeder.ts`): `RAQIB_DEMO_SAMPLE_VALUES=true` seeds clearly labelled placeholder deduction values, shift hours and a consecutive-day limit; `npm run demo:upgrade` (`upgradeExisting` + `verifyDemo`) adds what an already seeded demo lacks without a reset and runs read-only consistency checks. Training history rows are immutable by trigger, so the seeder stamps them with a pinned business date rather than editing them afterwards.

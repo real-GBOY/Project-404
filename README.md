@@ -54,7 +54,7 @@ four re-implements sign-in, tenancy, permissions, file storage, an audit trail o
 | **`mizan/`** | **Mizan** | Law firms: matters, hearings, clients, documents, billing | web · mobile (Expo) | live · 202 tests | [Mizan tab →](docs/products/mizan.md) |
 | **`atlas/`** | **Atlas** | Property developers: CRM, inventory, sales, installments | web | live · 85 tests | [Atlas tab →](docs/products/atlas.md) |
 | **`hotel-project/`** | **HotelOS** | Hotels: reservations, front desk, housekeeping, finance | staff app · public website | 8 slices done · 197 tests + 54 E2E runs | [HotelOS tab →](docs/products/hotelos.md) |
-| **`raqib/`** | **Raqib** | Security-guarding companies: site inspections, review and approval, corrective actions, guard scoring, training | web (offline-capable PWA) | live · 245 + 41 tests + 28 E2E | [Raqib tab →](docs/products/raqib.md) |
+| **`raqib/`** | **Raqib** | Security-guarding companies: site inspections, review and approval, corrective actions, guard scoring, training | web (offline-capable PWA) | live · 373 + 58 tests + 57 E2E | [Raqib tab →](docs/products/raqib.md) |
 | **`core/`** | **Core** | None: the reusable platform | — | 13 capabilities | [core/README.md](core/README.md) |
 
 Every product is its own deployable, with its own process, PostgreSQL database and seed data. The products
@@ -71,12 +71,13 @@ personal data that must be encrypted at rest, and an approval trail nobody may r
 |---|---|
 | **Offline-first field inspections** | A service worker and an IndexedDB outbox let inspectors answer, write notes and take photos with no signal, survive a reload offline, and replay everything in order on reconnect. A browser test cuts the network to prove it. |
 | **History that can't be rewritten** | Published form versions, an inspection's item snapshot, issued reports and every workflow history are immutable through database triggers. An inspection always shows the form version it ran on. |
-| **Authorization as a build failure** | All 121 routes sit behind a fail-closed guard, and a static test fails the build if a route lacks a declared permission. 14 modules by 8 rights, scoped to dated project assignments, with "nobody approves their own work" rules on top. |
+| **Authorization as a build failure** | All 141 routes sit behind a fail-closed guard (a handful are explicitly public, such as sign-in and account requests), and a static test fails the build if a route lacks a declared permission. 14 modules by 8 rights, scoped to dated project assignments, with "nobody approves their own work" rules on top. |
 | **A confidential area no role can open** | Separate tables and a separate rule: an expiring, revocable grant issued by the General Manager, a logged entry with a stated reason, and a reporter identity stored apart and revealed only through a logged action. |
 | **Encryption and abuse controls** | National IDs and two-step secrets sealed with AES-256-GCM and a keyed blind index. Lockout, TOTP with recovery codes, session revocation. Uploads are content-sniffed, stripped of GPS metadata and optionally virus-scanned. |
 | **Real reports and exports** | Arabic and English report PDFs made in the browser from the frozen snapshot (no server renders anything), plus CSV and native Excel workbooks from a hand-written xlsx writer. Files go to Cloudflare R2 over presigned URLs, with abandoned uploads cleaned up nightly. |
-| **Arabic and right-to-left throughout** | 38 screens and 1,772 interface strings in Arabic and English, mirrored properly rather than translated at the edges. |
-| **The numbers** | 121 routes · 35 forced-RLS tables · 7 roles · 245 backend tests, 41 web tests and 28 browser tests in real Chrome. The demo company is seeded by playing a year of inspections through the real workflows. |
+| **Client-driven workflows** | Scoring from 100 with versioned, client-approved deductions; several forms in one visit; escalation of late corrective actions at 3, 6 and 9 days; supervisor-then-manager training approvals; project ranking by observations, improvement, complaints and contract expiry; confidential surveys for guards. The client's own values are configuration. The 20 requirements are tracked in [the requirements matrix](raqib/docs/RAQIB_REQUIREMENTS_MATRIX.md). |
+| **Arabic and right-to-left throughout** | 38 designed screens plus the account and survey screens, and 1,977 interface strings in Arabic and English, mirrored properly rather than translated at the edges. A test fails the build if the code asks for a string that does not exist. |
+| **The numbers** | 141 routes · 41 forced-RLS tables · 8 roles · 373 backend tests, 58 web tests and 57 browser tests in real Chrome (plus a read-only smoke test for the live site). The demo company is seeded by playing a year of inspections through the real workflows. |
 
 [Raqib tab →](docs/products/raqib.md)
 
@@ -173,7 +174,7 @@ Each capability documents its contract next to the code; start at [core/README.m
 | Mobile | Expo / React Native (Mizan) · installable offline PWA (Raqib) |
 | AI | OpenAI-compatible provider boundary (Groq in production) |
 | Testing | Vitest, Playwright (real Chrome) |
-| Hosting | AWS VPS (systemd + nginx) for APIs, Vercel for web frontends, Cloudflare R2 for files (`mizan-files`, `raqib-files`) |
+| Hosting | VPS (systemd + nginx) for the APIs (Raqib on its own Interserver VPS, the others on a shared AWS box), Vercel for web frontends, Cloudflare R2 for files (`mizan-files`, `raqib-files`) |
 
 ## Getting started
 
@@ -192,7 +193,7 @@ Each product then runs on its own. Every product tab has full setup steps and de
 | Mizan | `docker compose up --build` | http://localhost:4300 |
 | Atlas | `cd atlas/backend && ATLAS_SEED_DEMO=true npm run serve` | http://localhost:4400 |
 | HotelOS | `cd hotel-project/backend && npm run dev` | http://localhost:4600 |
-| Raqib | `cd raqib/backend && npm run migrate && npm run dev`, then `cd ../web && npm run dev` | http://localhost:4500 |
+| Raqib | `cd raqib/backend && npm run migrate && npm run dev`, then `cd ../web && npm run dev` (see [raqib/README.md](raqib/README.md)) | http://localhost:4500 |
 
 Demo databases use the password `demo-password-2026` for every account. Raqib's web app and the HotelOS public
 website both default to port 4500, so run one at a time or change a port.
@@ -206,9 +207,10 @@ website both default to port 4500, so run one at a time or change a port.
 | Atlas | Backend + web, plus a live AI-provider suite | 80 + 5 |
 | HotelOS | Backend (including concurrent-booking races) + staff app | 139 + 58 |
 | HotelOS | End to end (Playwright, real backend, desktop and phone) | 27 scenarios × 2 |
-| Raqib | Backend: real HTTP, authorization, RLS on every table, security, retention, jobs | 245 |
-| Raqib | Web unit tests, including architecture rules that fail the build | 41 |
-| Raqib | End to end (Playwright, real Chrome and backend): offline work, MFA, lockout, downloads | 28 |
+| Raqib | Backend: real HTTP, authorization, RLS on every table, security, retention, jobs, scoring, surveys, training chains | 373 |
+| Raqib | Web unit tests, including architecture rules and a check that every string key exists | 58 |
+| Raqib | End to end (Playwright, real Chrome and backend): offline work, MFA, lockout, downloads, a full inspection-to-closure workflow, surveys, training chains | 57 |
+| Raqib | Live smoke test (read-only, against a running deployment; skipped unless pointed at one) | 8 |
 
 Tenant isolation is tested directly: the harness runs Core as the restricted database role, so tests prove
 tenant A can't read tenant B even when the application code gets a query wrong.
@@ -261,7 +263,10 @@ Product-specific limitations are listed on each product tab.
 | [docs/database-erd.md](docs/database-erd.md) | The schema as an ER diagram |
 | [docs/raqib-deployment.md](docs/raqib-deployment.md) | How Raqib is deployed: VPS, nginx, TLS, R2, Vercel |
 | [docs/products/raqib.md](docs/products/raqib.md) | The Raqib product page: screenshots, lifecycles, highlights |
+| [raqib/README.md](raqib/README.md) | Start here for Raqib: what is in the folder, how to run, test and deploy it |
 | [raqib/docs/](raqib/docs) | Raqib's architecture, security model and operations guide |
+| [raqib/docs/RAQIB_REQUIREMENTS_MATRIX.md](raqib/docs/RAQIB_REQUIREMENTS_MATRIX.md) | The client's 20 requirements against what works, with how each is tested |
+| [raqib/docs/RAQIB_DELIVERY.md](raqib/docs/RAQIB_DELIVERY.md) | Costs, two-stage delivery, acceptance and handover |
 | [SECURITY.md](SECURITY.md) | Security model and how to report a vulnerability |
 
 ## License

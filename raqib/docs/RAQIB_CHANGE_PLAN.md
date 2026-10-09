@@ -7,7 +7,7 @@ migrations (new tables/columns with defaults); no data is reset or dropped.
 ## 1. What exists today (audit summary)
 
 - **Backend** `raqib/backend` — NestJS/Fastify on AURIC Core, Postgres + RLS on every tenant table, hand-written SQL migrations
-  (`prisma/migrations`, latest `20261015120000_raqib_project_closed`), Kysely types in `app/raqib/db/schema.ts`.
+  (`prisma/migrations`, latest at the start of round 1 `20261015120000_raqib_project_closed`; the work added `20261016120000` to `20261017120000`), Kysely types in `app/raqib/db/schema.ts`.
   Modules under `app/raqib/*`: access (template → scope → object rule), projects, visits, forms, inspections, review, reports,
   observations, actions, training, analytics, confidential, onboarding, settings, audit, search, evidence, jobs.
 - **Web** `raqib/web` — React 19 + Vite + Tailwind 4; approved-design screens in `src/ui/generated/screens`, view-model
@@ -101,6 +101,8 @@ Assumptions, flagged: the guard-chain stages and who may skip them are configura
 
 ### Status of the addendum
 
-Steps 1-5 and 7 are implemented in the backend and covered by tests; the web side of R15 (contract fields, indicator line), R16
-(supervisor stage, guard self-request) and R17 (survey panel) is built. Added since: a logo-upload control, a ranking sort selector, e2e for surveys and the guard training chain, and demo data with surveys and guard-origin requests. Still open: a ranking-weights screen. The matrix
-is the authority on each requirement's status.
+All six requirements are implemented in the backend and the web app and covered by automated tests; see the matrix for the status and test of each. After the
+first implementation a walk through the whole workflow in a real browser found and fixed further gaps (violations that deducted nothing, the report page
+showing only the first form, mixed weighted/deduction displays, guards that could not be chosen when scheduling, raw string keys on two screens, a
+start-on-the-day rule, note and evidence handling when an answer changes). The live demo was brought up to date without a reset. What still depends on the
+client is listed in `RAQIB_MATERIALS_REQUEST.md`.
