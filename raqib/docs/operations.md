@@ -17,6 +17,7 @@ All variables are listed in `backend/.env.example`. The ones that matter in prod
 | `AURIC_CORS_ORIGINS` | the web app origin(s), e.g. `https://raqib.example.com` |
 | `AURIC_FILE_STORAGE_DRIVER=r2` + the R2 keys | evidence and attachments in Cloudflare R2. `local` writes under `AURIC_FILE_STORAGE_PATH` and is for a single small server |
 | `RAQIB_TRUSTED_PROXY_HOPS=1` | behind nginx. The rate limiter reads the client address that many hops from the right of `X-Forwarded-For`; with `0` behind a proxy every visitor shares one address |
+| `RAQIB_DEMO_SAMPLE_VALUES=true` | demo only (set it on the command line when starting a demo server, not in `.env`, which the tests also read): seeds PLACEHOLDER deduction values (high 10, medium 5, low 2), shift hours (06–14, 14–22, 22–06) and a 6-day consecutive limit so the workflow can be shown; never the client's real values, and off by default (the automated tests assume it is off) |
 | `RAQIB_SEED_DEMO=false` | **never** `true` against real data (the process refuses to start with it in production) |
 | `RAQIB_DATA_KEY` | **required in production**: 32 random bytes, base64 (`openssl rand -base64 32`). Seals national IDs and second-factor secrets; back it up with the database password, because without it those values are unrecoverable |
 | `RAQIB_ENFORCE_ACCOUNT_POLICY` | defaults to on in production: people owing a second factor or a new password are held at account set-up |

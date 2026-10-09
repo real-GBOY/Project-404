@@ -33,11 +33,26 @@ import { EvidenceService } from "@raqib/raqib/evidence/application/evidence-serv
 import { FILE_STORAGE } from "@core/kernel/tokens.js";
 import type { IFileStorage } from "@core/contracts/index.js";
 import { readRaqibConfig } from "@raqib/config.js";
+import { ScoringRepository } from "@raqib/raqib/scoring/infrastructure/scoring-repository.js";
 import { SurveysRepository } from "@raqib/raqib/surveys/infrastructure/surveys-repository.js";
 import { DEFAULT_SETTINGS } from "@raqib/raqib/settings/domain/defaults.js";
 import { DEMO_NAMED_GUARDS, DEMO_ORG, DEMO_PASSWORD, DEMO_PEOPLE, DEMO_PROJECTS, fillerGuards } from "./demo-data.js";
 
 const log = moduleLogger("raqib-demo-seed");
+
+/** Demo placeholder shifts and rest rule (the client has not supplied theirs); only used with RAQIB_DEMO_SAMPLE_VALUES=true. */
+const SAMPLE_SETTINGS = {
+  ...DEFAULT_SETTINGS,
+  schedule: {
+    shifts: [
+      { key: "morning", nameAr: "صباحية", nameEn: "Morning", start: "06:00", end: "14:00" },
+      { key: "evening", nameAr: "مسائية", nameEn: "Evening", start: "14:00", end: "22:00" },
+      { key: "night", nameAr: "ليلية", nameEn: "Night", start: "22:00", end: "06:00" },
+    ],
+    minRestHours: 0,
+    maxConsecutiveDays: 6,
+  },
+};
 
 /**
  * Opt-in demo dataset (`RAQIB_SEED_DEMO=true`, run from `AppSeedService` only). Idempotent: skips
@@ -64,6 +79,7 @@ export class DemoSeeder {
     private readonly training: TrainingService,
     private readonly confidential: ConfidentialService,
     private readonly surveys: SurveysRepository,
+    private readonly scoring: ScoringRepository,
     private readonly onboarding: OnboardingService,
     @Inject(FILE_STORAGE) private readonly files: IFileStorage,
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
@@ -523,7 +539,18 @@ export class DemoSeeder {
 
     await withContext({ userId: ownerId, organizationId: orgId }, async () => {
       await this.uow.transaction(async () => {
-        await this.settings.save(DEFAULT_SETTINGS, ownerId);
+        const sample = readRaqibConfig().demoSampleValues;
+        await this.settings.save(sample ? SAMPLE_SETTINGS : DEFAULT_SETTINGS, ownerId);
+        if (sample) {
+          // PLACEHOLDER deduction values for the demo, not the client's: 100 minus these per non-compliant item
+          await this.scoring.insert({
+            base: 100,
+            bySeverity: { high: 10, medium: 5, low: 2 },
+            byItem: {},
+            reason: "Demo placeholder values (not the client's approved table)",
+            createdBy: ownerId,
+          });
+        }
 
         for (const f of DEMO_FORMS) {
           const fid = await this.forms.insertForm({

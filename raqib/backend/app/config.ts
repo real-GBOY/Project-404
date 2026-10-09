@@ -20,6 +20,14 @@ const schema = z.object({
     .enum(["true", "false"])
     .default("false")
     .transform((v) => v === "true"),
+  /**
+   * Demo only: fill the client-owned rules (deduction values, shift hours, rest rule) with PLACEHOLDER numbers so the whole
+   * workflow can be shown. They are not the client's values; real ones replace them from Settings.
+   */
+  demoSampleValues: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((v) => v === "true"),
   /** How many days of past inspection history the demo seeds. */
   demoHistoryDays: z.coerce.number().int().min(1).max(365).default(365),
   /** How often the scheduled jobs (overdue visits and actions) run. Default 15 minutes. */
@@ -63,6 +71,7 @@ export function readRaqibConfig(env: NodeJS.ProcessEnv = process.env): RaqibConf
   const parsed = schema.safeParse({
     seedDemo: env.RAQIB_SEED_DEMO,
     allowDemoInProduction: env.RAQIB_ALLOW_DEMO_IN_PRODUCTION,
+    demoSampleValues: env.RAQIB_DEMO_SAMPLE_VALUES,
     demoHistoryDays: env.RAQIB_DEMO_HISTORY_DAYS,
     jobsIntervalMs: env.RAQIB_JOBS_INTERVAL_MS,
     accountRequestsPerHour: env.RAQIB_ACCOUNT_REQUESTS_PER_HOUR,

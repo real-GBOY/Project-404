@@ -70,7 +70,7 @@ on a phone and a desktop, in Arabic and English.
 ## 6. Demo
 
 The demo organization (`RAQIB_ALLOW_DEMO_IN_PRODUCTION`) shows scheduling, multi-form inspections, scoring, corrective actions,
-review and approval, PDFs, analytics with project ranking, and training requests. It also has an open and a draft survey and guard-origin training requests (the General Manager names the survey manager, as in real use). Because the client's original forms are not supplied, the demo forms are
+review and approval, PDFs, analytics with project ranking, and training requests. It also has an open and a draft survey and guard-origin training requests (the General Manager names the survey manager, as in real use). With `RAQIB_DEMO_SAMPLE_VALUES=true` the demo also carries clearly labelled placeholder deduction values, shift hours and a consecutive-day limit, so scoring from 100 and the scheduling rules can be shown; they are not the client's values. Because the client's original forms are not supplied, the demo forms are
 placeholders.
 
 Final acceptance depends on verification against the matrix with the client's real content; this document is not itself an
