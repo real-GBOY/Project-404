@@ -37,6 +37,15 @@ export const STRINGS_TRAINING: Record<string, readonly [string, string]> = {
     "يراجع المشرف طلبات الحراس قبل مدير المشروع",
     "A supervisor reviews guards' requests before the project manager",
   ],
+  set_ranking: ["ترتيب المشاريع", "Project ranking"],
+  setd_ranking: [
+    "وزن كل مؤشر في ترتيب «الأحوج للاهتمام أولًا». الأوزان المتساوية تعني أن المؤشرات الأربعة بنفس الأهمية، والصفر يلغي المؤشر.",
+    'How much each indicator counts in the "needs attention first" ranking. Equal weights mean the four indicators matter equally; zero switches an indicator off.',
+  ],
+  sf_ranking_observations: ["وزن عدد الملاحظات", "Weight: number of observations"],
+  sf_ranking_improvement: ["وزن التحسن (الأقل تحسنًا أسوأ)", "Weight: improvement (less is worse)"],
+  sf_ranking_complaints: ["وزن الشكاوى", "Weight: complaints"],
+  sf_ranking_contract: ["وزن قرب انتهاء العقد", "Weight: contract ending soon"],
   set_training: ["طلبات التدريب", "Training requests"],
   setd_training: [
     "مسار الموافقة: طلب المشرف يذهب إلى مدير المشروع ثم إدارة الجودة؛ وطلب الحارس يراجعه المشرف أولًا ما لم يُعطَّل ذلك هنا.",

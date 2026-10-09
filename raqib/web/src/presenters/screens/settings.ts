@@ -174,6 +174,16 @@ export function settingsScreen(c: Ctx) {
     schedule: scheduleFields,
     escalation: escalationFields,
     training: [F("tog", "training", "guardReviewBySupervisor")],
+    ranking: (["observations", "improvement", "complaints", "contract"] as const).map((k) =>
+      F("num", "ranking", k, {
+        labelKey: `sf_ranking_${k}`,
+        read: (d: Draft) => (d.ranking!.weights as Record<string, number>)[k],
+        write: (d: Draft, v: unknown) => {
+          (d.ranking!.weights as Record<string, unknown>)[k] = Math.max(0, Number(v) || 0);
+          return d;
+        },
+      }),
+    ),
     forms: [
       F("tog", "insp", "latestOnStart"),
       F("tog", "insp", "publishNeedsApproval"),
@@ -234,6 +244,7 @@ export function settingsScreen(c: Ctx) {
     "projects",
     "forms",
     "training",
+    "ranking",
     "scoring",
     "schedule",
     "escalation",

@@ -5,11 +5,13 @@ invented prices and no invented durations**: wherever the client has not supplie
 
 ## 1. Budget
 
-- Ceiling for the build: **USD 500** (the client's stated cap). No feature in this round needs a paid service.
+- **Price: to be agreed.** The client has asked for a total of at most USD 500. The full scope of the 20 requirements is far larger
+  than that figure covers, so the price and the stage split are settled between the client and the developer, in writing, before the
+  work is treated as committed. This document does not accept a ceiling and states no price. No feature built so far needs a paid service.
 - **Power BI and any external analytics subscription are not used.** Analytics (periods, project filters, trends, closure
   durations, recurring violations, training metrics, project ranking, CSV and Excel export) are computed by the Raqib backend
   from its own database and shown in the app.
-- Anything the client later asks for beyond the 20 requirements is quoted separately and is not covered by this ceiling.
+- Anything the client later asks for beyond the 20 requirements is quoted separately and is not part of the agreed scope.
 
 ## 2. Recurring costs (identified, not priced)
 
@@ -62,8 +64,8 @@ on a phone and a desktop, in Arabic and English.
 5. The escalation counting rule and recipients; what counts as high severity.
 6. MOI requirements and quality standards to embed.
 7. The organization's name and logo (the product is configurable until then: Settings → organization has the name and a logo upload control).
-8. Ranking weights, if equal weights are not what the client wants.
-9. Acceptance dates, stage durations, and the bug-fix period.
+8. Ranking weights, if equal weights are not what the client wants (editable in Settings → Project ranking).
+9. Acceptance dates, stage durations, the bug-fix period, and the price and how it is split between the stages.
 
 ## 6. Demo
 

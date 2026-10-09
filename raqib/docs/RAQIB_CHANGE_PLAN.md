@@ -21,7 +21,7 @@ migrations (new tables/columns with defaults); no data is reset or dropped.
 1. The client's **original inspection forms**, **deduction values**, **shift times**, **consecutive-shift rule**, **escalation
    counting rule and recipients**, and **MOI requirements** were not supplied. They are modelled as *configuration*, left
    empty or marked "assumed – confirm", and never silently invented. See §6.
-2. Budget cap $500: no new paid service. PDFs stay browser-generated (no server browser) unless a free, dependency-light path is found.
+2. The client asked for a $500 total, which the scope exceeds; price is to be agreed (see `RAQIB_DELIVERY.md`). No new paid service. PDFs stay browser-generated (no server browser) unless a free, dependency-light path is found.
 3. Existing behaviour stays: where a new rule has no configuration yet, the old behaviour applies.
 
 ## 3. Implementation order (dependency order)
