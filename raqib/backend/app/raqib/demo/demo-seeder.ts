@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { currentExecutor, unitOfWork } from "@core/kernel/db/db.js";
+import { currentExecutor, readInTenant, unitOfWork } from "@core/kernel/db/db.js";
 import { newId } from "@core/kernel/id.js";
 import { runAsSystem, withContext } from "@core/kernel/logging/context.js";
 import { moduleLogger } from "@core/kernel/logging/logger.js";
@@ -355,18 +355,12 @@ export class DemoSeeder {
     const rejected = await ask("G-10288", "Advanced surveillance", "refresher", "low", "", "Not needed this quarter.", 12);
     await step("pm", rejected.id, "reject", { text: "Not justified by any finding; revisit next quarter." }, 11);
 
-    // a guard asks for themselves: the first waits for the supervisor, the second was reviewed and now waits for the project manager
-    const byGuard = (course: string, reason: "low_score" | "refresher", notes: string, ago: number) =>
-      as("guard", ago, async (who) => {
-        const r = await this.training.create({ course, reason, priority: "medium", related: "", notes }, who);
-        agos.set(r.id, [ago]);
-        return r;
-      });
-    await byGuard("First aid essentials", "refresher", "I would like to renew my first-aid certificate.", 1);
-    const reviewed = await byGuard("Radio communication procedure", "low_score", "My last score on radio procedure was low.", 4);
-    await step("gs", reviewed.id, "review", { text: "Agreed: the score was low and he asked for it." }, 3);
+    await this.backdate(orgId, userIds, agos);
+    await this.seedGuardTraining(orgId, userIds, today);
+  }
 
-    // the database stamps rows with the real time, so move each request back to when it "happened" (its history entries are stamped by the pinned date and cannot be edited)
+  /** The database stamps rows with the real time, so move each request back to when it "happened" (its history entries are stamped by the pinned date and cannot be edited). */
+  private async backdate(orgId: string, userIds: Map<string, string>, agos: Map<string, number[]>): Promise<void> {
     await withContext({ userId: userIds.get("qm")!, organizationId: orgId }, () =>
       this.uow.transaction(async () => {
         for (const [id, days] of agos) {
@@ -379,6 +373,30 @@ export class DemoSeeder {
         }
       }),
     );
+  }
+
+  /** Two requests a guard made for themselves: one waits for the supervisor, the other was reviewed and waits for the project manager. */
+  private async seedGuardTraining(orgId: string, userIds: Map<string, string>, today: string): Promise<void> {
+    const as = async <T>(key: string, agoDays: number, fn: (who: Awaited<ReturnType<AccessService["resolve"]>>) => Promise<T>): Promise<T> =>
+      withContext({ userId: userIds.get(key)!, organizationId: orgId }, () =>
+        runAsOf(addDays(today, -agoDays), async () =>
+          fn(await this.access.resolve({ userId: userIds.get(key)!, email: "", organizationId: orgId, permissions: [] })),
+        ),
+      );
+    const agos = new Map<string, number[]>();
+    const byGuard = (course: string, reason: "low_score" | "refresher", notes: string, ago: number) =>
+      as("guard", ago, async (who) => {
+        const r = await this.training.create({ course, reason, priority: "medium", related: "", notes }, who);
+        agos.set(r.id, [ago]);
+        return r;
+      });
+    await byGuard("First aid essentials", "refresher", "I would like to renew my first-aid certificate.", 1);
+    const reviewed = await byGuard("Radio communication procedure", "low_score", "My last score on radio procedure was low.", 4);
+    await as("gs", 3, async (who) => {
+      await this.training.step(reviewed.id, "review", { text: "Agreed: the score was low and he asked for it." }, who);
+      agos.get(reviewed.id)?.push(3);
+    });
+    await this.backdate(orgId, userIds, agos);
   }
 
   /** One open and one draft survey. The General Manager still names who manages surveys, as in real use. */
@@ -517,6 +535,192 @@ export class DemoSeeder {
         await this.onboarding.reject(target.id, "That project already has a manager.", who);
       }),
     );
+  }
+
+  /**
+   * Bring an ALREADY SEEDED demo organization up to date without touching what is in it: it only fills what is missing
+   * (placeholder deduction table and its scoring manager, shift hours and rules, contract dates and head-counts, the surveys,
+   * and the guards' own training requests) and reports each step. Safe to run twice. Existing inspections and reports are
+   * never re-scored: they keep the scoring they were issued under.
+   */
+  async upgradeExisting(clock: Clock): Promise<string[]> {
+    const org = await runAsSystem(() => currentExecutor().selectFrom("organizations").select("id").where("slug", "=", DEMO_ORG.slug).executeTakeFirst());
+    if (!org) throw new Error("the demo organization is not in this database");
+    const orgId = org.id;
+    const rows = await runAsSystem(() =>
+      currentExecutor()
+        .selectFrom("users")
+        .select(["id", "email"])
+        .where(
+          "email",
+          "in",
+          DEMO_PEOPLE.map((p) => p.email),
+        )
+        .execute(),
+    );
+    const userIds = new Map<string, string>();
+    for (const p of DEMO_PEOPLE) {
+      const r = rows.find((x) => x.email === p.email);
+      if (r) userIds.set(p.key, r.id);
+    }
+    for (const k of ["gm", "qm", "gs", "guard"]) if (!userIds.has(k)) throw new Error(`demo person "${k}" is missing`);
+    const today = localDate(clock.now(), DEFAULT_SETTINGS.org.tz);
+    const done: string[] = [];
+    const inOrg = <T>(key: string, fn: () => Promise<T>): Promise<T> => withContext({ userId: userIds.get(key)!, organizationId: orgId }, fn);
+
+    // settings: shift hours and the consecutive-day limit only where still empty; the demo lets visits start early
+    await inOrg("gm", () =>
+      this.uow.transaction(async () => {
+        const cur = await this.settings.load();
+        const shifts = cur.schedule.shifts.map((sh) => {
+          const sample = SAMPLE_SETTINGS.schedule.shifts.find((x) => x.key === sh.key);
+          return sample && !sh.start && !sh.end ? { ...sh, start: sample.start, end: sample.end } : sh;
+        });
+        const next = {
+          ...cur,
+          schedule: { ...cur.schedule, shifts, maxConsecutiveDays: cur.schedule.maxConsecutiveDays || SAMPLE_SETTINGS.schedule.maxConsecutiveDays },
+          insp: { ...cur.insp, allowEarlyStart: true },
+        };
+        await this.settings.save(next, userIds.get("gm")!);
+        done.push("settings: shift hours, consecutive-day limit, early start for the demo");
+      }),
+    );
+
+    // the placeholder deduction table (only when none is published) and the quality manager as its scoring manager
+    await inOrg("gm", () =>
+      this.uow.transaction(async () => {
+        if (await this.scoring.latest()) return void done.push("scoring: a deduction table already exists, left as is");
+        await this.scoring.insert({
+          base: 100,
+          bySeverity: { high: 10, medium: 5, low: 2 },
+          byItem: {},
+          reason: "Demo placeholder values (not the client's approved table)",
+          createdBy: userIds.get("gm")!,
+        });
+        await this.scoring.addDesignee(userIds.get("qm")!, "scoring_admin", userIds.get("gm")!);
+        done.push("scoring: placeholder deduction table v1 published, quality manager named scoring manager");
+      }),
+    );
+
+    // contract dates and head-counts the ranking needs
+    await inOrg("qm", () =>
+      this.uow.transaction(async () => {
+        const projects = await this.projects.list();
+        let n = 0;
+        for (const def of DEMO_PROJECTS) {
+          const pr = projects.find((x) => x.code === def.code);
+          if (!pr || (pr.contractStart && pr.contractEnd && pr.employeesAssigned != null)) continue;
+          await this.projects.update(pr.id, {
+            contractStart: pr.contractStart ?? addDays(today, -540),
+            contractEnd: pr.contractEnd ?? addDays(today, def.contractEndInDays),
+            employeesAssigned: pr.employeesAssigned ?? (def.guards || 12),
+          });
+          n++;
+        }
+        done.push(`projects: contract dates and head-count filled on ${n}`);
+      }),
+    );
+
+    // surveys
+    const surveys = await inOrg("qm", () => readInTenant(() => this.surveys.list()));
+    if (surveys.length) done.push("surveys: already present, left as is");
+    else {
+      await this.seedSurveys(orgId, userIds, today);
+      done.push("surveys: one open and one draft added");
+    }
+
+    // guard-origin training requests
+    const guardRequests = await inOrg("qm", () =>
+      readInTenant(() =>
+        raqibDb()
+          .selectFrom("raqib_training_requests")
+          .select(sql<number>`count(*)::int`.as("n"))
+          .where("requester_kind", "=", "guard")
+          .executeTakeFirst(),
+      ),
+    );
+    if ((guardRequests?.n ?? 0) > 0) done.push("training: guard requests already present, left as is");
+    else {
+      await this.seedGuardTraining(orgId, userIds, today);
+      done.push("training: two requests made by a guard added (one at the supervisor, one at the project manager)");
+    }
+    return done;
+  }
+
+  /** Read-only consistency checks over the demo organization. Returns one line per check, "FAIL" lines first. */
+  async verifyDemo(): Promise<{ ok: boolean; lines: string[] }> {
+    const org = await runAsSystem(() => currentExecutor().selectFrom("organizations").select("id").where("slug", "=", DEMO_ORG.slug).executeTakeFirst());
+    if (!org) throw new Error("the demo organization is not in this database");
+    const gm = await runAsSystem(() =>
+      currentExecutor()
+        .selectFrom("users")
+        .select("id")
+        .where("email", "=", DEMO_PEOPLE.find((p) => p.key === "gm")!.email)
+        .executeTakeFirstOrThrow(),
+    );
+    const lines: string[] = [];
+    let ok = true;
+    const check = (good: boolean, text: string) => {
+      if (!good) ok = false;
+      lines.push(`${good ? "ok  " : "FAIL"} ${text}`);
+    };
+    await withContext({ userId: gm.id, organizationId: org.id }, () =>
+      readInTenant(async () => {
+        const n = async (q: { executeTakeFirst: () => Promise<{ n: number } | undefined> }) => (await q.executeTakeFirst())?.n ?? 0;
+        const count = sql<number>`count(*)::int`.as("n");
+        const db = raqibDb();
+        const cfg = await this.scoring.latest();
+        const cfgCount = cfg ? 1 : 0;
+        check(cfgCount === 1, `a deduction table is published (v${cfg?.version ?? "-"})`);
+        const orphan = await n(
+          db.selectFrom("raqib_inspections").select(count).where("scoring_policy", "=", "deduction_v1").where("scoring_config_id", "is", null),
+        );
+        check(orphan === 0, `no inspection is on deduction scoring without its table (${orphan})`);
+        const byPolicy = await db.selectFrom("raqib_inspections").select(["scoring_policy", count]).groupBy("scoring_policy").execute();
+        lines.push(
+          `info inspections by scoring: ${byPolicy.map((r) => `${r.scoring_policy}=${r.n}`).join(", ")} (earlier ones keep the scoring they were issued under)`,
+        );
+        const demoCodes = DEMO_PROJECTS.map((d) => d.code);
+        const noContract = await n(
+          db
+            .selectFrom("raqib_projects")
+            .select(count)
+            .where("code", "in", demoCodes)
+            .where((eb) => eb.or([eb("contract_start", "is", null), eb("contract_end", "is", null), eb("employees_assigned", "is", null)])),
+        );
+        check(noContract === 0, `every demo project has contract dates and a head-count (${noContract} without)`);
+        const others = await db.selectFrom("raqib_projects").select(["code", "name_en"]).where("code", "not in", demoCodes).execute();
+        if (others.length)
+          lines.push(`info projects that are not part of the demo (test leftovers?): ${others.map((o) => `${o.code} "${o.name_en}"`).join("; ")}`);
+        const badOrder = await n(db.selectFrom("raqib_projects").select(count).whereRef("contract_end", "<", "contract_start"));
+        check(badOrder === 0, `no contract ends before it starts (${badOrder})`);
+        const strayStage = await n(
+          db.selectFrom("raqib_training_requests").select(count).where("status", "=", "pending_supervisor").where("requester_kind", "<>", "guard"),
+        );
+        check(strayStage === 0, `only guard requests wait at the supervisor stage (${strayStage} stray)`);
+        const guardReq = await n(db.selectFrom("raqib_training_requests").select(count).where("requester_kind", "=", "guard"));
+        check(guardReq > 0, `guard-made training requests exist (${guardReq})`);
+        const surveys = await n(db.selectFrom("raqib_surveys").select(count));
+        check(surveys > 0, `surveys exist (${surveys})`);
+        const hist = await n(
+          db
+            .selectFrom("raqib_training_requests as t")
+            .select(count)
+            .where((eb) => eb.not(eb.exists(eb.selectFrom("raqib_training_events as e").select("e.id").whereRef("e.request_id", "=", "t.id")))),
+        );
+        check(hist === 0, `every training request has a history (${hist} without)`);
+        const s = await this.settings.load();
+        check(
+          s.schedule.shifts.every((sh) => sh.start && sh.end),
+          "every shift has hours",
+        );
+        check(!!s.ranking?.weights, "ranking weights are set");
+        const designee = await this.scoring.designees("scoring_admin");
+        check(designee.length > 0, `a scoring manager is named (${designee.length})`);
+      }),
+    );
+    lines.sort((x, y) => (x.startsWith("FAIL") ? -1 : y.startsWith("FAIL") ? 1 : 0));
+    return { ok, lines };
   }
 
   async seed(clock: Clock): Promise<void> {

@@ -14,6 +14,7 @@
     "start": "node dist/raqib/backend/main.js",
     "migrate": "node --import @swc-node/register/esm-register scripts/migrate.ts up",
     "provision": "node --import @swc-node/register/esm-register scripts/provision.ts",
+    "demo:upgrade": "node --import @swc-node/register/esm-register scripts/demo-upgrade.ts",
     "migrate:status": "node --import @swc-node/register/esm-register scripts/migrate.ts status",
     "migrate:dev": "prisma migrate dev",
     "db:generate": "prisma generate",
