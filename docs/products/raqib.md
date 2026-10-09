@@ -40,8 +40,9 @@ All data shown is synthetic demo data.
 | **Quality Management** (director) | Everything: schedules visits, approves inspections, closes actions, manages forms, people and permission templates, reads the audit log |
 | **Quality Employee** | Reviews submitted inspections, flags items, returns or forwards them, reviews corrective-action closures |
 | **Project Manager** | Sees their projects, owns and works corrective actions, approves training requests for their guards |
-| **Inspector** | Runs assigned inspections in the field, offline if needed, with notes, photos, video and guard scores |
-| **Guards Supervisor** | Evaluates and develops guards, raises training requests |
+| **Quality Inspector** | Runs assigned inspections (one or several forms per visit) in the field, offline if needed, with notes, photos, video and guard scores. Never sees a score |
+| **Security Supervisor** | Evaluates and develops guards, raises training requests |
+| **Administrative Staff** | Keeps the visit schedule and prints or exports it for the projects they are assigned; nothing else by default |
 | **Security Guard** | Sees their own record and can file a confidential report |
 | **General Manager** | Executive view of compliance and audit, and issues the time-limited grants that open the confidential area |
 
@@ -60,7 +61,7 @@ when and why:
 
 ## Highlights
 
-- **The server is the only authority.** All 121 routes sit behind a fail-closed guard, and a static test fails
+- **The server is the only authority.** Every route sits behind a fail-closed guard, and a static test fails
   the build if any route lacks a declared permission. Permissions are per-organization templates of 14 modules
   by 8 rights, scoped to dated project assignments, with object rules on top: nobody reviews, approves or
   closes their own work, and review and approval are separate rights.
@@ -90,6 +91,18 @@ when and why:
 - **Real demo history.** The demo company is seeded by playing a year of inspections through the real
   workflows, about ninety approved inspections with findings that improve over time, so the dashboard has real
   data behind every number.
+
+### Client feedback round 1 (October 2026)
+
+The first client review added, in place and without rebuilding anything: **deduction scoring** (100 minus the client's approved deductions,
+versioned and restricted to a person the General Manager names, with the earlier weighted score kept until the values are entered);
+**several forms in one visit**, each with its own issue number and score; **escalation** of unresolved corrective actions at 3, 6 and 9
+days by in-app notice and email, plus an immediate alert for high-severity observations; **configurable shifts** with rest and
+consecutive-day rules; an **audited corrections log** for system-generated data; the **Administrative Staff** role; **A4 print kit** for
+completed reports, blank forms and the visit schedule; month view, export and print on the schedule; and closure-time, recurring-violation,
+training and ranking analytics. The client's own values (deductions, shift hours, escalation rule, original forms) are configuration, not
+code: see [raqib/docs/RAQIB_REQUIREMENTS_MATRIX.md](../../raqib/docs/RAQIB_REQUIREMENTS_MATRIX.md) for what is verified and what is still
+waiting on the client.
 
 ### By the numbers
 
@@ -145,7 +158,7 @@ The password is `demo-password-2026` for every account.
 | `n.alqahtani@raqib.sa` | Quality Employee |
 | `f.aldosari@raqib.sa` | Project Manager |
 | `k.alshehri@raqib.sa` · `r.alzahrani@raqib.sa` | Inspector |
-| `m.alharbi@raqib.sa` | Guards Supervisor |
+| `m.alharbi@raqib.sa` | Security Supervisor |
 | `g-10302@raqib.sa` | Security Guard |
 | `m.alsudairi@raqib.sa` | General Manager |
 

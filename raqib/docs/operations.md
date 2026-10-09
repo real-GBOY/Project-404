@@ -98,6 +98,35 @@ page for the company is `/request-account/<slug>`; further people join through a
   older than the organization's attachment retention (settings, years; 0 = keep) is deleted from storage and flagged purged.
 - `GET /api/raqib/account/users/:id/personal-data` (users export right) produces a person's data for a data-subject request.
 
+## Escalation email
+
+Escalations and high-severity alerts are in-app **and** email. Email goes through Core's outbox; without `AURIC_SMTP_URL` the mail is only
+logged (dev transport), so set it (and `AURIC_EMAIL_FROM` if used) before relying on it. The job runs with the other nightly work
+(`RaqibJobs.runAll`); `GET /api/health/raqib` reports its last run, including `actionsEscalated`. The escalation days, counting rule and
+recipients are in Settings → Escalation and are **assumptions until the client confirms them**.
+
+## Deploying client feedback round 1
+
+All migrations are additive (new tables, nullable or defaulted columns, widened CHECKs; existing inspections get a form id and an issue
+number in migration `20261016120400`). Deploy order is the usual one: back up, `npm run migrate`, restart the API, deploy the web app.
+After deploying, in the product: (1) the General Manager names the scoring manager, who enters the approved deduction values;
+(2) Quality Management enters shift names and hours and, if the client has them, the rest/consecutive rules; (3) confirm or change
+the escalation settings; (4) load the client's original inspection forms. Until (1) the previous weighted scoring applies.
+
+## Checking how a printed report looks
+
+Reports, blank forms and the visit schedule are print-ready A4 pages that the browser turns into PDF. To look at the real layout (long
+Arabic and English text, many pages, repeated table headings, page numbers) without a running system:
+
+```bash
+cd raqib/backend
+node --import @swc-node/register/esm-register scripts/render-print-samples.ts ./print-samples   # writes report/blank HTML, ar + en
+# print each file to PDF with any Chromium (Playwright: page.pdf({ format: "A4", preferCSSPageSize: true })) and look at the pages
+```
+
+Page numbers use the CSS paged-media footer (`@page` margin box), which Chrome and Edge print; a browser without it still prints
+every page correctly, only without the "page N of M" footer.
+
 ## Browser tests
 
 `cd raqib/web && npm run e2e` builds the app, starts the backend on a throw-away database (`raqib_e2e`, seeded with the demo

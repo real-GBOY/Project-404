@@ -149,6 +149,33 @@ using real demo accounts (`demo` password) and real data. Arabic/English and RTL
 | 11 | Confidential access = explicit GM grant + logged session; identity stored apart; restrictive RLS | No role can open it; nothing about the reporter leaks through ordinary tables |
 | 12 | In-process rate limiter | One process per deployment; documented limit |
 
+## 12. Client feedback round 1 (2026-10)
+
+The change plan and the requirement-by-requirement status are in [RAQIB_CHANGE_PLAN.md](RAQIB_CHANGE_PLAN.md) and
+[RAQIB_REQUIREMENTS_MATRIX.md](RAQIB_REQUIREMENTS_MATRIX.md). What this round added to the architecture (all additive migrations
+`20261016120000` … `20261016120500`; nothing existing was rewritten):
+
+| Area | What it is |
+|---|---|
+| **Deduction scoring** (`app/raqib/scoring`, `inspections/domain/scoring.ts`) | `deduction_v1` policy: base 100 minus a configured amount per non-compliant item (item amount beats severity amount), never below 0, one deduction per recorded violation (`raqib_inspection_deductions` primary key). Rules are versioned, immutable rows in `raqib_scoring_configs`; an inspection pins the version when it starts, so a later publish never moves it. With **no** configuration the earlier `weighted_compliance_v1` keeps scoring. Only a person the General Manager names (`raqib_designations`) may publish, which is deliberately not a permission-template right. |
+| **Score visibility** (`access.canSeeScore`) | Inspections and visits return no percentage, deductions or rule version to a role that cannot review, approve, read reports or read analytics (the inspector). Enforced in the API, not just the screens. |
+| **Several forms per visit** (`raqib_visit_forms`, `raqib_inspections.form_id/issue_no`) | A visit names the forms it needs; each form is its own inspection with its own issue number (`INS-yy-nnnn`) and score, started separately and submitted together. The guard evaluation belongs to the first form. Review flags items against the inspection that owns them; approval records violations for every form and the report carries each form (`extraForms`). A visit that names none uses the default site form exactly as before. The visit-level figure is the **mean** of its forms (assumption, flagged for the client). |
+| **Shifts and scheduling rules** (`settings.schedule`, `visits/domain/schedule-rules.ts`) | Shifts are configuration (key, names, optional hours). Two rules, both **off by default**: minimum rest hours between an inspector's shifts and a cap on consecutive days. The backend rejects a violating assignment with 409. A shift in use cannot be removed. |
+| **Escalation** (`settings.escalation`, `actions/domain/escalation.ts`, `RaqibJobs.escalateActions`) | An action still with its responsible person escalates at each configured day threshold (3, 6, 9 by default). Counting (from assignment or due date, weekend days that do not count) and recipients per level are settings. Each level is announced once (`escalation_level` on the action), written into the action history as an `escalated` event and sent in-app and by email. A high-severity observation notifies the configured roles at once. |
+| **Corrections** (`raqib_corrections`) | The only way system-generated inspection data (start/submit times, a deduction amount) changes after the fact: previous value, new value, who, role, when and why, append-only. Times need the approve right; deductions need the scoring designation. |
+| **Administrative Staff** (`adm`) | New role: schedules and prints visits in assigned projects; no inspections, review, scores, analytics, users or settings by default. |
+| **Printable documents** (`reports/domain/print-kit.ts`, `report-html.ts`, `forms/domain/blank-form-html.ts`) | One A4 stylesheet for completed reports and blank forms: page numbers, repeated table headings, rows that never split, long text that wraps, bidi-safe numbers, deductions and signature lines; blank forms at `GET /raqib/forms/:id/blank`. The browser still produces the PDF. |
+| **Analytics** | Added closure durations, recurring violations, observation summary, training metrics and project ranking, all computed from persisted rows and scope-filtered, in the CSV/Excel export too. |
+
+Decisions added:
+
+| # | Decision | Why |
+|---|---|---|
+| 13 | Client-supplied values (deductions, shift hours, rest/consecutive rules, escalation rule) are configuration that ships empty or flagged as assumed | The client's values were not provided; inventing them would put wrong numbers in front of auditors |
+| 14 | Scoring configuration changes are not a template right but a named designation | "Restricted to the client-designated user" must hold even for people with full settings access |
+| 15 | One inspection per (visit, form), one report per visit | Each form needs its own number and score; the approval decision is about the visit |
+| 16 | Services use the injected clock, not `new Date()` | Escalation and analytics are time-driven and must be testable; corrective actions had the last stray `new Date()` |
+
 ## 11. Offline field inspections (web)
 
 `web/src/services/offline/` (with `hooks/use-offline-sync.ts` and `components/SyncStatus.tsx`): an installable PWA (`public/sw.js` keeps the app shell, never API data, on the device) plus a per-user
@@ -160,3 +187,16 @@ snapshots the form). Everything is scoped by user id; sign-out clears the cached
 A real-browser test (`web/e2e`) drives this against the real backend: answer offline, reload with no network, reconnect, verify the
 server. The web app's structure, layering rules and where to add things are in `web/README.md`; colors live only in
 `web/src/styles/colors.ts`.
+
+## 13. Addendum: requirements 15-20
+
+- **Projects** carry `contract_start`, `contract_end` and `employees_assigned` (additive migration `20261017120000_raqib_addendum`).
+- **Ranking** (`analytics/domain/project-ranking.ts`) is pure: the service gathers observations, improvement, complaint counts and
+  days to contract end; each indicator becomes a percentile and the weighted mean (weights in `settings.ranking.weights`) is the
+  "attention" score. Any single indicator can be the sort instead.
+- **Search** adds an exact national-ID match and the inspection issue number, always through the caller's scope.
+- **Training** is a state machine `pending_supervisor` (guard requests, when `settings.training.guardReviewBySupervisor`) →
+  `pending_pm` → `approved` → `scheduled` → `completed`, with `returned` and `rejected` and a history entry per step.
+- **Surveys** (`app/raqib/surveys`): definitions only; answers are filed through `ConfidentialService.submit` with a `survey_id`.
+- **Branding** (`shared/branding.ts`): organization name and logo from settings, printed on blank forms, the schedule and reports,
+  and frozen into a report's snapshot when it is issued.

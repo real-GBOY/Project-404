@@ -30,6 +30,16 @@ every Raqib table. The runtime database role must not own the tables (see operat
 - issued reports are immutable frozen snapshots (trigger) written in the approval transaction;
 - overdue is derived from dates and never stored; scores and repeat counts are computed once and stored.
 
+### Added in client feedback round 1
+
+- **Scores stay away from inspectors.** The API omits the percentage, deductions and rule version unless the caller can review,
+  approve, read reports or read analytics (`canSeeScore`); the visit list does the same. Tests: `scoring.integration`, `journey.integration`.
+- **Deduction rules are not an ordinary setting.** Publishing needs a designation granted by the General Manager
+  (`raqib_designations`); every version is immutable and audited, and an inspection keeps the version it started under.
+- **System-generated data changes only through corrections.** Inspectors have no route that sets timestamps, issue numbers or
+  scores. An authorised correction writes an append-only row (previous value, new value, user, role, time, reason) and an audit entry.
+- **Duplicate deductions are impossible**, not just unlikely: `raqib_inspection_deductions` is keyed by (inspection, item).
+
 ## 4. Evidence and files
 
 Files are private Core files reached only through authorized endpoints (`/raqib/evidence/:id/content`, report PDFs,
@@ -98,3 +108,21 @@ server-side (they need native image libraries); the web app previews photos loca
   minimum the organization commits to keep (archival happens outside the app).
 - A refresh token lives in the browser's local storage (see `packages/web`); it is protected by the strict CSP and the API's rotation
   and reuse detection, and is revoked on password change.
+
+## 11. Surveys, complaint indicators and the quality role (requirements 15–19)
+
+- **Survey answers are confidential reports.** A guard's answer travels through the confidential pipeline (separate tables,
+  restrictive row-level policy, explicit grants, logged session, optional anonymity). The `surveys` module stores only the
+  definitions (title, questions, status); no route returns answers, so there is no second copy to leak. Search, analytics,
+  exports and notifications never read the confidential tables, and notifications carry no content.
+- **Who manages surveys** is a named designation (`survey_manager`), granted by the General Manager. It is separate from every
+  permission template and from the confidential grants: being Quality Management or an administrator does not manage surveys and
+  does not open the answers.
+- **Complaint indicators.** The project ranking shows a complaint count only to a caller holding an active confidential grant; for
+  everyone else the figure is absent (`null`), never zero, so the existence of complaints is not revealed. Only non-anonymous
+  reports carry a project link, so anonymity is not weakened by the indicator.
+- **Quality responsibility (requirement 19).** Quality roles inspect, review, verify and follow up; they hold no "work" right on
+  corrective actions, which belong to the project manager and the responsible people. Reporting lines are an organizational fact;
+  permissions are the templates, and they are what the API enforces.
+- **Training chain.** A guard sees and creates only their own request; the supervisor-review stage needs the supervisor letter
+  and the project-manager stage needs the approve letter; a person cannot decide their own request.
