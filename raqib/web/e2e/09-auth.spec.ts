@@ -26,7 +26,7 @@ test.describe("sign-in and account security", () => {
   });
 
   test("five wrong passwords lock the account and say for how long", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/login");
     await page.getByLabel("Email").fill(ACCOUNTS.guard);
     for (let i = 0; i < 5; i++) {
       await page.getByLabel("Password").fill(`wrong-password-${i}`);
@@ -40,7 +40,7 @@ test.describe("sign-in and account security", () => {
   });
 
   test("password recovery never reveals whether an address is registered", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/login");
     await page.getByRole("link", { name: "Forgot your password?" }).click();
     await page.getByLabel("Email").fill("nobody-at-all@example.com");
     await page.getByRole("button", { name: "Send the link" }).click();

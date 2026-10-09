@@ -96,7 +96,7 @@ export async function attemptSignIn(
   password = PASSWORD,
   otp?: string,
 ): Promise<void> {
-  await page.goto("/");
+  await page.goto("/login");
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(password);
   if (otp) await page.getByLabel("Verification code").fill(otp);
