@@ -9,6 +9,9 @@ import { seedRbacDefinitions } from "@core/rbac/application/seed.js";
 import { RbacRepository } from "@core/rbac/infrastructure/rbac-repository.js";
 import { ADMIT_PERMISSIONS } from "@admit/admit/permissions.js";
 import { ADMIT_ROLES } from "@admit/admit/shared/roles.js";
+import { DemoSeeder } from "@admit/admit/demo/demo-seeder.js";
+import { CLOCK } from "@core/kernel/tokens.js";
+import type { Clock } from "@core/kernel/clock.js";
 import { assertTicketKeyConfigured } from "@admit/admit/shared/secrets.js";
 import { demoSeedRefusal, readAdmitConfig } from "./config.js";
 
@@ -25,6 +28,8 @@ export class AppSeedService {
   constructor(
     private readonly coreSeed: SeedService,
     private readonly rbac: RbacRepository,
+    private readonly demo: DemoSeeder,
+    @Inject(CLOCK) private readonly clock: Clock,
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
 
@@ -36,5 +41,7 @@ export class AppSeedService {
 
     await runAsSystem(() => seedRbacDefinitions(this.rbac, this.uow, { permissions: ADMIT_PERMISSIONS, roles: ADMIT_ROLES }));
     log.info({ permissions: ADMIT_PERMISSIONS.length, roles: ADMIT_ROLES.map((r) => r.key) }, "admit RBAC seeded");
+
+    if (readAdmitConfig().seedDemo) await this.demo.seed(this.clock);
   }
 }

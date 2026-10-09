@@ -9,5 +9,6 @@ import { StaffService } from "./application/staff-service.js";
   imports: [AuditModule, IdentityModule, AdmitEventsModule],
   controllers: [StaffController],
   providers: [StaffService],
+  exports: [StaffService],
 })
 export class StaffModule {}

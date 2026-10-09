@@ -14,6 +14,6 @@ import { RateLimiter } from "./infrastructure/rate-limiter.js";
   imports: [AdmitEventsModule, BookingsStoreModule, BookingsModule, PaymentsModule, EmailsModule, SettingsModule],
   controllers: [PublicController],
   providers: [PublicService, RateLimiter],
-  exports: [RateLimiter],
+  exports: [RateLimiter, PublicService],
 })
 export class PublicModule {}

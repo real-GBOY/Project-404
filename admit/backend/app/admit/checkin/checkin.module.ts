@@ -10,5 +10,6 @@ import { CheckinService } from "./application/checkin-service.js";
   imports: [IdentityModule, BookingsStoreModule, AdmitEventsModule],
   controllers: [CheckinController],
   providers: [CheckinService],
+  exports: [CheckinService],
 })
 export class CheckinModule {}

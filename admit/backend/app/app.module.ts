@@ -16,6 +16,7 @@ import { AppExceptionFilter } from "@core/http/app-exception.filter.js";
 import { RequestContextMiddleware } from "@core/http/request-context.middleware.js";
 import { HealthController } from "@core/observability/health.controller.js";
 import { AdmitModule } from "@admit/admit/admit.module.js";
+import { DemoModule } from "@admit/admit/demo/demo.module.js";
 import { AppSeedService } from "./seed.js";
 
 /**
@@ -42,6 +43,7 @@ import { AppSeedService } from "./seed.js";
     FilesModule,
     SecurityModule,
     AdmitModule,
+    DemoModule,
   ],
   controllers: [HealthController],
   providers: [SeedService, AppSeedService, RequestContextMiddleware, { provide: APP_FILTER, useClass: AppExceptionFilter }],
