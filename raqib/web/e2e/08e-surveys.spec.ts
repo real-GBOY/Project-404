@@ -21,7 +21,7 @@ test.describe("surveys", () => {
     const list = await api<{
       candidates: Array<{ userId: string; name: { en: string }; role: string }>;
     }>(request, gm.token, "GET", "/raqib/surveys");
-    const person = list.candidates.find((c) => /qe$/.test(c.role))!;
+    const person = list.candidates.find((c) => /qm$/.test(c.role))!;
     expect(person).toBeTruthy();
 
     // the General Manager names the manager from the confidential screen
@@ -33,17 +33,17 @@ test.describe("surveys", () => {
     await expect(page.getByText(person.name.en).first()).toBeVisible();
 
     // the named manager writes and publishes it
-    const qe = await asUser(browser, ACCOUNTS.qe);
-    await qe.goto("/surveys");
-    await qe.getByLabel("Title (English)").fill(title);
-    await qe.getByLabel("Title (Arabic)").fill("استبيان الرفاهية");
-    await qe.getByLabel("Questions in Arabic, one per line").fill("كيف حالك؟\nما ملاحظاتك؟");
-    await qe.getByLabel("Questions in English, one per line").fill("How are you?\nAny comments?");
-    await qe.getByLabel(/Numbers of the questions answered/).fill("1");
-    await qe.getByRole("button", { name: "Save as draft" }).click();
-    await expect(qe.getByText(title)).toBeVisible();
-    await qe.getByRole("button", { name: "Publish", exact: true }).click();
-    await expect(qe.getByText(/Open · 2 questions/).first()).toBeVisible();
+    const qm = await asUser(browser, ACCOUNTS.qm);
+    await qm.goto("/surveys");
+    await qm.getByLabel("Title (English)").fill(title);
+    await qm.getByLabel("Title (Arabic)").fill("استبيان الرفاهية");
+    await qm.getByLabel("Questions in Arabic, one per line").fill("كيف حالك؟\nما ملاحظاتك؟");
+    await qm.getByLabel("Questions in English, one per line").fill("How are you?\nAny comments?");
+    await qm.getByLabel(/Numbers of the questions answered/).fill("1");
+    await qm.getByRole("button", { name: "Save as draft" }).click();
+    await expect(qm.getByText(title)).toBeVisible();
+    await qm.getByRole("button", { name: "Publish", exact: true }).click();
+    await expect(qm.getByText(/Open · 2 questions/).first()).toBeVisible();
 
     // the guard answers it, choosing to stay anonymous
     const guard = await asUser(browser, ACCOUNTS.guard);
