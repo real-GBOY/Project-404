@@ -23,11 +23,11 @@
         </tr></table>
       </td></tr>
       <tr>
-        <td class="stack qr-cell" width="232" bgcolor="#FFFFFF" style="padding:20px;vertical-align:top;background:#FFFFFF;">
+        <td class="stack qr-cell" width="168" bgcolor="#FFFFFF" style="width:168px;padding:12px;vertical-align:top;background:#FFFFFF;">
           <!-- 400x400 PNG, black on white, 4-module quiet zone baked in, ECC M -->
-          <img src="{{ t.ticket_qr_code_url }}" width="200" height="200" alt="QR code for ticket {{ t.ticket_id }}" style="width:200px;height:200px;background:#FFFFFF;color:#16140F;font-family:'Courier New',monospace;font-size:16px;">
+          <img src="{{ t.ticket_qr_code_url }}" width="144" height="144" alt="QR code for ticket {{ t.ticket_id }}" style="width:144px;height:144px;max-width:100%;background:#FFFFFF;color:#16140F;font-family:'Courier New',monospace;font-size:16px;">
         </td>
-        <td class="stack" style="padding:20px 20px 20px 4px;vertical-align:top;">
+        <td class="stack text-cell" style="padding:20px 20px 20px 8px;vertical-align:top;">
           <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#77716A;">Holder</div>
           <div style="font-size:17px;font-weight:700;padding:2px 0 12px;color:#16140F;">{{ t.ticket_holder_name or customer_name }}</div>
           <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#77716A;">Type</div>
