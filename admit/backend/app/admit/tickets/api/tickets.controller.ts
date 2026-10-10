@@ -1,4 +1,5 @@
-import { Body, Controller, Get, HttpCode, Param, Post, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Param, Post, Query, Res, UseGuards } from "@nestjs/common";
+import type { FastifyReply } from "fastify";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { z } from "zod";
 import { CurrentUser, RequirePermission } from "@core/http/decorators.js";
@@ -14,6 +15,7 @@ const searchQuery = z.object({
   limit: z.coerce.number().int().min(1).max(200).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 });
+const exportQuery = searchQuery.pick({ eventId: true, q: true });
 const revokeSchema = z.object({ reason: z.string().trim().min(3).max(300) }).strict();
 
 @ApiTags("admit · tickets")
@@ -27,6 +29,19 @@ export class TicketsController {
   @RequirePermission("read", "ticket")
   async search(@CurrentUser() who: Principal, @Query(ZodQuery(searchQuery)) q: z.infer<typeof searchQuery>) {
     return { items: await this.service.search(who, q) };
+  }
+
+  /** The attendee list as CSV. Registered before ":id" so "export.csv" is not read as a ticket id. */
+  @Get("export.csv")
+  @RequirePermission("read", "ticket")
+  async exportCsv(
+    @CurrentUser() who: Principal,
+    @Query(ZodQuery(exportQuery)) q: z.infer<typeof exportQuery>,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
+    const { name, csv } = await this.service.exportCsv(who, q);
+    reply.header("content-type", "text/csv; charset=utf-8").header("content-disposition", `attachment; filename="${name}"`).header("cache-control", "no-store");
+    return csv;
   }
 
   @Get(":id")

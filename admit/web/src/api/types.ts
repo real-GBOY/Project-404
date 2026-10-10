@@ -377,6 +377,15 @@ export interface ScanOutcome {
   gate?: string;
   at?: string;
 }
+export interface AuditRecord {
+  id: string;
+  actorId: string | null;
+  actorType: "user" | "system";
+  action: string;
+  resourceType: string;
+  resourceId: string | null;
+  createdAt: string;
+}
 export interface ScannerEvents {
   staff: { name: string; userId: string };
   events: {

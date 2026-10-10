@@ -61,7 +61,9 @@ a slow reviewer must not cost a customer who already paid.
 | **A real email pipeline** | The API writes the complete, already-decided email into an outbox table in the same transaction as the change. A **Python worker** claims rows with `FOR UPDATE SKIP LOCKED`, renders seven templates and sends over SMTP with leases and backoff. A failed email never invalidates a ticket. |
 | **Honest interface** | The scanner shows green only for a server answer (a tested state machine); "emailed" is drawn only once the provider accepted the message. |
 | **Tenant isolation** | The organizer is a Core organization; every Admit table has forced row-level security, and public guest routes run inside the organizer's tenant context. |
-| **The numbers** | 13 tenant tables · 22 permissions · 5 roles · 68 backend tests, 26 worker tests, 31 web tests and 10 browser tests in real Chrome. |
+| **Run by a real organizer** | `npm run provision` onboards an organizer with no demo data; owners create staff accounts, reset passwords and remove people; everyone changes their own password; bookings and attendees export as spreadsheet-safe CSV; every approval, cancellation, export and team change is in an owner-readable audit log; a booking's tickets email can be sent again. See [the go-live guide](../../admit/docs/go-live.md). |
+| **Looked after** | nightly database backups copied off the machine into R2 and verified; security headers, request limits on sign-in and checkout, fail2ban; CI on every push (backend, web, worker, browser). |
+| **The numbers** | 13 tenant tables · 22 permissions · 5 roles · 77 backend tests, 28 worker tests, 31 web tests and 13 browser tests in real Chrome. |
 
 ## How it's built
 
@@ -102,9 +104,9 @@ Organizer **Nile Sessions Events** at `/e/nile-sessions`. Sign in at `/admin` (d
 ## Tests
 
 ```bash
-cd admit/backend && npm run ci                # typecheck, lint, format, 68 integration tests on real PostgreSQL, build
+cd admit/backend && npm run ci                # typecheck, lint, format, 77 integration tests on real PostgreSQL, build
 cd admit/web && npm test && npm run e2e       # 31 unit tests; the browser journey (needs Chrome)
-cd admit/worker && .venv/bin/python -m pytest # 26 tests
+cd admit/worker && .venv/bin/python -m pytest # 28 tests
 ```
 
 The browser journey runs a guest booking, the upload, the reviewer's approval, the real QR images and the door scan in real Chrome against a
@@ -115,7 +117,7 @@ throwaway database. SCREENS=1 re-captures the screenshots on this page.
 - "Delivered" needs provider webhooks, so the top email status is `ACCEPTED`. The live deployment sends through a Gmail account (a demo-grade sender).
 - Proof files are stored as uploaded: type and size are enforced, but there is no metadata stripping or malware scan.
 - No cross-booking "My tickets" session: guests use the per-booking link, and "Find my booking" emails a fresh one.
-- There is no email invitation: an owner creates a new person's account (name and a starting password they hand over) or adds an existing one. A password reset by the owner is not built.
+- There is no email invitation and no self-service "forgot password": an owner creates a new person's account (name and a starting password they hand over), adds an existing one, and resets passwords.
 - Single currency (EGP) and time zone (Africa/Cairo), English only; Arabic/RTL is phase two.
 - Partial payments, refund recording, holder-only emails and wallet passes are open decisions in the spec and are not built.
 
@@ -125,4 +127,5 @@ throwaway database. SCREENS=1 re-captures the screenshots on this page.
 |---|---|
 | [admit/README.md](../../admit/README.md) | Start here: what is in the folder, how to run, test |
 | [admit/docs/architecture.md](../../admit/docs/architecture.md) | Audit of Core, the rules that matter and where each is enforced, limitations |
+| [admit/docs/go-live.md](../../admit/docs/go-live.md) | Going live with a real organizer: onboarding, secrets, email, refunds, personal data, rehearsal |
 | [docs/admit-deployment.md](../admit-deployment.md) | How Admit is deployed: VPS, nginx, TLS, worker, Vercel, backups |

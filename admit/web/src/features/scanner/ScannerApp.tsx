@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { adminApi } from "@/api";
 import type { ScannerEvents, ScanOutcome } from "@/api/types";
 import { Logo } from "@/components/Logo";
+import { ChangePasswordDialog } from "@/components/PasswordDialogs";
 import { fmtShortDate, fmtStamp, fmtTimeSec } from "@/lib/format";
 import { ApiError } from "@/services/http";
 import { AuthProvider, useAuth } from "../admin/auth";
@@ -676,6 +677,8 @@ function Home({
   onManual: () => void;
   onSignOut: () => void;
 }) {
+  const { logout } = useAuth();
+  const [pwOpen, setPwOpen] = useState(false);
   const total = current.checkedIn + current.remaining;
   const pct = total ? Math.round((current.checkedIn / total) * 100) : 0;
   return (
@@ -729,6 +732,17 @@ function Home({
       <div className="h-1.5 rounded-sm bg-rule" role="img" aria-label={`${pct}% arrived`}>
         <div className="h-1.5 rounded-sm bg-ok-solid" style={{ width: `${pct}%` }} />
       </div>
+      <ChangePasswordDialog
+        open={pwOpen}
+        onClose={() => setPwOpen(false)}
+        onChanged={() => logout("password_changed")}
+      />
+      <button
+        onClick={() => setPwOpen(true)}
+        className="self-start text-[13px] text-ink-2 underline"
+      >
+        Change password
+      </button>
       <label className="flex items-center gap-2 text-[13px] text-ink-2">
         <input
           type="checkbox"

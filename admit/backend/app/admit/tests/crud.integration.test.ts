@@ -7,7 +7,8 @@ import type { TestingModule } from "@nestjs/testing";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Clock } from "@core/kernel/clock.js";
-import { createAdmitHttpTestApp, hasTestDb, loginAs, seedOrganizer, seedStaff, type SeededOrganizer } from "./helpers.js";
+import { ProvisioningService } from "@admit/admit/staff/application/provisioning-service.js";
+import { createAdmitHttpTestApp, get, hasTestDb, loginAs, seedOrganizer, seedStaff, type SeededOrganizer } from "./helpers.js";
 
 const T0 = Date.parse("2026-10-20T08:00:00.000Z");
 const clock: Clock = { now: () => new Date(T0) };
@@ -228,6 +229,182 @@ describe.skipIf(!hasTestDb)("Admit dashboard CRUD rules", () => {
       });
       expect(approve.status).toBe(409);
       expect(approve.body.error.code).toBe("admit.event_closed");
+    });
+  });
+
+  describe("resending tickets", () => {
+    it("queues the tickets email again for a confirmed booking, and only for a confirmed booking", async () => {
+      const { typeId, methodId } = await publishedEvent("resend-event");
+      const png = Buffer.from("89504e470d0a1a0a0000000d49484452", "hex");
+      const waiting = (await book("resend-event", typeId, 30)).body;
+      const paid = (await book("resend-event", typeId, 31)).body;
+      const k = keyOf(paid.links);
+      const pre = await call("POST", `/admit/public/${org.slug}/bookings/${paid.ref}/proof/presign?k=${k}`, {
+        body: { fileName: "r.png", contentType: "image/png", byteSize: png.length },
+      });
+      expect((await call("PUT", pre.body.upload.url.replace(/^\/api/, ""), { raw: png, headers: { "content-type": "application/octet-stream" } })).status).toBe(
+        204,
+      );
+      expect(
+        (
+          await call("POST", `/admit/public/${org.slug}/bookings/${paid.ref}/proof?k=${k}`, {
+            body: { fileId: pre.body.fileId, methodId, transactionId: "TXN12345" },
+          })
+        ).status,
+      ).toBe(201);
+      const queue = (await call("GET", "/admit/payments", { token: owner })).body.items as Json[];
+      const item = queue.find((i) => i.bookingRef === paid.ref)!;
+      expect(
+        (
+          await call("POST", `/admit/payments/${item.submissionId}/approve`, {
+            token: owner,
+            body: { version: item.version, idempotencyKey: `resend-approve-${seq++}-xxxxxxxx` },
+          })
+        ).status,
+      ).toBe(200);
+
+      const idOf = async (ref: string) => ((await call("GET", `/admit/bookings?search=${ref}`, { token: owner })).body.items as Json[])[0]!.id as string;
+      const paidId = await idOf(paid.ref);
+      const ticketMails = async () =>
+        ((await call("GET", `/admit/bookings/${paidId}`, { token: owner })).body.emails as Json[]).filter((e) => e.type === "TICKETS").length;
+      expect(await ticketMails()).toBe(1);
+
+      expect((await call("POST", `/admit/bookings/${paidId}/resend-tickets`, { token: owner })).status).toBe(204);
+      expect(await ticketMails()).toBe(2);
+      // each request is its own occasion: pressing it again sends again, and the timeline says so
+      expect((await call("POST", `/admit/bookings/${paidId}/resend-tickets`, { token: owner })).status).toBe(204);
+      expect(await ticketMails()).toBe(3);
+      const detail = (await call("GET", `/admit/bookings/${paidId}`, { token: owner })).body;
+      expect(JSON.stringify(detail.timeline)).toContain("Tickets email sent again");
+
+      // an unpaid booking has no tickets to send; a viewer may not trigger email
+      const waitingId = await idOf(waiting.ref);
+      const refused = await call("POST", `/admit/bookings/${waitingId}/resend-tickets`, { token: owner });
+      expect(refused.status).toBe(409);
+      expect(refused.body.error.code).toBe("admit.booking_state");
+      expect((await call("POST", `/admit/bookings/${paidId}/resend-tickets`, { token: viewer })).status).toBe(403);
+    });
+  });
+
+  describe("exports", () => {
+    const raw = async (url: string, token: string) => {
+      const res = await http.inject({
+        method: "GET",
+        url: `/api${url}`,
+        headers: { authorization: `Bearer ${token}`, "x-forwarded-for": `10.8.${(ipSeq >> 8) & 255}.${ipSeq++ & 255}` },
+      });
+      return { status: res.statusCode, text: res.body, headers: res.headers };
+    };
+
+    it("exports bookings and attendees as Excel-friendly CSV, only to people who may read them, and audits it", async () => {
+      const { eventId, typeId } = await publishedEvent("export-event");
+      const evil = await call("POST", `/admit/public/${org.slug}/events/export-event/bookings`, {
+        body: {
+          items: [{ ticketTypeId: typeId, quantity: 1 }],
+          customer: { name: "Export Guest", email: "evil@example.com", phone: "010 1234 5678" },
+          policyAck: true,
+        },
+        headers: { "idempotency-key": `export-key-${Date.now()}-xxxxxxxx` },
+      });
+      expect(evil.status).toBe(201);
+
+      const res = await raw(`/admit/bookings/export.csv?eventId=${eventId}`, owner);
+      expect(res.status).toBe(200);
+      expect(String(res.headers["content-type"])).toContain("text/csv");
+      expect(String(res.headers["content-disposition"])).toMatch(/attachment; filename="admit-bookings-\d{4}-\d{2}-\d{2}\.csv"/);
+      expect(res.text.charCodeAt(0)).toBe(0xfeff);
+      const lines = res.text.trim().split(/\r?\n/);
+      expect(lines[0]).toBe("Reference,Status,Event,Customer,Email,Phone,Tickets,Total,Currency,Booked at,Hold expires");
+      expect(lines).toHaveLength(2);
+      expect(lines[1]).toContain(evil.body.ref);
+
+      const tickets = await raw(`/admit/tickets/export.csv?eventId=${eventId}`, owner);
+      expect(tickets.status).toBe(200);
+      expect(tickets.text.split(/\r?\n/)[0]).toContain("Ticket ID,Booking,Event,Ticket type,Holder");
+
+      // the viewer may read bookings; door staff may not
+      expect((await raw("/admit/bookings/export.csv", viewer)).status).toBe(200);
+      const door = await loginAs(http, (await seedStaff(app, org, "door_staff", "Door")).email);
+      expect((await raw("/admit/bookings/export.csv", door)).status).toBe(403);
+      expect((await raw("/admit/tickets/export.csv", door)).status).toBe(403);
+      expect((await raw("/admit/bookings/export.csv", "not-a-token")).status).toBe(401);
+
+      const audited = await call("GET", "/audit-logs?limit=50", { token: owner });
+      expect(JSON.stringify(audited.body)).toContain("admit.export.bookings");
+    });
+  });
+
+  describe("passwords and onboarding", () => {
+    it("lets a person change their own password, and only with the right current one", async () => {
+      const member = await seedStaff(app, org, "viewer", "Changer");
+      const token = await loginAs(http, member.email);
+      const wrong = await call("POST", "/admit/me/password", { token, body: { currentPassword: "not-the-password", newPassword: "brand-new-password-1" } });
+      expect(wrong.status).toBe(401);
+      const weak = await call("POST", "/admit/me/password", { token, body: { currentPassword: "correct horse battery staple", newPassword: "short" } });
+      expect(weak.status).toBe(400);
+      const ok = await call("POST", "/admit/me/password", {
+        token,
+        body: { currentPassword: "correct horse battery staple", newPassword: "brand-new-password-1" },
+      });
+      expect(ok.status).toBe(204);
+      await expect(loginAs(http, member.email)).rejects.toThrow(); // the old password no longer works
+      expect(await loginAs(http, member.email, "brand-new-password-1")).toBeTruthy();
+    });
+
+    it("lets the owner hand a colleague a new password, and nobody else", async () => {
+      const colleague = await seedStaff(app, org, "door_staff", "Locked Out");
+      const colleagueToken = await loginAs(http, colleague.email);
+      const list = (await call("GET", "/admit/team", { token: owner })).body.members as Json[];
+      const userId = list.find((m) => m.email === colleague.email)!.userId as string;
+
+      expect((await call("POST", `/admit/team/${userId}/password`, { token: colleagueToken, body: { newPassword: "owner-chose-this-1" } })).status).toBe(403);
+      expect((await call("POST", `/admit/team/${userId}/password`, { token: owner, body: { newPassword: "short" } })).status).toBe(400);
+      expect((await call("POST", "/admit/team/usr_nobody/password", { token: owner, body: { newPassword: "owner-chose-this-1" } })).status).toBe(404);
+      expect((await call("POST", `/admit/team/${userId}/password`, { token: owner, body: { newPassword: "owner-chose-this-1" } })).status).toBe(204);
+      await expect(loginAs(http, colleague.email)).rejects.toThrow();
+      expect(await loginAs(http, colleague.email, "owner-chose-this-1")).toBeTruthy();
+    });
+
+    it("provisions a real organizer with no demo data, and refuses duplicates before creating anything", async () => {
+      const svc = get<ProvisioningService>(app, ProvisioningService);
+      const stamp = Date.now();
+      const r = await svc.provision({
+        name: `Cairo Live Events ${stamp}`,
+        slug: `cairo-live-${stamp}`,
+        ownerEmail: `boss+${stamp}@cairolive.test`,
+        ownerName: "Boss Owner",
+        ownerPassword: "first-password-123",
+      });
+      expect(r.slug).toBe(`cairo-live-${stamp}`);
+
+      const token = await loginAs(http, r.ownerEmail, "first-password-123");
+      const me = await call("GET", "/admit/me", { token });
+      expect(me.status).toBe(200);
+      expect(me.body.eventReach).toBe("all");
+      expect(me.body.permissions).toEqual(expect.arrayContaining(["publish:event", "approve:payment", "assign:role", "scan:checkin"]));
+      // nothing was seeded for them: no events, no team beyond the owner
+      expect((await call("GET", "/admit/events", { token })).body.items).toHaveLength(0);
+      expect((await call("GET", `/admit/public/${r.slug}/events`)).body.events).toHaveLength(0);
+      expect(((await call("GET", "/admit/team", { token })).body.members as Json[]).length).toBe(1);
+
+      await expect(
+        svc.provision({
+          name: "Another",
+          slug: r.slug,
+          ownerEmail: `other+${stamp}@cairolive.test`,
+          ownerName: "Other Owner",
+          ownerPassword: "first-password-123",
+        }),
+      ).rejects.toMatchObject({ code: "admit.provision_slug_taken" });
+      await expect(
+        svc.provision({ name: "Third", slug: `third-${stamp}`, ownerEmail: r.ownerEmail, ownerName: "Third Owner", ownerPassword: "first-password-123" }),
+      ).rejects.toMatchObject({ code: "admit.provision_email_taken" });
+      // the failed attempts left nothing behind: the slug of the second try is still free
+      expect((await call("GET", `/admit/public/third-${stamp}/events`)).status).toBe(404);
+
+      // lock-out recovery
+      await svc.resetOwnerPassword(r.ownerEmail, "recovered-password-9");
+      expect(await loginAs(http, r.ownerEmail, "recovered-password-9")).toBeTruthy();
     });
   });
 

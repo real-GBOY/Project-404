@@ -290,6 +290,50 @@ export class IdentityService {
     });
   }
 
+  /**
+   * A signed-in person changes their own password: the current one must be right. Every refresh token is revoked, so other devices
+   * (and this one, at its next refresh) have to sign in again with the new password.
+   */
+  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+    await this.uow.transaction(async () => {
+      const user = await this.users.findById(userId);
+      if (!user || !(await this.hasher.verify(user.passwordHash, currentPassword))) {
+        throw Unauthenticated("identity.invalid_credentials", "The current password is not correct.");
+      }
+      user.changePassword(await this.hasher.hash(newPassword));
+      await this.users.update(user);
+      await this.refreshTokens.revokeAllForUser(user.id);
+      await this.audit.record({
+        actorId: user.id,
+        actorType: "user",
+        action: "user.password_changed",
+        resourceType: "user",
+        resourceId: user.id,
+      });
+    });
+  }
+
+  /**
+   * Someone with authority (a product decides who) sets another person's password, for example an organizer owner handing a colleague
+   * a new starting password. All of that person's sessions end. The caller is responsible for the authorization check.
+   */
+  async setPassword(userId: string, newPassword: string, actorId: string): Promise<void> {
+    await this.uow.transaction(async () => {
+      const user = await this.users.findById(userId);
+      if (!user) throw ValidationError("identity.unknown_user", "That user does not exist.");
+      user.changePassword(await this.hasher.hash(newPassword));
+      await this.users.update(user);
+      await this.refreshTokens.revokeAllForUser(user.id);
+      await this.audit.record({
+        actorId,
+        actorType: "user",
+        action: "user.password_set_by_admin",
+        resourceType: "user",
+        resourceId: user.id,
+      });
+    });
+  }
+
   async resetPassword(token: string, newPassword: string): Promise<void> {
     await this.uow.transaction(async () => {
       const userId = await this.verificationTokens.consume(token, "password_reset");

@@ -34,8 +34,8 @@ export function SubmittedPage() {
             <p className="max-w-[560px] text-[17px] leading-relaxed text-ink-3">
               Your booking is reserved but <strong>not yet paid</strong>. When the organizer
               confirms the transfer, your{" "}
-              {plural(b.ticketCount || b.lines.reduce((n, l) => n + l.quantity, 0), "ticket")} will be emailed to{" "}
-              <strong>{b.customer.emailMasked}</strong>.
+              {plural(b.ticketCount || b.lines.reduce((n, l) => n + l.quantity, 0), "ticket")} will
+              be emailed to <strong>{b.customer.emailMasked}</strong>.
             </p>
             <dl className="m-0 grid border border-ink bg-surface sm:grid-cols-3">
               {[

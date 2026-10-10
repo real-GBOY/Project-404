@@ -84,6 +84,28 @@ export class TeamService {
     });
   }
 
+  /** The owner sets a colleague's password (a starting password to hand over). Their sessions end. */
+  async setMemberPassword(who: Principal, userId: string, newPassword: string): Promise<void> {
+    await this.uow.transaction(async () => {
+      await this.access.require(who, "manage_members", "organization");
+      await this.access.require(who, "assign", "role");
+      const member = await currentExecutor()
+        .selectFrom("organization_members")
+        .select("user_id")
+        .where("organization_id", "=", requireOrganizationId())
+        .where("user_id", "=", userId)
+        .executeTakeFirst();
+      if (!member) throw NotFound("admit.member_not_found", "That person is not on the team.");
+      await this.identity.setPassword(userId, newPassword, who.userId);
+      await this.audit.record({ actorId: who.userId, action: "admit.team.password_reset", resourceType: "user", resourceId: userId });
+    });
+  }
+
+  /** Anyone signed in changes their own password. */
+  async changeOwnPassword(who: Principal, currentPassword: string, newPassword: string): Promise<void> {
+    await this.identity.changePassword(who.userId, currentPassword, newPassword);
+  }
+
   /** Add an account to the organizer with an Admit role, creating the account first when `account` is given and the email is new. */
   async add(who: Principal, email: string, roleKey: string, account?: { name: string; password: string }): Promise<void> {
     if (!ADMIT_ROLE_KEYS.has(roleKey)) throw ValidationError("admit.unknown_role", "Choose one of the Admit roles.");

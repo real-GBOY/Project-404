@@ -8,6 +8,8 @@ import { ZodBody } from "@core/http/zod.pipe.js";
 import type { Principal } from "@core/http/principal.js";
 import { TeamService } from "../application/team-service.js";
 
+const passwordSchema = z.object({ newPassword: z.string().min(10, "The password must be at least 10 characters.").max(200) }).strict();
+
 const addSchema = z
   .object({
     email: z.string().trim().toLowerCase().email().max(200),
@@ -41,6 +43,13 @@ export class TeamController {
   @RequirePermission("assign", "role")
   async add(@CurrentUser() who: Principal, @Body(ZodBody(addSchema)) b: z.infer<typeof addSchema>) {
     await this.service.add(who, b.email, b.roleKey, b.account);
+  }
+
+  @Post(":userId/password")
+  @HttpCode(204)
+  @RequirePermission("assign", "role")
+  async setPassword(@CurrentUser() who: Principal, @Param("userId") userId: string, @Body(ZodBody(passwordSchema)) b: z.infer<typeof passwordSchema>) {
+    await this.service.setMemberPassword(who, userId, b.newPassword);
   }
 
   @Delete(":userId")

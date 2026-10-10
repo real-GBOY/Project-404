@@ -143,8 +143,9 @@ export class EmailComposer {
   }
 
   /** The confirmation with every ticket's QR. One entry per issued ticket, never merged into one code. */
-  ticketsIssued(bookingId: string) {
-    return this.queue("TICKETS", bookingId, "issued", async ({ booking, links }) => {
+  /** `occasion` is "issued" for the confirmation sent with approval; an organizer re-sending the tickets passes a fresh one. */
+  ticketsIssued(bookingId: string, occasion = "issued") {
+    return this.queue("TICKETS", bookingId, occasion, async ({ booking, links }) => {
       const [issued, types] = await Promise.all([this.tickets.forBookings([booking.id]), this.events.listTypes([booking.eventId])]);
       const tn = new Map(types.map((t) => [t.id, t.name]));
       const live = issued.filter((t) => t.status !== "REVOKED");

@@ -27,6 +27,23 @@ export function BookingsPage() {
   const [eventId, setEventId] = useState("");
   const [offset, setOffset] = useState(0);
   const q = useDebounced(search);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const runExport = async () => {
+    setExporting(true);
+    setExportError(null);
+    try {
+      await adminApi.bookings.exportCsv({
+        eventId: eventId || undefined,
+        status: status || undefined,
+        search: q || undefined,
+      });
+    } catch (err) {
+      setExportError(errorText(err));
+    } finally {
+      setExporting(false);
+    }
+  };
   const open = params.get("b");
   const events = useQuery({ queryKey: ["admin", "events"], queryFn: () => adminApi.events.list() });
   const list = useQuery({
@@ -91,7 +108,21 @@ export function BookingsPage() {
             </option>
           ))}
         </select>
+        <Button
+          variant="secondary"
+          size="md"
+          loading={exporting}
+          onClick={() => void runExport()}
+          title="Download every booking that matches these filters as a spreadsheet"
+        >
+          Export CSV
+        </Button>
       </div>
+      {exportError ? (
+        <p role="alert" className="text-sm text-bad-solid">
+          {exportError}
+        </p>
+      ) : null}
       <QueryState query={list}>
         {(d) => (
           <div>
@@ -182,6 +213,10 @@ export function BookingDrawer({ id, onClose }: { id: string; onClose: () => void
   });
   const retry = useMutation({
     mutationFn: (mid: string) => adminApi.emails.retry(mid),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["admin", "booking", id] }),
+  });
+  const resend = useMutation({
+    mutationFn: () => adminApi.bookings.resendTickets(id),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["admin", "booking", id] }),
   });
   const revoke = useMutation({
@@ -361,6 +396,31 @@ export function BookingDrawer({ id, onClose }: { id: string; onClose: () => void
                   </div>
                 ))}
               </div>
+              {b.status === "CONFIRMED" && can("retry:email") ? (
+                <div className="flex flex-col gap-1.5 px-[22px] pt-4">
+                  <div>
+                    <Button
+                      variant="secondary"
+                      size="md"
+                      loading={resend.isPending}
+                      onClick={() => resend.mutate()}
+                    >
+                      Send the tickets email again
+                    </Button>
+                  </div>
+                  {resend.isSuccess ? (
+                    <p role="status" className="text-xs text-ok-fg">
+                      Queued. It goes to {b.customer.email}. Check the email list below for its
+                      delivery status.
+                    </p>
+                  ) : null}
+                  {resend.isError ? (
+                    <p role="alert" className="text-xs text-bad-solid">
+                      {errorText(resend.error)}
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
               {can("cancel:booking") &&
               (b.status === "AWAITING_PAYMENT" ||
                 b.status === "IN_REVIEW" ||

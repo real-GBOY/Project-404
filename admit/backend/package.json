@@ -12,6 +12,7 @@
     "serve": "node --import @swc-node/register/esm-register main.ts",
     "build": "node scripts/build.mjs",
     "start": "node dist/admit/backend/main.js",
+    "provision": "node --import @swc-node/register/esm-register scripts/provision.ts",
     "migrate": "node --import @swc-node/register/esm-register scripts/migrate.ts up",
     "migrate:status": "node --import @swc-node/register/esm-register scripts/migrate.ts status",
     "migrate:dev": "prisma migrate dev",

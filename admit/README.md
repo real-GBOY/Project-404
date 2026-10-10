@@ -28,10 +28,15 @@ ADMIT_WORKER_DATABASE_URL=postgres://postgres:postgres@localhost:5432/admit .ven
 Demo organizer **Nile Sessions Events** (`/e/nile-sessions`); sign in at `/admin` as `salma@` (owner), `dalia@` (event manager), `karim@`
 (payment reviewer), `ali@` (door staff, `/scan`), `mona@` (viewer) `@nilesessions.example`, password `demo-password-2026`.
 
+## Go live with a real organizer
+
+`npm run provision -- --name "Your Events" --owner-email you@example.com --owner-name "Your Name"` (in `admit/backend`) creates an organizer and its owner with no
+demo data. The full checklist (secrets, a real email sender, refunds, personal data, monitoring, rehearsal) is in [docs/go-live.md](docs/go-live.md).
+
 ## Test it
 
 ```bash
-cd admit/backend && npm run ci        # typecheck, lint, format, 68 integration tests (needs Postgres), build
+cd admit/backend && npm run ci        # typecheck, lint, format, 77 integration tests (needs Postgres), build
 cd admit/web && npm test && npm run e2e   # 31 unit tests; the browser journey against the real backend (needs Chrome)
 cd admit/worker && .venv/bin/python -m pytest
 ```

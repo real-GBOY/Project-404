@@ -18,6 +18,7 @@ const DEMO_ACCOUNTS = [
 
 const REASONS: Record<string, string> = {
   session_expired: "Your session ended. Sign in again to continue.",
+  password_changed: "Your password was changed. Sign in with the new one.",
   network: "We could not reach the server. Check your connection.",
 };
 
@@ -40,11 +41,13 @@ export function LoginPage({ to = "/admin" }: { to?: string }) {
       await login(email.trim(), password);
     } catch (err) {
       setMessage(
-        err instanceof ApiError && (err.status === 401 || err.status === 400)
-          ? "That email and password do not match an account."
-          : err instanceof ApiError
-            ? err.message
-            : "We could not reach the server. Check your connection.",
+        err instanceof ApiError && err.status === 429
+          ? "Too many sign-in attempts. Wait a minute and try again."
+          : err instanceof ApiError && (err.status === 401 || err.status === 400)
+            ? "That email and password do not match an account."
+            : err instanceof ApiError
+              ? err.message
+              : "We could not reach the server. Check your connection.",
       );
       setBusy(false);
     }

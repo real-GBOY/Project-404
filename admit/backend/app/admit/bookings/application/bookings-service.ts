@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { Inject, Injectable } from "@nestjs/common";
 import type { UnitOfWork } from "@core/kernel/db/db.js";
 import { readInTenant } from "@core/kernel/db/db.js";
@@ -12,6 +13,7 @@ import { readAdmitConfig } from "@admit/config.js";
 import { isUniqueViolation } from "@admit/admit/shared/pg-errors.js";
 import { admitId } from "@admit/admit/shared/ids.js";
 import { accessSecretHash, newBookingRef, safeEqualHex, sha256Hex } from "@admit/admit/shared/secrets.js";
+import { csvFileName, toCsv } from "@admit/admit/shared/csv.js";
 import { EventAccess } from "@admit/admit/events/application/event-access.js";
 import { EventsRepository, type EventRecord, type PaymentMethodRecord } from "@admit/admit/events/infrastructure/events-repository.js";
 import { TicketsRepository } from "@admit/admit/tickets/infrastructure/tickets-repository.js";
@@ -366,6 +368,43 @@ export class BookingsService {
     });
   }
 
+  /** Every booking the caller may see (optionally filtered) as a CSV for Excel. The export is audited: it holds customers' contact details. */
+  async exportCsv(who: Principal, f: { eventId?: string; status?: BookingStatus[]; search?: string }): Promise<{ name: string; csv: string }> {
+    const all: AdminBookingSummary[] = [];
+    for (let offset = 0; all.length < 50_000; offset += 200) {
+      const page = await this.list(who, { ...f, limit: 200, offset });
+      all.push(...page.items);
+      if (offset + 200 >= page.total) break;
+    }
+    const now = this.clock.now();
+    await this.uow.transaction(() =>
+      this.audit.record({
+        actorId: who.userId,
+        action: "admit.export.bookings",
+        resourceType: "admit_booking",
+        resourceId: f.eventId ?? "all",
+        after: { rows: all.length },
+      }),
+    );
+    const csv = toCsv(
+      ["Reference", "Status", "Event", "Customer", "Email", "Phone", "Tickets", "Total", "Currency", "Booked at", "Hold expires"],
+      all.map((b) => [
+        b.ref,
+        b.status,
+        b.eventTitle,
+        b.customerName,
+        b.email,
+        b.phone,
+        b.ticketCount,
+        (b.totalMinor / 100).toFixed(2),
+        b.currency,
+        b.createdAt,
+        b.holdExpiresAt,
+      ]),
+    );
+    return { name: csvFileName("admit-bookings", now), csv };
+  }
+
   /** People who booked, grouped by email, limited to the caller's events. Verified spend counts CONFIRMED bookings only. */
   async customers(who: Principal, f: { search?: string; limit: number; offset: number }) {
     return readInTenant(async () => {
@@ -491,6 +530,23 @@ export class BookingsService {
           createdAt: e.createdAt,
         })),
       };
+    });
+  }
+
+  /** Queue the tickets email again (the customer lost it, or mistyped the address and it was corrected). Only for a confirmed booking. */
+  async resendTickets(who: Principal, id: string): Promise<void> {
+    await this.uow.transaction(async () => {
+      const seen = await this.repo.find(id);
+      if (!seen) throw NotFound("admit.booking_not_found", "Booking not found.");
+      await this.access.assertEvent(who, seen.eventId);
+      if (seen.status !== "CONFIRMED")
+        throw Conflict("admit.booking_state", "Tickets exist only for a confirmed booking. This one is " + seen.status.toLowerCase().replace("_", " ") + ".");
+      const live = (await this.tickets.forBookings([id])).filter((t) => t.status !== "REVOKED");
+      if (!live.length) throw Conflict("admit.no_tickets", "Every ticket of this booking was revoked, so there is nothing to send.");
+      const now = this.clock.now();
+      await this.composer.ticketsIssued(id, `resent-${randomUUID()}`);
+      await this.repo.addTimeline(id, "Tickets email sent again", { actorId: who.userId, at: now });
+      await this.audit.record({ actorId: who.userId, action: "admit.booking.tickets_resent", resourceType: "admit_booking", resourceId: id });
     });
   }
 

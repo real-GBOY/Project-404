@@ -20,6 +20,19 @@ export function TicketsPage() {
   const [eventId, setEventId] = useState("");
   const [revoking, setRevoking] = useState<string | null>(null);
   const q = useDebounced(search);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const runExport = async () => {
+    setExporting(true);
+    setExportError(null);
+    try {
+      await adminApi.tickets.exportCsv({ eventId: eventId || undefined, q: q || undefined });
+    } catch (err) {
+      setExportError(errorText(err));
+    } finally {
+      setExporting(false);
+    }
+  };
   const events = useQuery({ queryKey: ["admin", "events"], queryFn: () => adminApi.events.list() });
   const list = useQuery({
     queryKey: ["admin", "tickets", q, eventId],
@@ -60,7 +73,21 @@ export function TicketsPage() {
             </option>
           ))}
         </select>
+        <Button
+          variant="secondary"
+          size="md"
+          loading={exporting}
+          onClick={() => void runExport()}
+          title="Download the attendee list as a spreadsheet"
+        >
+          Export attendee list
+        </Button>
       </div>
+      {exportError ? (
+        <p role="alert" className="text-sm text-bad-solid">
+          {exportError}
+        </p>
+      ) : null}
       <p className="border border-rule bg-surface px-3.5 py-2.5 text-[13px] leading-normal text-ink-2">
         <strong className="text-ink">Checked in</strong> means the ticket was scanned and admitted.{" "}
         <strong className="text-ink">Revoked</strong> means an organizer invalidated it (refund,

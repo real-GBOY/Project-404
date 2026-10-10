@@ -9,6 +9,7 @@ const withK = (path: string, k: string) => `${path}?k=${e(k)}`;
 export const ENDPOINTS = {
   auth: { login: "/auth/login", refresh: "/auth/refresh", logout: "/auth/logout" },
   me: "/admit/me",
+  mePassword: "/admit/me/password",
   public: {
     events: (org: string) => `${pub(org)}/events`,
     event: (org: string, event: string) => `${pub(org)}/events/${e(event)}`,
@@ -44,6 +45,8 @@ export const ENDPOINTS = {
     byId: (id: string) => `/admit/bookings/${id}`,
     cancel: (id: string) => `/admit/bookings/${id}/cancel`,
     customers: "/admit/bookings/customers/list",
+    exportCsv: "/admit/bookings/export.csv",
+    resend: (id: string) => `/admit/bookings/${id}/resend-tickets`,
   },
   payments: {
     queue: "/admit/payments",
@@ -56,6 +59,7 @@ export const ENDPOINTS = {
   },
   tickets: {
     list: "/admit/tickets",
+    exportCsv: "/admit/tickets/export.csv",
     byId: (id: string) => `/admit/tickets/${id}`,
     revoke: (id: string) => `/admit/tickets/${id}/revoke`,
   },
@@ -66,10 +70,12 @@ export const ENDPOINTS = {
   },
   emails: { list: "/admit/emails", retry: (id: string) => `/admit/emails/${id}/retry` },
   reports: { overview: "/admit/reports/overview" },
+  audit: "/audit-logs",
   settings: "/admit/settings",
   team: {
     list: "/admit/team",
     member: (userId: string) => `/admit/team/${userId}`,
+    password: (userId: string) => `/admit/team/${userId}/password`,
     role: (userId: string, role: string) => `/admit/team/${userId}/roles/${role}`,
   },
 } as const;

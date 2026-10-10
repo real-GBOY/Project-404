@@ -96,13 +96,32 @@ encodes the organizer's picture URL plus `#<ticket token>`: a phone camera opens
 
 ## Backups
 
-`/opt/admit/admit-backup.sh` (source: `scripts/admit-backup.sh`) runs from root's crontab at 03:30: a verified `pg_dump -Fc` into
-`/var/backups/admit` (14 kept). Payment proofs live in R2, not on the box, so they are not in this backup. These copies are on the same machine; copy
-them off the box (for example with `scp`) before relying on them against losing the server. Restore:
+`/opt/admit/admit-backup.sh` (source: `scripts/admit-backup.sh`, with `backend/scripts/offsite-backup.mjs`) runs from root's crontab at 03:30:
+
+1. a verified `pg_dump -Fc` into `/var/backups/admit` (14 kept) on the box;
+2. the same dump copied **off the machine** into R2 (`admit-files`, folder `backups/`, 14 days kept) and read back to check its size, so losing the
+   server does not lose the data. Payment proofs are already in R2, so they are not in the dump.
+
+Restore (to a scratch database first, to prove the dump is good):
 
 ```bash
 sudo -u postgres createdb admit_restore && sudo -u postgres pg_restore -d admit_restore /var/backups/admit/admit-YYYY-MM-DD.dump
 ```
+
+If the box is lost, download `backups/admit-YYYY-MM-DD.dump` from the bucket (Cloudflare dashboard or the R2 API) and restore it on a new box
+with the same `ADMIT_TICKET_KEY`.
+
+## Hardening
+
+`admit/deploy/harden-vps.sh` (idempotent; already applied) adds, for Admit's own nginx site only:
+
+- security headers on every API answer (HSTS, `nosniff`, `Referrer-Policy: no-referrer`, `X-Frame-Options: DENY`);
+- request limits per client address: sign-in 10 a minute with a burst of 5, the public booking routes 120 a minute (HTTP 429 beyond that,
+  and the sign-in page says "wait a minute");
+- fail2ban for SSH (the stock `sshd` jail).
+
+The box also runs a firewall allowing only SSH, HTTP and HTTPS, and automatic security updates. SSH currently still accepts passwords for root:
+switch to keys only (`PasswordAuthentication no`) once you have confirmed a key works for you.
 
 ## Web security headers
 
@@ -119,6 +138,11 @@ If the API host changes, update `connect-src` and `img-src` there.
    (`journalctl -u admit-worker -n 20`).
 5. `/scan` signs in as `ali@nilesessions.example` and a ticket ID entered by hand answers "Entry approved" once and "Already used" after.
 
+## Going live with a real organizer
+
+See [admit/docs/go-live.md](../admit/docs/go-live.md): onboarding with `npm run provision` (no demo data), secrets to rotate, a real email
+sender, refunds, personal data, monitoring and a rehearsal checklist.
+
 ## Operating notes
 
 - Logs: `journalctl -u admit -f`, `journalctl -u admit-worker -f`. Status: `systemctl status admit admit-worker`.
@@ -128,5 +152,5 @@ If the API host changes, update `connect-src` and `img-src` there.
 
 ## Not on this deployment
 
-Outgoing mail (see Email), off-machine database backups, malware scanning of proof uploads, a custom domain (the sslip.io hostname stands in for one),
+A transactional email provider on your own domain (see Email), malware scanning of proof uploads, a custom domain (the sslip.io hostname stands in for one),
 and provider delivery webhooks (the top email status is `ACCEPTED`).

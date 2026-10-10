@@ -1,8 +1,9 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState } from "react";
 import { Navigate, NavLink, Outlet, Route, Routes, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { adminApi } from "@/api";
 import { Logo } from "@/components/Logo";
+import { ChangePasswordDialog } from "@/components/PasswordDialogs";
 import { fmtShortDate, fmtTime } from "@/lib/format";
 import { AuthProvider, isDoorOnly, useAuth } from "./auth";
 import { LoginPage } from "./LoginPage";
@@ -16,6 +17,7 @@ import { CustomersPage } from "./CustomersPage";
 import { ReportsPage } from "./ReportsPage";
 import { EmailPage } from "./EmailPage";
 import { SettingsPage } from "./SettingsPage";
+import { AuditPage } from "./AuditPage";
 
 const EventEditorPage = lazy(() => import("./EventEditorPage"));
 
@@ -37,11 +39,13 @@ const NAV: NavItem[] = [
   { to: "/admin/customers", label: "Customers", needs: "read:booking" },
   { to: "/admin/email", label: "Email delivery", needs: "read:email", badge: "email" },
   { to: "/admin/reports", label: "Reports", needs: "read:report" },
+  { to: "/admin/audit", label: "Audit log", needs: "read:audit_log" },
   { to: "/admin/settings", label: "Settings", needs: "manage:event_staff" },
 ];
 
 function Shell() {
   const { me, can, logout } = useAuth();
+  const [pwOpen, setPwOpen] = useState(false);
   const items = NAV.filter((n) => can(n.needs));
   const queue = useQuery({
     queryKey: ["admin", "queue-count"],
@@ -107,8 +111,14 @@ function Shell() {
             {me?.eventReach === "all" ? "All events" : "Assigned events"}
           </span>
           <button
-            onClick={() => logout()}
+            onClick={() => setPwOpen(true)}
             className="mt-1.5 self-start bg-transparent p-0 text-xs text-faint underline hover:text-paper"
+          >
+            Change password
+          </button>
+          <button
+            onClick={() => logout()}
+            className="self-start bg-transparent p-0 text-xs text-faint underline hover:text-paper"
           >
             Sign out
           </button>
@@ -142,6 +152,14 @@ function Shell() {
             ))}
           </nav>
           <span className="hidden flex-1 md:block" />
+          <span className="flex items-center gap-3 text-xs md:hidden">
+            <button className="underline" onClick={() => setPwOpen(true)}>
+              Password
+            </button>
+            <button className="underline" onClick={() => logout()}>
+              Sign out
+            </button>
+          </span>
           <span className="whitespace-nowrap font-mono text-xs text-ink-2">
             {fmtShortDate(now)} · {fmtTime(now)}
           </span>
@@ -150,6 +168,11 @@ function Shell() {
           <Outlet />
         </main>
       </div>
+      <ChangePasswordDialog
+        open={pwOpen}
+        onClose={() => setPwOpen(false)}
+        onChanged={() => logout("password_changed")}
+      />
     </div>
   );
 }
@@ -215,6 +238,7 @@ export default function AdminApp() {
             <Route path="customers" element={<CustomersPage />} />
             <Route path="email" element={<EmailPage />} />
             <Route path="reports" element={<ReportsPage />} />
+            <Route path="audit" element={<AuditPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/admin" replace />} />

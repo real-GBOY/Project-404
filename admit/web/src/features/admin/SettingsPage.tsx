@@ -4,6 +4,7 @@ import { adminApi } from "@/api";
 import type { TeamMember, TeamRole } from "@/api/types";
 import { Button } from "@/components/Button";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { ResetPasswordDialog } from "@/components/PasswordDialogs";
 import { SelectField, TextField } from "@/components/Field";
 import { Notice } from "@/components/Notice";
 import { QueryState } from "@/components/QueryState";
@@ -106,6 +107,8 @@ function Team() {
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [removing, setRemoving] = useState<TeamMember | null>(null);
+  const [resetting, setResetting] = useState<TeamMember | null>(null);
+  const toast = useToast();
   const refresh = () => qc.invalidateQueries({ queryKey: ["admin", "team"] });
   const add = useMutation({
     mutationFn: () =>
@@ -177,6 +180,14 @@ function Team() {
                           ) : null}
                         </span>
                       ))}
+                      {manage ? (
+                        <button
+                          className="ml-2 text-xs font-semibold underline"
+                          onClick={() => setResetting(m)}
+                        >
+                          Reset password
+                        </button>
+                      ) : null}
                       {manage && m.email !== me?.user.email ? (
                         <button
                           className="ml-2 text-xs font-semibold text-bad-solid underline"
@@ -284,6 +295,14 @@ function Team() {
             </>
           )}
         </QueryState>
+        <ResetPasswordDialog
+          person={resetting ? { userId: resetting.userId, name: resetting.name } : null}
+          onClose={() => setResetting(null)}
+          onDone={() => {
+            setResetting(null);
+            toast.show("Password set");
+          }}
+        />
         <ConfirmDialog
           open={removing !== null}
           onClose={() => setRemoving(null)}

@@ -52,7 +52,15 @@ test("capture the main screens", async ({ page }) => {
   await page.evaluate(() => localStorage.clear());
   await page.setViewportSize({ width: 390, height: 800 });
   await page.goto("/scan");
-  if (await page.getByLabel("Email").waitFor({ timeout: 8000 }).then(() => true, () => false)) {
+  if (
+    await page
+      .getByLabel("Email")
+      .waitFor({ timeout: 8000 })
+      .then(
+        () => true,
+        () => false,
+      )
+  ) {
     await page.getByLabel("Email").fill("ali@nilesessions.example");
     await page.getByLabel("Password").fill("demo-password-2026");
     await page.getByRole("button", { name: "Sign in" }).click();

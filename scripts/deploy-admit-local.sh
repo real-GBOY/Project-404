@@ -30,7 +30,7 @@ fi
 echo "-> shipping to $SSH_USER@$SSH_HOST"
 "${SSH[@]}" "rm -rf /tmp/admit-ship && mkdir -p /tmp/admit-ship"
 tar -czf - -C admit/backend/dist . | "${SSH[@]}" "cat > /tmp/admit-ship/backend.tgz"
-"${SCP[@]}" package.json package-lock.json admit/backend/deploy-vps.sh "$SSH_USER@$SSH_HOST:/tmp/admit-ship/"
+"${SCP[@]}" package.json package-lock.json admit/backend/deploy-vps.sh scripts/admit-backup.sh admit/backend/scripts/offsite-backup.mjs "$SSH_USER@$SSH_HOST:/tmp/admit-ship/"
 printf 'SERVICE=%s\nPORT=%s\n' "$SERVICE" "$PORT" | "${SSH[@]}" "cat > /tmp/admit-ship/deploy.env"
 
 echo "-> releasing on the box"
@@ -39,6 +39,7 @@ echo "-> releasing on the box"
   find '$BACKEND_DIR/dist' -mindepth 1 -delete
   tar --no-same-owner -xzf /tmp/admit-ship/backend.tgz -C '$BACKEND_DIR/dist'
   cp /tmp/admit-ship/package.json /tmp/admit-ship/package-lock.json /tmp/admit-ship/deploy-vps.sh /tmp/admit-ship/deploy.env '$BACKEND_DIR/'
+  cp /tmp/admit-ship/admit-backup.sh /opt/admit/admit-backup.sh && cp /tmp/admit-ship/offsite-backup.mjs /opt/admit/offsite-backup.mjs && chmod +x /opt/admit/admit-backup.sh
   rm -rf /tmp/admit-ship
   chown -R admit:admit '$BACKEND_DIR'
   env BACKEND_DIR='$BACKEND_DIR' SERVICE='$SERVICE' PORT='$PORT' bash '$BACKEND_DIR/deploy-vps.sh'

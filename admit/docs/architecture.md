@@ -74,6 +74,8 @@ Dependency direction: product modules → Core contracts/services. Core imports 
 | **A published event stays buyable** | removing or taking off sale the last on-sale ticket type, or deleting/disabling the last enabled payment method of a published event is a 409 (`admit.last_ticket_type`, `admit.last_payment_method`) | crud tests |
 | **History is never deleted** | a venue that events use, a ticket type or payment method that bookings used, a published event and any event with bookings cannot be deleted (409); only an unused venue and a bookless draft can. Cancel or archive instead | crud tests |
 | **The door flow follows the design** | door staff who sign in at the organizer login go straight to the phone scanner; the first start explains the camera prompt; every verdict is a server answer (approved, already used, not a valid ticket, cancelled, not for this event, event closed, **not paid yet** for a typed booking reference with no tickets); no answer is a connection error that records nothing | journey, e2e |
+| **Passwords are the owner's to manage** | anyone changes their own (current one required, all sessions end); an owner sets a colleague's; `npm run provision -- --reset-owner` recovers a lone owner; reset links by e-mail are not built | account tests |
+| **Exports are audited and spreadsheet-safe** | bookings and attendees as CSV need the read permission, are limited to the caller's events, are logged with a row count, start with a BOM for Arabic names and defuse `=`/`+`/`-`/`@` cells | csv unit + export tests |
 | **A closed event takes no more money** | a cancelled or archived event refuses new proof uploads (`admit.event_closed`) and refuses approving a payment, so no ticket is issued for it | crud tests |
 | **The organizer cannot lock itself out** | an owner cannot remove themselves, and the last `owner` role cannot be removed from the team or the account (409 `admit.cannot_remove_self`, `admit.last_owner`); removing a person drops their roles, event assignments and membership but keeps their account and every audit record | crud tests |
 | **Email failure never invalidates a ticket** | the worker writes nowhere but `admit_email_messages`; a FAILED email leaves the booking and tickets untouched | worker tests |
@@ -100,7 +102,7 @@ The booking timeline, the review pipeline and the scanner verdicts are derived f
 
 ## 6. Verification performed
 
-- Backend: 68 integration tests against real PostgreSQL (migrate-from-zero, RLS on every table, journey, concurrency, demo). Typecheck, lint, format, build clean.
+- Backend: 77 integration tests against real PostgreSQL (migrate-from-zero, RLS on every table, journey, concurrency, demo). Typecheck, lint, format, build clean.
 - Worker: 26 pytest (rendering of all 7 types incl. real API payloads, claim/lease/backoff/final-failure, isolation).
 - Web: 31 unit tests (validation, state machines, readiness, date handling, permissions); typecheck, lint, production build clean.
 - **Browser end-to-end (Playwright, real Chrome, real backend, throw-away DB)**: a guest books under validation, uploads proof, a reviewer approves, the guest loads real QR PNGs, door staff admit a ticket once and are told when it was first used; a role without the permission cannot reach the review queue; an invalid booking link reveals nothing.
@@ -111,7 +113,7 @@ The booking timeline, the review pipeline and the scanner verdicts are derived f
 - **"Delivered" needs provider webhooks.** With SMTP the top status is `ACCEPTED`, as the design's open decision anticipated.
 - **Proof files are stored as uploaded** (type and size are enforced; EXIF is not stripped and there is no malware scan, unlike Raqib's ClamAV hook).
 - **No cross-booking "My tickets" session.** Guests use the per-booking magic link, and "Find my booking" emails a fresh link (always the same answer).
-- **No email invitation or owner-initiated password reset.** The owner creates a new person's account directly (name and a starting password to hand over) or adds an existing account; people change their own password after signing in.
+- **No email invitation and no self-service "forgot password".** The owner creates a new person's account directly (name and a starting password to hand over) or adds an existing account, and resets passwords; people change their own after signing in.
 - **Cover images**: the event cover is a URL field in the API; the editor has no upload yet (a striped placeholder shows).
 - **Payment methods are per event**, not a shared organizer library; there is no password re-entry step for editing them (they are permissioned and audited).
 - **No idle re-auth modal**: sessions follow the Core access/refresh token lifetimes.

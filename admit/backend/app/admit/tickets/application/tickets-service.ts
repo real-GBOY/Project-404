@@ -7,6 +7,7 @@ import type { Clock } from "@core/kernel/clock.js";
 import type { IAuditLogger } from "@core/contracts/index.js";
 import type { Principal } from "@core/http/principal.js";
 import { newTicketId, ticketTokenHash, ticketToken } from "@admit/admit/shared/secrets.js";
+import { csvFileName, toCsv } from "@admit/admit/shared/csv.js";
 import { EventAccess } from "@admit/admit/events/application/event-access.js";
 import { EventsRepository } from "@admit/admit/events/infrastructure/events-repository.js";
 import { BookingsRepository, type BookingRecord } from "@admit/admit/bookings/infrastructure/bookings-repository.js";
@@ -101,6 +102,43 @@ export class TicketsService {
       if (q.eventId && scope && !scope.includes(q.eventId)) return [];
       return this.views(await this.repo.search({ eventIds: scope, eventId: q.eventId, q: q.q, limit: q.limit, offset: q.offset }));
     });
+  }
+
+  /** Every ticket the caller may see (optionally for one event) as a CSV: the attendee list. Audited. */
+  async exportCsv(who: Principal, f: { eventId?: string; q?: string }): Promise<{ name: string; csv: string }> {
+    const all: TicketView[] = [];
+    for (let offset = 0; all.length < 100_000; offset += 200) {
+      const page = await this.search(who, { ...f, limit: 200, offset });
+      all.push(...page);
+      if (page.length < 200) break;
+    }
+    const now = this.clock.now();
+    await this.uow.transaction(() =>
+      this.audit.record({
+        actorId: who.userId,
+        action: "admit.export.tickets",
+        resourceType: "admit_ticket",
+        resourceId: f.eventId ?? "all",
+        after: { rows: all.length },
+      }),
+    );
+    const csv = toCsv(
+      ["Ticket ID", "Booking", "Event", "Ticket type", "Holder", "No.", "Status", "Checked in at", "Gate", "Revoked at", "Revoked reason"],
+      all.map((t) => [
+        t.id,
+        t.bookingRef,
+        t.eventTitle,
+        t.ticketType,
+        t.holderName,
+        t.seq,
+        t.status,
+        t.checkedInAt,
+        t.checkedInGate,
+        t.revokedAt,
+        t.revokedReason,
+      ]),
+    );
+    return { name: csvFileName("admit-tickets", now), csv };
   }
 
   async get(who: Principal, id: string): Promise<TicketView> {

@@ -4,6 +4,7 @@
  */
 import { ENDPOINTS as E } from "@/config/endpoints";
 import { http } from "@/services/http";
+import { downloadProtected } from "@/lib/download";
 import type * as T from "./types";
 
 const anon = { anonymous: true } as const;
@@ -58,6 +59,10 @@ const list = <R>(path: string) => http<{ items: R[] }>(path).then((r) => r.items
 
 export const adminApi = {
   me: () => http<T.Me>(E.me),
+  account: {
+    changePassword: (currentPassword: string, newPassword: string) =>
+      http<void>(E.mePassword, { method: "POST", body: { currentPassword, newPassword } }),
+  },
 
   events: {
     list: () => list<T.AdminEvent>(E.events.list),
@@ -114,6 +119,9 @@ export const adminApi = {
     get: (id: string) => http<T.BookingDetail>(E.bookings.byId(id)),
     cancel: (id: string, reason: string) =>
       http<void>(E.bookings.cancel(id), { method: "POST", body: { reason } }),
+    resendTickets: (id: string) => http<void>(E.bookings.resend(id), { method: "POST" }),
+    exportCsv: (q: { eventId?: string; status?: string; search?: string }) =>
+      downloadProtected(E.bookings.exportCsv + toQuery(q), "admit-bookings.csv"),
     customers: (q: { search?: string; limit?: number; offset?: number }) =>
       http<{ items: T.CustomerRow[]; total: number }>(E.bookings.customers, { query: q }),
   },
@@ -153,8 +161,15 @@ export const adminApi = {
   tickets: {
     list: (q: { eventId?: string; q?: string; limit?: number; offset?: number }) =>
       list<T.TicketRow>(E.tickets.list + toQuery(q)),
+    exportCsv: (q: { eventId?: string; q?: string }) =>
+      downloadProtected(E.tickets.exportCsv + toQuery(q), "admit-tickets.csv"),
     revoke: (id: string, reason: string) =>
       http<T.TicketRow>(E.tickets.revoke(id), { method: "POST", body: { reason } }),
+  },
+
+  audit: {
+    list: (q: { action?: string; from?: string; cursor?: string; limit?: number }) =>
+      http<{ records: T.AuditRecord[]; nextCursor?: string }>(E.audit, { query: q }),
   },
 
   checkin: {
@@ -191,6 +206,8 @@ export const adminApi = {
         method: "POST",
         body: { email, roleKey, ...(account ? { account } : {}) },
       }),
+    setPassword: (userId: string, newPassword: string) =>
+      http<void>(E.team.password(userId), { method: "POST", body: { newPassword } }),
     removeMember: (userId: string) => http<void>(E.team.member(userId), { method: "DELETE" }),
     removeRole: (userId: string, roleKey: string) =>
       http<void>(E.team.role(userId, roleKey), { method: "DELETE" }),
