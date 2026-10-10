@@ -80,6 +80,7 @@ describe("QR link payloads", () => {
   it("extracts the token from the ticket link or a bare token", () => {
     expect(tokenFromScan(`https://admit.example/q/${token}`)).toBe(token);
     expect(tokenFromScan(`http://localhost:4700/q/${token}?x=1`)).toBe(token);
+    expect(tokenFromScan(`https://i.postimg.cc/x/pic.jpg#${token}`)).toBe(token);
     expect(tokenFromScan(token)).toBe(token);
   });
   it("rejects anything that is not one of ours", () => {

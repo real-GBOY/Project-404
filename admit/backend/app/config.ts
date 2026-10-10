@@ -44,6 +44,11 @@ const schema = z.object({
   publicUrl: z.string().trim().default(""),
   /** Public origin of this API, used for the QR image URLs inside emails (an email client cannot reach localhost). */
   apiUrl: z.string().trim().default(""),
+  /**
+   * What every ticket QR opens when scanned with an ordinary phone: this picture. The QR holds `<this url>#<ticket token>`; a browser
+   * ignores the part after `#`, and the door scanner reads the token from it.
+   */
+  qrImageUrl: z.string().trim().url().default("https://i.postimg.cc/cCvLrpyG/Whats-App-Image-2026-10-10-at-2-27-41-PM.jpg"),
   /** How long a magic link (booking status / tickets) stays valid. */
   accessLinkDays: z.coerce.number().int().min(1).max(365).default(30),
   /** Largest payment-proof file, in bytes. */
@@ -62,6 +67,7 @@ export function readAdmitConfig(env: NodeJS.ProcessEnv = process.env): AdmitConf
     ticketKey: env.ADMIT_TICKET_KEY,
     publicUrl: env.ADMIT_PUBLIC_URL,
     apiUrl: env.ADMIT_API_URL,
+    qrImageUrl: env.ADMIT_QR_IMAGE_URL,
     accessLinkDays: env.ADMIT_ACCESS_LINK_DAYS,
     proofMaxBytes: env.ADMIT_PROOF_MAX_BYTES,
   });

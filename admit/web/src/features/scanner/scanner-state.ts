@@ -105,7 +105,8 @@ export const isCompleteTicketId = (v: string) =>
  */
 export function tokenFromScan(code: string): string | null {
   const t = code.trim();
-  const m = /\/q\/([A-Za-z0-9_-]{22})(?:[/?#].*)?$/.exec(t);
+  // current form: `<picture url>#<token>`; earlier tickets used `<site>/q/<token>`
+  const m = /#([A-Za-z0-9_-]{22})$/.exec(t) ?? /\/q\/([A-Za-z0-9_-]{22})(?:[/?#].*)?$/.exec(t);
   if (m) return m[1]!;
   return /^[A-Za-z0-9_-]{22}$/.test(t) ? t : null;
 }

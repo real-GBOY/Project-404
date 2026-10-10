@@ -74,10 +74,9 @@ export const ticketTokenHash = (ticketId: string): string => sha256Hex(ticketTok
 export const TOKEN_SHAPE = /^[A-Za-z0-9_-]{22}$/;
 
 /**
- * What a ticket's QR actually encodes: a link to the customer site (`/q/<token>`). Any phone camera or QR app that scans it lands on a
- * harmless page; the door scanner reads the token out of the link. The token is the last path segment and nothing else is in the link.
+ * What a ticket's QR actually encodes: the configured picture URL followed by `#<token>`. Any phone camera or QR app that scans it opens the
+ * picture (browsers never send or show the fragment); the door scanner reads the token from the fragment.
  */
 export function qrPayload(token: string): string {
-  const base = (readAdmitConfig().publicUrl || getConfig().appUrl).replace(/\/$/, "");
-  return `${base}/q/${token}`;
+  return `${readAdmitConfig().qrImageUrl}#${token}`;
 }
