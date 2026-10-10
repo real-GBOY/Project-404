@@ -82,19 +82,17 @@ function Shell() {
   const now = new Date();
   return (
     <div className="flex min-h-screen">
-      {navOpen ? (
-        <button
-          type="button"
-          aria-label="Close menu"
-          tabIndex={-1}
-          onClick={() => setNavOpen(false)}
-          className="fixed inset-0 z-30 bg-ink/50 md:hidden"
-        />
-      ) : null}
+      <button
+        type="button"
+        aria-label="Close menu"
+        tabIndex={-1}
+        onClick={() => setNavOpen(false)}
+        className={`fixed inset-0 z-30 bg-ink/50 backdrop-blur-[1px] transition-opacity duration-300 motion-reduce:transition-none md:hidden ${navOpen ? "opacity-100" : "pointer-events-none opacity-0"}`}
+      />
       <aside
         id="admin-menu"
         aria-label="Menu"
-        className={`fixed inset-y-0 left-0 z-40 flex h-dvh w-[272px] max-w-[85vw] flex-none flex-col bg-night text-rule-strong transition-[transform,visibility] duration-200 md:sticky md:top-0 md:z-auto md:h-screen md:w-[232px] md:max-w-none md:translate-x-0 md:visible ${navOpen ? "visible translate-x-0" : "invisible -translate-x-full"}`}
+        className={`fixed inset-y-0 left-0 z-40 flex h-dvh w-[272px] max-w-[85vw] flex-none flex-col bg-night text-rule-strong transition-[transform,visibility] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none md:transition-none md:sticky md:top-0 md:z-auto md:h-screen md:w-[232px] md:max-w-none md:translate-x-0 md:visible ${navOpen ? "visible translate-x-0 shadow-2xl" : "invisible -translate-x-full"}`}
       >
         <div className="flex flex-col gap-3 border-b border-[#2e2a24] px-5 pb-4 pt-5">
           <span className="flex items-center gap-2">
@@ -123,13 +121,14 @@ function Shell() {
               <span aria-hidden="true">↗</span>
             </a>
           ) : null}
-          {items.map((n) => (
+          {items.map((n, i) => (
             <NavLink
               key={n.to}
               to={n.to}
               end={n.to === "/admin"}
+              style={{ transitionDelay: navOpen ? `${90 + i * 35}ms` : "0ms" }}
               className={({ isActive }) =>
-                `flex h-[38px] items-center justify-between gap-2 rounded-[5px] px-2.5 text-sm font-medium no-underline ${isActive ? "bg-paper text-ink hover:text-ink" : "text-rule-strong hover:bg-night-2 hover:text-paper"}`
+                `${navOpen ? "translate-x-0 opacity-100" : "-translate-x-3 opacity-0"} transition-[transform,opacity,background-color] duration-300 motion-reduce:transition-none md:translate-x-0 md:opacity-100 md:transition-none flex h-[38px] items-center justify-between gap-2 rounded-[5px] px-2.5 text-sm font-medium no-underline ${isActive ? "bg-paper text-ink hover:text-ink" : "text-rule-strong hover:bg-night-2 hover:text-paper"}`
               }
             >
               <span>{n.label}</span>
@@ -181,9 +180,17 @@ function Shell() {
             aria-expanded={navOpen}
             className="grid size-10 flex-none place-items-center rounded-sm border border-rule-strong bg-transparent md:hidden"
           >
-            <svg width="18" height="14" viewBox="0 0 18 14" aria-hidden="true">
-              <path d="M0 1h18M0 7h18M0 13h18" stroke="currentColor" strokeWidth="2" />
-            </svg>
+            <span aria-hidden="true" className="relative block h-3.5 w-[18px]">
+              <span
+                className={`absolute left-0 h-0.5 w-full bg-current transition-all duration-300 motion-reduce:transition-none ${navOpen ? "top-1.5 rotate-45" : "top-0"}`}
+              />
+              <span
+                className={`absolute left-0 top-1.5 h-0.5 w-full bg-current transition-opacity duration-200 motion-reduce:transition-none ${navOpen ? "opacity-0" : "opacity-100"}`}
+              />
+              <span
+                className={`absolute left-0 h-0.5 w-full bg-current transition-all duration-300 motion-reduce:transition-none ${navOpen ? "top-1.5 -rotate-45" : "top-3"}`}
+              />
+            </span>
           </button>
           <div className="md:hidden">
             <Logo size={20} />
