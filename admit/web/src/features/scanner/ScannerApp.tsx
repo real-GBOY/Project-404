@@ -861,7 +861,7 @@ function Camera({
             ].map((c) => (
               <div key={c} className={`absolute size-12 border-white ${c}`} />
             ))}
-            <div className="absolute inset-x-4 top-1/2 h-0.5 bg-brand" />
+            <div className="scan-line absolute inset-x-4 h-0.5 rounded-full bg-brand" />
           </div>
           <span
             role="status"
