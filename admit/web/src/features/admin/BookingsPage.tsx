@@ -10,7 +10,7 @@ import { ReasonDialog } from "@/components/ReasonDialog";
 import { TextArea } from "@/components/Field";
 import { QueryState } from "@/components/QueryState";
 import { errorText } from "@/lib/errors";
-import { fmtStamp, money, moneyShort } from "@/lib/format";
+import { fmtStamp, money, moneyShort, plural } from "@/lib/format";
 import { BOOKING, EMAIL, EMAIL_TYPE_LABEL, SUBMISSION, TICKET } from "@/lib/status";
 import { Forbidden } from "./AdminApp";
 import { useAuth } from "./auth";
@@ -225,7 +225,7 @@ export function BookingDrawer({ id, onClose }: { id: string; onClose: () => void
                       status={{
                         tone: "ok",
                         glyph: "✓",
-                        label: `${b.tickets.filter((t) => t.status !== "REVOKED").length} tickets issued`,
+                        label: `${plural(b.tickets.filter((t) => t.status !== "REVOKED").length, "ticket")} issued`,
                       }}
                     />
                   ) : null}

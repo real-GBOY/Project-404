@@ -9,7 +9,7 @@ import { Dialog } from "@/components/Dialog";
 import { TextArea } from "@/components/Field";
 import { Notice } from "@/components/Notice";
 import { errorText } from "@/lib/errors";
-import { age, fmtStamp, money } from "@/lib/format";
+import { age, fmtStamp, money, plural } from "@/lib/format";
 import { EMAIL } from "@/lib/status";
 import { ApiError } from "@/services/http";
 import { Forbidden } from "./AdminApp";
@@ -514,7 +514,7 @@ function Workbench({
           You confirm this transfer is in the organizer's {item.method ?? "payment"} account. This
           issues{" "}
           <strong className="text-ink">
-            {bk ? bk.lines.reduce((n, l) => n + l.quantity, 0) : "the"} tickets
+            {bk ? plural(bk.lines.reduce((n, l) => n + l.quantity, 0), "ticket") : "the tickets"}
           </strong>{" "}
           for {item.eventTitle} and emails them to the customer.
         </p>
@@ -623,7 +623,7 @@ function ResultPanel({
               step(
                 true,
                 "✓",
-                `${result.ticketsIssued} tickets issued`,
+                `${plural(result.ticketsIssued, "ticket")} issued`,
                 "Unique tokens, one per ticket",
               ),
             ]}
