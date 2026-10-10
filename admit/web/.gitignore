@@ -5,3 +5,7 @@ dist
 .vercel
 coverage
 *.tsbuildinfo
+node_modules
+test-results
+playwright-report
+e2e/screens

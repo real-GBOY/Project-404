@@ -25,15 +25,18 @@ type Stage =
 export function UploadPage() {
   const q = useGuestBooking();
   const { org, ref, k } = useBookingAccess();
+  // once the proof is in, the booking is no longer "awaiting payment"; that must not bounce this page to the status page before the
+  // person is taken to the "proof received" page
+  const [submitted, setSubmitted] = useState(false);
   if (!k) return <BookingError />;
   return (
     <QueryState query={q} skeleton={<Page narrow="xs"><Skeleton className="h-64 w-full" /></Page>}>
-      {(b) => (b.status === "AWAITING_PAYMENT" ? <Upload b={b} /> : <Navigate to={bookingPath(org, ref, k)} replace />)}
+      {(b) => (b.status === "AWAITING_PAYMENT" || submitted ? <Upload b={b} onSubmitted={() => setSubmitted(true)} /> : <Navigate to={bookingPath(org, ref, k)} replace />)}
     </QueryState>
   );
 }
 
-function Upload({ b }: { b: GuestBooking }) {
+function Upload({ b, onSubmitted }: { b: GuestBooking; onSubmitted: () => void }) {
   const { org, ref, k } = useBookingAccess();
   const nav = useNavigate();
   const qc = useQueryClient();
@@ -80,6 +83,7 @@ function Upload({ b }: { b: GuestBooking }) {
     setSubmitError(null);
     try {
       await publicApi.submitProof(org, ref, k, { fileId: stage.fileId, methodId: methodId || null, transactionId: txn.trim() || null, sentFrom: sentFrom.trim() || null, amountMinor: b.totalMinor });
+      onSubmitted();
       await qc.invalidateQueries({ queryKey: qk.booking(org, ref) });
       nav(bookingPath(org, ref, k, "submitted"), { replace: true });
     } catch (err) {

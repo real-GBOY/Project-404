@@ -31,19 +31,22 @@ export function ReviewPage() {
 
   const items = useMemo(() => (queue.data ?? []).filter((i) => !eventFilter || i.eventId === eventFilter), [queue.data, eventFilter]);
   const events = useMemo(() => [...new Map((queue.data ?? []).map((i) => [i.eventId, i.eventTitle]))], [queue.data]);
-  const current = items.find((i) => i.submissionId === selectedId) ?? null;
+  // A payment I just decided leaves the queue at once, but its result (tickets, email) must stay on screen until I move on.
+  const [pinned, setPinned] = useState<QueueItem | null>(null);
+  const current = items.find((i) => i.submissionId === selectedId) ?? (pinned && pinned.submissionId === selectedId ? pinned : null);
   const [gone, setGone] = useState<QueueItem | null>(null);
 
   // An item decided elsewhere leaves the queue; say so in one line rather than letting it vanish silently.
   const lastSeen = useRef<QueueItem | null>(null);
   useEffect(() => {
     if (current) lastSeen.current = current;
-    else if (selectedId && lastSeen.current?.submissionId === selectedId && queue.data) setGone(lastSeen.current);
-  }, [current, selectedId, queue.data]);
+    else if (selectedId && lastSeen.current?.submissionId === selectedId && queue.data && pinned?.submissionId !== selectedId) setGone(lastSeen.current);
+  }, [current, selectedId, queue.data, pinned]);
 
   if (!can("read:payment")) return <Forbidden needs="read:payment" />;
   const select = (id: string | null) => {
     setGone(null);
+    setPinned(null);
     setParams(id ? { s: id } : {}, { replace: true });
   };
   return (
@@ -74,7 +77,7 @@ export function ReviewPage() {
           </div>
 
           {current ? (
-            <Workbench key={current.submissionId} item={current} onNext={() => { const i = items.findIndex((x) => x.submissionId === current.submissionId); select(items[(i + 1) % items.length]?.submissionId ?? null); void qc.invalidateQueries({ queryKey: ["admin", "queue"] }); }} onDecided={() => void qc.invalidateQueries({ queryKey: ["admin", "queue"] })} />
+            <Workbench key={current.submissionId} item={current} onNext={() => { const i = items.findIndex((x) => x.submissionId === current.submissionId); select(items[(i + 1) % items.length]?.submissionId ?? null); void qc.invalidateQueries({ queryKey: ["admin", "queue"] }); }} onDecided={() => { setPinned(current); void qc.invalidateQueries({ queryKey: ["admin", "queue"] }); }} />
           ) : (
             <div className="col-span-2 flex flex-col items-center justify-center gap-2 bg-paper p-10 text-center">
               {gone ? <Notice tone="info">{gone.customer} ({gone.bookingRef}) was decided by someone else and has left the queue.</Notice> : null}
