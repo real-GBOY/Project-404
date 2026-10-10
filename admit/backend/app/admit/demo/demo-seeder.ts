@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import QRCode from "qrcode";
+import { DEMO_PROOF_JPEG_BASE64 } from "./demo-proof.js";
 import { sql } from "kysely";
 import { currentExecutor, unitOfWork } from "@core/kernel/db/db.js";
 import { newId } from "@core/kernel/id.js";
@@ -190,11 +190,11 @@ export class DemoSeeder {
     const reviewer = who("finance");
 
     const submitProof = async () => {
-      const png = await QRCode.toBuffer(`DEMO RECEIPT ${booking.ref} EGP ${(booking.totalMinor / 100).toFixed(2)}`, { type: "png", width: 360, margin: 2 });
+      const png = Buffer.from(DEMO_PROOF_JPEG_BASE64, "base64");
       const stored = await this.files.upload({
         content: png,
-        originalName: "instapay-receipt.png",
-        contentType: "image/png",
+        originalName: "instapay-receipt.jpeg",
+        contentType: "image/jpeg",
         visibility: "private",
         metadata: { kind: "payment_proof", bookingId: booking.id },
       });
