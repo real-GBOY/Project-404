@@ -49,7 +49,7 @@ export function OverviewPage() {
         <QueryState query={report}>
           {(r) => (
             <>
-              <div className="grid border border-ink bg-surface sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid grid-cols-1 border border-ink bg-surface sm:grid-cols-2 lg:grid-cols-4">
                 <Metric
                   label="Verified revenue"
                   value={revenue ? money(revenue.amountMinor, revenue.currency) : "EGP 0.00"}
@@ -114,7 +114,7 @@ export function OverviewPage() {
         </p>
       )}
 
-      <div className="grid items-start gap-6 xl:grid-cols-2">
+      <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-2">
         {can("read:payment") ? (
           <Card>
             <CardHead

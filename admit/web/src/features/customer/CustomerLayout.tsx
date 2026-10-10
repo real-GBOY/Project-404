@@ -6,7 +6,8 @@ export function CustomerLayout() {
   const { org = "" } = useParams();
   const cat = useCatalogue();
   const name = cat.data?.organizer.name;
-  const nav = "text-[15px] font-medium no-underline hover:text-brand-deep";
+  const nav =
+    "inline-flex min-h-10 items-center text-[15px] font-medium no-underline hover:text-brand-deep";
   return (
     <div className="flex min-h-screen flex-col">
       <header className="border-b border-ink bg-paper">

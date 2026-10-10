@@ -46,20 +46,22 @@ export function HomePage() {
                 ))}
               </div>
 
-              <section className="grid border border-ink bg-night text-paper md:grid-cols-2">
+              <section className="grid grid-cols-1 border border-ink bg-night text-paper md:grid-cols-2">
                 <Cover
                   url={featured.coverUrl}
                   night
                   label="featured event photo"
                   ratio="16/10"
-                  className="min-h-[300px] md:h-full"
+                  className="min-h-[220px] md:min-h-[300px] md:h-full"
                 />
-                <div className="flex flex-col justify-between gap-5 p-8 md:p-9">
+                <div className="flex min-w-0 flex-col justify-between gap-5 p-5 sm:p-8 md:p-9">
                   <div className="flex flex-col gap-4">
                     <span className="label tracking-[0.12em] text-brand-soft">
                       Featured{featured.category ? ` · ${featured.category}` : ""}
                     </span>
-                    <h1 className="display text-5xl md:text-7xl">{featured.title}</h1>
+                    <h1 className="display break-words text-4xl sm:text-5xl md:text-7xl">
+                      {featured.title}
+                    </h1>
                   </div>
                   <div className="grid grid-cols-2 gap-4 border-t border-ink-2 pt-4 text-sm">
                     <div className="flex flex-col gap-1">
