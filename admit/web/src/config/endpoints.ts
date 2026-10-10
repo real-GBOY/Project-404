@@ -69,6 +69,7 @@ export const ENDPOINTS = {
   settings: "/admit/settings",
   team: {
     list: "/admit/team",
+    member: (userId: string) => `/admit/team/${userId}`,
     role: (userId: string, role: string) => `/admit/team/${userId}/roles/${role}`,
   },
 } as const;

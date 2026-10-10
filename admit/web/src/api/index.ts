@@ -185,8 +185,13 @@ export const adminApi = {
 
   team: {
     get: () => http<T.Team>(E.team.list),
-    add: (email: string, roleKey: string) =>
-      http<void>(E.team.list, { method: "POST", body: { email, roleKey } }),
+    /** With `account` the owner creates the login on the person's behalf (name + a starting password). */
+    add: (email: string, roleKey: string, account?: { name: string; password: string }) =>
+      http<void>(E.team.list, {
+        method: "POST",
+        body: { email, roleKey, ...(account ? { account } : {}) },
+      }),
+    removeMember: (userId: string) => http<void>(E.team.member(userId), { method: "DELETE" }),
     removeRole: (userId: string, roleKey: string) =>
       http<void>(E.team.role(userId, roleKey), { method: "DELETE" }),
   },

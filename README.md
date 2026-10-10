@@ -58,7 +58,7 @@ five re-implements sign-in, tenancy, permissions, file storage, an audit trail o
 | **`atlas/`** | **Atlas** | Property developers: CRM, inventory, sales, installments | web | live · 85 tests | [Atlas tab →](docs/products/atlas.md) |
 | **`hotel-project/`** | **HotelOS** | Hotels: reservations, front desk, housekeeping, finance | staff app · public website | 8 slices done · 197 tests + 54 E2E runs | [HotelOS tab →](docs/products/hotelos.md) |
 | **`raqib/`** | **Raqib** | Security-guarding companies: site inspections, review and approval, corrective actions, guard scoring, training | web (offline-capable PWA) | live · 373 + 58 tests + 57 E2E | [Raqib tab →](docs/products/raqib.md) |
-| **`admit/`** | **Admit** | Event organizers: ticket sales with manual payment verification, QR tickets, door check-in, email worker | web (customer site · dashboard · scanner) · Python email worker | live · 62 backend + 26 worker + 31 web tests + 8 E2E | [Admit tab →](docs/products/admit.md) |
+| **`admit/`** | **Admit** | Event organizers: ticket sales with manual payment verification, QR tickets, door check-in, email worker | web (customer site · dashboard · scanner) · Python email worker | live · 67 backend + 26 worker + 31 web tests + 8 E2E | [Admit tab →](docs/products/admit.md) |
 | **`core/`** | **Core** | None: the reusable platform | — | 13 capabilities | [core/README.md](core/README.md) |
 
 Every product is its own deployable, with its own process, PostgreSQL database and seed data. The products
@@ -100,7 +100,7 @@ verifies the transfer by hand, and it's the first product with a **non-Node part
 | **A durable email outbox with a Python worker** | The API writes each complete, already-decided email into a product-owned table in the same transaction as the change. The worker claims rows with `FOR UPDATE SKIP LOCKED`, renders seven templates and sends over SMTP with leases and backoff. A failed email never invalidates a ticket. |
 | **QR codes anyone can scan** | The QR holds the organizer's picture URL plus `#<token>`: a phone camera opens the picture, the door scanner reads the token. |
 | **Tenancy and permissions** | An organizer is a Core organization; 13 tenant tables with forced RLS; 22 permissions across 5 roles; anyone below an owner reaches only the events they are assigned. |
-| **The numbers** | 62 backend tests on real PostgreSQL, 26 worker tests, 31 web tests and 8 browser tests in real Chrome. Core gained one generic CORS header (`idempotency-key`) and nothing else. |
+| **The numbers** | 67 backend tests on real PostgreSQL, 26 worker tests, 31 web tests and 8 browser tests in real Chrome. Core gained one generic CORS header (`idempotency-key`) and nothing else. |
 
 [Admit tab →](docs/products/admit.md)
 
@@ -242,7 +242,7 @@ website both default to port 4500, so run one at a time or change a port.
 | Raqib | Web unit tests, including architecture rules and a check that every string key exists | 58 |
 | Raqib | End to end (Playwright, real Chrome and backend): offline work, MFA, lockout, downloads, a full inspection-to-closure workflow, surveys, training chains | 57 |
 | Raqib | Live smoke test (read-only, against a running deployment; skipped unless pointed at one) | 8 |
-| Admit | Backend: migrate-from-zero, RLS on every table, the booking-to-ticket journey, concurrency (overselling, double approval, double check-in), demo seeder | 62 |
+| Admit | Backend: migrate-from-zero, RLS on every table, the booking-to-ticket journey, concurrency (overselling, double approval, double check-in), demo seeder | 67 |
 | Admit | Email worker (pytest): rendering of all 7 emails, claim, lease, backoff and final failure | 26 |
 | Admit | Web unit tests: validation, scanner and status state machines, readiness | 31 |
 | Admit | End to end (Playwright, real Chrome and backend): book, upload, approve, real QR codes, door scan once, permission and privacy checks | 8 |

@@ -61,7 +61,7 @@ a slow reviewer must not cost a customer who already paid.
 | **A real email pipeline** | The API writes the complete, already-decided email into an outbox table in the same transaction as the change. A **Python worker** claims rows with `FOR UPDATE SKIP LOCKED`, renders seven templates and sends over SMTP with leases and backoff. A failed email never invalidates a ticket. |
 | **Honest interface** | The scanner shows green only for a server answer (a tested state machine); "emailed" is drawn only once the provider accepted the message. |
 | **Tenant isolation** | The organizer is a Core organization; every Admit table has forced row-level security, and public guest routes run inside the organizer's tenant context. |
-| **The numbers** | 13 tenant tables · 22 permissions · 5 roles · 62 backend tests, 26 worker tests, 31 web tests and 8 browser tests in real Chrome. |
+| **The numbers** | 13 tenant tables · 22 permissions · 5 roles · 67 backend tests, 26 worker tests, 31 web tests and 8 browser tests in real Chrome. |
 
 ## How it's built
 
@@ -102,7 +102,7 @@ Organizer **Nile Sessions Events** at `/e/nile-sessions`. Sign in at `/admin` (d
 ## Tests
 
 ```bash
-cd admit/backend && npm run ci                # typecheck, lint, format, 62 integration tests on real PostgreSQL, build
+cd admit/backend && npm run ci                # typecheck, lint, format, 67 integration tests on real PostgreSQL, build
 cd admit/web && npm test && npm run e2e       # 31 unit tests; the browser journey (needs Chrome)
 cd admit/worker && .venv/bin/python -m pytest # 26 tests
 ```
@@ -115,7 +115,7 @@ throwaway database. SCREENS=1 re-captures the screenshots on this page.
 - "Delivered" needs provider webhooks, so the top email status is `ACCEPTED`. The live deployment still uses the `log` transport (no outgoing mail on the box).
 - Proof files are stored as uploaded: type and size are enforced, but there is no metadata stripping or malware scan.
 - No cross-booking "My tickets" session: guests use the per-booking link, and "Find my booking" emails a fresh one.
-- Staff can only be added if they already have an account; AURIC has no invitation flow.
+- There is no email invitation: an owner creates a new person's account (name and a starting password they hand over) or adds an existing one. A password reset by the owner is not built.
 - Single currency (EGP) and time zone (Africa/Cairo), English only; Arabic/RTL is phase two.
 - Partial payments, refund recording, holder-only emails and wallet passes are open decisions in the spec and are not built.
 

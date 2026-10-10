@@ -230,4 +230,96 @@ describe.skipIf(!hasTestDb)("Admit dashboard CRUD rules", () => {
       expect(approve.body.error.code).toBe("admit.event_closed");
     });
   });
+
+  describe("the owner manages the team", () => {
+    const team = async () => (await call("GET", "/admit/team", { token: owner })).body.members as Json[];
+    const newcomer = () => `newcomer+${Date.now()}-${seq++}@admit.test`;
+
+    it("creates an account for a new person and gives them a role in one step", async () => {
+      const email = newcomer();
+      const without = await call("POST", "/admit/team", { token: owner, body: { email, roleKey: "door_staff" } });
+      expect(without.status).toBe(404);
+      expect(without.body.error.code).toBe("admit.no_account");
+
+      const weak = await call("POST", "/admit/team", {
+        token: owner,
+        body: { email, roleKey: "door_staff", account: { name: "Door Person", password: "short" } },
+      });
+      expect(weak.status).toBe(400);
+
+      const ok = await call("POST", "/admit/team", {
+        token: owner,
+        body: { email, roleKey: "door_staff", account: { name: "Door Person", password: "a-starting-password-1" } },
+      });
+      expect(ok.status).toBe(204);
+      const member = (await team()).find((m) => m.email === email)!;
+      expect(member).toMatchObject({ name: "Door Person" });
+      expect(member.roles.map((r: Json) => r.key)).toEqual(["door_staff"]);
+
+      // the person can sign in with the password the owner chose, and sees the role they were given
+      const token = await loginAs(http, email, "a-starting-password-1");
+      const me = await call("GET", "/admit/me", { token });
+      expect(me.status).toBe(200);
+      expect(me.body.permissions).toContain("scan:checkin");
+      expect(me.body.permissions).not.toContain("approve:payment");
+    });
+
+    it("still adds an existing account without needing a password", async () => {
+      const existing = await seedStaff(app, org, "viewer", "Already Here");
+      const r = await call("POST", "/admit/team", { token: owner, body: { email: existing.email, roleKey: "event_manager" } });
+      expect(r.status).toBe(204);
+      expect(
+        (await team())
+          .find((m) => m.email === existing.email)!
+          .roles.map((x: Json) => x.key)
+          .sort(),
+      ).toEqual(["event_manager", "viewer"]);
+    });
+
+    it("removes a person entirely: roles, event assignments and membership", async () => {
+      const email = newcomer();
+      await call("POST", "/admit/team", {
+        token: owner,
+        body: { email, roleKey: "door_staff", account: { name: "Temp Staff", password: "a-starting-password-1" } },
+      });
+      const member = (await team()).find((m) => m.email === email)!;
+      const { venueId, eventId } = await publishedEvent("team-remove");
+      expect((await call("PUT", `/admit/events/${eventId}/staff/${member.userId}`, { token: owner, body: { gate: "B" } })).status).toBe(200);
+      expect(venueId).toBeTruthy();
+
+      expect((await call("DELETE", `/admit/team/${member.userId}`, { token: owner })).status).toBe(204);
+      expect((await team()).some((m) => m.userId === member.userId)).toBe(false);
+      const staff = await call("GET", `/admit/events/${eventId}/staff`, { token: owner });
+      expect((staff.body.items as Json[]).some((s) => s.userId === member.userId)).toBe(false);
+      expect((await call("DELETE", `/admit/team/${member.userId}`, { token: owner })).status).toBe(404);
+    });
+
+    it("is for owners only", async () => {
+      const manager = await loginAs(http, (await seedStaff(app, org, "event_manager", "Manager")).email);
+      expect(
+        (
+          await call("POST", "/admit/team", {
+            token: manager,
+            body: { email: newcomer(), roleKey: "viewer", account: { name: "Nobody Here", password: "a-starting-password-1" } },
+          })
+        ).status,
+      ).toBe(403);
+      expect((await call("DELETE", `/admit/team/${org.ownerId}`, { token: manager })).status).toBe(403);
+    });
+
+    it("never lets the organizer lock itself out", async () => {
+      const self = await call("DELETE", `/admit/team/${org.ownerId}`, { token: owner });
+      expect(self.status).toBe(409);
+      expect(self.body.error.code).toBe("admit.cannot_remove_self");
+
+      // a second owner may remove the first, but then the remaining one is the last
+      const second = await seedStaff(app, org, "owner", "Second Owner");
+      const secondToken = await loginAs(http, second.email);
+      expect((await call("DELETE", `/admit/team/${org.ownerId}`, { token: secondToken })).status).toBe(204);
+      const last = await call("DELETE", `/admit/team/${second.userId}/roles/owner`, { token: secondToken });
+      expect(last.status).toBe(409);
+      expect(last.body.error.code).toBe("admit.last_owner");
+      owner = secondToken; // the original owner is gone; keep going as the remaining one
+    });
+  });
 });

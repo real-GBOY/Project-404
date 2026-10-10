@@ -8,7 +8,20 @@ import { ZodBody } from "@core/http/zod.pipe.js";
 import type { Principal } from "@core/http/principal.js";
 import { TeamService } from "../application/team-service.js";
 
-const addSchema = z.object({ email: z.string().trim().toLowerCase().email().max(200), roleKey: z.string().min(2).max(40) }).strict();
+const addSchema = z
+  .object({
+    email: z.string().trim().toLowerCase().email().max(200),
+    roleKey: z.string().min(2).max(40),
+    /** Present when the owner creates the account on the person's behalf. */
+    account: z
+      .object({
+        name: z.string().trim().min(2, "Enter their full name.").max(120),
+        password: z.string().min(10, "The starting password must be at least 10 characters.").max(200),
+      })
+      .strict()
+      .optional(),
+  })
+  .strict();
 
 @ApiTags("admit · team")
 @ApiBearerAuth("access-token")
@@ -27,7 +40,14 @@ export class TeamController {
   @HttpCode(204)
   @RequirePermission("assign", "role")
   async add(@CurrentUser() who: Principal, @Body(ZodBody(addSchema)) b: z.infer<typeof addSchema>) {
-    await this.service.add(who, b.email, b.roleKey);
+    await this.service.add(who, b.email, b.roleKey, b.account);
+  }
+
+  @Delete(":userId")
+  @HttpCode(204)
+  @RequirePermission("assign", "role")
+  async removeMember(@CurrentUser() who: Principal, @Param("userId") userId: string) {
+    await this.service.removeMember(who, userId);
   }
 
   @Delete(":userId/roles/:roleKey")

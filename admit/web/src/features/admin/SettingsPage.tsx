@@ -3,11 +3,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { adminApi } from "@/api";
 import type { TeamMember, TeamRole } from "@/api/types";
 import { Button } from "@/components/Button";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { SelectField, TextField } from "@/components/Field";
 import { Notice } from "@/components/Notice";
 import { QueryState } from "@/components/QueryState";
 import { useToast } from "@/components/Toast";
 import { errorText } from "@/lib/errors";
+import { ApiError } from "@/services/http";
 import { Forbidden } from "./AdminApp";
 import { useAuth } from "./auth";
 import { MATRIX } from "./permission-matrix";
@@ -95,18 +97,35 @@ function Organizer() {
 }
 
 function Team() {
-  const { can } = useAuth();
+  const { can, me } = useAuth();
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ["admin", "team"], queryFn: () => adminApi.team.get() });
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("event_manager");
+  const [create, setCreate] = useState(false);
+  const [name, setName] = useState("");
+  const [password, setPassword] = useState("");
+  const [removing, setRemoving] = useState<TeamMember | null>(null);
   const refresh = () => qc.invalidateQueries({ queryKey: ["admin", "team"] });
   const add = useMutation({
-    mutationFn: () => adminApi.team.add(email.trim(), role),
+    mutationFn: () =>
+      adminApi.team.add(email.trim(), role, create ? { name: name.trim(), password } : undefined),
     onSuccess: async () => {
       setEmail("");
+      setName("");
+      setPassword("");
+      setCreate(false);
       await refresh();
     },
+    // an unknown email is the cue to offer creating the account right here
+    onError: (err) => {
+      if (err instanceof ApiError && err.code === "admit.no_account") setCreate(true);
+    },
+  });
+  const removeMember = useMutation({
+    mutationFn: (m: TeamMember) => adminApi.team.removeMember(m.userId),
+    onSuccess: refresh,
+    onSettled: () => setRemoving(null),
   });
   const remove = useMutation({
     mutationFn: (v: { userId: string; role: string }) => adminApi.team.removeRole(v.userId, v.role),
@@ -158,13 +177,21 @@ function Team() {
                           ) : null}
                         </span>
                       ))}
+                      {manage && m.email !== me?.user.email ? (
+                        <button
+                          className="ml-2 text-xs font-semibold text-bad-solid underline"
+                          onClick={() => setRemoving(m)}
+                        >
+                          Remove person
+                        </button>
+                      ) : null}
                     </span>
                   </li>
                 ))}
               </ul>
-              {remove.isError ? (
+              {remove.isError || removeMember.isError ? (
                 <p role="alert" className="px-5 py-2 text-sm text-bad-solid">
-                  {errorText(remove.error)}
+                  {errorText(remove.error ?? removeMember.error)}
                 </p>
               ) : null}
               {manage ? (
@@ -182,7 +209,7 @@ function Team() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="h-10"
-                      hint="They need an account already."
+                      hint="An existing account is added as is; for a new person, create their account below."
                     />
                   </div>
                   <div className="w-52">
@@ -199,14 +226,49 @@ function Team() {
                       ))}
                     </SelectField>
                   </div>
+                  <label className="flex basis-full items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      className="accent-ink"
+                      checked={create}
+                      onChange={(e) => setCreate(e.target.checked)}
+                    />
+                    This person has no account yet: create one for them
+                  </label>
+                  {create ? (
+                    <>
+                      <div className="min-w-[220px] flex-1">
+                        <TextField
+                          label="Full name"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          className="h-10"
+                        />
+                      </div>
+                      <div className="min-w-[220px] flex-1">
+                        <TextField
+                          label="Starting password"
+                          type="text"
+                          autoComplete="off"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="h-10"
+                          hint="At least 10 characters. Tell them in person; they can change it after signing in."
+                        />
+                      </div>
+                    </>
+                  ) : null}
                   <Button
                     type="submit"
                     variant="ink"
                     size="md"
                     loading={add.isPending}
-                    disabled={!email.includes("@")}
+                    disabled={
+                      !email.includes("@") ||
+                      (create && (name.trim().length < 2 || password.length < 10))
+                    }
                   >
-                    Add
+                    {create ? "Create account & add" : "Add"}
                   </Button>
                   {add.isError ? (
                     <p role="alert" className="basis-full text-sm text-bad-solid">
@@ -222,6 +284,20 @@ function Team() {
             </>
           )}
         </QueryState>
+        <ConfirmDialog
+          open={removing !== null}
+          onClose={() => setRemoving(null)}
+          title={`Remove ${removing?.name ?? "this person"}?`}
+          confirmLabel="Remove from the team"
+          busy={removeMember.isPending}
+          onConfirm={() => removing && removeMember.mutate(removing)}
+        >
+          <p>
+            They lose every role and every event assignment, and can no longer open this dashboard
+            or the scanner. Their account and everything they did (decisions, scans, the audit
+            trail) stays on record. You cannot remove yourself or the last owner.
+          </p>
+        </ConfirmDialog>
       </Card>
 
       <Card tone="ink">
