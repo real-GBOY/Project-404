@@ -108,3 +108,9 @@ def enqueue(org):
 def row(mid: str) -> dict:
     with psycopg.connect(TEST_DB, autocommit=True, row_factory=psycopg.rows.dict_row) as c:
         return c.execute("select * from admit_email_messages where id = %s", (mid,)).fetchone()
+
+
+@pytest.fixture(autouse=True)
+def no_network_images(monkeypatch):
+    """Tests never download QR images; a test that cares passes its own fetcher to the Worker."""
+    monkeypatch.setattr("admit_worker.worker.fetch_png", lambda url: None)

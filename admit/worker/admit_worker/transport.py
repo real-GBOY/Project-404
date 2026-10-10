@@ -19,7 +19,9 @@ class PermanentError(Exception):
     """Retrying cannot help: the address was refused outright, or the server rejected the message for good."""
 
 
-def build_message(mail_from: str, to: str, subject: str, html: str, text: str, reply_to: str = "") -> EmailMessage:
+def build_message(
+    mail_from: str, to: str, subject: str, html: str, text: str, reply_to: str = "", inline_images: list[tuple[str, bytes]] | None = None
+) -> EmailMessage:
     msg = EmailMessage()
     name, addr = parseaddr(mail_from)
     msg["From"] = formataddr((name, addr)) if name else addr
@@ -31,6 +33,10 @@ def build_message(mail_from: str, to: str, subject: str, html: str, text: str, r
         msg["Reply-To"] = reply_to
     msg.set_content(text)
     msg.add_alternative(html, subtype="html")
+    # images the HTML references as cid:<content-id> travel inside the message (multipart/related), so they show without "display images"
+    html_part = msg.get_body(("html",))
+    for cid, data in inline_images or []:
+        html_part.add_related(data, "image", "png", cid=f"<{cid}>", filename=f"{cid.split('@')[0]}.png", disposition="inline")
     return msg
 
 

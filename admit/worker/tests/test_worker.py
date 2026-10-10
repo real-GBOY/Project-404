@@ -184,3 +184,40 @@ def test_real_payloads_from_the_api_render(tmp_path):
     for r in rows:
         subject, html, text = render(r["type"], r["payload"])
         assert subject and "{{" not in html and text
+
+
+PNG = bytes.fromhex("89504e470d0a1a0a") + bytes(40)
+
+
+def _only_eml(tmp_path):
+    import email
+    from email import policy
+
+    files = list((tmp_path / "outbox").glob("*.eml"))
+    assert len(files) == 1
+    return email.message_from_bytes(files[0].read_bytes(), policy=policy.default)
+
+
+def test_ticket_qr_images_travel_inside_the_email(tmp_path, enqueue):
+    mid = enqueue("TICKETS")
+    run_for(Worker(cfg(tmp_path), fetch_image=lambda url: PNG), [mid])
+    assert row(mid)["status"] == "ACCEPTED"
+    msg = _only_eml(tmp_path)
+    html = msg.get_body(("html",)).get_content()
+    # the remote links are gone, replaced by cid: references that resolve to attached PNGs (one per ticket)
+    assert "https://api.example/qr/" not in html
+    cids = [p["Content-ID"].strip("<>") for p in msg.walk() if p.get_content_type() == "image/png"]
+    assert len(cids) == 2
+    for cid in cids:
+        assert f"cid:{cid}" in html
+    assert any(p.get_content_type() == "multipart/related" for p in msg.walk())
+
+
+def test_a_failed_qr_download_keeps_the_remote_link(tmp_path, enqueue):
+    mid = enqueue("TICKETS")
+    run_for(Worker(cfg(tmp_path), fetch_image=lambda url: None), [mid])
+    assert row(mid)["status"] == "ACCEPTED"  # the ticket email is never held back by an image
+    msg = _only_eml(tmp_path)
+    html = msg.get_body(("html",)).get_content()
+    assert "https://api.example/qr/1.png?k=abc" in html and "https://api.example/qr/2.png?k=abc" in html
+    assert not [p for p in msg.walk() if p.get_content_type() == "image/png"]

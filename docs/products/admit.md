@@ -112,7 +112,7 @@ throwaway database. SCREENS=1 re-captures the screenshots on this page.
 
 ## Known limitations
 
-- "Delivered" needs provider webhooks, so the top email status is `ACCEPTED`. The live deployment still uses the `log` transport (no outgoing mail on the box).
+- "Delivered" needs provider webhooks, so the top email status is `ACCEPTED`. The live deployment sends through a Gmail account (a demo-grade sender).
 - Proof files are stored as uploaded: type and size are enforced, but there is no metadata stripping or malware scan.
 - No cross-booking "My tickets" session: guests use the per-booking link, and "Find my booking" emails a fresh one.
 - There is no email invitation: an owner creates a new person's account (name and a starting password they hand over) or adds an existing one. A password reset by the owner is not built.

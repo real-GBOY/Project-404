@@ -10,6 +10,7 @@ from typing import Protocol
 import psycopg
 
 from .config import Config
+from .images import Fetcher, fetch_png, inline_qr_images
 from .outbox import Message, Outbox
 from .render import RenderError, render
 from .transport import LogTransport, PermanentError, SmtpTransport, TransientError, build_message
@@ -29,8 +30,11 @@ class Worker:
     """Claims due messages, renders and sends each, and records the outcome. It decides nothing about bookings or tickets:
     a message that cannot be sent ends up FAILED where staff can see it and retry it; the booking and its tickets are untouched."""
 
-    def __init__(self, cfg: Config, outbox: Outbox | None = None, transport: Transport | None = None) -> None:
+    def __init__(
+        self, cfg: Config, outbox: Outbox | None = None, transport: Transport | None = None, fetch_image: Fetcher | None = None
+    ) -> None:
         self.cfg = cfg
+        self.fetch_image = fetch_image or fetch_png
         self.outbox = outbox or Outbox(cfg.database_url, cfg.worker_id, cfg.lease_seconds, cfg.backoff_base)
         self.transport = transport or make_transport(cfg)
         self._stop = threading.Event()
@@ -42,7 +46,8 @@ class Worker:
         except RenderError as exc:
             log.error("render failed for %s (%s): %s", m.id, m.type, exc)
             return "failed" if self.outbox.failed(m, f"render: {exc}") else "lost"
-        msg = build_message(self.cfg.mail_from, m.to_email, subject, html, text, reply_to=str(m.payload.get("support_email") or ""))
+        html, inline = inline_qr_images(html, m.payload, self.fetch_image)
+        msg = build_message(self.cfg.mail_from, m.to_email, subject, html, text, reply_to=str(m.payload.get("support_email") or ""), inline_images=inline)
         try:
             provider_id = self.transport.send(msg)
         except PermanentError as exc:

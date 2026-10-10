@@ -6,7 +6,7 @@ Admit is **live** (a showcase deployment with the demo organizer, like the other
 |---|---|---|
 | **Web** (customer site, dashboard, scanner) | **https://admit-web-lime.vercel.app** (Vercel project `admit-web`, team `gboys-projects-b23d1180`) | `VITE_API_BASE`, `VITE_ORG_SLUG=nile-sessions`, `VITE_DEMO=true` |
 | **API** | **https://admit.162-35-28-116.sslip.io/api** (systemd `admit`, `127.0.0.1:3400`, user `admit`, `/opt/admit/backend`) | nginx + Let's Encrypt, API only |
-| **Email worker** | systemd `admit-worker`, `/opt/admit/worker` (Python venv) | transport `log` for now, see "Email" |
+| **Email worker** | systemd `admit-worker`, `/opt/admit/worker` (Python venv) | SMTP through the Gmail account `nayelthedev404@gmail.com` (an app password), see "Email" |
 | **Database** | `admit` on the box's PostgreSQL, shared `auric_app` / `auric_system` roles | its own database, nothing shared with Raqib |
 | **Files** | Cloudflare R2 bucket **`admit-files`** (Western Europe, same account as `raqib-files`): payment proofs, uploaded straight from the browser over presigned URLs | bucket CORS allows `*.vercel.app` and the local dev ports |
 
@@ -77,18 +77,22 @@ flags off on a fresh database and create the organizer and team through Core's i
 
 ## Email
 
-The worker runs with `ADMIT_WORKER_TRANSPORT=log`: every message is rendered from the real templates and written as an `.eml` file in
-`/opt/admit/worker/outbox`, and the row goes `QUEUED -> ACCEPTED`. **Nothing leaves the box.** The box has no outgoing mail, as with Raqib.
-To deliver for real, give the worker an SMTP account in `/opt/admit/worker/.env` and restart it:
+The worker sends over SMTP with a Gmail account, `nayelthedev404@gmail.com`, authenticated by a Google **app password** (2-step verification
+on). The settings live only in `/opt/admit/worker/.env` on the server (mode 600), never in the repository:
 
 ```
 ADMIT_WORKER_TRANSPORT=smtp
-ADMIT_WORKER_SMTP_URL=smtps://user:password@smtp.example.com:465
-ADMIT_WORKER_MAIL_FROM=Admit <tickets@your-domain>
+ADMIT_WORKER_SMTP_URL=smtps://nayelthedev404%40gmail.com:<app password>@smtp.gmail.com:465
+ADMIT_WORKER_MAIL_FROM=Admit <nayelthedev404@gmail.com>
 ```
 
-Use an address on a domain you control (SPF/DKIM) so the mail is not filtered. A message the provider refuses ends as `FAILED` and shows in
-the dashboard's **Email delivery** with a Retry button; it never affects the booking or its tickets.
+Restart with `systemctl restart admit-worker`. A Gmail sender is fine for a demo (about 500 messages a day, and the "from" is a personal address);
+for real customers use a transactional provider on a domain you control (SPF/DKIM) and change only these three lines. A message the
+provider refuses ends as `FAILED` and shows in the dashboard's **Email delivery** with a Retry button; it never affects the booking or its tickets.
+
+**The ticket QR travels inside the email.** At send time the worker downloads each ticket's QR PNG from the API and attaches it as an inline
+image (`cid:`), so it shows without "display images" and offline. If the download fails the email still goes out with the remote link. The QR
+encodes the organizer's picture URL plus `#<ticket token>`: a phone camera opens the picture, the door scanner reads the token.
 
 ## Backups
 

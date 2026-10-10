@@ -282,7 +282,7 @@ validation / tests`), so a developer who knows one product can find their way ar
 - **The Rule of Three is due, and Raqib adds candidates.** Its field-level encryption, offline queue and PDF
   renderer live in the product today; deciding what to extract into shared modules is the next step.
 
-- **Admit's live email is log-only.** The worker renders and records every message, but the shared VPS has no outgoing mail; real delivery needs an SMTP account (see [docs/admit-deployment.md](docs/admit-deployment.md)).
+- **Admit's live email goes out through a Gmail account** (an app password in the server's `.env`): fine for a demo, not for real customer volume. See [docs/admit-deployment.md](docs/admit-deployment.md).
 
 Product-specific limitations are listed on each product tab.
 

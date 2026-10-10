@@ -62,3 +62,9 @@ API ↔ worker payload contract is checked from both sides.
 `instructions` (E0), `proof-received` (E1), `ticket-confirmed` (E2, the only one with tickets), `rejected` (E3),
 `expired` / `cancelled` (E4), `magic-link`. Markup follows the approved design (`email/ticket-confirmed.html`): 600 px,
 table-based, inline-styled, system fonts, tickets on a fixed white surface so the QR survives dark mode, Outlook VML button.
+
+## Inline QR images
+
+For TICKETS emails the worker downloads each ticket's QR PNG (`ticket_qr_code_url`) at send time and attaches it as an inline `cid:` image
+(multipart/related), so the code shows without "display images". A failed or oversize download keeps the remote link and never holds the email
+back (`admit_worker/images.py`).
