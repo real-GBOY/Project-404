@@ -46,14 +46,18 @@ export function HomePage() {
                 ))}
               </div>
 
-              <section className="grid grid-cols-1 border border-ink bg-night text-paper md:grid-cols-2">
-                <Cover
-                  url={featured.coverUrl}
-                  night
-                  label="featured event photo"
-                  ratio="16/10"
-                  className="min-h-[220px] md:min-h-[300px] md:h-full"
-                />
+              <section
+                className={`grid grid-cols-1 border border-ink bg-night text-paper ${featured.coverUrl ? "md:grid-cols-2" : ""}`}
+              >
+                {featured.coverUrl ? (
+                  <Cover
+                    url={featured.coverUrl}
+                    night
+                    label="featured event photo"
+                    ratio="16/10"
+                    className="min-h-[220px] md:h-full md:min-h-[300px]"
+                  />
+                ) : null}
                 <div className="flex min-w-0 flex-col justify-between gap-5 p-5 sm:p-8 md:p-9">
                   <div className="flex flex-col gap-4">
                     <span className="label tracking-[0.12em] text-brand-soft">
