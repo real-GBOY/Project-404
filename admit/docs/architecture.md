@@ -94,7 +94,7 @@ The booking timeline, the review pipeline and the scanner verdicts are derived f
 
 - Backend: 52 integration tests against real PostgreSQL (migrate-from-zero, RLS on every table, journey, concurrency, demo). Typecheck, lint, format, build clean.
 - Worker: 26 pytest (rendering of all 7 types incl. real API payloads, claim/lease/backoff/final-failure, isolation).
-- Web: 29 unit tests (validation, state machines, readiness, date handling, permissions); typecheck, lint, production build clean.
+- Web: 31 unit tests (validation, state machines, readiness, date handling, permissions); typecheck, lint, production build clean.
 - **Browser end-to-end (Playwright, real Chrome, real backend, throw-away DB)**: a guest books under validation, uploads proof, a reviewer approves, the guest loads real QR PNGs, door staff admit a ticket once and are told when it was first used; a role without the permission cannot reach the review queue; an invalid booking link reveals nothing.
 - The Python worker was run against the live dev database and delivered the queued demo mail as `.eml` files.
 

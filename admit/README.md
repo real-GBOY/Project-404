@@ -4,12 +4,15 @@ Event ticketing with **manual payment verification** for Egypt: guests book, pay
 proof; a reviewer approves it; tickets with QR codes are issued and emailed; door staff scan each ticket exactly once. Built on AURIC Core
 as its own deployment (own database, own users), like Mizan, Atlas, HotelOS and Raqib.
 
+**Live:** web https://admit-web-lime.vercel.app · API https://admit.162-35-28-116.sslip.io/api (on the Raqib VPS). How it is deployed: [../docs/admit-deployment.md](../docs/admit-deployment.md).
+
 | Part | Folder | Stack |
 |---|---|---|
 | API | [`backend/`](backend) | NestJS + Fastify, Kysely/Prisma, AURIC Core by source |
 | Web | [`web/`](web) | React 19, Vite, Tailwind 4: customer site, organizer dashboard, door scanner |
 | Email worker | [`worker/`](worker) | Python 3.11+, psycopg, Jinja2: drains the transactional email outbox |
-| Docs | [`docs/`](docs) | [architecture, audit & limitations](docs/architecture.md) · [deployment](docs/deployment.md) |
+| Docs | [`docs/`](docs) | [architecture, audit & limitations](docs/architecture.md) · [deployment](docs/deployment.md) · [product page](../docs/products/admit.md) |
+| Deploy | [`deploy/`](deploy) | systemd units and `provision-vps.sh`, the one-time setup of the VPS |
 
 ## Run it locally
 
@@ -29,7 +32,7 @@ Demo organizer **Nile Sessions Events** (`/e/nile-sessions`); sign in at `/admin
 
 ```bash
 cd admit/backend && npm run ci        # typecheck, lint, format, 52 integration tests (needs Postgres), build
-cd admit/web && npm test && npm run e2e   # 29 unit tests; the browser journey against the real backend (needs Chrome)
+cd admit/web && npm test && npm run e2e   # 31 unit tests; the browser journey against the real backend (needs Chrome)
 cd admit/worker && .venv/bin/python -m pytest
 ```
 

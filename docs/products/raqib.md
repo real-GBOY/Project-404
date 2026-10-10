@@ -1,7 +1,7 @@
 # Raqib: security quality and field inspection
 
-| [Overview](../../README.md) | [Mizan](mizan.md) | [Atlas](atlas.md) | [HotelOS](hotelos.md) | **Raqib** | [Security](../../SECURITY.md) |
-|:---:|:---:|:---:|:---:|:---:|:---:|
+| [Overview](../../README.md) | [Mizan](mizan.md) | [Atlas](atlas.md) | [HotelOS](hotelos.md) | **Raqib** | [Admit](admit.md) | [Security](../../SECURITY.md) |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 
 Raqib runs the quality function of a **security-guarding company**. Inspectors visit sites and fill in a
 versioned checklist, quality staff review and approve every inspection, findings turn into corrective actions

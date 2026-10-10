@@ -1,31 +1,33 @@
-# Project-404: one foundation, four products
+# Project-404: one foundation, five products
 
 ![NestJS 11](https://img.shields.io/badge/NestJS-11-e0234e) ![Fastify](https://img.shields.io/badge/Fastify-5-000000) ![PostgreSQL + RLS](https://img.shields.io/badge/PostgreSQL-RLS-336791) ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6) ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
-| **Overview** | [Mizan](docs/products/mizan.md) | [Atlas](docs/products/atlas.md) | [HotelOS](docs/products/hotelos.md) | [Raqib](docs/products/raqib.md) | [Admit](admit/README.md) | [Security](SECURITY.md) |
-|:---:|:---:|:---:|:---:|:---:|:---:|
+| **Overview** | [Mizan](docs/products/mizan.md) | [Atlas](docs/products/atlas.md) | [HotelOS](docs/products/hotelos.md) | [Raqib](docs/products/raqib.md) | [Admit](docs/products/admit.md) | [Security](SECURITY.md) |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 
-Project-404 is a **domain-agnostic application foundation** with **four independently deployed products**
+Project-404 is a **domain-agnostic application foundation** with **five independently deployed products**
 built on it. The foundation handles identity, permissions, multi-tenancy, files, audit, notifications,
-events and AI orchestration. The products cover four very different businesses: a law firm, a real-estate
-developer, a hotel and a security-guarding company.
+events and AI orchestration. The products cover five very different businesses: a law firm, a real-estate
+developer, a hotel, a security-guarding company and an event organizer.
 
 The foundation (`core/`) is the engine and knows nothing about any business. Each product brings its own
 domain, its own database and its own apps, and reaches Core only through published contracts. None of the
-four re-implements sign-in, tenancy, permissions, file storage, an audit trail or event delivery.
+five re-implements sign-in, tenancy, permissions, file storage, an audit trail or event delivery.
 
 <table>
   <tr>
-    <td width="25%"><a href="docs/products/mizan.md"><img src="docs/screenshots/mizan/dashboard.png" alt="Mizan dashboard"></a></td>
-    <td width="25%"><a href="docs/products/atlas.md"><img src="docs/screenshots/atlas/dashboard.png" alt="Atlas executive dashboard"></a></td>
-    <td width="25%"><a href="docs/products/hotelos.md"><img src="hotel-project/docs/screenshots/dashboard.png" alt="HotelOS dashboard"></a></td>
-    <td width="25%"><a href="docs/products/raqib.md"><img src="docs/screenshots/raqib/dashboard.png" alt="Raqib quality overview"></a></td>
+    <td width="20%"><a href="docs/products/mizan.md"><img src="docs/screenshots/mizan/dashboard.png" alt="Mizan dashboard"></a></td>
+    <td width="20%"><a href="docs/products/atlas.md"><img src="docs/screenshots/atlas/dashboard.png" alt="Atlas executive dashboard"></a></td>
+    <td width="20%"><a href="docs/products/hotelos.md"><img src="hotel-project/docs/screenshots/dashboard.png" alt="HotelOS dashboard"></a></td>
+    <td width="20%"><a href="docs/products/raqib.md"><img src="docs/screenshots/raqib/dashboard.png" alt="Raqib quality overview"></a></td>
+    <td width="20%"><a href="docs/products/admit.md"><img src="docs/screenshots/admit/dashboard.png" alt="Admit organizer overview"></a></td>
   </tr>
   <tr>
     <td align="center"><b><a href="docs/products/mizan.md">Mizan</a></b><br>Law-firm management</td>
     <td align="center"><b><a href="docs/products/atlas.md">Atlas</a></b><br>Real-estate developer OS</td>
     <td align="center"><b><a href="docs/products/hotelos.md">HotelOS</a></b><br>Hotel operations</td>
     <td align="center"><b><a href="docs/products/raqib.md">Raqib</a></b><br>Security quality and field inspection</td>
+    <td align="center"><b><a href="docs/products/admit.md">Admit</a></b><br>Event ticketing</td>
   </tr>
 </table>
 
@@ -35,6 +37,7 @@ four re-implements sign-in, tenancy, permissions, file storage, an audit trail o
 
 - [The products](#the-products)
 - [Raqib at a glance](#raqib-at-a-glance)
+- [Admit at a glance](#admit-at-a-glance)
 - [Why one foundation](#why-one-foundation)
 - [Architecture](#architecture)
 - [Core capabilities](#core-capabilities)
@@ -55,7 +58,7 @@ four re-implements sign-in, tenancy, permissions, file storage, an audit trail o
 | **`atlas/`** | **Atlas** | Property developers: CRM, inventory, sales, installments | web | live · 85 tests | [Atlas tab →](docs/products/atlas.md) |
 | **`hotel-project/`** | **HotelOS** | Hotels: reservations, front desk, housekeeping, finance | staff app · public website | 8 slices done · 197 tests + 54 E2E runs | [HotelOS tab →](docs/products/hotelos.md) |
 | **`raqib/`** | **Raqib** | Security-guarding companies: site inspections, review and approval, corrective actions, guard scoring, training | web (offline-capable PWA) | live · 373 + 58 tests + 57 E2E | [Raqib tab →](docs/products/raqib.md) |
-| **`admit/`** | **Admit** | Event organizers: ticket sales with manual payment verification, QR tickets, door check-in, email worker | web (customer site · dashboard · scanner) | built · 52 backend + 26 worker + 29 web tests + browser E2E | [Admit README →](admit/README.md) |
+| **`admit/`** | **Admit** | Event organizers: ticket sales with manual payment verification, QR tickets, door check-in, email worker | web (customer site · dashboard · scanner) · Python email worker | live · 52 backend + 26 worker + 31 web tests + 8 E2E | [Admit tab →](docs/products/admit.md) |
 | **`core/`** | **Core** | None: the reusable platform | — | 13 capabilities | [core/README.md](core/README.md) |
 
 Every product is its own deployable, with its own process, PostgreSQL database and seed data. The products
@@ -82,6 +85,25 @@ personal data that must be encrypted at rest, and an approval trail nobody may r
 
 [Raqib tab →](docs/products/raqib.md)
 
+## Admit at a glance
+
+Admit is the newest product. It sells event tickets where guests pay the organizer directly (InstaPay, a wallet, a bank transfer) and a person
+verifies the transfer by hand, and it's the first product with a **non-Node part**: a Python worker that sends its email.
+
+![Admit payment review](docs/screenshots/admit/review.png)
+
+| | |
+|---|---|
+| **Never oversells** | A booking locks the ticket types and counts held seats from live bookings (there is no counter to drift). A test books the last 2 seats 6 times at once; exactly 2 succeed. |
+| **Approve once, admit once** | Version-checked payment decisions (4 simultaneous approvals: 1 winner, 2 tickets, 1 email) and one atomic check-in update (8 simultaneous scans: 1 admitted, the rest told when and where the first happened). |
+| **Guests without accounts** | A booking is reached through an unguessable link, never the public reference alone. QR tokens are an HMAC of the ticket id under a server key; only their SHA-256 is stored. |
+| **A durable email outbox with a Python worker** | The API writes each complete, already-decided email into a product-owned table in the same transaction as the change. The worker claims rows with `FOR UPDATE SKIP LOCKED`, renders seven templates and sends over SMTP with leases and backoff. A failed email never invalidates a ticket. |
+| **QR codes anyone can scan** | The QR holds the organizer's picture URL plus `#<token>`: a phone camera opens the picture, the door scanner reads the token. |
+| **Tenancy and permissions** | An organizer is a Core organization; 13 tenant tables with forced RLS; 22 permissions across 5 roles; anyone below an owner reaches only the events they are assigned. |
+| **The numbers** | 52 backend tests on real PostgreSQL, 26 worker tests, 31 web tests and 8 browser tests in real Chrome. Core was not modified. |
+
+[Admit tab →](docs/products/admit.md)
+
 ## Why one foundation
 
 Most business software spends its first months on the same plumbing: sign-in, roles, tenants, uploads, an
@@ -97,22 +119,28 @@ by shipping products on top of it:
    encryption, immutable approval trails, an isolated confidential area and Cloudflare R2 storage, and it
    is the first product to need most of them.
 
+5. **Admit** is the fifth, a ticketing product with public guest checkout. It proved Core could carry
+   anonymous traffic (guests are served inside the organizer's tenant context, so RLS still applies) and a
+   consumer in another language: its email is delivered by a Python worker over a transactional outbox, with
+   Core untouched.
+
 Each product took a fraction of the first one's effort, because none of them rebuilt the foundation.
 
 ## Architecture
 
 ```
-   CLIENTS      mizan/web · mobile    atlas/web          hotel-project/app · web     raqib/web (offline PWA)
-                React 19 · Expo       React 19 + Vite    React 19 + Vite             React 19 + Vite
-                      │                   │                       │                          │
+   CLIENTS      mizan/web · mobile    atlas/web          hotel-project/app · web     raqib/web (offline PWA)    admit/web
+                React 19 · Expo       React 19 + Vite    React 19 + Vite             React 19 + Vite            React 19 + Vite
+                      │                   │                       │                          │                      │
                       │   HTTP / JSON only: no client shares code with any server
-                      ▼                   ▼                       ▼                          ▼
-   PRODUCT      mizan/backend/        atlas/backend/     hotel-project/backend/      raqib/backend/app/raqib/
-   BACKENDS     app/lawfirm/          app/realestate/    app/hotel/                  :3300 · database: raqib
-                :3000 · db: auric     :3100 · db: atlas  :3200 · db: hotelos
-                      │                   │                       │                          │
+                      ▼                   ▼                       ▼                          ▼                      ▼
+   PRODUCT      mizan/backend/        atlas/backend/     hotel-project/backend/      raqib/backend/app/raqib/   admit/backend/
+   BACKENDS     app/lawfirm/          app/realestate/    app/hotel/                  :3300 · database: raqib    app/admit/ :3400
+                :3000 · db: auric     :3100 · db: atlas  :3200 · db: hotelos                                    db: admit
+                                                                                                                + Python email worker
+                      │                   │                       │                          │                      │
                       │   core/contracts interfaces + DI tokens only, never a Core table
-                      ▼                   ▼                       ▼                          ▼
+                      ▼                   ▼                       ▼                          ▼                      ▼
                 ─────────────────────────────  PROJECT-404 CORE  ─────────────────────────────
                 identity · rbac · organizations · tenancy · files · audit · notifications
                 events + outbox · messaging · assistant · localization · observability · http
@@ -137,7 +165,7 @@ Every request in every product follows the same pipeline, and the server enforce
 
 | Principle | How it shows up |
 |---|---|
-| **Modular monolith, not microservices** | Each product is one NestJS process made of feature modules. Four products means four processes, not a service mesh. |
+| **Modular monolith, not microservices** | Each product is one NestJS process made of feature modules. Five products means five processes, not a service mesh. |
 | **Core never knows a domain** | `core/` never imports from a product. A `Matter`, `Lead` or `Reservation` in Core is a bug. |
 | **The database is the security boundary** | Row-level security and `organization_id NOT NULL` on every tenant table, so a forgotten `WHERE` can't leak data across tenants. See the [Security tab](SECURITY.md). |
 | **Every use case owns its transaction** | Authenticate, validate, open a transaction, persist, then publish events. |
@@ -149,19 +177,19 @@ Every request in every product follows the same pipeline, and the server enforce
 
 | Capability | Module | Used by |
 |---|---|---|
-| Identity: register, login, refresh-token rotation, email verification, password reset, Argon2id | `core/identity` | all four |
-| RBAC: roles, `action:resource` permissions, wildcards, server-side guards | `core/rbac` | all four |
-| Organizations and membership (an organization **is** the tenant) | `core/organizations` | all four |
-| **Multi-tenancy**: shared schema, per-transaction tenant context, PostgreSQL RLS | `core/kernel/tenant` | all four |
-| Files: presigned uploads to local disk or Cloudflare R2 (one bucket per product, or a folder per product), permission-checked downloads | `core/files` | all four |
-| Audit: append-only trail, immutability enforced by the database | `core/audit` | all four |
-| Notifications: in-app and email, templated per locale | `core/notifications` | all four |
-| Events: in-process bus, **transactional outbox**, worker, dead-letter queue | `core/events` | all four |
+| Identity: register, login, refresh-token rotation, email verification, password reset, Argon2id | `core/identity` | all five |
+| RBAC: roles, `action:resource` permissions, wildcards, server-side guards | `core/rbac` | all five |
+| Organizations and membership (an organization **is** the tenant) | `core/organizations` | all five |
+| **Multi-tenancy**: shared schema, per-transaction tenant context, PostgreSQL RLS | `core/kernel/tenant` | all five |
+| Files: presigned uploads to local disk or Cloudflare R2 (one bucket per product, or a folder per product), permission-checked downloads | `core/files` | all five |
+| Audit: append-only trail, immutability enforced by the database | `core/audit` | all five |
+| Notifications: in-app and email, templated per locale | `core/notifications` | Mizan, Atlas, HotelOS, Raqib |
+| Events: in-process bus, **transactional outbox**, worker, dead-letter queue | `core/events` | Mizan, Atlas, HotelOS, Raqib (Admit uses its own outbox for its Python worker) |
 | Messaging: real-time conversations over Socket.IO | `core/messaging` | Atlas |
 | **AI orchestration**: provider boundary, permission-checked tools, conversation store | `core/assistant` | Mizan, Atlas |
 | Localization: language and direction, Arabic formatters | `core/localization` | Mizan |
-| Observability: structured logs, correlation IDs, health checks | `core/observability` | all four |
-| HTTP: Zod validation, auth and permission guards, error filter, OpenAPI | `core/http` | all four |
+| Observability: structured logs, correlation IDs, health checks | `core/observability` | all five |
+| HTTP: Zod validation, auth and permission guards, error filter, OpenAPI | `core/http` | all five |
 
 Each capability documents its contract next to the code; start at [core/README.md](core/README.md).
 
@@ -174,8 +202,9 @@ Each capability documents its contract next to the code; start at [core/README.m
 | Web | React 19, Vite, Tailwind CSS 4, TanStack Query |
 | Mobile | Expo / React Native (Mizan) · installable offline PWA (Raqib) |
 | AI | OpenAI-compatible provider boundary (Groq in production) |
-| Testing | Vitest, Playwright (real Chrome) |
-| Hosting | VPS (systemd + nginx) for the APIs (Raqib on its own Interserver VPS, the others on a shared AWS box), Vercel for web frontends, Cloudflare R2 for files (`mizan-files`, `raqib-files`) |
+| Email worker | Python 3.12, psycopg, Jinja2 (Admit): a durable outbox in PostgreSQL, `FOR UPDATE SKIP LOCKED` |
+| Testing | Vitest, Playwright (real Chrome), pytest |
+| Hosting | VPS (systemd + nginx) for the APIs (Raqib and Admit on the Interserver VPS, the others on a shared AWS box), Vercel for web frontends, Cloudflare R2 for files (`mizan-files`, `raqib-files`; Admit keeps payment proofs on the VPS disk) |
 
 ## Getting started
 
@@ -195,6 +224,7 @@ Each product then runs on its own. Every product tab has full setup steps and de
 | Atlas | `cd atlas/backend && ATLAS_SEED_DEMO=true npm run serve` | http://localhost:4400 |
 | HotelOS | `cd hotel-project/backend && npm run dev` | http://localhost:4600 |
 | Raqib | `cd raqib/backend && npm run migrate && npm run dev`, then `cd ../web && npm run dev` (see [raqib/README.md](raqib/README.md)) | http://localhost:4500 |
+| Admit | `cd admit/backend && npm run serve`, then `cd ../web && npm run dev` (see [admit/README.md](admit/README.md)) | http://localhost:4700 |
 
 Demo databases use the password `demo-password-2026` for every account. Raqib's web app and the HotelOS public
 website both default to port 4500, so run one at a time or change a port.
@@ -212,6 +242,10 @@ website both default to port 4500, so run one at a time or change a port.
 | Raqib | Web unit tests, including architecture rules and a check that every string key exists | 58 |
 | Raqib | End to end (Playwright, real Chrome and backend): offline work, MFA, lockout, downloads, a full inspection-to-closure workflow, surveys, training chains | 57 |
 | Raqib | Live smoke test (read-only, against a running deployment; skipped unless pointed at one) | 8 |
+| Admit | Backend: migrate-from-zero, RLS on every table, the booking-to-ticket journey, concurrency (overselling, double approval, double check-in), demo seeder | 52 |
+| Admit | Email worker (pytest): rendering of all 7 emails, claim, lease, backoff and final failure | 26 |
+| Admit | Web unit tests: validation, scanner and status state machines, readiness | 31 |
+| Admit | End to end (Playwright, real Chrome and backend): book, upload, approve, real QR codes, door scan once, permission and privacy checks | 8 |
 
 Tenant isolation is tested directly: the harness runs Core as the restricted database role, so tests prove
 tenant A can't read tenant B even when the application code gets a query wrong.
@@ -229,6 +263,7 @@ Project-404/
 ├── atlas/                  Product 2: real estate (backend, web), own database
 ├── hotel-project/          Product 3: HotelOS (backend, app, web), own database
 ├── raqib/                  Product 4: security quality (backend, web, docs), own database
+├── admit/                  Product 5: event ticketing (backend, web, Python email worker, docs, deploy), own database
 ├── packages/               @auric/web (shared HTTP client) · create-auric (project scaffolder)
 ├── prisma/                 Core + Mizan schema and migrations
 ├── docs/                   architecture, tenancy, product pages, deployment, conventions
@@ -246,6 +281,8 @@ validation / tests`), so a developer who knows one product can find their way ar
 - **Updates poll.** Notifications and dashboards refresh on a timer; only Atlas messaging is real-time.
 - **The Rule of Three is due, and Raqib adds candidates.** Its field-level encryption, offline queue and PDF
   renderer live in the product today; deciding what to extract into shared modules is the next step.
+
+- **Admit's live email is log-only.** The worker renders and records every message, but the shared VPS has no outgoing mail; real delivery needs an SMTP account (see [docs/admit-deployment.md](docs/admit-deployment.md)).
 
 Product-specific limitations are listed on each product tab.
 
@@ -268,6 +305,10 @@ Product-specific limitations are listed on each product tab.
 | [raqib/docs/](raqib/docs) | Raqib's architecture, security model and operations guide |
 | [raqib/docs/RAQIB_REQUIREMENTS_MATRIX.md](raqib/docs/RAQIB_REQUIREMENTS_MATRIX.md) | The client's 20 requirements against what works, with how each is tested |
 | [raqib/docs/RAQIB_DELIVERY.md](raqib/docs/RAQIB_DELIVERY.md) | Costs, two-stage delivery, acceptance and handover |
+| [docs/admit-deployment.md](docs/admit-deployment.md) | How Admit is deployed: VPS, nginx, TLS, Python worker, Vercel, backups |
+| [docs/products/admit.md](docs/products/admit.md) | The Admit product page: screenshots, lifecycle, highlights |
+| [admit/README.md](admit/README.md) | Start here for Admit: what is in the folder, how to run and test it |
+| [admit/docs/](admit/docs) | Admit's audit of Core, architecture rules and known limitations |
 | [SECURITY.md](SECURITY.md) | Security model and how to report a vulnerability |
 
 ## License

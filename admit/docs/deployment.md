@@ -1,7 +1,8 @@
 # Admit — deployment
 
 Same shape as Raqib and HotelOS: a separate Node service + its own Postgres database, a static web app, and (new) one small Python worker.
-Nothing here has been deployed yet; these are the steps and the checks.
+Admit is **live** on the Raqib VPS (API and email worker) and Vercel (web): the record of what runs where, with the exact scripts, is
+[docs/admit-deployment.md](../../docs/admit-deployment.md). This file is the generic recipe: the steps and the checks.
 
 ## 1. Database
 

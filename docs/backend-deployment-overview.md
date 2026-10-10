@@ -4,7 +4,7 @@
 
 Every product backend (Mizan, Atlas, HotelOS) is its own NestJS/Fastify app that imports `core/` (kernel, identity, orgs, RBAC, messaging, assistant, files). Each one deploys as an independent service on one shared AWS ARM VPS (`ubuntu@100.26.109.162`, t4g, 921 MB RAM + 2 GB swap, Ubuntu 20.04). There is no Docker because the box is too small.
 
-**Raqib** follows the same recipe but runs on its **own VPS** (Interserver, `root@162.35.28.116`), with its own Postgres 16, nginx and certificate: see [raqib-deployment.md](raqib-deployment.md).
+**Raqib** follows the same recipe but runs on its **own VPS** (Interserver, `root@162.35.28.116`), with its own Postgres 16, nginx and certificate: see [raqib-deployment.md](raqib-deployment.md). **Admit** (backend on `:3400`, database `admit`, plus a Python email worker) is deployed on that same Interserver VPS as its own systemd service, user, directory and database: see [admit-deployment.md](admit-deployment.md).
 
 Each product gets its own:
 

@@ -1,7 +1,7 @@
 # HotelOS: hotel operations
 
-| [Overview](../../README.md) | [Mizan](mizan.md) | [Atlas](atlas.md) | **HotelOS** | [Raqib](raqib.md) | [Security](../../SECURITY.md) |
-|:---:|:---:|:---:|:---:|:---:|:---:|
+| [Overview](../../README.md) | [Mizan](mizan.md) | [Atlas](atlas.md) | **HotelOS** | [Raqib](raqib.md) | [Admit](admit.md) | [Security](../../SECURITY.md) |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 
 HotelOS runs **Hotel Transylvania**, a four-star Nile-side hotel in Cairo. It covers reservations, the front
 desk, housekeeping, maintenance, finance and analytics, plus the public website where guests book. It's the
