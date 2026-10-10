@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Navigate, NavLink, Outlet, Route, Routes, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { adminApi } from "@/api";
@@ -46,7 +46,25 @@ const NAV: NavItem[] = [
 function Shell() {
   const { me, can, logout } = useAuth();
   const [pwOpen, setPwOpen] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
+  const { pathname } = useLocation();
   const items = NAV.filter((n) => can(n.needs));
+  const current = [...items]
+    .sort((a, b) => b.to.length - a.to.length)
+    .find((n) => (n.to === "/admin" ? pathname === "/admin" : pathname.startsWith(n.to)));
+  // the phone menu closes when you go somewhere, on Escape, and never leaves the page behind it scrollable
+  useEffect(() => setNavOpen(false), [pathname]);
+  useEffect(() => {
+    if (!navOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setNavOpen(false);
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [navOpen]);
   const queue = useQuery({
     queryKey: ["admin", "queue-count"],
     queryFn: () => adminApi.payments.queue(),
@@ -64,11 +82,32 @@ function Shell() {
   const now = new Date();
   return (
     <div className="flex min-h-screen">
-      <aside className="sticky top-0 hidden h-screen w-[232px] flex-none flex-col bg-night text-rule-strong md:flex">
+      {navOpen ? (
+        <button
+          type="button"
+          aria-label="Close menu"
+          tabIndex={-1}
+          onClick={() => setNavOpen(false)}
+          className="fixed inset-0 z-30 bg-ink/50 md:hidden"
+        />
+      ) : null}
+      <aside
+        id="admin-menu"
+        aria-label="Menu"
+        className={`fixed inset-y-0 left-0 z-40 flex h-dvh w-[272px] max-w-[85vw] flex-none flex-col bg-night text-rule-strong transition-[transform,visibility] duration-200 md:sticky md:top-0 md:z-auto md:h-screen md:w-[232px] md:max-w-none md:translate-x-0 md:visible ${navOpen ? "visible translate-x-0" : "invisible -translate-x-full"}`}
+      >
         <div className="flex flex-col gap-3 border-b border-[#2e2a24] px-5 pb-4 pt-5">
           <span className="flex items-center gap-2">
             <Logo size={22} light />
             <span className="ml-1 font-mono text-[10px] text-faint">ORGANIZER</span>
+            <button
+              type="button"
+              onClick={() => setNavOpen(false)}
+              aria-label="Close menu"
+              className="ml-auto grid size-9 place-items-center rounded-sm border border-night-rule bg-transparent text-lg leading-none text-paper md:hidden"
+            >
+              ×
+            </button>
           </span>
           <span className="truncate rounded-sm border border-night-rule bg-night-2 px-2 py-2 text-[13px] text-paper">
             {me?.organizer.name}
@@ -111,7 +150,10 @@ function Shell() {
             {me?.eventReach === "all" ? "All events" : "Assigned events"}
           </span>
           <button
-            onClick={() => setPwOpen(true)}
+            onClick={() => {
+              setNavOpen(false);
+              setPwOpen(true);
+            }}
             className="mt-1.5 self-start bg-transparent p-0 text-xs text-faint underline hover:text-paper"
           >
             Change password
@@ -131,39 +173,25 @@ function Shell() {
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-10 flex h-[60px] items-center gap-4 border-b border-rule-strong bg-paper px-4 md:px-7">
+          <button
+            type="button"
+            onClick={() => setNavOpen(true)}
+            aria-label="Open menu"
+            aria-controls="admin-menu"
+            aria-expanded={navOpen}
+            className="grid size-10 flex-none place-items-center rounded-sm border border-rule-strong bg-transparent md:hidden"
+          >
+            <svg width="18" height="14" viewBox="0 0 18 14" aria-hidden="true">
+              <path d="M0 1h18M0 7h18M0 13h18" stroke="currentColor" strokeWidth="2" />
+            </svg>
+          </button>
           <div className="md:hidden">
             <Logo size={20} />
           </div>
-          <nav
-            aria-label="Dashboard (compact)"
-            className="flex min-w-0 flex-1 gap-1 overflow-x-auto md:hidden"
-          >
-            {items.map((n) => (
-              <NavLink
-                key={n.to}
-                to={n.to}
-                end={n.to === "/admin"}
-                ref={(el) => {
-                  if (el?.getAttribute("aria-current") === "page")
-                    el.scrollIntoView({ inline: "center", block: "nearest" });
-                }}
-                className={({ isActive }) =>
-                  `whitespace-nowrap rounded-sm px-3 py-2 text-[13px] font-medium no-underline ${isActive ? "bg-ink text-paper hover:text-paper" : "text-ink-2"}`
-                }
-              >
-                {n.label}
-              </NavLink>
-            ))}
-          </nav>
-          <span className="hidden flex-1 md:block" />
-          <span className="flex items-center gap-3 text-xs md:hidden">
-            <button className="min-h-9 px-1 underline" onClick={() => setPwOpen(true)}>
-              Password
-            </button>
-            <button className="min-h-9 px-1 underline" onClick={() => logout()}>
-              Sign out
-            </button>
+          <span className="min-w-0 flex-1 truncate text-sm font-semibold md:hidden">
+            {current?.label}
           </span>
+          <span className="hidden flex-1 md:block" />
           <span className="hidden whitespace-nowrap font-mono text-xs text-ink-2 sm:inline">
             {fmtShortDate(now)} · {fmtTime(now)}
           </span>
