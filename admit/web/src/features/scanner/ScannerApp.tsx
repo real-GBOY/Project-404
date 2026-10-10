@@ -15,6 +15,7 @@ import {
   isDuplicateRead,
   normalizeTicketId,
   reduce,
+  tokenFromScan,
   verdictKind,
   type ScanRequest,
   type Screen,
@@ -747,7 +748,9 @@ function Camera({
           const now = Date.now();
           if (isDuplicateRead(last.current, code, now)) return;
           last.current = { code, at: now };
-          onCode({ token: code.trim() });
+          const token = tokenFromScan(code);
+          // not one of our links: still ask the server, which answers "not a valid ticket" and logs it
+          onCode({ token: token ?? code.trim().slice(0, 200) });
         });
       },
       (err) => !cancelled && onFail(classifyCameraError(err)),

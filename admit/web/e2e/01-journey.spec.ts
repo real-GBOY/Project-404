@@ -127,3 +127,15 @@ test("an unknown organizer or booking reveals nothing", async ({ page }) => {
   await page.goto("/b/nile-sessions/ADM-AAAA-BBBB?k=" + "a".repeat(32));
   await expect(page.getByRole("heading", { name: "We could not find that booking" })).toBeVisible();
 });
+
+test("scanning a ticket QR with any phone camera lands on the QR page, which shows the picture and nothing about the ticket", async ({
+  page,
+}) => {
+  await page.goto("/q/aB3_-xyZ0123456789AbCd");
+  const img = page.getByRole("img", { name: "Scanned ticket QR code" });
+  await expect(img).toBeVisible();
+  await expect
+    .poll(() => img.evaluate((i: HTMLImageElement) => i.naturalWidth))
+    .toBeGreaterThan(100);
+  await expect(page.getByText("aB3_")).toHaveCount(0);
+});

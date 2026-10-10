@@ -16,6 +16,7 @@ import { StatusPage } from "@/features/customer/StatusPage";
 import { TicketPage } from "@/features/customer/TicketPage";
 import { FindBookingPage } from "@/features/customer/FindBookingPage";
 import { NotFoundPage } from "./NotFoundPage";
+import { QrLandingPage } from "./QrLandingPage";
 
 // The organizer dashboard and the door scanner are separate bundles: customers never download them.
 const AdminApp = lazy(() => import("@/features/admin/AdminApp"));
@@ -64,6 +65,7 @@ export function App() {
               <Route path="/t/:org/:ref" element={<CustomerLayout />}>
                 <Route index element={<TicketPage />} />
               </Route>
+              <Route path="/q/:token" element={<QrLandingPage />} />
               <Route path="/admin/*" element={<AdminApp />} />
               <Route path="/scan/*" element={<ScannerApp />} />
               <Route path="*" element={<NotFoundPage />} />

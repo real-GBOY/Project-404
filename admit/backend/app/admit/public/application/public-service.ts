@@ -5,7 +5,7 @@ import { currentExecutor, readInTenant } from "@core/kernel/db/db.js";
 import { NotFound } from "@core/kernel/errors.js";
 import { UNIT_OF_WORK } from "@core/kernel/tokens.js";
 import { getContext, runAsSystem, runWithContext } from "@core/kernel/logging/context.js";
-import { ticketToken } from "@admit/admit/shared/secrets.js";
+import { qrPayload, ticketToken } from "@admit/admit/shared/secrets.js";
 import { EventsRepository, type EventRecord, type TicketTypeRecord } from "@admit/admit/events/infrastructure/events-repository.js";
 import { BookingsService } from "@admit/admit/bookings/application/bookings-service.js";
 import { TicketsRepository } from "@admit/admit/tickets/infrastructure/tickets-repository.js";
@@ -231,7 +231,7 @@ export class PublicService {
         if (!ticket || ticket.status === "REVOKED") throw NotFound("admit.ticket_not_found", "Ticket not found.");
         return ticket;
       });
-      return QRCode.toBuffer(ticketToken(t.id), {
+      return QRCode.toBuffer(qrPayload(ticketToken(t.id)), {
         type: "png",
         errorCorrectionLevel: "M",
         margin: 4,

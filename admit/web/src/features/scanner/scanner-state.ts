@@ -98,3 +98,14 @@ export function normalizeTicketId(raw: string): string {
 }
 export const isCompleteTicketId = (v: string) =>
   /^TKT-[A-HJ-NP-Z0-9]{4}-[A-HJ-NP-Z0-9]{4}$/.test(normalizeTicketId(v));
+
+/**
+ * A scanned QR is a link (`https://site/q/<token>`) so any phone shows something sensible; the check-in endpoint wants only the 22
+ * character token. Accepts the link or a bare token, and returns null for anything else (a screenshot of someone else's QR code).
+ */
+export function tokenFromScan(code: string): string | null {
+  const t = code.trim();
+  const m = /\/q\/([A-Za-z0-9_-]{22})(?:[/?#].*)?$/.exec(t);
+  if (m) return m[1]!;
+  return /^[A-Za-z0-9_-]{22}$/.test(t) ? t : null;
+}
