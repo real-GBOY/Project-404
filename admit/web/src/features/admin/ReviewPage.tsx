@@ -514,7 +514,12 @@ function Workbench({
           You confirm this transfer is in the organizer's {item.method ?? "payment"} account. This
           issues{" "}
           <strong className="text-ink">
-            {bk ? plural(bk.lines.reduce((n, l) => n + l.quantity, 0), "ticket") : "the tickets"}
+            {bk
+              ? plural(
+                  bk.lines.reduce((n, l) => n + l.quantity, 0),
+                  "ticket",
+                )
+              : "the tickets"}
           </strong>{" "}
           for {item.eventTitle} and emails them to the customer.
         </p>

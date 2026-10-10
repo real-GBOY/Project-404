@@ -463,6 +463,18 @@ describe.skipIf(!hasTestDb)("Admit journey", () => {
       expect(typed.body).toMatchObject({ result: "INVALID", reason: "unknown" });
     });
 
+    it('answers "not paid yet" for a typed booking reference without tickets, and never admits a booking', async () => {
+      const typed = (ref: string) => call("POST", "/admit/checkin", { token: door, body: { ticketId: ref, eventId } });
+      const r = await book([{ ticketTypeId: generalId, quantity: 1 }], 62);
+      // waiting for payment, then waiting for review: no tickets either way
+      expect((await typed(r.body.ref)).body).toMatchObject({ result: "INVALID", reason: "not_paid", bookingRef: r.body.ref });
+      await uploadProof(r.body.ref, keyOf(r.body.links));
+      expect((await typed(r.body.ref)).body).toMatchObject({ result: "INVALID", reason: "not_paid" });
+      expect((await typed("ADM-ZZZZ-ZZZZ")).body).toMatchObject({ result: "INVALID", reason: "unknown" });
+      const logged = await ownerQuery<{ n: string }>(`SELECT count(*)::text n FROM admit_scan_attempts WHERE reason = 'not_paid' AND method = 'MANUAL'`);
+      expect(Number(logged[0]!.n)).toBeGreaterThanOrEqual(2);
+    });
+
     it("admits by typed ticket ID too, logs it as manual, and says when a ticket belongs to another event", async () => {
       const r = await book([{ ticketTypeId: generalId, quantity: 1 }], 61);
       await uploadProof(r.body.ref, keyOf(r.body.links));

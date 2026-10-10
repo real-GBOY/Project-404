@@ -32,6 +32,7 @@ export function newTicketId(): string {
   return `TKT-${block(4)}-${block(4)}`;
 }
 
+export const BOOKING_REF_SHAPE = /^ADM-[A-HJ-NP-Z0-9]{4}-[A-HJ-NP-Z0-9]{4}$/;
 export const TICKET_ID_SHAPE = /^TKT-[A-HJ-NP-Z0-9]{4}-[A-HJ-NP-Z0-9]{4}$/;
 
 export const sha256Hex = (value: string): string => createHash("sha256").update(value).digest("hex");

@@ -61,7 +61,7 @@ a slow reviewer must not cost a customer who already paid.
 | **A real email pipeline** | The API writes the complete, already-decided email into an outbox table in the same transaction as the change. A **Python worker** claims rows with `FOR UPDATE SKIP LOCKED`, renders seven templates and sends over SMTP with leases and backoff. A failed email never invalidates a ticket. |
 | **Honest interface** | The scanner shows green only for a server answer (a tested state machine); "emailed" is drawn only once the provider accepted the message. |
 | **Tenant isolation** | The organizer is a Core organization; every Admit table has forced row-level security, and public guest routes run inside the organizer's tenant context. |
-| **The numbers** | 13 tenant tables · 22 permissions · 5 roles · 67 backend tests, 26 worker tests, 31 web tests and 8 browser tests in real Chrome. |
+| **The numbers** | 13 tenant tables · 22 permissions · 5 roles · 68 backend tests, 26 worker tests, 31 web tests and 10 browser tests in real Chrome. |
 
 ## How it's built
 
@@ -102,7 +102,7 @@ Organizer **Nile Sessions Events** at `/e/nile-sessions`. Sign in at `/admin` (d
 ## Tests
 
 ```bash
-cd admit/backend && npm run ci                # typecheck, lint, format, 67 integration tests on real PostgreSQL, build
+cd admit/backend && npm run ci                # typecheck, lint, format, 68 integration tests on real PostgreSQL, build
 cd admit/web && npm test && npm run e2e       # 31 unit tests; the browser journey (needs Chrome)
 cd admit/worker && .venv/bin/python -m pytest # 26 tests
 ```

@@ -11,6 +11,7 @@ export type Screen =
   | { name: "checking"; request: ScanRequest }
   | { name: "verdict"; outcome: ScanOutcome; request: ScanRequest }
   | { name: "offline"; request: ScanRequest }
+  | { name: "permission" }
   | { name: "manual" }
   | { name: "camera_blocked" }
   | { name: "camera_missing" };
@@ -23,6 +24,8 @@ export interface ScanRequest {
 
 export type Action =
   | { type: "start" }
+  /** First use on this device: explain the camera prompt before the browser shows it. */
+  | { type: "ask_camera" }
   | { type: "home" }
   | { type: "manual" }
   | { type: "code_read"; request: ScanRequest }
@@ -36,6 +39,8 @@ export function reduce(s: Screen, a: Action): Screen {
   switch (a.type) {
     case "start":
       return { name: "scanning" };
+    case "ask_camera":
+      return { name: "permission" };
     case "home":
       return { name: "home" };
     case "manual":
@@ -73,7 +78,8 @@ export function isDuplicateRead(
   return !!last && last.code === code && now - last.at < DEDUPE_MS;
 }
 
-export type VerdictKind = "approved" | "used" | "unknown" | "revoked" | "other_event" | "closed";
+export type VerdictKind =
+  "approved" | "used" | "unknown" | "revoked" | "other_event" | "closed" | "not_paid";
 
 export function verdictKind(o: ScanOutcome): VerdictKind {
   if (o.result === "ADMITTED") return "approved";
@@ -85,19 +91,27 @@ export function verdictKind(o: ScanOutcome): VerdictKind {
       return "other_event";
     case "event_closed":
       return "closed";
+    case "not_paid":
+      return "not_paid";
     default:
       return "unknown";
   }
 }
 
-/** Ticket IDs are typed in capitals without confusable characters; accept lower case and stray spaces/dashes. */
+/**
+ * Ticket IDs (TKT-XXXX-XXXX) and booking references (ADM-XXXX-XXXX) are typed in capitals without confusable characters; accept
+ * lower case and stray spaces/dashes. A booking reference is not a ticket: the server answers "not paid yet" for one without tickets.
+ */
 export function normalizeTicketId(raw: string): string {
   const v = raw.toUpperCase().replace(/[^A-Z0-9]/g, "");
-  const body = v.startsWith("TKT") ? v.slice(3) : v;
-  return body.length === 8 ? `TKT-${body.slice(0, 4)}-${body.slice(4)}` : raw.trim().toUpperCase();
+  const prefix = v.startsWith("ADM") ? "ADM" : "TKT";
+  const body = v.startsWith("TKT") || v.startsWith("ADM") ? v.slice(3) : v;
+  return body.length === 8
+    ? `${prefix}-${body.slice(0, 4)}-${body.slice(4)}`
+    : raw.trim().toUpperCase();
 }
 export const isCompleteTicketId = (v: string) =>
-  /^TKT-[A-HJ-NP-Z0-9]{4}-[A-HJ-NP-Z0-9]{4}$/.test(normalizeTicketId(v));
+  /^(TKT|ADM)-[A-HJ-NP-Z0-9]{4}-[A-HJ-NP-Z0-9]{4}$/.test(normalizeTicketId(v));
 
 /**
  * A scanned QR is a link (`https://site/q/<token>`) so any phone shows something sensible; the check-in endpoint wants only the 22

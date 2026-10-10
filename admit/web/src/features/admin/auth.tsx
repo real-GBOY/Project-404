@@ -34,6 +34,17 @@ export function useAuth(): AuthValue {
   return v;
 }
 
+/**
+ * A door person: can scan, but has no dashboard to work in (no bookings, payments or event editing). They belong in the phone scanner,
+ * so sign-in and the dashboard home send them to /scan instead of an overview that shows them nothing useful.
+ */
+// eslint-disable-next-line react-refresh/only-export-components
+export function isDoorOnly(can: (permission: string) => boolean): boolean {
+  return (
+    can("scan:checkin") && !can("read:booking") && !can("read:payment") && !can("update:event")
+  );
+}
+
 /** Permission check with Core's wildcard rules ("*:*", "approve:*", "*:payment"). */
 // eslint-disable-next-line react-refresh/only-export-components
 export function hasPermission(held: string[], wanted: string): boolean {

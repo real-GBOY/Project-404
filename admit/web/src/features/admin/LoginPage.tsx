@@ -6,7 +6,7 @@ import { Logo } from "@/components/Logo";
 import { Notice } from "@/components/Notice";
 import { DEMO_MODE, DEMO_PASSWORD } from "@/config/env";
 import { ApiError } from "@/services/http";
-import { useAuth } from "./auth";
+import { isDoorOnly, useAuth } from "./auth";
 
 const DEMO_ACCOUNTS = [
   ["Owner", "salma@nilesessions.example"],
@@ -22,14 +22,15 @@ const REASONS: Record<string, string> = {
 };
 
 export function LoginPage({ to = "/admin" }: { to?: string }) {
-  const { status, error, login } = useAuth();
+  const { status, error, login, can } = useAuth();
   const loc = useLocation() as { state?: { from?: string } };
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  if (status === "authenticated") return <Navigate to={loc.state?.from ?? to} replace />;
+  if (status === "authenticated")
+    return <Navigate to={loc.state?.from ?? (isDoorOnly(can) ? "/scan" : to)} replace />;
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();

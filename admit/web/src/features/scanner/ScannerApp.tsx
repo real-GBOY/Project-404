@@ -24,6 +24,7 @@ import {
 
 const EVENT_KEY = "admit.scanner.event";
 const SOUND_KEY = "admit.scanner.sound";
+const CAMERA_KEY = "admit.scanner.camera";
 const read = (k: string) => {
   try {
     return sessionStorage.getItem(k) ?? localStorage.getItem(k);
@@ -38,6 +39,9 @@ const write = (k: string, v: string) => {
     /* private mode */
   }
 };
+
+/** The camera opened once on this device, so the explanation screen is skipped from now on. */
+const rememberCamera = () => write(CAMERA_KEY, "1");
 
 export default function ScannerApp() {
   return (
@@ -172,6 +176,18 @@ const VERDICT: Record<
     btn: "bg-white",
     btnFg: "text-ink",
   },
+  not_paid: {
+    bg: "bg-bad-solid",
+    fg: "text-white",
+    glyph: "✕",
+    glyphBg: "bg-white",
+    glyphFg: "text-bad-solid",
+    title: "Not paid yet",
+    sub: "This booking has no issued tickets. The payment is still being verified or was rejected.",
+    btn: "bg-white",
+    btnFg: "text-ink",
+    secondary: "Call supervisor",
+  },
   closed: {
     bg: "bg-bad-solid",
     fg: "text-white",
@@ -225,6 +241,11 @@ function rowsFor(
       return [
         ["Scanning for", eventTitle],
         ["Status", "Event is not open"],
+      ];
+    case "not_paid":
+      return [
+        ["Booking", o.bookingRef ?? "", true],
+        ["Next step", "Guest contacts organizer"],
       ];
     default:
       return [
@@ -398,7 +419,7 @@ function Scanner() {
               setSound(v);
               write(SOUND_KEY, v ? "1" : "0");
             }}
-            onStart={() => dispatch({ type: "start" })}
+            onStart={() => dispatch({ type: read(CAMERA_KEY) === "1" ? "start" : "ask_camera" })}
             onManual={() => dispatch({ type: "manual" })}
             onSignOut={() => logout()}
           />
@@ -412,8 +433,35 @@ function Scanner() {
           onCode={submitCode}
           onDone={() => dispatch({ type: "home" })}
           onManual={() => dispatch({ type: "manual" })}
+          onOpened={rememberCamera}
           onFail={(f) => dispatch({ type: f === "blocked" ? "camera_blocked" : "camera_missing" })}
         />
+      );
+    case "permission":
+      return (
+        <Full tone="light">
+          <div className="flex flex-1 flex-col gap-4 px-6 py-7">
+            <div aria-hidden="true" className="size-[72px] rounded-2xl border-[3px] border-ink" />
+            <h1 className="display text-[40px]">Allow camera to scan tickets</h1>
+            <p className="text-base leading-normal text-ink-3">
+              Your browser will ask for camera access next. Tap <strong>Allow</strong>. Video stays
+              on this phone; only the code is sent to check the ticket.
+            </p>
+            <span className="flex-1" />
+            <button
+              onClick={() => dispatch({ type: "start" })}
+              className="h-16 rounded-xl bg-ink text-lg font-semibold text-paper"
+            >
+              Continue
+            </button>
+            <button
+              onClick={() => dispatch({ type: "manual" })}
+              className="h-14 rounded-xl border border-ink bg-transparent text-base font-semibold"
+            >
+              Use manual entry instead
+            </button>
+          </div>
+        </Full>
       );
     case "checking":
       return (
@@ -719,6 +767,7 @@ function Camera({
   onCode,
   onDone,
   onManual,
+  onOpened,
   onFail,
 }: {
   title: string;
@@ -726,6 +775,7 @@ function Camera({
   onCode: (r: ScanRequest) => void;
   onDone: () => void;
   onManual: () => void;
+  onOpened: () => void;
   onFail: (f: "blocked" | "missing") => void;
 }) {
   const video = useRef<HTMLVideoElement>(null);
@@ -743,6 +793,7 @@ function Camera({
       (c) => {
         if (cancelled) return c.stop();
         cam.current = c;
+        onOpened();
         setCanTorch(c.canTorch);
         stopDecode = startDecoding(el, (code) => {
           const now = Date.now();
@@ -761,7 +812,7 @@ function Camera({
       cam.current?.stop();
       cam.current = null;
     };
-  }, [facing, onCode, onFail]);
+  }, [facing, onCode, onFail, onOpened]);
 
   const btn =
     "h-16 rounded-2xl bg-white/15 text-[13px] font-semibold text-paper disabled:opacity-40";
@@ -868,7 +919,8 @@ function Manual({ onSubmit, onBack }: { onSubmit: (id: string) => void; onBack: 
           />
         </label>
         <span className="text-[13px] leading-snug text-ink-2">
-          8 letters and digits. No O or I is used, so 0 and 1 are always numbers.
+          8 letters and digits. No O or I is used, so 0 and 1 are always numbers. A booking
+          reference (ADM-…) works too: it tells you whether the guest has paid.
         </span>
         <span className="flex-1" />
         <button

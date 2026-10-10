@@ -14,6 +14,7 @@ const REASON: Record<string, string> = {
   revoked: "Revoked",
   other_event: "Other event",
   event_closed: "Event closed",
+  not_paid: "Not paid yet",
 };
 
 export function CheckinPage() {

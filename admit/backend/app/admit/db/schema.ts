@@ -182,9 +182,9 @@ export type admit_scan_attempts = {
    */
   result: "ADMITTED" | "ALREADY_USED" | "INVALID";
   /**
-   * @kyselyType('unknown' | 'revoked' | 'other_event' | 'event_closed')
+   * @kyselyType('unknown' | 'revoked' | 'other_event' | 'event_closed' | 'not_paid')
    */
-  reason: "unknown" | "revoked" | "other_event" | "event_closed" | null;
+  reason: "unknown" | "revoked" | "other_event" | "event_closed" | "not_paid" | null;
   /**
    * @kyselyType('QR' | 'MANUAL')
    */

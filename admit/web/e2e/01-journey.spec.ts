@@ -118,7 +118,7 @@ test.describe.serial("booking to door", () => {
 });
 
 test("a person without approve permission cannot reach the review queue", async ({ page }) => {
-  await signIn(page, "ali@nilesessions.example", "/admin/login");
+  await signIn(page, "mona@nilesessions.example", "/admin/login");
   await page.goto("/admin/review");
   await expect(page.getByRole("heading", { name: "You do not have access" })).toBeVisible();
 });

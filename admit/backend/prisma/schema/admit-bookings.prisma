@@ -101,7 +101,7 @@ model admit_scan_attempts {
   ticket_id       String?
   /// @kyselyType('ADMITTED' | 'ALREADY_USED' | 'INVALID')
   result          String
-  /// @kyselyType('unknown' | 'revoked' | 'other_event' | 'event_closed')
+  /// @kyselyType('unknown' | 'revoked' | 'other_event' | 'event_closed' | 'not_paid')
   reason          String?
   /// @kyselyType('QR' | 'MANUAL')
   method          String   @default("QR")

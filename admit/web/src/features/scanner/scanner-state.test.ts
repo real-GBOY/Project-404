@@ -69,6 +69,8 @@ describe("scanner state machine", () => {
   it("normalizes typed ticket IDs", () => {
     expect(normalizeTicketId("tkt 6plm w45e")).toBe("TKT-6PLM-W45E");
     expect(normalizeTicketId("6plmw45e")).toBe("TKT-6PLM-W45E");
+    expect(normalizeTicketId("adm 7tta 9014")).toBe("ADM-7TTA-9014");
+    expect(isCompleteTicketId("adm-7tta-9014")).toBe(true);
     expect(isCompleteTicketId("tkt-6plm-w45e")).toBe(true);
     expect(isCompleteTicketId("tkt-6plm")).toBe(false);
     expect(isCompleteTicketId("TKT-OPLM-W45E")).toBe(false); // the letter O is never issued

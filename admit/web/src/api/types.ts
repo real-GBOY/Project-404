@@ -17,7 +17,7 @@ export type EventStatus = "draft" | "published" | "cancelled" | "archived";
 export type PaymentMethodType = "instapay" | "wallet" | "bank" | "cash_deposit" | "other";
 export type AvailabilityLabel = "available" | "selling_fast" | "sold_out" | "ended";
 export type ScanResult = "ADMITTED" | "ALREADY_USED" | "INVALID";
-export type InvalidReason = "unknown" | "revoked" | "other_event" | "event_closed";
+export type InvalidReason = "unknown" | "revoked" | "other_event" | "event_closed" | "not_paid";
 
 // ---- auth -----------------------------------------------------------------------------------------------------------
 export interface LoginResponse {
@@ -370,6 +370,8 @@ export interface ScanOutcome {
   result: ScanResult;
   reason?: InvalidReason;
   ticket?: { id: string; holder: string; type: string };
+  /** `not_paid` only: the booking reference that was typed. */
+  bookingRef?: string;
   firstCheckInAt?: string;
   firstCheckInBy?: string;
   gate?: string;

@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { adminApi } from "@/api";
 import { Logo } from "@/components/Logo";
 import { fmtShortDate, fmtTime } from "@/lib/format";
-import { AuthProvider, useAuth } from "./auth";
+import { AuthProvider, isDoorOnly, useAuth } from "./auth";
 import { LoginPage } from "./LoginPage";
 import { OverviewPage } from "./OverviewPage";
 import { ReviewPage } from "./ReviewPage";
@@ -71,6 +71,15 @@ function Shell() {
           </span>
         </div>
         <nav aria-label="Dashboard" className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-2.5">
+          {can("scan:checkin") ? (
+            <a
+              href="/scan"
+              className="mb-1 flex h-[38px] items-center justify-between gap-2 rounded-[5px] border border-night-rule px-2.5 text-sm font-semibold text-paper no-underline hover:bg-night-2"
+            >
+              <span>Door scanner</span>
+              <span aria-hidden="true">↗</span>
+            </a>
+          ) : null}
           {items.map((n) => (
             <NavLink
               key={n.to}
@@ -145,6 +154,13 @@ function Shell() {
   );
 }
 
+/** The dashboard home. A door person has no dashboard to work in, so they go straight to the scanner. */
+function Home() {
+  const { can } = useAuth();
+  if (isDoorOnly(can)) return <Navigate to="/scan" replace />;
+  return <OverviewPage />;
+}
+
 function RequireAuth() {
   const { status } = useAuth();
   const loc = useLocation();
@@ -188,7 +204,7 @@ export default function AdminApp() {
         <Routes>
           <Route path="login" element={<LoginPage />} />
           <Route element={<RequireAuth />}>
-            <Route index element={<OverviewPage />} />
+            <Route index element={<Home />} />
             <Route path="review" element={<ReviewPage />} />
             <Route path="bookings" element={<BookingsPage />} />
             <Route path="events" element={<EventsAdminPage />} />

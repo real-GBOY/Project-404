@@ -9,19 +9,22 @@ import type { Principal } from "@core/http/principal.js";
 import { requireOrganizationId } from "@core/kernel/tenant.js";
 import { admitDb } from "@admit/admit/db/executor.js";
 import { admitId } from "@admit/admit/shared/ids.js";
-import { sha256Hex, TICKET_ID_SHAPE, TOKEN_SHAPE } from "@admit/admit/shared/secrets.js";
+import { BOOKING_REF_SHAPE, sha256Hex, TICKET_ID_SHAPE, TOKEN_SHAPE } from "@admit/admit/shared/secrets.js";
+import { BookingsRepository } from "@admit/admit/bookings/infrastructure/bookings-repository.js";
 import { EventAccess } from "@admit/admit/events/application/event-access.js";
 import { EventsRepository } from "@admit/admit/events/infrastructure/events-repository.js";
 import { TicketsRepository, type TicketRecord } from "@admit/admit/tickets/infrastructure/tickets-repository.js";
 
 export type ScanResult = "ADMITTED" | "ALREADY_USED" | "INVALID";
 /** Why a scan was refused. Only as much as a door scanner needs: nothing about other events beyond "not this one". */
-export type InvalidReason = "unknown" | "revoked" | "other_event" | "event_closed";
+export type InvalidReason = "unknown" | "revoked" | "other_event" | "event_closed" | "not_paid";
 
 export interface ScanOutcome {
   result: ScanResult;
   reason?: InvalidReason;
   ticket?: { id: string; holder: string; type: string };
+  /** Only for `not_paid`: the booking reference that was typed (its payment is not approved, so it has no tickets). */
+  bookingRef?: string;
   /** Only for ALREADY_USED: when and where the ticket was first used, and by whom. */
   firstCheckInAt?: Date;
   firstCheckInBy?: string;
@@ -49,6 +52,7 @@ export interface ScanInput {
 export class CheckinService {
   constructor(
     private readonly tickets: TicketsRepository,
+    private readonly bookings: BookingsRepository,
     private readonly events: EventsRepository,
     private readonly access: EventAccess,
     @Inject(USER_PROVIDER) private readonly users: IUserProvider,
@@ -92,6 +96,16 @@ export class CheckinService {
       let ticket: TicketRecord | undefined;
       if (input.ticketId) {
         const id = input.ticketId.trim().toUpperCase();
+        // A booking reference typed at the door (a guest shows their booking page, not a ticket): there is no ticket to admit.
+        if (BOOKING_REF_SHAPE.test(id)) {
+          const booking = await this.bookings.findByRef(id);
+          if (!booking) return invalid("unknown");
+          if (booking.eventId !== event.id) return invalid("other_event");
+          // a confirmed booking has tickets: the staff member must scan or type one of those, so this is not a valid ticket code
+          if (booking.status === "CONFIRMED") return invalid("unknown");
+          await log("INVALID", null, "not_paid");
+          return { result: "INVALID", reason: "not_paid", bookingRef: booking.ref, at: now };
+        }
         ticket = TICKET_ID_SHAPE.test(id) ? await this.tickets.find(id) : undefined;
       } else if (input.token && TOKEN_SHAPE.test(input.token)) {
         ticket = await this.tickets.findByTokenHash(sha256Hex(input.token));
