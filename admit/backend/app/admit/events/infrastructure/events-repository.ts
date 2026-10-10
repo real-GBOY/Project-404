@@ -241,6 +241,18 @@ export class EventsRepository {
       .execute();
   }
 
+  async deleteVenue(id: string): Promise<void> {
+    await admitDb().deleteFrom("admit_venues").where("id", "=", id).execute();
+  }
+  async venueEventCount(id: string): Promise<number> {
+    const r = await admitDb()
+      .selectFrom("admit_events")
+      .select(({ fn }) => fn.countAll<string>().as("n"))
+      .where("venue_id", "=", id)
+      .executeTakeFirstOrThrow();
+    return Number(r.n);
+  }
+
   // ---- events ---------------------------------------------------------------------------------
   async findEvent(id: string): Promise<EventRecord | undefined> {
     const r = await admitDb()
@@ -317,6 +329,13 @@ export class EventsRepository {
       })
       .where("id", "=", id)
       .execute();
+  }
+  async eventHasBookings(id: string): Promise<boolean> {
+    const r = await admitDb().selectFrom("admit_bookings").select("id").where("event_id", "=", id).limit(1).executeTakeFirst();
+    return !!r;
+  }
+  async deleteEvent(id: string): Promise<void> {
+    await admitDb().deleteFrom("admit_events").where("id", "=", id).execute();
   }
   async setStatus(id: string, status: EventStatus, publishedAt?: Date | null): Promise<void> {
     await admitDb()

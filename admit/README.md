@@ -31,7 +31,7 @@ Demo organizer **Nile Sessions Events** (`/e/nile-sessions`); sign in at `/admin
 ## Test it
 
 ```bash
-cd admit/backend && npm run ci        # typecheck, lint, format, 52 integration tests (needs Postgres), build
+cd admit/backend && npm run ci        # typecheck, lint, format, 62 integration tests (needs Postgres), build
 cd admit/web && npm test && npm run e2e   # 31 unit tests; the browser journey against the real backend (needs Chrome)
 cd admit/worker && .venv/bin/python -m pytest
 ```

@@ -71,6 +71,9 @@ Dependency direction: product modules → Core contracts/services. Core imports 
 | **Check-in is exactly-once** | `UPDATE … WHERE status='VALID' RETURNING`; the loser re-reads and reports `ALREADY_USED` with the first time, gate and staff name | 8 simultaneous scans → 1 ADMITTED |
 | **Guests cannot be probed** | `ref` is public and not a credential; the magic-link secret `k` (HMAC of the booking id, hash stored) is required; a wrong ref and a wrong `k` are the same 404; per-IP rate limits (Postgres counters shared by all instances) | journey |
 | **Tenant isolation** | RLS on every table + composite (`organization_id`,`id`) FKs; another organizer sees none of it | foundation, journey |
+| **A published event stays buyable** | removing or taking off sale the last on-sale ticket type, or deleting/disabling the last enabled payment method of a published event is a 409 (`admit.last_ticket_type`, `admit.last_payment_method`) | crud tests |
+| **History is never deleted** | a venue that events use, a ticket type or payment method that bookings used, a published event and any event with bookings cannot be deleted (409); only an unused venue and a bookless draft can. Cancel or archive instead | crud tests |
+| **A closed event takes no more money** | a cancelled or archived event refuses new proof uploads (`admit.event_closed`) and refuses approving a payment, so no ticket is issued for it | crud tests |
 | **Email failure never invalidates a ticket** | the worker writes nowhere but `admit_email_messages`; a FAILED email leaves the booking and tickets untouched | worker tests |
 | **The UI shows server state only** | approval shows tickets from the response and the email from the polled record; "emailed" is only drawn once the provider accepted; the scanner shows green only for a server answer (a state machine, tested) | web unit + e2e |
 
@@ -95,7 +98,7 @@ The booking timeline, the review pipeline and the scanner verdicts are derived f
 
 ## 6. Verification performed
 
-- Backend: 52 integration tests against real PostgreSQL (migrate-from-zero, RLS on every table, journey, concurrency, demo). Typecheck, lint, format, build clean.
+- Backend: 62 integration tests against real PostgreSQL (migrate-from-zero, RLS on every table, journey, concurrency, demo). Typecheck, lint, format, build clean.
 - Worker: 26 pytest (rendering of all 7 types incl. real API payloads, claim/lease/backoff/final-failure, isolation).
 - Web: 31 unit tests (validation, state machines, readiness, date handling, permissions); typecheck, lint, production build clean.
 - **Browser end-to-end (Playwright, real Chrome, real backend, throw-away DB)**: a guest books under validation, uploads proof, a reviewer approves, the guest loads real QR PNGs, door staff admit a ticket once and are told when it was first used; a role without the permission cannot reach the review queue; an invalid booking link reveals nothing.

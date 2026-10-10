@@ -110,6 +110,28 @@ export class EventsService {
     });
   }
 
+  async getVenue(id: string): Promise<VenueRecord> {
+    const v = await readInTenant(() => this.repo.findVenue(id));
+    if (!v) throw NotFound("admit.venue_not_found", "Venue not found.");
+    return v;
+  }
+
+  /** A venue that events still point at stays: removing it would orphan their date, address and capacity. */
+  async deleteVenue(who: Principal, id: string): Promise<void> {
+    await this.uow.transaction(async () => {
+      const before = await this.repo.findVenue(id);
+      if (!before) throw NotFound("admit.venue_not_found", "Venue not found.");
+      const n = await this.repo.venueEventCount(id);
+      if (n > 0)
+        throw Conflict(
+          "admit.venue_in_use",
+          `${n} ${n === 1 ? "event uses" : "events use"} this venue. Move ${n === 1 ? "it" : "them"} to another venue first.`,
+        );
+      await this.repo.deleteVenue(id);
+      await this.audit.record({ actorId: who.userId, action: "admit.venue.deleted", resourceType: "admit_venue", resourceId: id, before });
+    });
+  }
+
   private async assertVenueFitsEvents(venueId: string, capacity: number): Promise<void> {
     const events = (await this.repo.listEvents({ ids: null })).filter((e) => e.venueId === venueId && e.status !== "archived" && e.status !== "cancelled");
     const types = await this.repo.listTypes(events.map((e) => e.id));
@@ -201,6 +223,26 @@ export class EventsService {
   async cancel(who: Principal, id: string): Promise<EventView> {
     return this.transition(who, id, "cancelled", "admit.event.cancelled", ["draft", "published"]);
   }
+  /** Only a draft that nobody has booked: anything else is history (cancel or archive it instead). */
+  async remove(who: Principal, id: string): Promise<void> {
+    await this.uow.transaction(async () => {
+      await this.access.assertEvent(who, id);
+      const e = (await this.requireEvents(id))[0]!;
+      if (e.status !== "draft")
+        throw Conflict("admit.event_not_deletable", `Only a draft event can be deleted. This one is ${e.status}: cancel or archive it instead.`);
+      if (await this.repo.eventHasBookings(id))
+        throw Conflict("admit.event_has_bookings", "This event has bookings, so it cannot be deleted. Cancel or archive it instead.");
+      await this.repo.deleteEvent(id);
+      await this.audit.record({
+        actorId: who.userId,
+        action: "admit.event.deleted",
+        resourceType: "admit_event",
+        resourceId: id,
+        before: { title: e.title, slug: e.slug },
+      });
+    });
+  }
+
   async archive(who: Principal, id: string): Promise<EventView> {
     return this.transition(who, id, "archived", "admit.event.archived", ["draft", "cancelled", "published"]);
   }
@@ -251,6 +293,7 @@ export class EventsService {
       const view = (await this.assemble(await this.requireEvents(locked.eventId)))[0]!;
       this.assertEditable(view);
       const current = view.ticketTypes.find((t) => t.id === typeId)!;
+      if (b.onSale === false || b.quantity === 0) this.assertStillOnSale(view, typeId, "take this ticket type off sale");
       if (b.quantity !== undefined) {
         if (b.quantity < current.held)
           throw Conflict("admit.quantity_below_sold", `${current.held} tickets are already booked or held; the quantity cannot go below that.`);
@@ -274,6 +317,9 @@ export class EventsService {
       const t = await this.repo.findType(typeId);
       if (!t) throw NotFound("admit.ticket_type_not_found", "Ticket type not found.");
       await this.access.assertEvent(who, t.eventId);
+      const view = (await this.assemble(await this.requireEvents(t.eventId)))[0]!;
+      this.assertEditable(view);
+      this.assertStillOnSale(view, typeId, "delete this ticket type");
       if (await this.repo.typeHasBookings(typeId))
         throw Conflict("admit.ticket_type_in_use", "This ticket type has bookings. Take it off sale instead of deleting it.");
       await this.repo.deleteType(typeId);
@@ -303,6 +349,9 @@ export class EventsService {
       const m = await this.repo.findMethod(id);
       if (!m) throw NotFound("admit.payment_method_not_found", "Payment method not found.");
       await this.access.assertEvent(who, m.eventId);
+      const view = (await this.assemble(await this.requireEvents(m.eventId)))[0]!;
+      this.assertEditable(view);
+      if (b.enabled === false) this.assertStillPayable(view, id, "disable this payment method");
       await this.repo.updateMethod(id, b);
       await this.audit.record({
         actorId: who.userId,
@@ -320,6 +369,9 @@ export class EventsService {
       const m = await this.repo.findMethod(id);
       if (!m) throw NotFound("admit.payment_method_not_found", "Payment method not found.");
       await this.access.assertEvent(who, m.eventId);
+      const view = (await this.assemble(await this.requireEvents(m.eventId)))[0]!;
+      this.assertEditable(view);
+      this.assertStillPayable(view, id, "delete this payment method");
       if (await this.repo.methodInUse(id))
         throw Conflict("admit.payment_method_in_use", "Customers have already paid with this method. Disable it instead of deleting it.");
       await this.repo.deleteMethod(id);
@@ -330,6 +382,28 @@ export class EventsService {
   // ---- rules ----------------------------------------------------------------------------------
   private assertEditable(view: EventView): void {
     if (view.status === "archived" || view.status === "cancelled") throw Conflict("admit.event_state", `A ${view.status} event cannot be changed.`);
+  }
+
+  /** A published event is a promise to customers: it must always keep a ticket type on sale ... */
+  private assertStillOnSale(view: EventView, typeId: string, what: string): void {
+    if (view.status !== "published") return;
+    if (!view.ticketTypes.some((t) => t.id !== typeId && t.onSale && t.quantity > 0)) {
+      throw Conflict(
+        "admit.last_ticket_type",
+        `A published event needs at least one ticket type on sale, so you cannot ${what}. Add another one first, or unpublish the event.`,
+      );
+    }
+  }
+
+  /** ... and somewhere to send the money. */
+  private assertStillPayable(view: EventView, methodId: string, what: string): void {
+    if (view.status !== "published") return;
+    if (!view.paymentMethods.some((m) => m.id !== methodId && m.enabled)) {
+      throw Conflict(
+        "admit.last_payment_method",
+        `A published event needs at least one enabled payment method, so you cannot ${what}. Add another one first, or unpublish the event.`,
+      );
+    }
   }
 
   private assertCapacity(view: EventView, total: number): void {

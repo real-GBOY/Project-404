@@ -69,6 +69,7 @@ export const adminApi = {
     unpublish: (id: string) => http<T.AdminEvent>(E.events.unpublish(id), { method: "POST" }),
     cancel: (id: string) => http<T.AdminEvent>(E.events.cancel(id), { method: "POST" }),
     archive: (id: string) => http<T.AdminEvent>(E.events.archive(id), { method: "POST" }),
+    remove: (id: string) => http<void>(E.events.byId(id), { method: "DELETE" }),
     addType: (id: string, body: Omit<T.TicketType, "id" | "eventId" | "held" | "remaining">) =>
       http<T.TicketType>(E.events.types(id), { method: "POST", body }),
     addMethod: (id: string, body: Omit<T.PaymentMethod, "id" | "eventId">) =>
@@ -87,6 +88,7 @@ export const adminApi = {
     create: (body: Omit<T.Venue, "id">) => http<T.Venue>(E.venues.list, { method: "POST", body }),
     update: (id: string, body: Partial<Omit<T.Venue, "id">>) =>
       http<T.Venue>(E.venues.byId(id), { method: "PATCH", body }),
+    remove: (id: string) => http<void>(E.venues.byId(id), { method: "DELETE" }),
   },
   ticketTypes: {
     update: (

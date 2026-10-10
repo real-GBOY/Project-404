@@ -5,6 +5,7 @@ import { adminApi } from "@/api";
 import type { AdminEvent, EventInput, PaymentMethod, TicketType, Venue } from "@/api/types";
 import { Badge } from "@/components/Badge";
 import { Button } from "@/components/Button";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Dialog } from "@/components/Dialog";
 import { SelectField, TextArea, TextField } from "@/components/Field";
 import { Notice } from "@/components/Notice";
@@ -129,7 +130,10 @@ function Editor({ event, venues }: { event?: AdminEvent; venues: Venue[] }) {
   const [dirty, setDirty] = useState(!event);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [venueOpen, setVenueOpen] = useState(false);
+  const [venueOpen, setVenueOpen] = useState<false | "new" | "edit">(false);
+  const [confirm, setConfirm] = useState<"unpublish" | "cancel" | "archive" | "delete" | null>(
+    null,
+  );
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => {
     setD((p) => ({ ...p, [k]: v }));
     setDirty(true);
@@ -187,6 +191,25 @@ function Editor({ event, venues }: { event?: AdminEvent; venues: Venue[] }) {
     },
     onError: fail,
   });
+  const removeEvent = useMutation({
+    mutationFn: () => adminApi.events.remove(event!.id),
+    onSuccess: async () => {
+      setDirty(false);
+      await invalidate();
+      toast.show("Draft deleted");
+      nav("/admin/events", { replace: true });
+    },
+    onError: (err) => {
+      setConfirm(null);
+      fail(err);
+    },
+  });
+  const runConfirmed = () => {
+    const what = confirm;
+    if (what === "delete") return removeEvent.mutate();
+    if (what) act.mutate(what);
+    setConfirm(null);
+  };
   const locked = event?.status === "archived" || event?.status === "cancelled";
 
   return (
@@ -228,7 +251,7 @@ function Editor({ event, venues }: { event?: AdminEvent; venues: Venue[] }) {
               size="md"
               variant="ink"
               loading={act.isPending}
-              onClick={() => act.mutate("unpublish")}
+              onClick={() => setConfirm("unpublish")}
             >
               Unpublish
             </Button>
@@ -352,7 +375,12 @@ function Editor({ event, venues }: { event?: AdminEvent; venues: Venue[] }) {
                   ))}
                 </SelectField>
               </div>
-              <Button variant="secondary" onClick={() => setVenueOpen(true)} disabled={locked}>
+              {venue && can("update:event") ? (
+                <Button variant="secondary" onClick={() => setVenueOpen("edit")} disabled={locked}>
+                  Edit venue
+                </Button>
+              ) : null}
+              <Button variant="secondary" onClick={() => setVenueOpen("new")} disabled={locked}>
                 New venue
               </Button>
             </div>
@@ -507,15 +535,16 @@ function Editor({ event, venues }: { event?: AdminEvent; venues: Venue[] }) {
           {event && can("publish:event") && !locked ? (
             <Section id="danger" title="Close this event">
               <p className="text-sm text-ink-2">
-                Cancelling stops sales and the door scanner for this event. Existing bookings stay
-                on record; refunds happen outside Admit.
+                Cancelling stops sales and the door scanner for this event, and customers who have
+                not paid yet can no longer send proof. Existing bookings stay on record; refunds
+                happen outside Admit. Archiving hides a finished event from the lists.
               </p>
               <div className="flex gap-2">
                 <Button
                   variant="danger"
                   size="md"
                   loading={act.isPending}
-                  onClick={() => act.mutate("cancel")}
+                  onClick={() => setConfirm("cancel")}
                 >
                   Cancel event
                 </Button>
@@ -523,9 +552,23 @@ function Editor({ event, venues }: { event?: AdminEvent; venues: Venue[] }) {
                   variant="secondary"
                   size="md"
                   loading={act.isPending}
-                  onClick={() => act.mutate("archive")}
+                  onClick={() => setConfirm("archive")}
                 >
                   Archive
+                </Button>
+              </div>
+            </Section>
+          ) : null}
+
+          {event && event.status === "draft" && can("update:event") ? (
+            <Section id="delete" title="Delete this draft">
+              <p className="text-sm text-ink-2">
+                Removes the draft with its ticket types and payment methods. Only possible while
+                nobody has booked it; once it has bookings, cancel or archive it instead.
+              </p>
+              <div>
+                <Button variant="danger" size="md" onClick={() => setConfirm("delete")}>
+                  Delete draft
                 </Button>
               </div>
             </Section>
@@ -582,15 +625,66 @@ function Editor({ event, venues }: { event?: AdminEvent; venues: Venue[] }) {
         </aside>
       </div>
       <VenueDialog
-        open={venueOpen}
+        key={venueOpen === "edit" ? `edit-${venue?.id}` : "new"}
+        open={venueOpen !== false}
+        venue={venueOpen === "edit" ? venue : undefined}
         onClose={() => setVenueOpen(false)}
-        onCreated={(v) => {
-          void qc
-            .invalidateQueries({ queryKey: ["admin", "venues"] })
-            .then(() => set("venueId", v.id));
+        onSaved={(v) => {
+          void qc.invalidateQueries({ queryKey: ["admin"] }).then(() => set("venueId", v.id));
+          setVenueOpen(false);
+        }}
+        onDeleted={() => {
+          void qc.invalidateQueries({ queryKey: ["admin"] }).then(() => set("venueId", ""));
           setVenueOpen(false);
         }}
       />
+      <ConfirmDialog
+        open={confirm !== null}
+        onClose={() => setConfirm(null)}
+        title={
+          confirm === "unpublish"
+            ? "Unpublish this event?"
+            : confirm === "cancel"
+              ? "Cancel this event?"
+              : confirm === "archive"
+                ? "Archive this event?"
+                : "Delete this draft?"
+        }
+        confirmLabel={
+          confirm === "unpublish"
+            ? "Unpublish"
+            : confirm === "cancel"
+              ? "Cancel event"
+              : confirm === "archive"
+                ? "Archive"
+                : "Delete draft"
+        }
+        tone={confirm === "unpublish" ? "ink" : "danger"}
+        busy={act.isPending || removeEvent.isPending}
+        onConfirm={runConfirmed}
+      >
+        {confirm === "unpublish" ? (
+          <p>
+            The event leaves the public site and nobody can start a new booking. Bookings already
+            made keep working. You can publish it again later.
+          </p>
+        ) : confirm === "cancel" ? (
+          <p>
+            Sales and the door scanner stop for this event, and customers who have not paid yet can
+            no longer send proof. Existing bookings stay on record;{" "}
+            <strong>refunds happen outside Admit</strong>. This cannot be undone.
+          </p>
+        ) : confirm === "archive" ? (
+          <p>
+            The event is hidden from the lists and can no longer be edited. It stays in reports.
+          </p>
+        ) : (
+          <p>
+            The draft, its ticket types and its payment methods are removed for good. Its address
+            becomes free again.
+          </p>
+        )}
+      </ConfirmDialog>
     </>
   );
 }
@@ -619,28 +713,44 @@ function Section({
 
 function VenueDialog({
   open,
+  venue,
   onClose,
-  onCreated,
+  onSaved,
+  onDeleted,
 }: {
   open: boolean;
+  /** Present when editing an existing venue; absent for "New venue". */
+  venue?: Venue;
   onClose: () => void;
-  onCreated: (v: Venue) => void;
+  onSaved: (v: Venue) => void;
+  onDeleted: () => void;
 }) {
-  const [v, setV] = useState({ name: "", area: "", address: "", capacity: "" });
-  const create = useMutation({
+  const [v, setV] = useState({
+    name: venue?.name ?? "",
+    area: venue?.area ?? "",
+    address: venue?.address ?? "",
+    capacity: venue ? String(venue.capacity) : "",
+  });
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const body = () => ({
+    name: v.name.trim(),
+    area: v.area.trim(),
+    address: v.address.trim(),
+    mapUrl: venue?.mapUrl ?? null,
+    capacity: Number(v.capacity),
+  });
+  const save = useMutation({
     mutationFn: () =>
-      adminApi.venues.create({
-        name: v.name.trim(),
-        area: v.area.trim(),
-        address: v.address.trim(),
-        mapUrl: null,
-        capacity: Number(v.capacity),
-      }),
-    onSuccess: onCreated,
+      venue ? adminApi.venues.update(venue.id, body()) : adminApi.venues.create(body()),
+    onSuccess: onSaved,
+  });
+  const remove = useMutation({
+    mutationFn: () => adminApi.venues.remove(venue!.id),
+    onSuccess: onDeleted,
   });
   const ok = v.name.trim().length >= 2 && Number(v.capacity) >= 1;
   return (
-    <Dialog open={open} onClose={onClose} title="New venue">
+    <Dialog open={open} onClose={onClose} title={venue ? "Edit venue" : "New venue"}>
       <div className="flex flex-col gap-3 px-[22px] pt-3">
         <TextField
           label="Name"
@@ -666,25 +776,54 @@ function VenueDialog({
           value={v.address}
           onChange={(e) => setV({ ...v, address: e.target.value })}
         />
-        {create.isError ? (
+        {save.isError || remove.isError ? (
           <p role="alert" className="text-sm text-bad-solid">
-            {errorText(create.error)}
+            {errorText(save.error ?? remove.error)}
           </p>
         ) : null}
+        {venue && confirmDelete ? (
+          <div className="flex flex-col gap-2 border border-bad-line bg-bad-bg p-3 text-sm">
+            <span>
+              Delete <strong>{venue.name}</strong>? Only possible while no event uses it.
+            </span>
+            <div className="flex gap-2">
+              <Button
+                variant="danger"
+                size="sm"
+                loading={remove.isPending}
+                onClick={() => remove.mutate()}
+              >
+                Yes, delete venue
+              </Button>
+              <Button variant="secondary" size="sm" onClick={() => setConfirmDelete(false)}>
+                Keep it
+              </Button>
+            </div>
+          </div>
+        ) : null}
       </div>
-      <div className="flex justify-end gap-2 p-[22px]">
-        <Button variant="secondary" size="md" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button
-          variant="ink"
-          size="md"
-          disabled={!ok}
-          loading={create.isPending}
-          onClick={() => create.mutate()}
-        >
-          Add venue
-        </Button>
+      <div className="flex items-center justify-between gap-2 p-[22px]">
+        <div>
+          {venue && !confirmDelete ? (
+            <Button variant="danger" size="md" onClick={() => setConfirmDelete(true)}>
+              Delete venue
+            </Button>
+          ) : null}
+        </div>
+        <div className="flex gap-2">
+          <Button variant="secondary" size="md" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            variant="ink"
+            size="md"
+            disabled={!ok}
+            loading={save.isPending}
+            onClick={() => save.mutate()}
+          >
+            {venue ? "Save venue" : "Add venue"}
+          </Button>
+        </div>
       </div>
     </Dialog>
   );
@@ -819,9 +958,11 @@ function TypeRow({
       adminApi.ticketTypes.update(t.id, patch),
     onSuccess: onChanged,
   });
+  const [confirmRemove, setConfirmRemove] = useState(false);
   const remove = useMutation({
     mutationFn: () => adminApi.ticketTypes.remove(t.id),
     onSuccess: onChanged,
+    onSettled: () => setConfirmRemove(false),
   });
   const dirty =
     name !== t.name ||
@@ -892,7 +1033,7 @@ function TypeRow({
             <button
               aria-label={`Remove ${t.name}`}
               className="size-8 rounded-sm border border-rule-strong bg-surface text-ink-2"
-              onClick={() => remove.mutate()}
+              onClick={() => setConfirmRemove(true)}
             >
               ✕
             </button>
@@ -906,6 +1047,16 @@ function TypeRow({
           </td>
         </tr>
       ) : null}
+      <ConfirmDialog
+        open={confirmRemove}
+        onClose={() => setConfirmRemove(false)}
+        title={`Remove ${t.name}?`}
+        confirmLabel="Remove ticket type"
+        busy={remove.isPending}
+        onConfirm={() => remove.mutate()}
+      >
+        <p>A ticket type that already has bookings cannot be removed: take it off sale instead.</p>
+      </ConfirmDialog>
     </>
   );
 }
@@ -916,15 +1067,18 @@ function PaymentMethods({ event, locked }: { event: AdminEvent; locked: boolean 
   const allowed = can("manage:payment_method") && !locked;
   const refresh = () => qc.invalidateQueries({ queryKey: ["admin"] });
   const [draft, setDraft] = useState<{
+    /** Set when editing an existing method. */
+    id?: string;
     type: PaymentMethod["type"];
     label: string;
     recipientName: string;
     identifier: string;
     instructions: string;
   } | null>(null);
+  const [removing, setRemoving] = useState<PaymentMethod | null>(null);
   const create = useMutation({
-    mutationFn: () =>
-      adminApi.events.addMethod(event.id, {
+    mutationFn: () => {
+      const fields = {
         type: draft!.type,
         label: draft!.label.trim(),
         recipientName: draft!.recipientName.trim(),
@@ -933,9 +1087,15 @@ function PaymentMethods({ event, locked }: { event: AdminEvent; locked: boolean 
           .split("\n")
           .map((s) => s.trim())
           .filter(Boolean),
-        enabled: true,
-        sortOrder: event.paymentMethods.length,
-      }),
+      };
+      return draft!.id
+        ? adminApi.paymentMethods.update(draft!.id, fields)
+        : adminApi.events.addMethod(event.id, {
+            ...fields,
+            enabled: true,
+            sortOrder: event.paymentMethods.length,
+          });
+    },
     onSuccess: async () => {
       setDraft(null);
       await refresh();
@@ -948,6 +1108,7 @@ function PaymentMethods({ event, locked }: { event: AdminEvent; locked: boolean 
   const remove = useMutation({
     mutationFn: (m: PaymentMethod) => adminApi.paymentMethods.remove(m.id),
     onSuccess: refresh,
+    onSettled: () => setRemoving(null),
   });
   return (
     <Section id="methods" title="Payment methods customers see">
@@ -974,12 +1135,29 @@ function PaymentMethods({ event, locked }: { event: AdminEvent; locked: boolean 
             <span className="font-mono">{m.identifier}</span> · {m.recipientName}
           </span>
           {allowed ? (
-            <button
-              className="justify-self-end text-xs font-semibold text-bad-solid underline"
-              onClick={() => remove.mutate(m)}
-            >
-              Remove
-            </button>
+            <span className="flex justify-self-end gap-3">
+              <button
+                className="text-xs font-semibold underline"
+                onClick={() =>
+                  setDraft({
+                    id: m.id,
+                    type: m.type,
+                    label: m.label,
+                    recipientName: m.recipientName,
+                    identifier: m.identifier,
+                    instructions: m.instructions.join("\n"),
+                  })
+                }
+              >
+                Edit
+              </button>
+              <button
+                className="text-xs font-semibold text-bad-solid underline"
+                onClick={() => setRemoving(m)}
+              >
+                Remove
+              </button>
+            </span>
           ) : null}
         </div>
       ))}
@@ -1067,7 +1245,7 @@ function PaymentMethods({ event, locked }: { event: AdminEvent; locked: boolean 
                 draft.identifier.trim().length < 2
               }
             >
-              Add method
+              {draft.id ? "Save method" : "Add method"}
             </Button>
             <Button variant="secondary" size="md" onClick={() => setDraft(null)}>
               Cancel
@@ -1075,6 +1253,19 @@ function PaymentMethods({ event, locked }: { event: AdminEvent; locked: boolean 
           </div>
         </form>
       ) : null}
+      <ConfirmDialog
+        open={removing !== null}
+        onClose={() => setRemoving(null)}
+        title={`Remove ${removing?.label ?? "this method"}?`}
+        confirmLabel="Remove method"
+        busy={remove.isPending}
+        onConfirm={() => removing && remove.mutate(removing)}
+      >
+        <p>
+          Customers will no longer see it. A method that customers have already paid with cannot be
+          removed: disable it instead. A published event always keeps at least one enabled method.
+        </p>
+      </ConfirmDialog>
     </Section>
   );
 }

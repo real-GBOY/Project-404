@@ -58,6 +58,13 @@ export class EventsController {
     return this.service.update(who, id, b);
   }
 
+  @Delete("events/:id")
+  @HttpCode(204)
+  @RequirePermission("update", "event")
+  async remove(@CurrentUser() who: Principal, @Param("id") id: string) {
+    await this.service.remove(who, id);
+  }
+
   @Post("events/:id/publish")
   @HttpCode(200)
   @RequirePermission("publish", "event")
@@ -98,6 +105,19 @@ export class EventsController {
   @RequirePermission("create", "event")
   createVenue(@CurrentUser() who: Principal, @Body(ZodBody(venueSchema)) b: VenueBody) {
     return this.service.createVenue(who, b);
+  }
+
+  @Get("venues/:id")
+  @RequirePermission("read", "event")
+  venue(@Param("id") id: string) {
+    return this.service.getVenue(id);
+  }
+
+  @Delete("venues/:id")
+  @HttpCode(204)
+  @RequirePermission("update", "event")
+  async deleteVenue(@CurrentUser() who: Principal, @Param("id") id: string) {
+    await this.service.deleteVenue(who, id);
   }
 
   @Patch("venues/:id")

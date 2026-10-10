@@ -84,7 +84,14 @@ export class PaymentsService {
       );
     }
     if (booking.holdExpiresAt <= this.clock.now()) throw Conflict("admit.hold_expired", "The time to pay for this booking has run out.");
+    await this.assertEventOpen(booking.eventId, "The organizer cancelled this event, so payments are no longer accepted. Contact the organizer.");
     return booking;
+  }
+
+  /** A cancelled or archived event takes no more money and issues no more tickets. */
+  private async assertEventOpen(eventId: string, message: string): Promise<void> {
+    const e = await this.events.findEvent(eventId);
+    if (e && (e.status === "cancelled" || e.status === "archived")) throw Conflict("admit.event_closed", message);
   }
 
   /** Step 1: ask where to PUT the proof. Validates type and size before anything is stored. */
@@ -284,6 +291,7 @@ export class PaymentsService {
       ) {
         throw this.changed(sub);
       }
+      await this.assertEventOpen(booking.eventId, "This event was cancelled, so tickets cannot be issued. Reject the payment or cancel the booking instead.");
       if (!(await this.bookings.transition(booking.id, ["IN_REVIEW"], "CONFIRMED", { confirmedAt: now })))
         throw Conflict("admit.booking_changed", "This booking just changed. Reload and try again.");
       const issued = await this.tickets.issueForBooking(booking);
