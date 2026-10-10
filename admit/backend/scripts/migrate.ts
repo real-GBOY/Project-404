@@ -46,8 +46,7 @@ async function runPrisma(args: string[], databaseUrl?: string): Promise<PrismaRe
     return { stdout: stdout.trim(), stderr: stderr.trim() };
   } catch (err) {
     const e = err as { stdout?: string; stderr?: string; message?: string };
-    const detail =
-      [e.stdout, e.stderr].filter(Boolean).join("\n").trim() || e.message || String(err);
+    const detail = [e.stdout, e.stderr].filter(Boolean).join("\n").trim() || e.message || String(err);
     throw new Error(`prisma ${args.join(" ")} failed:\n${detail}`);
   }
 }
@@ -72,9 +71,7 @@ async function main() {
   }
 
   if (command === "down") {
-    console.error(
-      "`migrate:down` doesn't exist — Prisma migrations roll forward. Add a new migration to reverse a change.",
-    );
+    console.error("`migrate:down` doesn't exist — Prisma migrations roll forward. Add a new migration to reverse a change.");
     process.exitCode = 1;
     return;
   }

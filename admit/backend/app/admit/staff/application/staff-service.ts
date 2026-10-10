@@ -49,14 +49,25 @@ export class StaffService {
     await this.uow.transaction(async () => {
       await this.access.assertEvent(who, eventId);
       if (!(await this.events.findEvent(eventId))) throw NotFound("admit.event_not_found", "Event not found.");
-      const member = await admitDb().selectFrom("organization_members").select("user_id").where("organization_id", "=", requireOrganizationId()).where("user_id", "=", userId).executeTakeFirst();
+      const member = await admitDb()
+        .selectFrom("organization_members")
+        .select("user_id")
+        .where("organization_id", "=", requireOrganizationId())
+        .where("user_id", "=", userId)
+        .executeTakeFirst();
       if (!member) throw ValidationError("admit.not_a_member", "Add this person to the organizer first, then assign them to an event.");
       await admitDb()
         .insertInto("admit_event_staff")
         .values({ organization_id: requireOrganizationId(), event_id: eventId, user_id: userId, gate })
         .onConflict((oc) => oc.columns(["organization_id", "event_id", "user_id"]).doUpdateSet({ gate }))
         .execute();
-      await this.audit.record({ actorId: who.userId, action: "admit.event_staff.assigned", resourceType: "admit_event", resourceId: eventId, after: { userId, gate } });
+      await this.audit.record({
+        actorId: who.userId,
+        action: "admit.event_staff.assigned",
+        resourceType: "admit_event",
+        resourceId: eventId,
+        after: { userId, gate },
+      });
     });
     return this.list(who, eventId);
   }
@@ -65,7 +76,13 @@ export class StaffService {
     await this.uow.transaction(async () => {
       await this.access.assertEvent(who, eventId);
       await admitDb().deleteFrom("admit_event_staff").where("event_id", "=", eventId).where("user_id", "=", userId).execute();
-      await this.audit.record({ actorId: who.userId, action: "admit.event_staff.removed", resourceType: "admit_event", resourceId: eventId, before: { userId } });
+      await this.audit.record({
+        actorId: who.userId,
+        action: "admit.event_staff.removed",
+        resourceType: "admit_event",
+        resourceId: eventId,
+        before: { userId },
+      });
     });
   }
 }

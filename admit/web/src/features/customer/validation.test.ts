@@ -1,7 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { normalizePhone, validateDetails, validateProof, validEmail, validPhone, validTxn } from "./validation";
+import {
+  normalizePhone,
+  validateDetails,
+  validateProof,
+  validEmail,
+  validPhone,
+  validTxn,
+} from "./validation";
 
-const ok = { name: "Nour Hassan", email: "nour@example.com", phone: "010 1234 5678", holders: ["Nour Hassan"], namedTickets: true, hasPolicies: true, policyAck: true };
+const ok = {
+  name: "Nour Hassan",
+  email: "nour@example.com",
+  phone: "010 1234 5678",
+  holders: ["Nour Hassan"],
+  namedTickets: true,
+  hasPolicies: true,
+  policyAck: true,
+};
 
 describe("customer validation", () => {
   it("accepts a complete, valid form", () => {
@@ -17,7 +32,14 @@ describe("customer validation", () => {
   });
 
   it("explains each problem with an actionable message", () => {
-    const e = validateDetails({ ...ok, name: "X", email: "nope", phone: "010 12", holders: ["Nour", ""], policyAck: false });
+    const e = validateDetails({
+      ...ok,
+      name: "X",
+      email: "nope",
+      phone: "010 12",
+      holders: ["Nour", ""],
+      policyAck: false,
+    });
     expect(e.name).toMatch(/full name/);
     expect(e.email).toMatch(/name@example.com/);
     expect(e.phone).toMatch(/11 digits/);
@@ -27,7 +49,15 @@ describe("customer validation", () => {
   });
 
   it("only requires holder names when the event names its tickets, and the policy tick only when there are policies", () => {
-    expect(validateDetails({ ...ok, namedTickets: false, holders: ["", ""], hasPolicies: false, policyAck: false })).toEqual({});
+    expect(
+      validateDetails({
+        ...ok,
+        namedTickets: false,
+        holders: ["", ""],
+        hasPolicies: false,
+        policyAck: false,
+      }),
+    ).toEqual({});
   });
 
   it("checks email shape", () => {
@@ -38,8 +68,12 @@ describe("customer validation", () => {
   it("holds proof files to type and size rules", () => {
     expect(validateProof({ name: "r.png", type: "image/png", size: 1000 })).toBeNull();
     expect(validateProof({ name: "r.heic", type: "", size: 1000 })).toBeNull();
-    expect(validateProof({ name: "r.exe", type: "application/x-msdownload", size: 1000 })).toMatch(/photo/);
-    expect(validateProof({ name: "r.png", type: "image/png", size: 14 * 1024 * 1024 })).toBe("This file is 14 MB. Upload one under 10 MB.");
+    expect(validateProof({ name: "r.exe", type: "application/x-msdownload", size: 1000 })).toMatch(
+      /photo/,
+    );
+    expect(validateProof({ name: "r.png", type: "image/png", size: 14 * 1024 * 1024 })).toBe(
+      "This file is 14 MB. Upload one under 10 MB.",
+    );
   });
 
   it("treats the transaction id as optional but 4-40 characters when given", () => {

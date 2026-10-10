@@ -27,7 +27,11 @@ export const PUBLIC_RATE_POLICIES = {
 
 const slugParam = z.string().regex(/^[a-z0-9-]{2,64}$/);
 const refParam = z.string().regex(/^[A-Za-z0-9-]{6,20}$/);
-const keyParam = z.string().min(16).max(64).regex(/^[A-Za-z0-9_-]+$/);
+const keyParam = z
+  .string()
+  .min(16)
+  .max(64)
+  .regex(/^[A-Za-z0-9_-]+$/);
 const idParam = z.string().regex(/^[A-Za-z0-9_-]{3,64}$/);
 const IDEM = /^[A-Za-z0-9_-]{16,100}$/;
 
@@ -81,14 +85,26 @@ export class PublicController {
   }
 
   @Get("bookings/:ref")
-  async booking(@Param("org") org: string, @Param("ref") ref: string, @Query(ZodQuery(accessQuery)) q: z.infer<typeof accessQuery>, @Req() req: FastifyRequest, @Res({ passthrough: true }) reply: FastifyReply) {
+  async booking(
+    @Param("org") org: string,
+    @Param("ref") ref: string,
+    @Query(ZodQuery(accessQuery)) q: z.infer<typeof accessQuery>,
+    @Req() req: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
     await this.limit(PUBLIC_RATE_POLICIES.access, this.slug(org), req, reply);
     return this.service.booking(org, this.ref(ref), q.k);
   }
 
   @Post("bookings/:ref/cancel")
   @HttpCode(200)
-  async cancel(@Param("org") org: string, @Param("ref") ref: string, @Query(ZodQuery(accessQuery)) q: z.infer<typeof accessQuery>, @Req() req: FastifyRequest, @Res({ passthrough: true }) reply: FastifyReply) {
+  async cancel(
+    @Param("org") org: string,
+    @Param("ref") ref: string,
+    @Query(ZodQuery(accessQuery)) q: z.infer<typeof accessQuery>,
+    @Req() req: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
     await this.limit(PUBLIC_RATE_POLICIES.access, this.slug(org), req, reply);
     return this.service.cancel(org, this.ref(ref), q.k);
   }
@@ -140,7 +156,13 @@ export class PublicController {
   }
 
   @Get("bookings/:ref/tickets")
-  async tickets(@Param("org") org: string, @Param("ref") ref: string, @Query(ZodQuery(accessQuery)) q: z.infer<typeof accessQuery>, @Req() req: FastifyRequest, @Res({ passthrough: true }) reply: FastifyReply) {
+  async tickets(
+    @Param("org") org: string,
+    @Param("ref") ref: string,
+    @Query(ZodQuery(accessQuery)) q: z.infer<typeof accessQuery>,
+    @Req() req: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
     await this.limit(PUBLIC_RATE_POLICIES.access, this.slug(org), req, reply);
     return this.service.ticketsFor(org, this.ref(ref), q.k);
   }
@@ -166,7 +188,12 @@ export class PublicController {
   /** Always answers 202 with the same body, whether or not the ref and email match a booking. */
   @Post("links/resend")
   @HttpCode(202)
-  async resend(@Param("org") org: string, @Body(ZodBody(resendLinkSchema)) body: ResendLinkBody, @Req() req: FastifyRequest, @Res({ passthrough: true }) reply: FastifyReply) {
+  async resend(
+    @Param("org") org: string,
+    @Body(ZodBody(resendLinkSchema)) body: ResendLinkBody,
+    @Req() req: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
     await this.limit(PUBLIC_RATE_POLICIES.resend, this.slug(org), req, reply);
     if (refParam.safeParse(body.ref).success) await this.service.resendLink(org, body.ref, body.email, randomUUID());
     return { accepted: true };
@@ -188,7 +215,12 @@ export class PublicController {
     void reply.header("X-RateLimit-Remaining", String(decision.remaining));
     if (!decision.allowed) {
       void reply.header("Retry-After", String(decision.retryAfterSeconds));
-      throw new AppError({ code: "rate_limited", message: "Too many requests - please wait a moment and try again.", kind: "rate_limited", details: { retryAfterSeconds: decision.retryAfterSeconds } });
+      throw new AppError({
+        code: "rate_limited",
+        message: "Too many requests - please wait a moment and try again.",
+        kind: "rate_limited",
+        details: { retryAfterSeconds: decision.retryAfterSeconds },
+      });
     }
   }
 }

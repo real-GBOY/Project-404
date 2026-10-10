@@ -100,6 +100,8 @@ class _Text(HTMLParser):
 
 
 def html_to_text(html: str) -> str:
+    # the hidden preheader is for inbox previews; it is noise (and invisible padding characters) in a plain-text part
+    html = re.sub(r'<div style="display:none[^>]*>.*?</div>', "", html, flags=re.S)
     p = _Text()
     p.feed(html)
     text = "".join(p.out)

@@ -9,7 +9,11 @@ import type { Principal } from "@core/http/principal.js";
 import { BookingsService } from "../application/bookings-service.js";
 import { cancelBookingSchema, listBookingsQuery, type CancelBookingBody, type ListBookingsQuery } from "../validation/bookings.schema.js";
 
-const customersQuery = z.object({ search: z.string().trim().max(80).optional(), limit: z.coerce.number().int().min(1).max(200).default(50), offset: z.coerce.number().int().min(0).default(0) });
+const customersQuery = z.object({
+  search: z.string().trim().max(80).optional(),
+  limit: z.coerce.number().int().min(1).max(200).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+});
 
 @ApiTags("admit · bookings")
 @ApiBearerAuth("access-token")

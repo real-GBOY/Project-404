@@ -1,4 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { adminApi, authApi } from "@/api";
 import type { Me } from "@/api/types";
@@ -103,6 +111,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [qc],
   );
 
-  const value = useMemo<AuthValue>(() => ({ status, me, error, login, logout, can: (p) => !!me && hasPermission(me.permissions, p) }), [status, me, error, login, logout]);
+  const value = useMemo<AuthValue>(
+    () => ({
+      status,
+      me,
+      error,
+      login,
+      logout,
+      can: (p) => !!me && hasPermission(me.permissions, p),
+    }),
+    [status, me, error, login, logout],
+  );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

@@ -20,7 +20,10 @@ export function CustomerLayout() {
             </NavLink>
             {name ? <span className="hidden text-sm text-muted md:inline">by {name}</span> : null}
           </nav>
-          <Link to={`/e/${org}/find`} className="inline-flex h-10 items-center whitespace-nowrap rounded-sm border border-ink px-4 text-sm font-semibold no-underline hover:bg-ink hover:text-paper">
+          <Link
+            to={`/e/${org}/find`}
+            className="inline-flex h-10 items-center whitespace-nowrap rounded-sm border border-ink px-4 text-sm font-semibold no-underline hover:bg-ink hover:text-paper"
+          >
             My booking
           </Link>
         </div>
@@ -39,20 +42,34 @@ function Footer({ name, support, org }: { name?: string; support: string | null;
       <div className="mx-auto grid w-full max-w-[1280px] gap-7 px-4 py-10 text-sm leading-8 md:grid-cols-4 md:px-6">
         <div className="flex flex-col gap-2">
           <Logo size={22} light />
-          <span className="leading-normal text-faint">Tickets for events in Egypt, paid directly to organizers and verified by people.</span>
+          <span className="leading-normal text-faint">
+            Tickets for events in Egypt, paid directly to organizers and verified by people.
+          </span>
         </div>
         <div className="flex flex-col">
           <span className="font-semibold text-paper">Tickets</span>
-          <Link to={`/e/${org}/find`} className="text-rule-strong">Find my booking</Link>
-          <Link to={`/e/${org}/events`} className="text-rule-strong">All events</Link>
+          <Link to={`/e/${org}/find`} className="text-rule-strong">
+            Find my booking
+          </Link>
+          <Link to={`/e/${org}/events`} className="text-rule-strong">
+            All events
+          </Link>
         </div>
         <div className="flex flex-col">
           <span className="font-semibold text-paper">Organizers</span>
-          <Link to="/admin" className="text-rule-strong">Organizer sign in</Link>
+          <Link to="/admin" className="text-rule-strong">
+            Organizer sign in
+          </Link>
         </div>
         <div className="flex flex-col">
           <span className="font-semibold text-paper">{name ?? "Support"}</span>
-          {support ? <a href={`mailto:${support}`} className="text-rule-strong">{support}</a> : <span className="text-faint">Contact the organizer</span>}
+          {support ? (
+            <a href={`mailto:${support}`} className="text-rule-strong">
+              {support}
+            </a>
+          ) : (
+            <span className="text-faint">Contact the organizer</span>
+          )}
         </div>
       </div>
     </footer>

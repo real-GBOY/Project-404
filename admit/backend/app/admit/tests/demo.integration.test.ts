@@ -69,7 +69,16 @@ describe.skipIf(!hasTestDb)("Admit demo organizer", () => {
 
     const salma = await loginAs(http, "salma@nilesessions.example", DEMO_PASSWORD);
     const events = await api("/admit/events", salma);
-    expect(events.body.items.map((e: any) => e.status).sort()).toEqual(["draft", "draft", "published", "published", "published", "published", "published", "published"]);
+    expect(events.body.items.map((e: any) => e.status).sort()).toEqual([
+      "draft",
+      "draft",
+      "published",
+      "published",
+      "published",
+      "published",
+      "published",
+      "published",
+    ]);
 
     const ali = await loginAs(http, "ali@nilesessions.example", DEMO_PASSWORD);
     const mine = await api("/admit/checkin/events", ali);

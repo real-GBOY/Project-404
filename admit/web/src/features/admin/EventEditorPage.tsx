@@ -38,28 +38,85 @@ interface Draft {
   program: { time: string; title: string }[];
 }
 
-const blank = (venueId = ""): Draft => ({ title: "", slug: "", category: "", description: "", venueId, startsAt: "", endsAt: "", maxPerBooking: 6, namedTickets: false, holdHours: 24, allowResubmission: true, supportEmail: "", refund: "", age: "", entry: "", program: [] });
+const blank = (venueId = ""): Draft => ({
+  title: "",
+  slug: "",
+  category: "",
+  description: "",
+  venueId,
+  startsAt: "",
+  endsAt: "",
+  maxPerBooking: 6,
+  namedTickets: false,
+  holdHours: 24,
+  allowResubmission: true,
+  supportEmail: "",
+  refund: "",
+  age: "",
+  entry: "",
+  program: [],
+});
 
 const fromEvent = (e: AdminEvent): Draft => ({
-  title: e.title, slug: e.slug, category: e.category, description: e.description, venueId: e.venue.id, startsAt: toInputValue(e.startsAt), endsAt: toInputValue(e.endsAt), maxPerBooking: e.maxPerBooking,
-  namedTickets: e.namedTickets, holdHours: e.holdHours, allowResubmission: e.allowResubmission, supportEmail: e.supportEmail ?? "", refund: e.policies.refund ?? "", age: e.policies.age ?? "", entry: e.policies.entry ?? "",
+  title: e.title,
+  slug: e.slug,
+  category: e.category,
+  description: e.description,
+  venueId: e.venue.id,
+  startsAt: toInputValue(e.startsAt),
+  endsAt: toInputValue(e.endsAt),
+  maxPerBooking: e.maxPerBooking,
+  namedTickets: e.namedTickets,
+  holdHours: e.holdHours,
+  allowResubmission: e.allowResubmission,
+  supportEmail: e.supportEmail ?? "",
+  refund: e.policies.refund ?? "",
+  age: e.policies.age ?? "",
+  entry: e.policies.entry ?? "",
   program: e.program.map((p) => ({ time: p.time, title: p.title })),
 });
 
 const toInput = (d: Draft): EventInput => ({
-  slug: d.slug, title: d.title.trim(), category: d.category.trim(), description: d.description, venueId: d.venueId, startsAt: fromInputValue(d.startsAt), endsAt: fromInputValue(d.endsAt), coverUrl: null,
-  maxPerBooking: d.maxPerBooking, namedTickets: d.namedTickets, holdHours: d.holdHours, allowResubmission: d.allowResubmission, supportEmail: d.supportEmail.trim() || null,
-  policies: Object.fromEntries(Object.entries({ refund: d.refund.trim(), age: d.age.trim(), entry: d.entry.trim() }).filter(([, v]) => v)),
-  program: d.program.filter((p) => p.time.trim() && p.title.trim()).map((p) => ({ time: p.time.trim(), title: p.title.trim() })),
+  slug: d.slug,
+  title: d.title.trim(),
+  category: d.category.trim(),
+  description: d.description,
+  venueId: d.venueId,
+  startsAt: fromInputValue(d.startsAt),
+  endsAt: fromInputValue(d.endsAt),
+  coverUrl: null,
+  maxPerBooking: d.maxPerBooking,
+  namedTickets: d.namedTickets,
+  holdHours: d.holdHours,
+  allowResubmission: d.allowResubmission,
+  supportEmail: d.supportEmail.trim() || null,
+  policies: Object.fromEntries(
+    Object.entries({ refund: d.refund.trim(), age: d.age.trim(), entry: d.entry.trim() }).filter(
+      ([, v]) => v,
+    ),
+  ),
+  program: d.program
+    .filter((p) => p.time.trim() && p.title.trim())
+    .map((p) => ({ time: p.time.trim(), title: p.title.trim() })),
 });
 
 export default function EventEditorPage() {
   const { id } = useParams();
   const { can } = useAuth();
   const venues = useQuery({ queryKey: ["admin", "venues"], queryFn: () => adminApi.venues.list() });
-  const event = useQuery({ queryKey: ["admin", "event", id], queryFn: () => adminApi.events.get(id!), enabled: !!id });
-  if (!can(id ? "update:event" : "create:event")) return <Forbidden needs={id ? "update:event" : "create:event"} />;
-  if (id) return <QueryState query={event}>{(e) => <Editor key={e.id + e.title} event={e} venues={venues.data ?? []} />}</QueryState>;
+  const event = useQuery({
+    queryKey: ["admin", "event", id],
+    queryFn: () => adminApi.events.get(id!),
+    enabled: !!id,
+  });
+  if (!can(id ? "update:event" : "create:event"))
+    return <Forbidden needs={id ? "update:event" : "create:event"} />;
+  if (id)
+    return (
+      <QueryState query={event}>
+        {(e) => <Editor key={e.id + e.title} event={e} venues={venues.data ?? []} />}
+      </QueryState>
+    );
   return <QueryState query={venues}>{(v) => <Editor venues={v} />}</QueryState>;
 }
 
@@ -78,7 +135,15 @@ function Editor({ event, venues }: { event?: AdminEvent; venues: Venue[] }) {
     setDirty(true);
   };
   const venue = venues.find((v) => v.id === d.venueId);
-  const ready = useMemo(() => readiness({ ...d, startsAt: fromInputValue(d.startsAt), endsAt: fromInputValue(d.endsAt) }, event, venue), [d, event, venue]);
+  const ready = useMemo(
+    () =>
+      readiness(
+        { ...d, startsAt: fromInputValue(d.startsAt), endsAt: fromInputValue(d.endsAt) },
+        event,
+        venue,
+      ),
+    [d, event, venue],
+  );
 
   useEffect(() => {
     if (!dirty) return;
@@ -127,45 +192,169 @@ function Editor({ event, venues }: { event?: AdminEvent; venues: Venue[] }) {
   return (
     <>
       <div className="sticky top-[68px] z-[4] flex flex-wrap items-center gap-2.5 border border-ink bg-surface px-3.5 py-2.5">
-        {event ? <Badge status={EVENT[event.status]} /> : <Badge status={EVENT.draft}>New event</Badge>}
+        {event ? (
+          <Badge status={EVENT[event.status]} />
+        ) : (
+          <Badge status={EVENT.draft}>New event</Badge>
+        )}
         <span className="min-w-0 flex-1 truncate font-semibold">{d.title || "Untitled event"}</span>
-        {dirty ? <span className="text-xs font-semibold text-used-fg">! Unsaved changes</span> : null}
-        {event?.status === "published" && me ? <a className="inline-flex h-[38px] items-center rounded-sm border border-rule-strong bg-surface px-3.5 text-[13px] font-semibold no-underline" href={`/e/${me.organizer.slug}/events/${event.slug}`} target="_blank" rel="noreferrer">View live page ↗</a> : null}
-        {!locked ? <Button variant="secondary" size="md" loading={save.isPending} disabled={!dirty || !d.title.trim() || !d.slug || !d.venueId} onClick={() => save.mutate()}>{event ? "Save changes" : "Create draft"}</Button> : null}
+        {dirty ? (
+          <span className="text-xs font-semibold text-used-fg">! Unsaved changes</span>
+        ) : null}
+        {event?.status === "published" && me ? (
+          <a
+            className="inline-flex h-[38px] items-center rounded-sm border border-rule-strong bg-surface px-3.5 text-[13px] font-semibold no-underline"
+            href={`/e/${me.organizer.slug}/events/${event.slug}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            View live page ↗
+          </a>
+        ) : null}
+        {!locked ? (
+          <Button
+            variant="secondary"
+            size="md"
+            loading={save.isPending}
+            disabled={!dirty || !d.title.trim() || !d.slug || !d.venueId}
+            onClick={() => save.mutate()}
+          >
+            {event ? "Save changes" : "Create draft"}
+          </Button>
+        ) : null}
         {event && !locked && can("publish:event") ? (
-          event.status === "published" ? <Button size="md" variant="ink" loading={act.isPending} onClick={() => act.mutate("unpublish")}>Unpublish</Button> : <Button size="md" loading={act.isPending} disabled={!ready.ok} onClick={() => act.mutate("publish")}>Publish…</Button>
+          event.status === "published" ? (
+            <Button
+              size="md"
+              variant="ink"
+              loading={act.isPending}
+              onClick={() => act.mutate("unpublish")}
+            >
+              Unpublish
+            </Button>
+          ) : (
+            <Button
+              size="md"
+              loading={act.isPending}
+              disabled={!ready.ok}
+              onClick={() => act.mutate("publish")}
+            >
+              Publish…
+            </Button>
+          )
         ) : null}
       </div>
       {error ? <Notice tone="bad">{error}</Notice> : null}
 
       <div className="grid items-start gap-7 lg:grid-cols-[200px_minmax(0,1fr)_300px]">
-        <nav aria-label="Sections" className="sticky top-36 hidden flex-col gap-0.5 text-sm lg:flex">
+        <nav
+          aria-label="Sections"
+          className="sticky top-36 hidden flex-col gap-0.5 text-sm lg:flex"
+        >
           {ready.sections.map((s) => (
-            <a key={s.id} href={`#${s.id}`} className={`flex justify-between rounded-xs px-2.5 py-1.5 no-underline ${s.ok ? "" : "bg-bad-bg"}`}><span>{s.label}</span><span className={`text-xs font-bold ${s.ok ? "text-ok-fg" : "text-bad-fg"}`}>{s.ok ? "✓" : "✕"}</span></a>
+            <a
+              key={s.id}
+              href={`#${s.id}`}
+              className={`flex justify-between rounded-xs px-2.5 py-1.5 no-underline ${s.ok ? "" : "bg-bad-bg"}`}
+            >
+              <span>{s.label}</span>
+              <span className={`text-xs font-bold ${s.ok ? "text-ok-fg" : "text-bad-fg"}`}>
+                {s.ok ? "✓" : "✕"}
+              </span>
+            </a>
           ))}
         </nav>
 
         <div className="flex min-w-0 flex-col gap-5">
           <Section id="basic" title="Basic information">
-            <TextField label="Event name" value={d.title} onChange={(e) => { set("title", e.target.value); if (!event) set("slug", slugify(e.target.value)); }} disabled={locked} error={fieldErrors.title} />
+            <TextField
+              label="Event name"
+              value={d.title}
+              onChange={(e) => {
+                set("title", e.target.value);
+                if (!event) set("slug", slugify(e.target.value));
+              }}
+              disabled={locked}
+              error={fieldErrors.title}
+            />
             <div className="grid gap-3 sm:grid-cols-2">
-              <TextField label="Category" value={d.category} onChange={(e) => set("category", e.target.value)} placeholder="Concert, Comedy, Workshop…" disabled={locked} />
-              <TextField label="Public address" mono value={d.slug} onChange={(e) => set("slug", slugify(e.target.value))} disabled={locked || (!!event && event.status !== "draft")} error={fieldErrors.slug} hint={event && event.status !== "draft" ? "Locked once published: customers may hold links to it." : "Letters, numbers and dashes."} />
+              <TextField
+                label="Category"
+                value={d.category}
+                onChange={(e) => set("category", e.target.value)}
+                placeholder="Concert, Comedy, Workshop…"
+                disabled={locked}
+              />
+              <TextField
+                label="Public address"
+                mono
+                value={d.slug}
+                onChange={(e) => set("slug", slugify(e.target.value))}
+                disabled={locked || (!!event && event.status !== "draft")}
+                error={fieldErrors.slug}
+                hint={
+                  event && event.status !== "draft"
+                    ? "Locked once published: customers may hold links to it."
+                    : "Letters, numbers and dashes."
+                }
+              />
             </div>
-            <TextArea label="Description" value={d.description} onChange={(e) => set("description", e.target.value)} disabled={locked} hint={`${d.description.length} / 5,000. A blank line starts a new paragraph.`} />
+            <TextArea
+              label="Description"
+              value={d.description}
+              onChange={(e) => set("description", e.target.value)}
+              disabled={locked}
+              hint={`${d.description.length} / 5,000. A blank line starts a new paragraph.`}
+            />
           </Section>
 
-          <Section id="when" title="Date, time & venue" bad={ready.sections.find((s) => s.id === "when")?.ok === false}>
+          <Section
+            id="when"
+            title="Date, time & venue"
+            bad={ready.sections.find((s) => s.id === "when")?.ok === false}
+          >
             <div className="grid gap-3 sm:grid-cols-2">
-              <TextField label="Starts" type="datetime-local" value={d.startsAt} onChange={(e) => set("startsAt", e.target.value)} disabled={locked} error={fieldErrors.startsAt} />
-              <TextField label="Ends" type="datetime-local" value={d.endsAt} onChange={(e) => set("endsAt", e.target.value)} disabled={locked} error={d.startsAt && d.endsAt && fromInputValue(d.endsAt) <= fromInputValue(d.startsAt) ? "End must be after start." : fieldErrors.endsAt} />
+              <TextField
+                label="Starts"
+                type="datetime-local"
+                value={d.startsAt}
+                onChange={(e) => set("startsAt", e.target.value)}
+                disabled={locked}
+                error={fieldErrors.startsAt}
+              />
+              <TextField
+                label="Ends"
+                type="datetime-local"
+                value={d.endsAt}
+                onChange={(e) => set("endsAt", e.target.value)}
+                disabled={locked}
+                error={
+                  d.startsAt && d.endsAt && fromInputValue(d.endsAt) <= fromInputValue(d.startsAt)
+                    ? "End must be after start."
+                    : fieldErrors.endsAt
+                }
+              />
             </div>
             <div className="flex items-end gap-2">
-              <div className="flex-1"><SelectField label="Venue" value={d.venueId} onChange={(e) => set("venueId", e.target.value)} disabled={locked}>
-                <option value="">Choose a venue…</option>
-                {venues.map((v) => (<option key={v.id} value={v.id}>{v.name}{v.area ? ` · ${v.area}` : ""} · capacity {v.capacity}</option>))}
-              </SelectField></div>
-              <Button variant="secondary" onClick={() => setVenueOpen(true)} disabled={locked}>New venue</Button>
+              <div className="flex-1">
+                <SelectField
+                  label="Venue"
+                  value={d.venueId}
+                  onChange={(e) => set("venueId", e.target.value)}
+                  disabled={locked}
+                >
+                  <option value="">Choose a venue…</option>
+                  {venues.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.name}
+                      {v.area ? ` · ${v.area}` : ""} · capacity {v.capacity}
+                    </option>
+                  ))}
+                </SelectField>
+              </div>
+              <Button variant="secondary" onClick={() => setVenueOpen(true)} disabled={locked}>
+                New venue
+              </Button>
             </div>
           </Section>
 
@@ -174,45 +363,171 @@ function Editor({ event, venues }: { event?: AdminEvent; venues: Venue[] }) {
               <TicketTypes event={event} locked={locked} />
               <Section id="booking" title="Booking & payment settings">
                 <div className="grid gap-3 sm:grid-cols-3">
-                  <SelectField label="Payment hold" value={d.holdHours} onChange={(e) => set("holdHours", Number(e.target.value))} disabled={locked} hint="Unpaid bookings expire and release tickets.">
-                    {[6, 12, 24, 48, 72].map((h) => (<option key={h} value={h}>{h} hours</option>))}
+                  <SelectField
+                    label="Payment hold"
+                    value={d.holdHours}
+                    onChange={(e) => set("holdHours", Number(e.target.value))}
+                    disabled={locked}
+                    hint="Unpaid bookings expire and release tickets."
+                  >
+                    {[6, 12, 24, 48, 72].map((h) => (
+                      <option key={h} value={h}>
+                        {h} hours
+                      </option>
+                    ))}
                   </SelectField>
-                  <TextField label="Max tickets per booking" type="number" min={1} max={6} value={d.maxPerBooking} onChange={(e) => set("maxPerBooking", Math.min(6, Math.max(1, Number(e.target.value) || 1)))} disabled={locked} />
-                  <TextField label="Support email" type="email" value={d.supportEmail} onChange={(e) => set("supportEmail", e.target.value)} disabled={locked} hint="Shown on tickets and emails." />
+                  <TextField
+                    label="Max tickets per booking"
+                    type="number"
+                    min={1}
+                    max={6}
+                    value={d.maxPerBooking}
+                    onChange={(e) =>
+                      set("maxPerBooking", Math.min(6, Math.max(1, Number(e.target.value) || 1)))
+                    }
+                    disabled={locked}
+                  />
+                  <TextField
+                    label="Support email"
+                    type="email"
+                    value={d.supportEmail}
+                    onChange={(e) => set("supportEmail", e.target.value)}
+                    disabled={locked}
+                    hint="Shown on tickets and emails."
+                  />
                 </div>
-                <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="accent-ink" checked={d.namedTickets} onChange={(e) => set("namedTickets", e.target.checked)} disabled={locked} />Name every ticket (the customer enters a holder per ticket)</label>
-                <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="accent-ink" checked={d.allowResubmission} onChange={(e) => set("allowResubmission", e.target.checked)} disabled={locked} />Let customers resubmit proof after a rejection, while the hold lasts</label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    className="accent-ink"
+                    checked={d.namedTickets}
+                    onChange={(e) => set("namedTickets", e.target.checked)}
+                    disabled={locked}
+                  />
+                  Name every ticket (the customer enters a holder per ticket)
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    className="accent-ink"
+                    checked={d.allowResubmission}
+                    onChange={(e) => set("allowResubmission", e.target.checked)}
+                    disabled={locked}
+                  />
+                  Let customers resubmit proof after a rejection, while the hold lasts
+                </label>
               </Section>
               <PaymentMethods event={event} locked={locked} />
               {can("manage:event_staff") ? <EventStaff event={event} /> : null}
             </>
           ) : (
-            <Notice tone="info">Create the draft first. Then you can add ticket types and payment methods.</Notice>
+            <Notice tone="info">
+              Create the draft first. Then you can add ticket types and payment methods.
+            </Notice>
           )}
 
           <Section id="policies" title="Policies & program">
-            <TextField label="Refund policy" value={d.refund} onChange={(e) => set("refund", e.target.value)} disabled={locked} />
+            <TextField
+              label="Refund policy"
+              value={d.refund}
+              onChange={(e) => set("refund", e.target.value)}
+              disabled={locked}
+            />
             <div className="grid gap-3 sm:grid-cols-2">
-              <TextField label="Age / entry requirements" value={d.age} onChange={(e) => set("age", e.target.value)} disabled={locked} />
-              <TextField label="At the door" value={d.entry} onChange={(e) => set("entry", e.target.value)} disabled={locked} />
+              <TextField
+                label="Age / entry requirements"
+                value={d.age}
+                onChange={(e) => set("age", e.target.value)}
+                disabled={locked}
+              />
+              <TextField
+                label="At the door"
+                value={d.entry}
+                onChange={(e) => set("entry", e.target.value)}
+                disabled={locked}
+              />
             </div>
             <div className="flex flex-col gap-2">
               <span className="text-sm font-semibold">Program</span>
               {d.program.map((p, i) => (
                 <div key={i} className="grid grid-cols-[90px_1fr_auto] items-center gap-2">
-                  <input aria-label={`Program time ${i + 1}`} value={p.time} onChange={(e) => set("program", d.program.map((x, j) => (j === i ? { ...x, time: e.target.value } : x)))} className="h-10 rounded-sm border border-rule-strong px-2.5 font-mono text-sm" placeholder="20:00" disabled={locked} />
-                  <input aria-label={`Program item ${i + 1}`} value={p.title} onChange={(e) => set("program", d.program.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)))} className="h-10 rounded-sm border border-rule-strong px-2.5 text-sm" placeholder="Set one" disabled={locked} />
-                  <button aria-label={`Remove program item ${i + 1}`} className="size-8 rounded-sm border border-rule-strong" onClick={() => set("program", d.program.filter((_, j) => j !== i))} disabled={locked}>✕</button>
+                  <input
+                    aria-label={`Program time ${i + 1}`}
+                    value={p.time}
+                    onChange={(e) =>
+                      set(
+                        "program",
+                        d.program.map((x, j) => (j === i ? { ...x, time: e.target.value } : x)),
+                      )
+                    }
+                    className="h-10 rounded-sm border border-rule-strong px-2.5 font-mono text-sm"
+                    placeholder="20:00"
+                    disabled={locked}
+                  />
+                  <input
+                    aria-label={`Program item ${i + 1}`}
+                    value={p.title}
+                    onChange={(e) =>
+                      set(
+                        "program",
+                        d.program.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)),
+                      )
+                    }
+                    className="h-10 rounded-sm border border-rule-strong px-2.5 text-sm"
+                    placeholder="Set one"
+                    disabled={locked}
+                  />
+                  <button
+                    aria-label={`Remove program item ${i + 1}`}
+                    className="size-8 rounded-sm border border-rule-strong"
+                    onClick={() =>
+                      set(
+                        "program",
+                        d.program.filter((_, j) => j !== i),
+                      )
+                    }
+                    disabled={locked}
+                  >
+                    ✕
+                  </button>
                 </div>
               ))}
-              <Button variant="secondary" size="sm" className="self-start" onClick={() => set("program", [...d.program, { time: "", title: "" }])} disabled={locked}>+ Add program item</Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="self-start"
+                onClick={() => set("program", [...d.program, { time: "", title: "" }])}
+                disabled={locked}
+              >
+                + Add program item
+              </Button>
             </div>
           </Section>
 
           {event && can("publish:event") && !locked ? (
             <Section id="danger" title="Close this event">
-              <p className="text-sm text-ink-2">Cancelling stops sales and the door scanner for this event. Existing bookings stay on record; refunds happen outside Admit.</p>
-              <div className="flex gap-2"><Button variant="danger" size="md" loading={act.isPending} onClick={() => act.mutate("cancel")}>Cancel event</Button><Button variant="secondary" size="md" loading={act.isPending} onClick={() => act.mutate("archive")}>Archive</Button></div>
+              <p className="text-sm text-ink-2">
+                Cancelling stops sales and the door scanner for this event. Existing bookings stay
+                on record; refunds happen outside Admit.
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="danger"
+                  size="md"
+                  loading={act.isPending}
+                  onClick={() => act.mutate("cancel")}
+                >
+                  Cancel event
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="md"
+                  loading={act.isPending}
+                  onClick={() => act.mutate("archive")}
+                >
+                  Archive
+                </Button>
+              </div>
             </Section>
           ) : null}
         </div>
@@ -221,45 +536,156 @@ function Editor({ event, venues }: { event?: AdminEvent; venues: Venue[] }) {
           <div className="border border-ink bg-surface">
             <div className="stripes aspect-[4/3]" />
             <div className="flex flex-col gap-1.5 p-3.5">
-              <span className="font-mono text-xs text-brand-deep">{d.startsAt ? new Date(fromInputValue(d.startsAt)).toLocaleString("en-GB", { timeZone: "Africa/Cairo", weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false }).toUpperCase() : "DATE NOT SET"}</span>
+              <span className="font-mono text-xs text-brand-deep">
+                {d.startsAt
+                  ? new Date(fromInputValue(d.startsAt))
+                      .toLocaleString("en-GB", {
+                        timeZone: "Africa/Cairo",
+                        weekday: "short",
+                        day: "numeric",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: false,
+                      })
+                      .toUpperCase()
+                  : "DATE NOT SET"}
+              </span>
               <span className="display-l text-[22px]">{d.title || "Untitled event"}</span>
               <span className="text-[13px] text-ink-2">{venue?.name ?? "No venue yet"}</span>
-              <span className="border-t border-dashed border-rule-strong pt-2 text-[13px]">{event && event.ticketTypes.length ? <>From <strong className="font-mono">{moneyShort(Math.min(...event.ticketTypes.map((t) => t.priceMinor)), event.currency)}</strong> · {event.ticketTypes.length} types · {event.capacityAllocated} tickets</> : "No tickets yet"}</span>
+              <span className="border-t border-dashed border-rule-strong pt-2 text-[13px]">
+                {event && event.ticketTypes.length ? (
+                  <>
+                    From{" "}
+                    <strong className="font-mono">
+                      {moneyShort(
+                        Math.min(...event.ticketTypes.map((t) => t.priceMinor)),
+                        event.currency,
+                      )}
+                    </strong>{" "}
+                    · {event.ticketTypes.length} types · {event.capacityAllocated} tickets
+                  </>
+                ) : (
+                  "No tickets yet"
+                )}
+              </span>
             </div>
           </div>
           <div className="flex flex-col gap-1.5 text-[13px]" aria-label="Ready to publish?">
             <span className="font-semibold">Ready to publish?</span>
-            {ready.checks.map((c) => (<span key={c.label} className={c.ok ? "text-ok-fg" : "font-semibold text-bad-fg"}>{c.ok ? "✓" : "✕"} {c.label}</span>))}
+            {ready.checks.map((c) => (
+              <span key={c.label} className={c.ok ? "text-ok-fg" : "font-semibold text-bad-fg"}>
+                {c.ok ? "✓" : "✕"} {c.label}
+              </span>
+            ))}
           </div>
         </aside>
       </div>
-      <VenueDialog open={venueOpen} onClose={() => setVenueOpen(false)} onCreated={(v) => { void qc.invalidateQueries({ queryKey: ["admin", "venues"] }).then(() => set("venueId", v.id)); setVenueOpen(false); }} />
+      <VenueDialog
+        open={venueOpen}
+        onClose={() => setVenueOpen(false)}
+        onCreated={(v) => {
+          void qc
+            .invalidateQueries({ queryKey: ["admin", "venues"] })
+            .then(() => set("venueId", v.id));
+          setVenueOpen(false);
+        }}
+      />
     </>
   );
 }
 
-function Section({ id, title, children, bad }: { id: string; title: string; children: React.ReactNode; bad?: boolean }) {
+function Section({
+  id,
+  title,
+  children,
+  bad,
+}: {
+  id: string;
+  title: string;
+  children: React.ReactNode;
+  bad?: boolean;
+}) {
   return (
-    <section id={id} className={`flex scroll-mt-40 flex-col gap-3.5 border bg-surface p-5 ${bad ? "border-bad-line" : "border-rule"}`}>
+    <section
+      id={id}
+      className={`flex scroll-mt-40 flex-col gap-3.5 border bg-surface p-5 ${bad ? "border-bad-line" : "border-rule"}`}
+    >
       <h2 className="m-0 text-[17px] font-semibold">{title}</h2>
       {children}
     </section>
   );
 }
 
-function VenueDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: (v: Venue) => void }) {
+function VenueDialog({
+  open,
+  onClose,
+  onCreated,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onCreated: (v: Venue) => void;
+}) {
   const [v, setV] = useState({ name: "", area: "", address: "", capacity: "" });
-  const create = useMutation({ mutationFn: () => adminApi.venues.create({ name: v.name.trim(), area: v.area.trim(), address: v.address.trim(), mapUrl: null, capacity: Number(v.capacity) }), onSuccess: onCreated });
+  const create = useMutation({
+    mutationFn: () =>
+      adminApi.venues.create({
+        name: v.name.trim(),
+        area: v.area.trim(),
+        address: v.address.trim(),
+        mapUrl: null,
+        capacity: Number(v.capacity),
+      }),
+    onSuccess: onCreated,
+  });
   const ok = v.name.trim().length >= 2 && Number(v.capacity) >= 1;
   return (
     <Dialog open={open} onClose={onClose} title="New venue">
       <div className="flex flex-col gap-3 px-[22px] pt-3">
-        <TextField label="Name" value={v.name} onChange={(e) => setV({ ...v, name: e.target.value })} />
-        <div className="grid grid-cols-2 gap-3"><TextField label="Area" value={v.area} onChange={(e) => setV({ ...v, area: e.target.value })} /><TextField label="Capacity" type="number" min={1} value={v.capacity} onChange={(e) => setV({ ...v, capacity: e.target.value })} /></div>
-        <TextField label="Address" value={v.address} onChange={(e) => setV({ ...v, address: e.target.value })} />
-        {create.isError ? <p role="alert" className="text-sm text-bad-solid">{errorText(create.error)}</p> : null}
+        <TextField
+          label="Name"
+          value={v.name}
+          onChange={(e) => setV({ ...v, name: e.target.value })}
+        />
+        <div className="grid grid-cols-2 gap-3">
+          <TextField
+            label="Area"
+            value={v.area}
+            onChange={(e) => setV({ ...v, area: e.target.value })}
+          />
+          <TextField
+            label="Capacity"
+            type="number"
+            min={1}
+            value={v.capacity}
+            onChange={(e) => setV({ ...v, capacity: e.target.value })}
+          />
+        </div>
+        <TextField
+          label="Address"
+          value={v.address}
+          onChange={(e) => setV({ ...v, address: e.target.value })}
+        />
+        {create.isError ? (
+          <p role="alert" className="text-sm text-bad-solid">
+            {errorText(create.error)}
+          </p>
+        ) : null}
       </div>
-      <div className="flex justify-end gap-2 p-[22px]"><Button variant="secondary" size="md" onClick={onClose}>Cancel</Button><Button variant="ink" size="md" disabled={!ok} loading={create.isPending} onClick={() => create.mutate()}>Add venue</Button></div>
+      <div className="flex justify-end gap-2 p-[22px]">
+        <Button variant="secondary" size="md" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button
+          variant="ink"
+          size="md"
+          disabled={!ok}
+          loading={create.isPending}
+          onClick={() => create.mutate()}
+        >
+          Add venue
+        </Button>
+      </div>
     </Dialog>
   );
 }
@@ -271,53 +697,215 @@ function TicketTypes({ event, locked }: { event: AdminEvent; locked: boolean }) 
   const refresh = () => qc.invalidateQueries({ queryKey: ["admin"] });
   const [add, setAdd] = useState({ name: "", price: "", qty: "" });
   const create = useMutation({
-    mutationFn: () => adminApi.events.addType(event.id, { name: add.name.trim(), description: "", priceMinor: Math.round(Number(add.price) * 100), quantity: Number(add.qty), maxPerBooking: event.maxPerBooking, onSale: true, sortOrder: event.ticketTypes.length }),
-    onSuccess: async () => { setAdd({ name: "", price: "", qty: "" }); await refresh(); },
+    mutationFn: () =>
+      adminApi.events.addType(event.id, {
+        name: add.name.trim(),
+        description: "",
+        priceMinor: Math.round(Number(add.price) * 100),
+        quantity: Number(add.qty),
+        maxPerBooking: event.maxPerBooking,
+        onSale: true,
+        sortOrder: event.ticketTypes.length,
+      }),
+    onSuccess: async () => {
+      setAdd({ name: "", price: "", qty: "" });
+      await refresh();
+    },
   });
   return (
     <Section id="tickets" title="Ticket types, pricing & capacity">
-      <div className="flex justify-between text-xs text-ink-2"><span>Venue capacity <strong className="font-mono">{event.venue.capacity}</strong> · allocated <strong className={`font-mono ${event.capacityAllocated > event.venue.capacity ? "text-bad-fg" : ""}`}>{event.capacityAllocated}</strong></span></div>
+      <div className="flex justify-between text-xs text-ink-2">
+        <span>
+          Venue capacity <strong className="font-mono">{event.venue.capacity}</strong> · allocated{" "}
+          <strong
+            className={`font-mono ${event.capacityAllocated > event.venue.capacity ? "text-bad-fg" : ""}`}
+          >
+            {event.capacityAllocated}
+          </strong>
+        </span>
+      </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[640px] border-collapse text-[13px]">
-          <thead><tr className="border-b border-ink text-left text-[11px] uppercase tracking-[0.06em] text-ink-2"><th className="py-2 pr-1.5">Name</th><th className="px-1.5">Price EGP</th><th className="px-1.5">Quantity</th><th className="px-1.5">Taken</th><th className="px-1.5">On sale</th><th /></tr></thead>
-          <tbody>{event.ticketTypes.map((t) => (<TypeRow key={t.id + t.name + t.priceMinor + t.quantity + t.onSale} t={t} disabled={!allowed} onChanged={refresh} />))}</tbody>
+          <thead>
+            <tr className="border-b border-ink text-left text-[11px] uppercase tracking-[0.06em] text-ink-2">
+              <th className="py-2 pr-1.5">Name</th>
+              <th className="px-1.5">Price EGP</th>
+              <th className="px-1.5">Quantity</th>
+              <th className="px-1.5">Taken</th>
+              <th className="px-1.5">On sale</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {event.ticketTypes.map((t) => (
+              <TypeRow
+                key={t.id + t.name + t.priceMinor + t.quantity + t.onSale}
+                t={t}
+                disabled={!allowed}
+                onChanged={refresh}
+              />
+            ))}
+          </tbody>
         </table>
       </div>
       {allowed ? (
-        <form className="flex flex-wrap items-end gap-2" onSubmit={(e) => { e.preventDefault(); create.mutate(); }}>
-          <div className="min-w-[180px] flex-1"><TextField label="New ticket type" value={add.name} onChange={(e) => setAdd({ ...add, name: e.target.value })} className="h-10" /></div>
-          <div className="w-28"><TextField label="Price EGP" inputMode="decimal" value={add.price} onChange={(e) => setAdd({ ...add, price: e.target.value })} className="h-10" /></div>
-          <div className="w-28"><TextField label="Quantity" inputMode="numeric" value={add.qty} onChange={(e) => setAdd({ ...add, qty: e.target.value })} className="h-10" /></div>
-          <Button type="submit" variant="secondary" size="md" loading={create.isPending} disabled={add.name.trim().length < 2 || add.price === "" || !Number(add.qty)}>+ Add ticket type</Button>
-          {create.isError ? <p role="alert" className="basis-full text-sm text-bad-solid">{errorText(create.error)}</p> : null}
+        <form
+          className="flex flex-wrap items-end gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            create.mutate();
+          }}
+        >
+          <div className="min-w-[180px] flex-1">
+            <TextField
+              label="New ticket type"
+              value={add.name}
+              onChange={(e) => setAdd({ ...add, name: e.target.value })}
+              className="h-10"
+            />
+          </div>
+          <div className="w-28">
+            <TextField
+              label="Price EGP"
+              inputMode="decimal"
+              value={add.price}
+              onChange={(e) => setAdd({ ...add, price: e.target.value })}
+              className="h-10"
+            />
+          </div>
+          <div className="w-28">
+            <TextField
+              label="Quantity"
+              inputMode="numeric"
+              value={add.qty}
+              onChange={(e) => setAdd({ ...add, qty: e.target.value })}
+              className="h-10"
+            />
+          </div>
+          <Button
+            type="submit"
+            variant="secondary"
+            size="md"
+            loading={create.isPending}
+            disabled={add.name.trim().length < 2 || add.price === "" || !Number(add.qty)}
+          >
+            + Add ticket type
+          </Button>
+          {create.isError ? (
+            <p role="alert" className="basis-full text-sm text-bad-solid">
+              {errorText(create.error)}
+            </p>
+          ) : null}
         </form>
       ) : null}
     </Section>
   );
 }
 
-function TypeRow({ t, disabled, onChanged }: { t: TicketType; disabled: boolean; onChanged: () => void }) {
+function TypeRow({
+  t,
+  disabled,
+  onChanged,
+}: {
+  t: TicketType;
+  disabled: boolean;
+  onChanged: () => void;
+}) {
   const [name, setName] = useState(t.name);
   const [price, setPrice] = useState(String(t.priceMinor / 100));
   const [qty, setQty] = useState(String(t.quantity));
-  const save = useMutation({ mutationFn: (patch: Parameters<typeof adminApi.ticketTypes.update>[1]) => adminApi.ticketTypes.update(t.id, patch), onSuccess: onChanged });
-  const remove = useMutation({ mutationFn: () => adminApi.ticketTypes.remove(t.id), onSuccess: onChanged });
-  const dirty = name !== t.name || Math.round(Number(price) * 100) !== t.priceMinor || Number(qty) !== t.quantity;
+  const save = useMutation({
+    mutationFn: (patch: Parameters<typeof adminApi.ticketTypes.update>[1]) =>
+      adminApi.ticketTypes.update(t.id, patch),
+    onSuccess: onChanged,
+  });
+  const remove = useMutation({
+    mutationFn: () => adminApi.ticketTypes.remove(t.id),
+    onSuccess: onChanged,
+  });
+  const dirty =
+    name !== t.name ||
+    Math.round(Number(price) * 100) !== t.priceMinor ||
+    Number(qty) !== t.quantity;
   const cell = "h-9 rounded-sm border border-rule-strong px-2.5 text-sm";
   return (
     <>
       <tr className="border-b border-rule-soft">
-        <td className="py-2 pr-1.5"><input aria-label="Ticket type name" value={name} onChange={(e) => setName(e.target.value)} disabled={disabled} className={`${cell} w-full`} /></td>
-        <td className="px-1.5"><input aria-label="Price" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} disabled={disabled} className={`${cell} w-24 font-mono`} /></td>
-        <td className="px-1.5"><input aria-label="Quantity" inputMode="numeric" value={qty} onChange={(e) => setQty(e.target.value)} disabled={disabled} className={`${cell} w-20 font-mono`} /></td>
+        <td className="py-2 pr-1.5">
+          <input
+            aria-label="Ticket type name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            disabled={disabled}
+            className={`${cell} w-full`}
+          />
+        </td>
+        <td className="px-1.5">
+          <input
+            aria-label="Price"
+            inputMode="decimal"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            disabled={disabled}
+            className={`${cell} w-24 font-mono`}
+          />
+        </td>
+        <td className="px-1.5">
+          <input
+            aria-label="Quantity"
+            inputMode="numeric"
+            value={qty}
+            onChange={(e) => setQty(e.target.value)}
+            disabled={disabled}
+            className={`${cell} w-20 font-mono`}
+          />
+        </td>
         <td className="px-1.5 font-mono text-xs text-ink-2">{t.held}</td>
-        <td className="px-1.5"><input type="checkbox" aria-label="On sale" className="accent-ink" checked={t.onSale} disabled={disabled || save.isPending} onChange={(e) => save.mutate({ onSale: e.target.checked })} /></td>
+        <td className="px-1.5">
+          <input
+            type="checkbox"
+            aria-label="On sale"
+            className="accent-ink"
+            checked={t.onSale}
+            disabled={disabled || save.isPending}
+            onChange={(e) => save.mutate({ onSale: e.target.checked })}
+          />
+        </td>
         <td className="whitespace-nowrap py-2 text-right">
-          {dirty && !disabled ? <Button size="sm" variant="ink" loading={save.isPending} onClick={() => save.mutate({ name: name.trim(), priceMinor: Math.round(Number(price) * 100), quantity: Number(qty) })}>Save</Button> : null}{" "}
-          {!disabled ? <button aria-label={`Remove ${t.name}`} className="size-8 rounded-sm border border-rule-strong bg-surface text-ink-2" onClick={() => remove.mutate()}>✕</button> : null}
+          {dirty && !disabled ? (
+            <Button
+              size="sm"
+              variant="ink"
+              loading={save.isPending}
+              onClick={() =>
+                save.mutate({
+                  name: name.trim(),
+                  priceMinor: Math.round(Number(price) * 100),
+                  quantity: Number(qty),
+                })
+              }
+            >
+              Save
+            </Button>
+          ) : null}{" "}
+          {!disabled ? (
+            <button
+              aria-label={`Remove ${t.name}`}
+              className="size-8 rounded-sm border border-rule-strong bg-surface text-ink-2"
+              onClick={() => remove.mutate()}
+            >
+              ✕
+            </button>
+          ) : null}
         </td>
       </tr>
-      {save.isError || remove.isError ? (<tr><td colSpan={6} className="pb-2 text-xs text-bad-solid"><div role="alert">{errorText(save.error ?? remove.error)}</div></td></tr>) : null}
+      {save.isError || remove.isError ? (
+        <tr>
+          <td colSpan={6} className="pb-2 text-xs text-bad-solid">
+            <div role="alert">{errorText(save.error ?? remove.error)}</div>
+          </td>
+        </tr>
+      ) : null}
     </>
   );
 }
@@ -327,39 +915,164 @@ function PaymentMethods({ event, locked }: { event: AdminEvent; locked: boolean 
   const { can } = useAuth();
   const allowed = can("manage:payment_method") && !locked;
   const refresh = () => qc.invalidateQueries({ queryKey: ["admin"] });
-  const [draft, setDraft] = useState<{ type: PaymentMethod["type"]; label: string; recipientName: string; identifier: string; instructions: string } | null>(null);
+  const [draft, setDraft] = useState<{
+    type: PaymentMethod["type"];
+    label: string;
+    recipientName: string;
+    identifier: string;
+    instructions: string;
+  } | null>(null);
   const create = useMutation({
-    mutationFn: () => adminApi.events.addMethod(event.id, { type: draft!.type, label: draft!.label.trim(), recipientName: draft!.recipientName.trim(), identifier: draft!.identifier.trim(), instructions: draft!.instructions.split("\n").map((s) => s.trim()).filter(Boolean), enabled: true, sortOrder: event.paymentMethods.length }),
-    onSuccess: async () => { setDraft(null); await refresh(); },
+    mutationFn: () =>
+      adminApi.events.addMethod(event.id, {
+        type: draft!.type,
+        label: draft!.label.trim(),
+        recipientName: draft!.recipientName.trim(),
+        identifier: draft!.identifier.trim(),
+        instructions: draft!.instructions
+          .split("\n")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        enabled: true,
+        sortOrder: event.paymentMethods.length,
+      }),
+    onSuccess: async () => {
+      setDraft(null);
+      await refresh();
+    },
   });
-  const toggle = useMutation({ mutationFn: (m: PaymentMethod) => adminApi.paymentMethods.update(m.id, { enabled: !m.enabled }), onSuccess: refresh });
-  const remove = useMutation({ mutationFn: (m: PaymentMethod) => adminApi.paymentMethods.remove(m.id), onSuccess: refresh });
+  const toggle = useMutation({
+    mutationFn: (m: PaymentMethod) => adminApi.paymentMethods.update(m.id, { enabled: !m.enabled }),
+    onSuccess: refresh,
+  });
+  const remove = useMutation({
+    mutationFn: (m: PaymentMethod) => adminApi.paymentMethods.remove(m.id),
+    onSuccess: refresh,
+  });
   return (
     <Section id="methods" title="Payment methods customers see">
-      <p className="text-sm text-ink-2">Where customers send money. Sensitive: changes are audited and apply to new bookings.</p>
+      <p className="text-sm text-ink-2">
+        Where customers send money. Sensitive: changes are audited and apply to new bookings.
+      </p>
       {event.paymentMethods.map((m) => (
-        <div key={m.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 border-t border-rule-soft pt-3">
+        <div
+          key={m.id}
+          className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 border-t border-rule-soft pt-3"
+        >
           <span className="font-semibold">{m.label}</span>
-          <label className="flex items-center gap-1.5 text-xs"><input type="checkbox" className="accent-ink" checked={m.enabled} disabled={!allowed} onChange={() => toggle.mutate(m)} />Enabled</label>
-          <span className="text-[13px] text-ink-2"><span className="font-mono">{m.identifier}</span> · {m.recipientName}</span>
-          {allowed ? <button className="justify-self-end text-xs font-semibold text-bad-solid underline" onClick={() => remove.mutate(m)}>Remove</button> : null}
+          <label className="flex items-center gap-1.5 text-xs">
+            <input
+              type="checkbox"
+              className="accent-ink"
+              checked={m.enabled}
+              disabled={!allowed}
+              onChange={() => toggle.mutate(m)}
+            />
+            Enabled
+          </label>
+          <span className="text-[13px] text-ink-2">
+            <span className="font-mono">{m.identifier}</span> · {m.recipientName}
+          </span>
+          {allowed ? (
+            <button
+              className="justify-self-end text-xs font-semibold text-bad-solid underline"
+              onClick={() => remove.mutate(m)}
+            >
+              Remove
+            </button>
+          ) : null}
         </div>
       ))}
-      {remove.isError || toggle.isError ? <p role="alert" className="text-sm text-bad-solid">{errorText(remove.error ?? toggle.error)}</p> : null}
-      {allowed && !draft ? <Button variant="secondary" size="sm" className="self-start" onClick={() => setDraft({ type: "instapay", label: "", recipientName: "", identifier: "", instructions: "" })}>+ Add method</Button> : null}
+      {remove.isError || toggle.isError ? (
+        <p role="alert" className="text-sm text-bad-solid">
+          {errorText(remove.error ?? toggle.error)}
+        </p>
+      ) : null}
+      {allowed && !draft ? (
+        <Button
+          variant="secondary"
+          size="sm"
+          className="self-start"
+          onClick={() =>
+            setDraft({
+              type: "instapay",
+              label: "",
+              recipientName: "",
+              identifier: "",
+              instructions: "",
+            })
+          }
+        >
+          + Add method
+        </Button>
+      ) : null}
       {draft ? (
-        <form className="flex flex-col gap-3 border border-rule-strong bg-paper p-4" onSubmit={(e) => { e.preventDefault(); create.mutate(); }}>
+        <form
+          className="flex flex-col gap-3 border border-rule-strong bg-paper p-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            create.mutate();
+          }}
+        >
           <div className="grid gap-3 sm:grid-cols-2">
-            <SelectField label="Type" value={draft.type} onChange={(e) => setDraft({ ...draft, type: e.target.value as PaymentMethod["type"] })}>
-              <option value="instapay">InstaPay</option><option value="wallet">Mobile wallet</option><option value="bank">Bank transfer</option><option value="cash_deposit">Cash deposit</option><option value="other">Other</option>
+            <SelectField
+              label="Type"
+              value={draft.type}
+              onChange={(e) =>
+                setDraft({ ...draft, type: e.target.value as PaymentMethod["type"] })
+              }
+            >
+              <option value="instapay">InstaPay</option>
+              <option value="wallet">Mobile wallet</option>
+              <option value="bank">Bank transfer</option>
+              <option value="cash_deposit">Cash deposit</option>
+              <option value="other">Other</option>
             </SelectField>
-            <TextField label="Name shown to customers" value={draft.label} onChange={(e) => setDraft({ ...draft, label: e.target.value })} />
-            <TextField label="Recipient name" value={draft.recipientName} onChange={(e) => setDraft({ ...draft, recipientName: e.target.value })} />
-            <TextField label="Address, number or IBAN" mono value={draft.identifier} onChange={(e) => setDraft({ ...draft, identifier: e.target.value })} />
+            <TextField
+              label="Name shown to customers"
+              value={draft.label}
+              onChange={(e) => setDraft({ ...draft, label: e.target.value })}
+            />
+            <TextField
+              label="Recipient name"
+              value={draft.recipientName}
+              onChange={(e) => setDraft({ ...draft, recipientName: e.target.value })}
+            />
+            <TextField
+              label="Address, number or IBAN"
+              mono
+              value={draft.identifier}
+              onChange={(e) => setDraft({ ...draft, identifier: e.target.value })}
+            />
           </div>
-          <TextArea label="Steps (one per line)" value={draft.instructions} onChange={(e) => setDraft({ ...draft, instructions: e.target.value })} />
-          {create.isError ? <p role="alert" className="text-sm text-bad-solid">{errorText(create.error)}</p> : null}
-          <div className="flex gap-2"><Button type="submit" variant="ink" size="md" loading={create.isPending} disabled={draft.label.trim().length < 2 || draft.recipientName.trim().length < 2 || draft.identifier.trim().length < 2}>Add method</Button><Button variant="secondary" size="md" onClick={() => setDraft(null)}>Cancel</Button></div>
+          <TextArea
+            label="Steps (one per line)"
+            value={draft.instructions}
+            onChange={(e) => setDraft({ ...draft, instructions: e.target.value })}
+          />
+          {create.isError ? (
+            <p role="alert" className="text-sm text-bad-solid">
+              {errorText(create.error)}
+            </p>
+          ) : null}
+          <div className="flex gap-2">
+            <Button
+              type="submit"
+              variant="ink"
+              size="md"
+              loading={create.isPending}
+              disabled={
+                draft.label.trim().length < 2 ||
+                draft.recipientName.trim().length < 2 ||
+                draft.identifier.trim().length < 2
+              }
+            >
+              Add method
+            </Button>
+            <Button variant="secondary" size="md" onClick={() => setDraft(null)}>
+              Cancel
+            </Button>
+          </div>
         </form>
       ) : null}
     </Section>
@@ -369,34 +1082,112 @@ function PaymentMethods({ event, locked }: { event: AdminEvent; locked: boolean 
 /** Who works this event, and at which gate. People without "see every event" reach only the events they are assigned to here. */
 function EventStaff({ event }: { event: AdminEvent }) {
   const qc = useQueryClient();
-  const staff = useQuery({ queryKey: ["admin", "event-staff", event.id], queryFn: () => adminApi.events.staff(event.id) });
+  const staff = useQuery({
+    queryKey: ["admin", "event-staff", event.id],
+    queryFn: () => adminApi.events.staff(event.id),
+  });
   const team = useQuery({ queryKey: ["admin", "team"], queryFn: () => adminApi.team.get() });
   const [userId, setUserId] = useState("");
   const [gate, setGate] = useState("");
   const refresh = () => qc.invalidateQueries({ queryKey: ["admin", "event-staff", event.id] });
-  const assign = useMutation({ mutationFn: () => adminApi.events.assign(event.id, userId, gate.trim()), onSuccess: async () => { setUserId(""); setGate(""); await refresh(); } });
-  const remove = useMutation({ mutationFn: (id: string) => adminApi.events.unassign(event.id, id), onSuccess: refresh });
-  const free = (team.data?.members ?? []).filter((m) => !staff.data?.some((s) => s.userId === m.userId));
+  const assign = useMutation({
+    mutationFn: () => adminApi.events.assign(event.id, userId, gate.trim()),
+    onSuccess: async () => {
+      setUserId("");
+      setGate("");
+      await refresh();
+    },
+  });
+  const remove = useMutation({
+    mutationFn: (id: string) => adminApi.events.unassign(event.id, id),
+    onSuccess: refresh,
+  });
+  const free = (team.data?.members ?? []).filter(
+    (m) => !staff.data?.some((s) => s.userId === m.userId),
+  );
   return (
     <Section id="staff" title="Event staff & gates">
-      <p className="text-sm text-ink-2">Door staff scan and reviewers decide payments only for events listed here. Owners and managers see every event.</p>
-      <QueryState query={staff} empty={(d) => (d.length === 0 ? <p className="text-sm text-ink-2">Nobody is assigned yet.</p> : false)}>
+      <p className="text-sm text-ink-2">
+        Door staff scan and reviewers decide payments only for events listed here. Owners and
+        managers see every event.
+      </p>
+      <QueryState
+        query={staff}
+        empty={(d) =>
+          d.length === 0 ? <p className="text-sm text-ink-2">Nobody is assigned yet.</p> : false
+        }
+      >
         {(d) => (
           <ul className="m-0 list-none p-0">
             {d.map((m) => (
-              <li key={m.userId} className="flex items-center justify-between gap-3 border-t border-rule-soft py-2.5 text-sm">
-                <span className="flex flex-col"><span className="font-semibold">{m.name}</span><span className="text-xs text-muted">{m.email}</span></span>
-                <span className="flex items-center gap-3"><span className="font-mono text-xs text-ink-2">{m.gate || "no gate"}</span><button aria-label={`Unassign ${m.name}`} className="text-xs font-semibold text-bad-solid underline" onClick={() => remove.mutate(m.userId)}>Remove</button></span>
+              <li
+                key={m.userId}
+                className="flex items-center justify-between gap-3 border-t border-rule-soft py-2.5 text-sm"
+              >
+                <span className="flex flex-col">
+                  <span className="font-semibold">{m.name}</span>
+                  <span className="text-xs text-muted">{m.email}</span>
+                </span>
+                <span className="flex items-center gap-3">
+                  <span className="font-mono text-xs text-ink-2">{m.gate || "no gate"}</span>
+                  <button
+                    aria-label={`Unassign ${m.name}`}
+                    className="text-xs font-semibold text-bad-solid underline"
+                    onClick={() => remove.mutate(m.userId)}
+                  >
+                    Remove
+                  </button>
+                </span>
               </li>
             ))}
           </ul>
         )}
       </QueryState>
-      <form className="flex flex-wrap items-end gap-2" onSubmit={(e) => { e.preventDefault(); assign.mutate(); }}>
-        <div className="min-w-[200px] flex-1"><SelectField label="Add a person" value={userId} onChange={(e) => setUserId(e.target.value)} className="h-10"><option value="">Choose…</option>{free.map((m) => (<option key={m.userId} value={m.userId}>{m.name}</option>))}</SelectField></div>
-        <div className="w-36"><TextField label="Gate" value={gate} onChange={(e) => setGate(e.target.value)} placeholder="Gate A" className="h-10" /></div>
-        <Button type="submit" variant="secondary" size="md" loading={assign.isPending} disabled={!userId}>Assign</Button>
-        {assign.isError || remove.isError ? <p role="alert" className="basis-full text-sm text-bad-solid">{errorText(assign.error ?? remove.error)}</p> : null}
+      <form
+        className="flex flex-wrap items-end gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          assign.mutate();
+        }}
+      >
+        <div className="min-w-[200px] flex-1">
+          <SelectField
+            label="Add a person"
+            value={userId}
+            onChange={(e) => setUserId(e.target.value)}
+            className="h-10"
+          >
+            <option value="">Choose…</option>
+            {free.map((m) => (
+              <option key={m.userId} value={m.userId}>
+                {m.name}
+              </option>
+            ))}
+          </SelectField>
+        </div>
+        <div className="w-36">
+          <TextField
+            label="Gate"
+            value={gate}
+            onChange={(e) => setGate(e.target.value)}
+            placeholder="Gate A"
+            className="h-10"
+          />
+        </div>
+        <Button
+          type="submit"
+          variant="secondary"
+          size="md"
+          loading={assign.isPending}
+          disabled={!userId}
+        >
+          Assign
+        </Button>
+        {assign.isError || remove.isError ? (
+          <p role="alert" className="basis-full text-sm text-bad-solid">
+            {errorText(assign.error ?? remove.error)}
+          </p>
+        ) : null}
       </form>
     </Section>
   );

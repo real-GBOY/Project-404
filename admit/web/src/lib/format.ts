@@ -11,14 +11,21 @@ export function moneyShort(minor: number, currency = "EGP"): string {
   return `${currency} ${(minor / 100).toLocaleString("en-US", { minimumFractionDigits: whole ? 0 : 2, maximumFractionDigits: 2 })}`;
 }
 
-const fmt = (opts: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat("en-GB", { timeZone: TIME_ZONE, ...opts });
+const fmt = (opts: Intl.DateTimeFormatOptions) =>
+  new Intl.DateTimeFormat("en-GB", { timeZone: TIME_ZONE, ...opts });
 const dowF = fmt({ weekday: "short" });
 const dayF = fmt({ day: "2-digit" });
 const monF = fmt({ month: "short" });
 const timeF = fmt({ hour: "2-digit", minute: "2-digit", hour12: false });
 const longDateF = fmt({ weekday: "long", day: "numeric", month: "long", year: "numeric" });
 const shortDateF = fmt({ weekday: "short", day: "numeric", month: "short" });
-const stampF = fmt({ day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });
+const stampF = fmt({
+  day: "numeric",
+  month: "short",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
 const secF = fmt({ hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
 
 const d = (v: string | Date) => (typeof v === "string" ? new Date(v) : v);
@@ -33,7 +40,11 @@ export const fmtWhen = (v: string | Date) => `${fmtShortDate(v)} · ${fmtTime(v)
 /** "7 Nov, 18:40" */
 export const fmtStamp = (v: string | Date) => stampF.format(d(v)).replace(",", "");
 /** Calendar-block parts: FRI / 14 / NOV */
-export const dateBlock = (v: string | Date) => ({ dow: dowF.format(d(v)).toUpperCase(), day: dayF.format(d(v)), mon: monF.format(d(v)).toUpperCase() });
+export const dateBlock = (v: string | Date) => ({
+  dow: dowF.format(d(v)).toUpperCase(),
+  day: dayF.format(d(v)),
+  mon: monF.format(d(v)).toUpperCase(),
+});
 
 /** "23 h 41 min" until `to`; "expired" once past. */
 export function timeLeft(to: string | Date, now = new Date()): string {
@@ -59,4 +70,7 @@ export function prettyPhone(raw: string): string {
   return v.length === 11 ? `${v.slice(0, 3)} ${v.slice(3, 7)} ${v.slice(7)}` : raw;
 }
 
-export const fileSize = (bytes: number) => (bytes >= 1_048_576 ? `${(bytes / 1_048_576).toFixed(1)} MB` : `${Math.max(Math.round(bytes / 1024), 1)} KB`);
+export const fileSize = (bytes: number) =>
+  bytes >= 1_048_576
+    ? `${(bytes / 1_048_576).toFixed(1)} MB`
+    : `${Math.max(Math.round(bytes / 1024), 1)} KB`;

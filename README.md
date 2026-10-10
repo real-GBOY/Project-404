@@ -2,7 +2,7 @@
 
 ![NestJS 11](https://img.shields.io/badge/NestJS-11-e0234e) ![Fastify](https://img.shields.io/badge/Fastify-5-000000) ![PostgreSQL + RLS](https://img.shields.io/badge/PostgreSQL-RLS-336791) ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6) ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
-| **Overview** | [Mizan](docs/products/mizan.md) | [Atlas](docs/products/atlas.md) | [HotelOS](docs/products/hotelos.md) | [Raqib](docs/products/raqib.md) | [Security](SECURITY.md) |
+| **Overview** | [Mizan](docs/products/mizan.md) | [Atlas](docs/products/atlas.md) | [HotelOS](docs/products/hotelos.md) | [Raqib](docs/products/raqib.md) | [Admit](admit/README.md) | [Security](SECURITY.md) |
 |:---:|:---:|:---:|:---:|:---:|:---:|
 
 Project-404 is a **domain-agnostic application foundation** with **four independently deployed products**
@@ -55,6 +55,7 @@ four re-implements sign-in, tenancy, permissions, file storage, an audit trail o
 | **`atlas/`** | **Atlas** | Property developers: CRM, inventory, sales, installments | web | live · 85 tests | [Atlas tab →](docs/products/atlas.md) |
 | **`hotel-project/`** | **HotelOS** | Hotels: reservations, front desk, housekeeping, finance | staff app · public website | 8 slices done · 197 tests + 54 E2E runs | [HotelOS tab →](docs/products/hotelos.md) |
 | **`raqib/`** | **Raqib** | Security-guarding companies: site inspections, review and approval, corrective actions, guard scoring, training | web (offline-capable PWA) | live · 373 + 58 tests + 57 E2E | [Raqib tab →](docs/products/raqib.md) |
+| **`admit/`** | **Admit** | Event organizers: ticket sales with manual payment verification, QR tickets, door check-in, email worker | web (customer site · dashboard · scanner) | built · 52 backend + 26 worker + 29 web tests + browser E2E | [Admit README →](admit/README.md) |
 | **`core/`** | **Core** | None: the reusable platform | — | 13 capabilities | [core/README.md](core/README.md) |
 
 Every product is its own deployable, with its own process, PostgreSQL database and seed data. The products

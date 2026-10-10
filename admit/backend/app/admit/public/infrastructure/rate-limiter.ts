@@ -41,19 +41,12 @@ export class RateLimiter {
         admitDb()
           .insertInto("admit_rate_limits")
           .values({ bucket, window_start: windowStart, hits: 1 })
-          .onConflict((oc) =>
-            oc
-              .columns(["bucket", "window_start"])
-              .doUpdateSet({ hits: sql`admit_rate_limits.hits + 1` }),
-          )
+          .onConflict((oc) => oc.columns(["bucket", "window_start"]).doUpdateSet({ hits: sql`admit_rate_limits.hits + 1` }))
           .returning("hits")
           .executeTakeFirstOrThrow(),
       ),
     );
-    const retryAfterSeconds = Math.max(
-      1,
-      Math.ceil((windowStart.getTime() + windowMs - now) / 1000),
-    );
+    const retryAfterSeconds = Math.max(1, Math.ceil((windowStart.getTime() + windowMs - now) / 1000));
     return {
       allowed: row.hits <= policy.limit,
       remaining: Math.max(policy.limit - row.hits, 0),
@@ -64,10 +57,6 @@ export class RateLimiter {
   /** Drop windows older than a day (the scheduled jobs call this). */
   async prune(): Promise<void> {
     const cutoff = new Date(this.clock.now().getTime() - 86_400_000);
-    await runAsSystem(() =>
-      this.uow.transaction(() =>
-        admitDb().deleteFrom("admit_rate_limits").where("window_start", "<", cutoff).execute(),
-      ),
-    );
+    await runAsSystem(() => this.uow.transaction(() => admitDb().deleteFrom("admit_rate_limits").where("window_start", "<", cutoff).execute()));
   }
 }

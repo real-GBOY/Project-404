@@ -33,7 +33,16 @@ export interface BookingLineView {
 export interface GuestBookingView {
   ref: string;
   status: BookingStatus;
-  event: { id: string; slug: string; title: string; startsAt: Date; endsAt: Date; venue: { name: string; area: string; address: string; mapUrl: string | null }; coverUrl: string | null; namedTickets: boolean };
+  event: {
+    id: string;
+    slug: string;
+    title: string;
+    startsAt: Date;
+    endsAt: Date;
+    venue: { name: string; area: string; address: string; mapUrl: string | null };
+    coverUrl: string | null;
+    namedTickets: boolean;
+  };
   customer: { name: string; emailMasked: string };
   lines: BookingLineView[];
   totalMinor: number;
@@ -123,10 +132,14 @@ export class BookingsService {
     const items = this.mergeItems(b.items);
     const total = items.reduce((n, i) => n + i.quantity, 0);
     if (total < 1 || total > event.maxPerBooking) {
-      throw ValidationError("admit.quantity", `Choose between 1 and ${event.maxPerBooking} tickets.`, { fields: [{ path: "items", message: `Choose between 1 and ${event.maxPerBooking} tickets.` }] });
+      throw ValidationError("admit.quantity", `Choose between 1 and ${event.maxPerBooking} tickets.`, {
+        fields: [{ path: "items", message: `Choose between 1 and ${event.maxPerBooking} tickets.` }],
+      });
     }
     if (Object.keys(event.policies).length && !b.policyAck) {
-      throw ValidationError("admit.policy_ack", "Please confirm you've read the event policies.", { fields: [{ path: "policyAck", message: "Please confirm you've read the event policies." }] });
+      throw ValidationError("admit.policy_ack", "Please confirm you've read the event policies.", {
+        fields: [{ path: "policyAck", message: "Please confirm you've read the event policies." }],
+      });
     }
 
     // Lock the ticket types first (id order), THEN count what is held: this is what makes overselling impossible.
@@ -136,13 +149,22 @@ export class BookingsService {
 
     const lines = items.map((i) => {
       const t = byId.get(i.ticketTypeId);
-      if (!t || !t.onSale) throw ValidationError("admit.ticket_type_unavailable", "One of the selected ticket types is not on sale.", { fields: [{ path: "items", message: "One of the selected ticket types is not on sale." }] });
-      if (i.quantity > t.maxPerBooking) throw ValidationError("admit.quantity", `At most ${t.maxPerBooking} ${t.name} tickets per booking.`, { fields: [{ path: "items", message: `At most ${t.maxPerBooking} ${t.name} tickets per booking.` }] });
+      if (!t || !t.onSale)
+        throw ValidationError("admit.ticket_type_unavailable", "One of the selected ticket types is not on sale.", {
+          fields: [{ path: "items", message: "One of the selected ticket types is not on sale." }],
+        });
+      if (i.quantity > t.maxPerBooking)
+        throw ValidationError("admit.quantity", `At most ${t.maxPerBooking} ${t.name} tickets per booking.`, {
+          fields: [{ path: "items", message: `At most ${t.maxPerBooking} ${t.name} tickets per booking.` }],
+        });
       const left = Math.max(t.quantity - (held.get(t.id) ?? 0), 0);
       if (i.quantity > left) {
-        throw Conflict("admit.sold_out", left === 0 ? `${t.name} is sold out.` : `Only ${left} ${t.name} tickets are left.`, { ticketTypeId: t.id, remaining: left });
+        throw Conflict("admit.sold_out", left === 0 ? `${t.name} is sold out.` : `Only ${left} ${t.name} tickets are left.`, {
+          ticketTypeId: t.id,
+          remaining: left,
+        });
       }
-      const names = event.namedTickets ? this.holderNames(i.holderNames, i.quantity) : i.holderNames?.slice(0, i.quantity) ?? [];
+      const names = event.namedTickets ? this.holderNames(i.holderNames, i.quantity) : (i.holderNames?.slice(0, i.quantity) ?? []);
       return { ticketTypeId: t.id, quantity: i.quantity, unitPriceMinor: t.priceMinor, holderNames: names };
     });
 
@@ -150,14 +172,31 @@ export class BookingsService {
     const ref = newBookingRef();
     const holdExpiresAt = new Date(now.getTime() + event.holdHours * 3_600_000);
     await this.repo.insert({
-      id, eventId: event.id, ref, accessHash: accessSecretHash(id), customerName: b.customer.name, email: b.customer.email.toLowerCase(), phone: b.customer.phone,
-      totalMinor: lines.reduce((n, l) => n + l.quantity * l.unitPriceMinor, 0), currency: event.currency, holdExpiresAt, policyAck: b.policyAck, idempotencyKey: key,
+      id,
+      eventId: event.id,
+      ref,
+      accessHash: accessSecretHash(id),
+      customerName: b.customer.name,
+      email: b.customer.email.toLowerCase(),
+      phone: b.customer.phone,
+      totalMinor: lines.reduce((n, l) => n + l.quantity * l.unitPriceMinor, 0),
+      currency: event.currency,
+      holdExpiresAt,
+      policyAck: b.policyAck,
+      idempotencyKey: key,
     });
     await this.repo.insertLines(id, lines);
     await this.repo.addTimeline(id, "Booking created", { at: now });
     await this.repo.addTimeline(id, "Waiting for payment", { state: "pending", at: now });
     await this.composer.instructions(id);
-    await this.audit.record({ actorId: null, actorType: "system", action: "admit.booking.created", resourceType: "admit_booking", resourceId: id, after: { ref, eventId: event.id, total } });
+    await this.audit.record({
+      actorId: null,
+      actorType: "system",
+      action: "admit.booking.created",
+      resourceType: "admit_booking",
+      resourceId: id,
+      after: { ref, eventId: event.id, total },
+    });
     return { booking: (await this.repo.find(id))!, created: true };
   }
 
@@ -214,7 +253,9 @@ export class BookingsService {
       this.events.venuesByIds([event.venueId]),
       this.tickets.forBookings([booking.id]),
       this.emails.forBookings([booking.id]),
-      booking.status === "AWAITING_PAYMENT" || booking.status === "IN_REVIEW" ? this.events.listMethods([event.id], true) : Promise.resolve([] as PaymentMethodRecord[]),
+      booking.status === "AWAITING_PAYMENT" || booking.status === "IN_REVIEW"
+        ? this.events.listMethods([event.id], true)
+        : Promise.resolve([] as PaymentMethodRecord[]),
     ]);
     const tn = new Map(types.map((t) => [t.id, t.name]));
     const v = venue.get(event.venueId)!;
@@ -223,15 +264,37 @@ export class BookingsService {
     return {
       ref: booking.ref,
       status: booking.status,
-      event: { id: event.id, slug: event.slug, title: event.title, startsAt: event.startsAt, endsAt: event.endsAt, venue: { name: v.name, area: v.area, address: v.address, mapUrl: v.mapUrl }, coverUrl: event.coverUrl, namedTickets: event.namedTickets },
+      event: {
+        id: event.id,
+        slug: event.slug,
+        title: event.title,
+        startsAt: event.startsAt,
+        endsAt: event.endsAt,
+        venue: { name: v.name, area: v.area, address: v.address, mapUrl: v.mapUrl },
+        coverUrl: event.coverUrl,
+        namedTickets: event.namedTickets,
+      },
       customer: { name: booking.customerName, emailMasked: maskEmail(booking.email) },
-      lines: lines.map((l) => ({ ticketTypeId: l.ticketTypeId, name: tn.get(l.ticketTypeId) ?? "Ticket", quantity: l.quantity, unitPriceMinor: l.unitPriceMinor, totalMinor: l.quantity * l.unitPriceMinor })),
+      lines: lines.map((l) => ({
+        ticketTypeId: l.ticketTypeId,
+        name: tn.get(l.ticketTypeId) ?? "Ticket",
+        quantity: l.quantity,
+        unitPriceMinor: l.unitPriceMinor,
+        totalMinor: l.quantity * l.unitPriceMinor,
+      })),
       totalMinor: booking.totalMinor,
       currency: booking.currency,
       holdExpiresAt: booking.holdExpiresAt,
       rejectionReason: booking.status === "AWAITING_PAYMENT" || booking.status === "REJECTED" ? booking.rejectionReason : null,
       canResubmit: booking.status === "AWAITING_PAYMENT" && booking.holdExpiresAt > now,
-      paymentMethods: methods.map((m) => ({ id: m.id, type: m.type, label: m.label, recipientName: m.recipientName, identifier: m.identifier, instructions: m.instructions })),
+      paymentMethods: methods.map((m) => ({
+        id: m.id,
+        type: m.type,
+        label: m.label,
+        recipientName: m.recipientName,
+        identifier: m.identifier,
+        instructions: m.instructions,
+      })),
       timeline: timeline.map((t) => ({ step: t.step, state: t.state, at: t.at, note: t.state === "failed" ? t.note : null })),
       ticketCount: tickets.filter((t) => t.status !== "REVOKED").length,
       emailStatus: lastTicketEmail?.status ?? null,
@@ -264,7 +327,10 @@ export class BookingsService {
   }
 
   // ---- organizer ------------------------------------------------------------------------------
-  async list(who: Principal, f: { eventId?: string; status?: BookingStatus[]; search?: string; limit: number; offset: number }): Promise<{ items: AdminBookingSummary[]; total: number }> {
+  async list(
+    who: Principal,
+    f: { eventId?: string; status?: BookingStatus[]; search?: string; limit: number; offset: number },
+  ): Promise<{ items: AdminBookingSummary[]; total: number }> {
     return readInTenant(async () => {
       const scope = await this.access.scope(who);
       if (f.eventId && scope && !scope.includes(f.eventId)) return { items: [], total: 0 };
@@ -278,9 +344,23 @@ export class BookingsService {
       return {
         total,
         items: items.map((b) => ({
-          id: b.id, ref: b.ref, status: b.status, eventId: b.eventId, eventTitle: title.get(b.eventId) ?? "", customerName: b.customerName, email: b.email, phone: b.phone,
-          totalMinor: b.totalMinor, currency: b.currency, ticketCount: b.status === "CONFIRMED" ? tickets.filter((t) => t.bookingId === b.id && t.status !== "REVOKED").length : lines.filter((l) => l.bookingId === b.id).reduce((n, l) => n + l.quantity, 0),
-          holdExpiresAt: b.holdExpiresAt, version: b.version, createdAt: b.createdAt,
+          id: b.id,
+          ref: b.ref,
+          status: b.status,
+          eventId: b.eventId,
+          eventTitle: title.get(b.eventId) ?? "",
+          customerName: b.customerName,
+          email: b.email,
+          phone: b.phone,
+          totalMinor: b.totalMinor,
+          currency: b.currency,
+          ticketCount:
+            b.status === "CONFIRMED"
+              ? tickets.filter((t) => t.bookingId === b.id && t.status !== "REVOKED").length
+              : lines.filter((l) => l.bookingId === b.id).reduce((n, l) => n + l.quantity, 0),
+          holdExpiresAt: b.holdExpiresAt,
+          version: b.version,
+          createdAt: b.createdAt,
         })),
       };
     });
@@ -291,7 +371,9 @@ export class BookingsService {
     return readInTenant(async () => {
       const scope = await this.access.scope(who);
       if (scope && !scope.length) return { items: [], total: 0 };
-      let q = admitDb().selectFrom("admit_bookings as b").leftJoin("admit_tickets as t", (j) => j.onRef("t.booking_id", "=", "b.id").on("t.status", "=", "USED"));
+      let q = admitDb()
+        .selectFrom("admit_bookings as b")
+        .leftJoin("admit_tickets as t", (j) => j.onRef("t.booking_id", "=", "b.id").on("t.status", "=", "USED"));
       if (scope) q = q.where("b.event_id", "in", scope);
       if (f.search) {
         const like = `%${f.search.replace(/[%_\\]/g, (m) => `\\${m}`)}%`;
@@ -309,7 +391,11 @@ export class BookingsService {
           sql<Date>`max(b.created_at)`.as("last_at"),
         ])
         .groupBy(sql`lower(b.email)`);
-      const rows = await grouped.orderBy(sql`max(b.created_at)`, "desc").limit(f.limit).offset(f.offset).execute();
+      const rows = await grouped
+        .orderBy(sql`max(b.created_at)`, "desc")
+        .limit(f.limit)
+        .offset(f.offset)
+        .execute();
       const total = await admitDb()
         .selectFrom("admit_bookings as b")
         .select(sql<string>`count(distinct lower(b.email))`.as("n"))
@@ -317,7 +403,16 @@ export class BookingsService {
         .executeTakeFirstOrThrow();
       return {
         total: Number(total.n),
-        items: rows.map((r) => ({ email: r.email, name: r.name, phone: r.phone, bookings: Number(r.bookings), attended: Number(r.attended), spendMinor: Number(r.spend), latestStatus: r.latest, lastBookingAt: r.last_at })),
+        items: rows.map((r) => ({
+          email: r.email,
+          name: r.name,
+          phone: r.phone,
+          bookings: Number(r.bookings),
+          attended: Number(r.attended),
+          spendMinor: Number(r.spend),
+          latestStatus: r.latest,
+          lastBookingAt: r.last_at,
+        })),
       };
     });
   }
@@ -340,18 +435,61 @@ export class BookingsService {
       const tn = new Map(types.map((t) => [t.id, t.name]));
       const canPayments = await this.access.can(who, "read", "payment");
       return {
-        id: booking.id, ref: booking.ref, status: booking.status, version: booking.version,
+        id: booking.id,
+        ref: booking.ref,
+        status: booking.status,
+        version: booking.version,
         event: { id: event.id, title: event.title, startsAt: event.startsAt },
         customer: { name: booking.customerName, email: booking.email, phone: booking.phone },
-        totalMinor: booking.totalMinor, currency: booking.currency, holdExpiresAt: booking.holdExpiresAt, rejectionReason: booking.rejectionReason,
-        createdAt: booking.createdAt, confirmedAt: booking.confirmedAt, cancelledAt: booking.cancelledAt,
-        lines: lines.map((l) => ({ ticketTypeId: l.ticketTypeId, name: tn.get(l.ticketTypeId) ?? "Ticket", quantity: l.quantity, unitPriceMinor: l.unitPriceMinor, totalMinor: l.quantity * l.unitPriceMinor })),
+        totalMinor: booking.totalMinor,
+        currency: booking.currency,
+        holdExpiresAt: booking.holdExpiresAt,
+        rejectionReason: booking.rejectionReason,
+        createdAt: booking.createdAt,
+        confirmedAt: booking.confirmedAt,
+        cancelledAt: booking.cancelledAt,
+        lines: lines.map((l) => ({
+          ticketTypeId: l.ticketTypeId,
+          name: tn.get(l.ticketTypeId) ?? "Ticket",
+          quantity: l.quantity,
+          unitPriceMinor: l.unitPriceMinor,
+          totalMinor: l.quantity * l.unitPriceMinor,
+        })),
         timeline: timeline.map((t) => ({ step: t.step, state: t.state, at: t.at, note: t.note, actorId: t.actorId })),
         submissions: canPayments
-          ? submissions.map((s) => ({ id: s.id, status: s.status, txnId: s.txnId, sentFrom: s.sentFrom, amountMinor: s.amountMinor, createdAt: s.createdAt, decidedAt: s.decidedAt, decidedBy: s.decidedBy, customerReason: s.customerReason, internalNote: s.internalNote }))
+          ? submissions.map((s) => ({
+              id: s.id,
+              status: s.status,
+              txnId: s.txnId,
+              sentFrom: s.sentFrom,
+              amountMinor: s.amountMinor,
+              createdAt: s.createdAt,
+              decidedAt: s.decidedAt,
+              decidedBy: s.decidedBy,
+              customerReason: s.customerReason,
+              internalNote: s.internalNote,
+            }))
           : [],
-        tickets: tickets.map((t) => ({ id: t.id, seq: t.seq, holderName: t.holderName, ticketType: tn.get(t.ticketTypeId) ?? "", status: t.status, checkedInAt: t.checkedInAt, checkedInGate: t.checkedInGate, revokedAt: t.revokedAt, revokedReason: t.revokedReason })),
-        emails: emails.map((e) => ({ id: e.id, type: e.type, status: e.status, attempts: e.attempts, lastError: e.lastError, sentAt: e.sentAt, createdAt: e.createdAt })),
+        tickets: tickets.map((t) => ({
+          id: t.id,
+          seq: t.seq,
+          holderName: t.holderName,
+          ticketType: tn.get(t.ticketTypeId) ?? "",
+          status: t.status,
+          checkedInAt: t.checkedInAt,
+          checkedInGate: t.checkedInGate,
+          revokedAt: t.revokedAt,
+          revokedReason: t.revokedReason,
+        })),
+        emails: emails.map((e) => ({
+          id: e.id,
+          type: e.type,
+          status: e.status,
+          attempts: e.attempts,
+          lastError: e.lastError,
+          sentAt: e.sentAt,
+          createdAt: e.createdAt,
+        })),
       };
     });
   }
@@ -363,7 +501,8 @@ export class BookingsService {
       await this.access.assertEvent(who, seen.eventId);
       const booking = (await this.repo.lock(id))!;
       if (booking.status === "CANCELLED") return;
-      if (booking.status === "EXPIRED" || booking.status === "REJECTED") throw Conflict("admit.booking_state", `A ${booking.status.toLowerCase()} booking cannot be cancelled.`);
+      if (booking.status === "EXPIRED" || booking.status === "REJECTED")
+        throw Conflict("admit.booking_state", `A ${booking.status.toLowerCase()} booking cannot be cancelled.`);
       if ((await this.tickets.forBookings([id])).some((t) => t.status === "USED")) {
         throw Conflict("admit.ticket_used", "Someone with this booking has already entered. Revoke individual tickets instead.");
       }
@@ -381,7 +520,15 @@ export class BookingsService {
     const revoked = await this.tickets.revokeForBooking(booking.id, now, actorId, reason);
     await this.repo.addTimeline(booking.id, "Booking cancelled", { actorId, note: reason, at: now });
     await this.composer.cancelled(booking.id);
-    await this.audit.record({ actorId, actorType: actorId ? "user" : "system", action: "admit.booking.cancelled", resourceType: "admit_booking", resourceId: booking.id, before: { status: booking.status }, after: { status: "CANCELLED", reason, revokedTickets: revoked } });
+    await this.audit.record({
+      actorId,
+      actorType: actorId ? "user" : "system",
+      action: "admit.booking.cancelled",
+      resourceType: "admit_booking",
+      resourceId: booking.id,
+      before: { status: booking.status },
+      after: { status: "CANCELLED", reason, revokedTickets: revoked },
+    });
   }
 
   // ---- scheduled ------------------------------------------------------------------------------

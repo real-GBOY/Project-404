@@ -70,7 +70,18 @@ export class CheckinService {
       const log = async (result: ScanResult, ticketId: string | null, reason: InvalidReason | null) => {
         await admitDb()
           .insertInto("admit_scan_attempts")
-          .values({ id: admitId("scn"), organization_id: requireOrganizationId(), event_id: event.id, ticket_id: ticketId, result, reason, method, gate, staff_id: who.userId, scanned_at: now })
+          .values({
+            id: admitId("scn"),
+            organization_id: requireOrganizationId(),
+            event_id: event.id,
+            ticket_id: ticketId,
+            result,
+            reason,
+            method,
+            gate,
+            staff_id: who.userId,
+            scanned_at: now,
+          })
           .execute();
       };
       const invalid = async (reason: InvalidReason, ticketId: string | null = null): Promise<ScanOutcome> => {
@@ -101,8 +112,12 @@ export class CheckinService {
         await log("ALREADY_USED", ticket.id, null);
         const by = current.checkedInBy ? await this.users.getUser(current.checkedInBy) : null;
         return {
-          result: "ALREADY_USED", ticket: { id: current.id, holder: current.holderName, type: typeName }, firstCheckInAt: current.checkedInAt ?? undefined,
-          firstCheckInBy: by?.displayName ?? by?.email ?? undefined, gate: current.checkedInGate ?? "", at: now,
+          result: "ALREADY_USED",
+          ticket: { id: current.id, holder: current.holderName, type: typeName },
+          firstCheckInAt: current.checkedInAt ?? undefined,
+          firstCheckInBy: by?.displayName ?? by?.email ?? undefined,
+          gate: current.checkedInGate ?? "",
+          at: now,
         };
       }
       return invalid("revoked", ticket.id);
@@ -127,7 +142,16 @@ export class CheckinService {
       const out = [];
       for (const e of events) {
         const c = await this.tickets.countsByStatus(e.id);
-        out.push({ id: e.id, title: e.title, startsAt: e.startsAt, endsAt: e.endsAt, venue: venues.get(e.venueId)?.name ?? "", gate: gate.get(e.id) ?? "", checkedIn: c.USED, remaining: c.VALID });
+        out.push({
+          id: e.id,
+          title: e.title,
+          startsAt: e.startsAt,
+          endsAt: e.endsAt,
+          venue: venues.get(e.venueId)?.name ?? "",
+          gate: gate.get(e.id) ?? "",
+          checkedIn: c.USED,
+          remaining: c.VALID,
+        });
       }
       return { staff: { name: me?.displayName ?? me?.email ?? "", userId: who.userId }, events: out };
     });
@@ -163,7 +187,17 @@ export class CheckinService {
         totals: { validTickets: counts.VALID + counts.USED, checkedIn: counts.USED, revoked: counts.REVOKED, remaining: counts.VALID },
         byType: byType.map((b) => ({ ticketTypeId: b.ticketTypeId, name: tn.get(b.ticketTypeId) ?? "", total: b.total, checkedIn: b.used })),
         arrivals: arrivals.map((a) => ({ at: a.at, count: a.n })),
-        scans: scans.map((s) => ({ id: s.id, at: s.scanned_at, result: s.result, reason: s.reason, method: s.method, ticketId: s.ticket_id, holder: s.holder_name, gate: s.gate, staff: s.staff_id ? (staff.get(s.staff_id) ?? "") : "" })),
+        scans: scans.map((s) => ({
+          id: s.id,
+          at: s.scanned_at,
+          result: s.result,
+          reason: s.reason,
+          method: s.method,
+          ticketId: s.ticket_id,
+          holder: s.holder_name,
+          gate: s.gate,
+          staff: s.staff_id ? (staff.get(s.staff_id) ?? "") : "",
+        })),
       };
     });
   }

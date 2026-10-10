@@ -1,8 +1,18 @@
 import { describe, expect, it } from "vitest";
 import type { ScanOutcome } from "@/api/types";
-import { isCompleteTicketId, isDuplicateRead, normalizeTicketId, reduce, verdictKind, type Screen } from "./scanner-state";
+import {
+  isCompleteTicketId,
+  isDuplicateRead,
+  normalizeTicketId,
+  reduce,
+  verdictKind,
+  type Screen,
+} from "./scanner-state";
 
-const admitted: ScanOutcome = { result: "ADMITTED", ticket: { id: "TKT-AAAA-BBBB", holder: "Mona", type: "Entry" } };
+const admitted: ScanOutcome = {
+  result: "ADMITTED",
+  ticket: { id: "TKT-AAAA-BBBB", holder: "Mona", type: "Entry" },
+};
 const read = { token: "x".repeat(22) };
 
 describe("scanner state machine", () => {
@@ -21,7 +31,13 @@ describe("scanner state machine", () => {
     const home: Screen = { name: "home" };
     expect(reduce(home, { type: "answered", outcome: admitted })).toBe(home);
     expect(reduce(home, { type: "code_read", request: read })).toBe(home);
-    const verdict = reduce(reduce(reduce({ name: "scanning" }, { type: "code_read", request: read }), { type: "answered", outcome: admitted }), { type: "code_read", request: { token: "y".repeat(22) } });
+    const verdict = reduce(
+      reduce(reduce({ name: "scanning" }, { type: "code_read", request: read }), {
+        type: "answered",
+        outcome: admitted,
+      }),
+      { type: "code_read", request: { token: "y".repeat(22) } },
+    );
     expect(verdict.name).toBe("verdict"); // a stray second read does not replace the verdict on screen
   });
 

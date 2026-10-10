@@ -1,8 +1,19 @@
 import { TIME_ZONE } from "@/config/env";
 
 const parts = (d: Date) => {
-  const f = new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
-  return Object.fromEntries(f.formatToParts(d).map((p) => [p.type, p.value])) as Record<string, string>;
+  const f = new Intl.DateTimeFormat("en-CA", {
+    timeZone: TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  });
+  return Object.fromEntries(f.formatToParts(d).map((p) => [p.type, p.value])) as Record<
+    string,
+    string
+  >;
 };
 
 /** ISO instant -> "YYYY-MM-DDTHH:mm" in the organizer's zone, for <input type="datetime-local">. */

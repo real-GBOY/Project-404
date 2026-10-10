@@ -15,7 +15,8 @@ import { Card, CardHead } from "./parts";
 
 export function SettingsPage() {
   const { can } = useAuth();
-  if (!can("manage:event_staff") && !can("read:admit_settings")) return <Forbidden needs="manage:event_staff" />;
+  if (!can("manage:event_staff") && !can("read:admit_settings"))
+    return <Forbidden needs="manage:event_staff" />;
   return (
     <>
       <h1 className="sr-only">Settings</h1>
@@ -32,19 +33,60 @@ function Organizer() {
   const q = useQuery({ queryKey: ["admin", "settings"], queryFn: () => adminApi.settings.get() });
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  useEffect(() => { if (q.data) { setName(q.data.organizerName); setEmail(q.data.supportEmail ?? ""); } }, [q.data]);
-  const save = useMutation({ mutationFn: () => adminApi.settings.update({ organizerName: name.trim(), supportEmail: email.trim() || null }), onSuccess: async () => { await qc.invalidateQueries({ queryKey: ["admin"] }); toast.show("Organizer settings saved"); } });
+  useEffect(() => {
+    if (q.data) {
+      setName(q.data.organizerName);
+      setEmail(q.data.supportEmail ?? "");
+    }
+  }, [q.data]);
+  const save = useMutation({
+    mutationFn: () =>
+      adminApi.settings.update({ organizerName: name.trim(), supportEmail: email.trim() || null }),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["admin"] });
+      toast.show("Organizer settings saved");
+    },
+  });
   const editable = can("update:admit_settings");
   return (
     <Card tone="ink">
       <CardHead title="Organizer" />
       <QueryState query={q}>
         {() => (
-          <form className="grid gap-4 p-5 sm:grid-cols-2" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
-            <TextField label="Organizer name" value={name} onChange={(e) => setName(e.target.value)} disabled={!editable} hint="Shown on the public site and in every email." />
-            <TextField label="Support email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={!editable} hint="Customers reply here; shown in email footers." />
-            {save.isError ? <p role="alert" className="text-sm text-bad-solid sm:col-span-2">{errorText(save.error)}</p> : null}
-            {editable ? <div><Button type="submit" variant="ink" size="md" loading={save.isPending}>Save</Button></div> : null}
+          <form
+            className="grid gap-4 p-5 sm:grid-cols-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              save.mutate();
+            }}
+          >
+            <TextField
+              label="Organizer name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              disabled={!editable}
+              hint="Shown on the public site and in every email."
+            />
+            <TextField
+              label="Support email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={!editable}
+              hint="Customers reply here; shown in email footers."
+            />
+            {save.isError ? (
+              <p role="alert" className="text-sm text-bad-solid sm:col-span-2">
+                {errorText(save.error)}
+              </p>
+            ) : null}
+            {editable ? (
+              <div>
+                <Button type="submit" variant="ink" size="md" loading={save.isPending}>
+                  Save
+                </Button>
+              </div>
+            ) : null}
           </form>
         )}
       </QueryState>
@@ -59,41 +101,124 @@ function Team() {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("event_manager");
   const refresh = () => qc.invalidateQueries({ queryKey: ["admin", "team"] });
-  const add = useMutation({ mutationFn: () => adminApi.team.add(email.trim(), role), onSuccess: async () => { setEmail(""); await refresh(); } });
-  const remove = useMutation({ mutationFn: (v: { userId: string; role: string }) => adminApi.team.removeRole(v.userId, v.role), onSuccess: refresh });
+  const add = useMutation({
+    mutationFn: () => adminApi.team.add(email.trim(), role),
+    onSuccess: async () => {
+      setEmail("");
+      await refresh();
+    },
+  });
+  const remove = useMutation({
+    mutationFn: (v: { userId: string; role: string }) => adminApi.team.removeRole(v.userId, v.role),
+    onSuccess: refresh,
+  });
   const manage = can("assign:role") && can("manage_members:organization");
   return (
     <>
       <Card tone="ink">
-        <CardHead title="Staff & roles" action={<span className="text-xs font-semibold text-used-fg">! Roles decide who can approve payments</span>} />
+        <CardHead
+          title="Staff & roles"
+          action={
+            <span className="text-xs font-semibold text-used-fg">
+              ! Roles decide who can approve payments
+            </span>
+          }
+        />
         <QueryState query={q}>
           {(t) => (
             <>
               <ul className="m-0 list-none p-0">
                 {t.members.map((m: TeamMember) => (
-                  <li key={m.userId} className="flex flex-wrap items-center justify-between gap-3 border-b border-rule-soft px-5 py-3">
-                    <span className="flex flex-col"><span className="font-semibold">{m.name}</span><span className="text-xs text-muted">{m.email}</span></span>
+                  <li
+                    key={m.userId}
+                    className="flex flex-wrap items-center justify-between gap-3 border-b border-rule-soft px-5 py-3"
+                  >
+                    <span className="flex flex-col">
+                      <span className="font-semibold">{m.name}</span>
+                      <span className="text-xs text-muted">{m.email}</span>
+                    </span>
                     <span className="flex flex-wrap items-center gap-1.5">
-                      {m.roles.length === 0 ? <span className="text-xs text-muted">No role</span> : null}
+                      {m.roles.length === 0 ? (
+                        <span className="text-xs text-muted">No role</span>
+                      ) : null}
                       {m.roles.map((r) => (
-                        <span key={r.key} className="inline-flex items-center gap-1.5 rounded-full bg-sunken px-2.5 py-1 text-xs font-semibold">
+                        <span
+                          key={r.key}
+                          className="inline-flex items-center gap-1.5 rounded-full bg-sunken px-2.5 py-1 text-xs font-semibold"
+                        >
                           {r.name}
-                          {manage ? <button aria-label={`Remove ${r.name} from ${m.name}`} className="text-muted hover:text-bad-solid" onClick={() => remove.mutate({ userId: m.userId, role: r.key })}>✕</button> : null}
+                          {manage ? (
+                            <button
+                              aria-label={`Remove ${r.name} from ${m.name}`}
+                              className="text-muted hover:text-bad-solid"
+                              onClick={() => remove.mutate({ userId: m.userId, role: r.key })}
+                            >
+                              ✕
+                            </button>
+                          ) : null}
                         </span>
                       ))}
                     </span>
                   </li>
                 ))}
               </ul>
-              {remove.isError ? <p role="alert" className="px-5 py-2 text-sm text-bad-solid">{errorText(remove.error)}</p> : null}
+              {remove.isError ? (
+                <p role="alert" className="px-5 py-2 text-sm text-bad-solid">
+                  {errorText(remove.error)}
+                </p>
+              ) : null}
               {manage ? (
-                <form className="flex flex-wrap items-end gap-3 border-t border-rule bg-paper px-5 py-4" onSubmit={(e) => { e.preventDefault(); add.mutate(); }}>
-                  <div className="min-w-[220px] flex-1"><TextField label="Add a person by email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-10" hint="They need an account already." /></div>
-                  <div className="w-52"><SelectField label="Role" value={role} onChange={(e) => setRole(e.target.value)} className="h-10">{t.roles.map((r) => (<option key={r.key} value={r.key}>{r.name}</option>))}</SelectField></div>
-                  <Button type="submit" variant="ink" size="md" loading={add.isPending} disabled={!email.includes("@")}>Add</Button>
-                  {add.isError ? <p role="alert" className="basis-full text-sm text-bad-solid">{errorText(add.error)}</p> : null}
+                <form
+                  className="flex flex-wrap items-end gap-3 border-t border-rule bg-paper px-5 py-4"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    add.mutate();
+                  }}
+                >
+                  <div className="min-w-[220px] flex-1">
+                    <TextField
+                      label="Add a person by email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="h-10"
+                      hint="They need an account already."
+                    />
+                  </div>
+                  <div className="w-52">
+                    <SelectField
+                      label="Role"
+                      value={role}
+                      onChange={(e) => setRole(e.target.value)}
+                      className="h-10"
+                    >
+                      {t.roles.map((r) => (
+                        <option key={r.key} value={r.key}>
+                          {r.name}
+                        </option>
+                      ))}
+                    </SelectField>
+                  </div>
+                  <Button
+                    type="submit"
+                    variant="ink"
+                    size="md"
+                    loading={add.isPending}
+                    disabled={!email.includes("@")}
+                  >
+                    Add
+                  </Button>
+                  {add.isError ? (
+                    <p role="alert" className="basis-full text-sm text-bad-solid">
+                      {errorText(add.error)}
+                    </p>
+                  ) : null}
                 </form>
-              ) : <div className="px-5 py-3"><Notice tone="info">Only an owner can add people or change roles.</Notice></div>}
+              ) : (
+                <div className="px-5 py-3">
+                  <Notice tone="info">Only an owner can add people or change roles.</Notice>
+                </div>
+              )}
             </>
           )}
         </QueryState>
@@ -107,8 +232,14 @@ function Team() {
               <table className="w-full min-w-[720px] border-collapse text-[13px]">
                 <thead>
                   <tr className="border-b border-ink text-left text-[11px] uppercase tracking-[0.06em] text-ink-2">
-                    <th scope="col" className="px-5 py-2.5">Permission</th>
-                    {t.roles.map((r: TeamRole) => (<th key={r.key} scope="col" className="px-2 py-2.5 text-center">{r.name}</th>))}
+                    <th scope="col" className="px-5 py-2.5">
+                      Permission
+                    </th>
+                    {t.roles.map((r: TeamRole) => (
+                      <th key={r.key} scope="col" className="px-2 py-2.5 text-center">
+                        {r.name}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
@@ -117,7 +248,15 @@ function Team() {
                       <td className="px-5 py-2">{label}</td>
                       {t.roles.map((r) => {
                         const on = r.permissions.includes(key) || r.permissions.includes("*:*");
-                        return <td key={r.key} className={`px-2 py-2 text-center font-bold ${on ? "text-ok-fg" : "text-[#b5aea3]"}`} aria-label={on ? "Allowed" : "Not allowed"}>{on ? "✓" : "—"}</td>;
+                        return (
+                          <td
+                            key={r.key}
+                            className={`px-2 py-2 text-center font-bold ${on ? "text-ok-fg" : "text-[#b5aea3]"}`}
+                            aria-label={on ? "Allowed" : "Not allowed"}
+                          >
+                            {on ? "✓" : "—"}
+                          </td>
+                        );
                       })}
                     </tr>
                   ))}
@@ -126,7 +265,10 @@ function Team() {
             </div>
           )}
         </QueryState>
-        <p className="px-5 py-3 text-xs text-muted">Which events a person can open is separate: people without “See every event” only reach events they are assigned to (set under each event).</p>
+        <p className="px-5 py-3 text-xs text-muted">
+          Which events a person can open is separate: people without “See every event” only reach
+          events they are assigned to (set under each event).
+        </p>
       </Card>
     </>
   );

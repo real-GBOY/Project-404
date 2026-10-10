@@ -1,8 +1,15 @@
 import { z } from "zod";
 
 const trimmed = (max: number) => z.string().trim().max(max);
-const slug = z.string().trim().toLowerCase().regex(/^[a-z0-9][a-z0-9-]{1,78}[a-z0-9]$/, "Use lowercase letters, numbers and dashes (3-80 characters).");
-const isoDateTime = z.string().datetime({ offset: true }).transform((v) => new Date(v));
+const slug = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(/^[a-z0-9][a-z0-9-]{1,78}[a-z0-9]$/, "Use lowercase letters, numbers and dashes (3-80 characters).");
+const isoDateTime = z
+  .string()
+  .datetime({ offset: true })
+  .transform((v) => new Date(v));
 
 export const venueSchema = z
   .object({

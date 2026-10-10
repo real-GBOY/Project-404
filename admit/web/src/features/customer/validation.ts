@@ -16,7 +16,8 @@ export function normalizePhone(raw: string): string {
 }
 
 export const validName = (v: string) => /^[\p{L}\p{M}][\p{L}\p{M} '-]{1,79}$/u.test(v.trim());
-export const validEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()) && v.trim().length <= 200;
+export const validEmail = (v: string) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()) && v.trim().length <= 200;
 export const validPhone = (v: string) => /^01[0125]\d{8}$/.test(normalizePhone(v));
 
 export interface DetailsInput {
@@ -41,7 +42,8 @@ export function validateDetails(i: DetailsInput): Record<string, string> {
       if (!validName(h)) errors[`holder-${n}`] = `Add a name for ticket ${n + 1}.`;
     });
   }
-  if (i.hasPolicies && !i.policyAck) errors.policy = "Please confirm you have read the event policies.";
+  if (i.hasPolicies && !i.policyAck)
+    errors.policy = "Please confirm you have read the event policies.";
   return errors;
 }
 
@@ -50,15 +52,24 @@ export function validateField(id: string, i: DetailsInput): string | undefined {
   return validateDetails(i)[id];
 }
 
-export const PROOF_TYPES = ["image/jpeg", "image/png", "image/heic", "image/heif", "application/pdf"];
+export const PROOF_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/heic",
+  "image/heif",
+  "application/pdf",
+];
 export const PROOF_MAX_BYTES = 10 * 1024 * 1024;
 
 /** Proof file rules: jpg/png/heic/pdf, one file, up to 10 MB. */
 export function validateProof(file: { type: string; size: number; name: string }): string | null {
-  if (!PROOF_TYPES.includes(file.type) && !/\.(jpe?g|png|heic|heif|pdf)$/i.test(file.name)) return "Upload a photo (JPG, PNG, HEIC) or a PDF.";
-  if (file.size > PROOF_MAX_BYTES) return `This file is ${Math.ceil(file.size / 1_048_576)} MB. Upload one under 10 MB.`;
+  if (!PROOF_TYPES.includes(file.type) && !/\.(jpe?g|png|heic|heif|pdf)$/i.test(file.name))
+    return "Upload a photo (JPG, PNG, HEIC) or a PDF.";
+  if (file.size > PROOF_MAX_BYTES)
+    return `This file is ${Math.ceil(file.size / 1_048_576)} MB. Upload one under 10 MB.`;
   if (file.size === 0) return "This file is empty. Choose another.";
   return null;
 }
 
-export const validTxn = (v: string) => v.trim() === "" || (v.trim().length >= 4 && v.trim().length <= 40);
+export const validTxn = (v: string) =>
+  v.trim() === "" || (v.trim().length >= 4 && v.trim().length <= 40);

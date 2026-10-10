@@ -8,8 +8,16 @@ export interface Step {
   when: string;
 }
 
-const SHORT = new Intl.DateTimeFormat("en-GB", { timeZone: "Africa/Cairo", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });
-const stamp = (iso: string | undefined) => (iso ? SHORT.format(new Date(iso)).replace(",", "") : "");
+const SHORT = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "Africa/Cairo",
+  day: "numeric",
+  month: "short",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
+const stamp = (iso: string | undefined) =>
+  iso ? SHORT.format(new Date(iso)).replace(",", "") : "";
 
 /**
  * The five-step booking timeline the customer sees, derived ONLY from what the server reports: the booking status, its recorded
@@ -52,7 +60,11 @@ export function buildSteps(b: GuestBooking): Step[] {
         es === "ACCEPTED" || es === "DELIVERED"
           ? { label: "Tickets emailed", state: "done", when: "" }
           : es === "FAILED"
-            ? { label: "Email did not arrive — your tickets are available here", state: "fail", when: "" }
+            ? {
+                label: "Email did not arrive — your tickets are available here",
+                state: "fail",
+                when: "",
+              }
             : { label: "Tickets emailed", state: "now", when: "Sending" };
       break;
     }
@@ -64,7 +76,11 @@ export function buildSteps(b: GuestBooking): Step[] {
       steps[1] = { label: "No proof received in time", state: "fail", when: "" };
       break;
     case "CANCELLED":
-      steps[1] = { label: "Booking cancelled", state: "fail", when: stamp(at("Booking cancelled")) };
+      steps[1] = {
+        label: "Booking cancelled",
+        state: "fail",
+        when: stamp(at("Booking cancelled")),
+      };
       break;
   }
   return steps;

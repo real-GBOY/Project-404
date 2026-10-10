@@ -26,55 +26,139 @@ export interface SubmissionRecord {
 }
 
 const cols = [
-  "id", "booking_id", "method_id", "file_id", "txn_id", "sent_from", "amount_minor", "status", "version", "claimed_by", "claimed_at", "decided_by",
-  "decided_at", "customer_reason", "internal_note", "created_at",
+  "id",
+  "booking_id",
+  "method_id",
+  "file_id",
+  "txn_id",
+  "sent_from",
+  "amount_minor",
+  "status",
+  "version",
+  "claimed_by",
+  "claimed_at",
+  "decided_by",
+  "decided_at",
+  "customer_reason",
+  "internal_note",
+  "created_at",
 ] as const;
 
 const toSub = (r: {
-  id: string; booking_id: string; method_id: string | null; file_id: string; txn_id: string | null; sent_from: string | null; amount_minor: number | null;
-  status: SubmissionStatus; version: number; claimed_by: string | null; claimed_at: Date | null; decided_by: string | null; decided_at: Date | null;
-  customer_reason: string | null; internal_note: string | null; created_at: Date;
+  id: string;
+  booking_id: string;
+  method_id: string | null;
+  file_id: string;
+  txn_id: string | null;
+  sent_from: string | null;
+  amount_minor: number | null;
+  status: SubmissionStatus;
+  version: number;
+  claimed_by: string | null;
+  claimed_at: Date | null;
+  decided_by: string | null;
+  decided_at: Date | null;
+  customer_reason: string | null;
+  internal_note: string | null;
+  created_at: Date;
 }): SubmissionRecord => ({
-  id: r.id, bookingId: r.booking_id, methodId: r.method_id, fileId: r.file_id, txnId: r.txn_id, sentFrom: r.sent_from, amountMinor: r.amount_minor,
-  status: r.status, version: r.version, claimedBy: r.claimed_by, claimedAt: r.claimed_at, decidedBy: r.decided_by, decidedAt: r.decided_at,
-  customerReason: r.customer_reason, internalNote: r.internal_note, createdAt: r.created_at,
+  id: r.id,
+  bookingId: r.booking_id,
+  methodId: r.method_id,
+  fileId: r.file_id,
+  txnId: r.txn_id,
+  sentFrom: r.sent_from,
+  amountMinor: r.amount_minor,
+  status: r.status,
+  version: r.version,
+  claimedBy: r.claimed_by,
+  claimedAt: r.claimed_at,
+  decidedBy: r.decided_by,
+  decidedAt: r.decided_at,
+  customerReason: r.customer_reason,
+  internalNote: r.internal_note,
+  createdAt: r.created_at,
 });
 
 /** The only code that touches payment submissions. */
 @Injectable()
 export class PaymentsRepository {
-  async insert(s: { bookingId: string; methodId: string | null; fileId: string; txnId: string | null; sentFrom: string | null; amountMinor: number | null }): Promise<string> {
+  async insert(s: {
+    bookingId: string;
+    methodId: string | null;
+    fileId: string;
+    txnId: string | null;
+    sentFrom: string | null;
+    amountMinor: number | null;
+  }): Promise<string> {
     const id = admitId("sub");
     await admitDb()
       .insertInto("admit_payment_submissions")
       .values({
-        id, organization_id: requireOrganizationId(), booking_id: s.bookingId, method_id: s.methodId, file_id: s.fileId, txn_id: s.txnId, sent_from: s.sentFrom, amount_minor: s.amountMinor,
+        id,
+        organization_id: requireOrganizationId(),
+        booking_id: s.bookingId,
+        method_id: s.methodId,
+        file_id: s.fileId,
+        txn_id: s.txnId,
+        sent_from: s.sentFrom,
+        amount_minor: s.amountMinor,
       })
       .execute();
     return id;
   }
 
   async find(id: string): Promise<SubmissionRecord | undefined> {
-    const r = await admitDb().selectFrom("admit_payment_submissions").select([...cols]).where("id", "=", id).executeTakeFirst();
+    const r = await admitDb()
+      .selectFrom("admit_payment_submissions")
+      .select([...cols])
+      .where("id", "=", id)
+      .executeTakeFirst();
     return r ? toSub(r as never) : undefined;
   }
   async lock(id: string): Promise<SubmissionRecord | undefined> {
-    const r = await admitDb().selectFrom("admit_payment_submissions").select([...cols]).where("id", "=", id).forUpdate().executeTakeFirst();
+    const r = await admitDb()
+      .selectFrom("admit_payment_submissions")
+      .select([...cols])
+      .where("id", "=", id)
+      .forUpdate()
+      .executeTakeFirst();
     return r ? toSub(r as never) : undefined;
   }
   async findByDecisionKey(key: string): Promise<SubmissionRecord | undefined> {
-    const r = await admitDb().selectFrom("admit_payment_submissions").select([...cols]).where("decision_key", "=", key).executeTakeFirst();
+    const r = await admitDb()
+      .selectFrom("admit_payment_submissions")
+      .select([...cols])
+      .where("decision_key", "=", key)
+      .executeTakeFirst();
     return r ? toSub(r as never) : undefined;
   }
   async openForBooking(bookingId: string): Promise<SubmissionRecord | undefined> {
-    const r = await admitDb().selectFrom("admit_payment_submissions").select([...cols]).where("booking_id", "=", bookingId).where("status", "=", "SUBMITTED").executeTakeFirst();
+    const r = await admitDb()
+      .selectFrom("admit_payment_submissions")
+      .select([...cols])
+      .where("booking_id", "=", bookingId)
+      .where("status", "=", "SUBMITTED")
+      .executeTakeFirst();
     return r ? toSub(r as never) : undefined;
   }
   async historyForBooking(bookingId: string): Promise<SubmissionRecord[]> {
-    return (await admitDb().selectFrom("admit_payment_submissions").select([...cols]).where("booking_id", "=", bookingId).orderBy("created_at").execute()).map((r) => toSub(r as never));
+    return (
+      await admitDb()
+        .selectFrom("admit_payment_submissions")
+        .select([...cols])
+        .where("booking_id", "=", bookingId)
+        .orderBy("created_at")
+        .execute()
+    ).map((r) => toSub(r as never));
   }
   async supersedeOpen(bookingId: string): Promise<void> {
-    await admitDb().updateTable("admit_payment_submissions").set({ status: "SUPERSEDED", version: sql`version + 1` }).where("booking_id", "=", bookingId).where("status", "=", "SUBMITTED").execute();
+    await admitDb()
+      .updateTable("admit_payment_submissions")
+      .set({ status: "SUPERSEDED", version: sql`version + 1` })
+      .where("booking_id", "=", bookingId)
+      .where("status", "=", "SUBMITTED")
+      .execute();
   }
 
   /** The review queue: submissions awaiting a decision, oldest first, limited to the caller's events. */
@@ -84,8 +168,23 @@ export class PaymentsRepository {
       .selectFrom("admit_payment_submissions as s")
       .innerJoin("admit_bookings as b", (j) => j.onRef("b.id", "=", "s.booking_id").onRef("b.organization_id", "=", "s.organization_id"))
       .select([
-        "s.id", "s.booking_id", "s.method_id", "s.file_id", "s.txn_id", "s.sent_from", "s.amount_minor", "s.status", "s.version", "s.claimed_by", "s.claimed_at",
-        "s.decided_by", "s.decided_at", "s.customer_reason", "s.internal_note", "s.created_at", "b.event_id",
+        "s.id",
+        "s.booking_id",
+        "s.method_id",
+        "s.file_id",
+        "s.txn_id",
+        "s.sent_from",
+        "s.amount_minor",
+        "s.status",
+        "s.version",
+        "s.claimed_by",
+        "s.claimed_at",
+        "s.decided_by",
+        "s.decided_at",
+        "s.customer_reason",
+        "s.internal_note",
+        "s.created_at",
+        "b.event_id",
       ]);
     if (eventIds) q = q.where("b.event_id", "in", eventIds);
     if (filter.eventId) q = q.where("b.event_id", "=", filter.eventId);
@@ -111,7 +210,12 @@ export class PaymentsRepository {
     return { claimedBy: r.claimed_by, claimedAt: r.claimed_at };
   }
   async release(id: string, userId: string): Promise<void> {
-    await admitDb().updateTable("admit_payment_submissions").set({ claimed_by: null, claimed_at: null }).where("id", "=", id).where("claimed_by", "=", userId).execute();
+    await admitDb()
+      .updateTable("admit_payment_submissions")
+      .set({ claimed_by: null, claimed_at: null })
+      .where("id", "=", id)
+      .where("claimed_by", "=", userId)
+      .execute();
   }
 
   /** Version-checked decision: only the first writer to see `status = SUBMITTED` at `version` wins. */
@@ -124,8 +228,15 @@ export class PaymentsRepository {
     const r = await admitDb()
       .updateTable("admit_payment_submissions")
       .set({
-        status: to, version: sql`version + 1`, decided_by: d.by, decided_at: d.at, customer_reason: d.customerReason, internal_note: d.internalNote,
-        decision_key: d.decisionKey, claimed_by: null, claimed_at: null,
+        status: to,
+        version: sql`version + 1`,
+        decided_by: d.by,
+        decided_at: d.at,
+        customer_reason: d.customerReason,
+        internal_note: d.internalNote,
+        decision_key: d.decisionKey,
+        claimed_by: null,
+        claimed_at: null,
       })
       .where("id", "=", id)
       .where("status", "=", "SUBMITTED")

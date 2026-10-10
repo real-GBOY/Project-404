@@ -7,7 +7,10 @@ import { expect, test, type Page } from "@playwright/test";
 const ORG = "nile-sessions";
 const PASSWORD = "demo-password-2026";
 // a 1x1 PNG
-const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
+const PNG = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+  "base64",
+);
 
 async function signIn(page: Page, email: string, to: string) {
   await page.goto(to);
@@ -54,7 +57,9 @@ test.describe.serial("booking to door", () => {
 
   test("the guest uploads proof, which waits for review (never a ticket)", async ({ page }) => {
     await page.goto(status.replace("/pay", "/upload"));
-    await page.getByTestId("proof-input").setInputFiles({ name: "receipt.png", mimeType: "image/png", buffer: PNG });
+    await page
+      .getByTestId("proof-input")
+      .setInputFiles({ name: "receipt.png", mimeType: "image/png", buffer: PNG });
     await expect(page.getByText(/Uploaded · receipt.png/)).toBeVisible();
     await page.getByRole("button", { name: "Submit for verification" }).click();
     await expect(page.getByRole("heading", { name: /Proof received/i })).toBeVisible();
@@ -86,15 +91,22 @@ test.describe.serial("booking to door", () => {
     await page.goto(tickets);
     const qr = page.getByRole("img", { name: /QR code for ticket/ });
     await expect(qr).toBeVisible();
-    await expect.poll(() => qr.evaluate((i: HTMLImageElement) => i.naturalWidth)).toBeGreaterThan(100);
+    await expect
+      .poll(() => qr.evaluate((i: HTMLImageElement) => i.naturalWidth))
+      .toBeGreaterThan(100);
     ticketId = (await page.getByTestId("ticket-id").textContent())!.trim();
     expect(ticketId).toMatch(/^TKT-/);
   });
 
-  test("door staff admit the ticket once; the second try says when it was first used", async ({ page }) => {
+  test("door staff admit the ticket once; the second try says when it was first used", async ({
+    page,
+  }) => {
     await signIn(page, "ali@nilesessions.example", "/scan/login");
     await page.getByRole("button", { name: /Cairo Jazz Nights/ }).click();
-    for (const [n, expected] of [[1, "Entry approved"], [2, "Already used"]] as const) {
+    for (const [n, expected] of [
+      [1, "Entry approved"],
+      [2, "Already used"],
+    ] as const) {
       await page.getByRole("button", { name: "Enter ticket ID manually" }).click();
       await page.getByPlaceholder("TKT-XXXX-XXXX").fill(ticketId.toLowerCase());
       await page.getByRole("button", { name: "Check ticket" }).click();

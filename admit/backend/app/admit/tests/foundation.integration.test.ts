@@ -55,7 +55,10 @@ describe.skipIf(!hasTestDb)("Admit foundation and event catalogue", () => {
 
   describe("database bootstrap", () => {
     it("applies every migration from an empty schema, none failed or rolled back", async () => {
-      const dirs = (await readdir(MIGRATIONS_DIR, { withFileTypes: true })).filter((d) => d.isDirectory()).map((d) => d.name).sort();
+      const dirs = (await readdir(MIGRATIONS_DIR, { withFileTypes: true }))
+        .filter((d) => d.isDirectory())
+        .map((d) => d.name)
+        .sort();
       const applied = await ownerQuery<{ migration_name: string }>(
         `SELECT migration_name FROM _prisma_migrations WHERE finished_at IS NOT NULL AND rolled_back_at IS NULL ORDER BY migration_name`,
       );
@@ -82,9 +85,13 @@ describe.skipIf(!hasTestDb)("Admit foundation and event catalogue", () => {
   describe("seeding", () => {
     it("registers the Admit permissions and roles, and is idempotent on re-run", async () => {
       await get<AppSeedService>(app, AppSeedService).seed();
-      const roles = await ownerQuery<{ key: string }>(`SELECT key FROM roles WHERE key IN ('owner','event_manager','finance_reviewer','door_staff','viewer') ORDER BY key`);
+      const roles = await ownerQuery<{ key: string }>(
+        `SELECT key FROM roles WHERE key IN ('owner','event_manager','finance_reviewer','door_staff','viewer') ORDER BY key`,
+      );
       expect(roles.map((r) => r.key)).toEqual(["door_staff", "event_manager", "finance_reviewer", "owner", "viewer"]);
-      const perms = await ownerQuery<{ n: string }>(`SELECT count(*)::text AS n FROM permissions WHERE resource IN ('event','ticket_type','payment','checkin')`);
+      const perms = await ownerQuery<{ n: string }>(
+        `SELECT count(*)::text AS n FROM permissions WHERE resource IN ('event','ticket_type','payment','checkin')`,
+      );
       expect(Number(perms[0]!.n)).toBeGreaterThanOrEqual(8);
     });
   });
@@ -122,7 +129,12 @@ describe.skipIf(!hasTestDb)("Admit foundation and event catalogue", () => {
       const t = await api("POST", `/admit/events/${eventId}/ticket-types`, { name: "General", priceMinor: 25000, quantity: 60 });
       expect(t.status).toBe(201);
       expect((await api("POST", `/admit/events/${eventId}/publish`)).body.error.code).toBe("admit.no_payment_method");
-      const m = await api("POST", `/admit/events/${eventId}/payment-methods`, { type: "instapay", label: "InstaPay", recipientName: "Admit Org", identifier: "admit@instapay" });
+      const m = await api("POST", `/admit/events/${eventId}/payment-methods`, {
+        type: "instapay",
+        label: "InstaPay",
+        recipientName: "Admit Org",
+        identifier: "admit@instapay",
+      });
       expect(m.status).toBe(201);
       const pub = await api("POST", `/admit/events/${eventId}/publish`);
       expect(pub.status).toBe(200);

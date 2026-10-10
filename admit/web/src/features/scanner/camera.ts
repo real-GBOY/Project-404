@@ -12,12 +12,21 @@ export interface Camera {
 /** Map a getUserMedia error to the two failures the scanner has screens for. */
 export function classifyCameraError(err: unknown): CameraFailure {
   const name = (err as { name?: string } | null)?.name ?? "";
-  return name === "NotAllowedError" || name === "SecurityError" || name === "PermissionDeniedError" ? "blocked" : "missing";
+  return name === "NotAllowedError" || name === "SecurityError" || name === "PermissionDeniedError"
+    ? "blocked"
+    : "missing";
 }
 
-export async function openCamera(video: HTMLVideoElement, facing: "environment" | "user"): Promise<Camera> {
-  if (!navigator.mediaDevices?.getUserMedia) throw Object.assign(new Error("no camera api"), { name: "NotFoundError" });
-  const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: facing }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+export async function openCamera(
+  video: HTMLVideoElement,
+  facing: "environment" | "user",
+): Promise<Camera> {
+  if (!navigator.mediaDevices?.getUserMedia)
+    throw Object.assign(new Error("no camera api"), { name: "NotFoundError" });
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: { facingMode: { ideal: facing }, width: { ideal: 1280 }, height: { ideal: 720 } },
+    audio: false,
+  });
   video.srcObject = stream;
   video.setAttribute("playsinline", "true");
   await video.play().catch(() => undefined);
@@ -26,7 +35,9 @@ export async function openCamera(video: HTMLVideoElement, facing: "environment" 
   return {
     canTorch: !!caps.torch,
     async torch(on) {
-      await track?.applyConstraints({ advanced: [{ torch: on } as MediaTrackConstraintSet] }).catch(() => undefined);
+      await track
+        ?.applyConstraints({ advanced: [{ torch: on } as MediaTrackConstraintSet] })
+        .catch(() => undefined);
     },
     stop() {
       stream.getTracks().forEach((t) => t.stop());
@@ -47,7 +58,9 @@ export function startDecoding(video: HTMLVideoElement, onCode: (code: string) =>
   let stopped = false;
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
-  const Detector = (window as unknown as { BarcodeDetector?: new (o: { formats: string[] }) => DetectorLike }).BarcodeDetector;
+  const Detector = (
+    window as unknown as { BarcodeDetector?: new (o: { formats: string[] }) => DetectorLike }
+  ).BarcodeDetector;
   const native = Detector ? new Detector({ formats: ["qr_code"] }) : null;
 
   const tick = async () => {

@@ -6,15 +6,7 @@ import { configureAuricHttp } from "@core/http/bootstrap.js";
 import { getConfig } from "@core/kernel/config.js";
 import { CLOCK, REQUIRE_EMAIL_VERIFICATION, WORKER_AUTOSTART } from "@core/kernel/tokens.js";
 import type { Clock } from "@core/kernel/clock.js";
-import {
-  applyTestConfig,
-  asSystem,
-  asUser,
-  get,
-  hasTestDb,
-  resetSchema,
-  TEST_DATABASE_URL,
-} from "@core/tests/helpers.js";
+import { applyTestConfig, asSystem, asUser, get, hasTestDb, resetSchema, TEST_DATABASE_URL } from "@core/tests/helpers.js";
 import { IdentityService } from "@core/identity/application/identity-service.js";
 import { OrganizationService } from "@core/organizations/application/organization-service.js";
 import { RbacService } from "@core/rbac/application/rbac-service.js";
@@ -74,9 +66,7 @@ export interface AdmitHttpTestApp {
  */
 export async function createAdmitHttpTestApp(opts: TestAppOptions = {}): Promise<AdmitHttpTestApp> {
   const moduleRef = await compileAdmit(opts);
-  const http = moduleRef.createNestApplication<NestFastifyApplication>(
-    new FastifyAdapter({ bodyLimit: 1_048_576 }),
-  );
+  const http = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter({ bodyLimit: 1_048_576 }));
   await configureAuricHttp(http, getConfig());
   await http.init();
   await http.getHttpAdapter().getInstance().ready();
@@ -85,11 +75,7 @@ export async function createAdmitHttpTestApp(opts: TestAppOptions = {}): Promise
 }
 
 /** POST /api/auth/login and return the bearer access token. Throws on a non-2xx. */
-export async function loginAs(
-  http: NestFastifyApplication,
-  email: string,
-  password = TEST_PASSWORD,
-): Promise<string> {
+export async function loginAs(http: NestFastifyApplication, email: string, password = TEST_PASSWORD): Promise<string> {
   const res = await http.inject({
     method: "POST",
     url: "/api/auth/login",
@@ -141,9 +127,7 @@ export async function seedStaff(
 
   const email = `staff+${Date.now()}-${seq++}@admit.test`;
   const user = await identity.register({ email, password: TEST_PASSWORD, displayName });
-  await asUser(org.ownerId, org.orgId, () =>
-    orgs.addMember({ organizationId: org.orgId, userId: user.id, actorId: org.ownerId }),
-  );
+  await asUser(org.ownerId, org.orgId, () => orgs.addMember({ organizationId: org.orgId, userId: user.id, actorId: org.ownerId }));
   await asSystem(() => rbac.assignRole(user.id, roleKey, org.ownerId, org.orgId));
   return { userId: user.id, email };
 }

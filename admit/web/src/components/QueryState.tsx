@@ -15,10 +15,22 @@ export function QueryState<T>({
   skeleton?: ReactNode;
   empty?: (data: T) => boolean | ReactNode;
 }) {
-  if (query.isPending) return <>{skeleton ?? <p role="status" aria-busy="true" className="text-sm text-ink-2">Loading…</p>}</>;
+  if (query.isPending)
+    return (
+      <>
+        {skeleton ?? (
+          <p role="status" aria-busy="true" className="text-sm text-ink-2">
+            Loading…
+          </p>
+        )}
+      </>
+    );
   if (query.isError) {
     return (
-      <div role="alert" className="flex flex-col items-start gap-3 rounded-sm border border-bad-line bg-bad-bg p-4 text-sm text-bad-ink">
+      <div
+        role="alert"
+        className="flex flex-col items-start gap-3 rounded-sm border border-bad-line bg-bad-bg p-4 text-sm text-bad-ink"
+      >
         <span>
           <strong>✕ Could not load this.</strong> {errorText(query.error)}
         </span>

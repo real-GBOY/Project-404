@@ -18,6 +18,19 @@ import { JobsModule } from "@admit/admit/jobs/jobs.module.js";
  * services; Admit behaviour never moves into Core. Architecture: `admit/docs/architecture.md`.
  */
 @Module({
-  imports: [AdmitSharedModule, SettingsModule, AdmitEventsModule, BookingsModule, PaymentsModule, TicketsModule, CheckinModule, EmailsModule, PublicModule, JobsModule, StaffModule, ReportsModule],
+  imports: [
+    AdmitSharedModule,
+    SettingsModule,
+    AdmitEventsModule,
+    BookingsModule,
+    PaymentsModule,
+    TicketsModule,
+    CheckinModule,
+    EmailsModule,
+    PublicModule,
+    JobsModule,
+    StaffModule,
+    ReportsModule,
+  ],
 })
 export class AdmitModule {}

@@ -1,10 +1,18 @@
 /** Shapes the Admit backend returns. Dates arrive as ISO strings; money is integer minor units (piastres) with a currency. */
 
-export type BookingStatus = "AWAITING_PAYMENT" | "IN_REVIEW" | "CONFIRMED" | "REJECTED" | "EXPIRED" | "CANCELLED";
+export type BookingStatus =
+  "AWAITING_PAYMENT" | "IN_REVIEW" | "CONFIRMED" | "REJECTED" | "EXPIRED" | "CANCELLED";
 export type TicketStatus = "VALID" | "USED" | "REVOKED";
 export type SubmissionStatus = "SUBMITTED" | "APPROVED" | "REJECTED" | "SUPERSEDED";
 export type EmailStatus = "QUEUED" | "ACCEPTED" | "DELIVERED" | "RETRYING" | "FAILED";
-export type EmailType = "INSTRUCTIONS" | "PROOF_RECEIVED" | "TICKETS" | "REJECTED" | "EXPIRED" | "CANCELLED" | "MAGIC_LINK";
+export type EmailType =
+  | "INSTRUCTIONS"
+  | "PROOF_RECEIVED"
+  | "TICKETS"
+  | "REJECTED"
+  | "EXPIRED"
+  | "CANCELLED"
+  | "MAGIC_LINK";
 export type EventStatus = "draft" | "published" | "cancelled" | "archived";
 export type PaymentMethodType = "instapay" | "wallet" | "bank" | "cash_deposit" | "other";
 export type AvailabilityLabel = "available" | "selling_fast" | "sold_out" | "ended";
@@ -17,7 +25,14 @@ export interface LoginResponse {
 }
 export interface Me {
   user: { id: string; email: string; name: string };
-  organizer: { id: string; slug: string; name: string; supportEmail: string | null; logoUrl: string | null; timeZone: string };
+  organizer: {
+    id: string;
+    slug: string;
+    name: string;
+    supportEmail: string | null;
+    logoUrl: string | null;
+    timeZone: string;
+  };
   permissions: string[];
   /** `all` = every event of the organizer; `assigned` = only the events they are assigned to. */
   eventReach: "all" | "assigned";
@@ -99,7 +114,16 @@ export interface BookingLine {
 export interface GuestBooking {
   ref: string;
   status: BookingStatus;
-  event: { id: string; slug: string; title: string; startsAt: string; endsAt: string; venue: { name: string; area: string; address: string; mapUrl: string | null }; coverUrl: string | null; namedTickets: boolean };
+  event: {
+    id: string;
+    slug: string;
+    title: string;
+    startsAt: string;
+    endsAt: string;
+    venue: { name: string; area: string; address: string; mapUrl: string | null };
+    coverUrl: string | null;
+    namedTickets: boolean;
+  };
   customer: { name: string; emailMasked: string };
   lines: BookingLine[];
   totalMinor: number;
@@ -124,7 +148,12 @@ export interface GuestTicket {
 }
 export interface GuestTickets {
   bookingStatus: BookingStatus;
-  event: { title: string; startsAt: string; endsAt: string; venue: { name: string; address: string; mapUrl: string | null } };
+  event: {
+    title: string;
+    startsAt: string;
+    endsAt: string;
+    venue: { name: string; address: string; mapUrl: string | null };
+  };
   tickets: GuestTicket[];
 }
 export interface PresignedProof {
@@ -245,9 +274,38 @@ export interface BookingDetail {
   cancelledAt: string | null;
   lines: BookingLine[];
   timeline: (TimelineEntry & { actorId: string | null })[];
-  submissions: { id: string; status: SubmissionStatus; txnId: string | null; sentFrom: string | null; amountMinor: number | null; createdAt: string; decidedAt: string | null; decidedBy: string | null; customerReason: string | null; internalNote: string | null }[];
-  tickets: { id: string; seq: number; holderName: string; ticketType: string; status: TicketStatus; checkedInAt: string | null; checkedInGate: string | null; revokedAt: string | null; revokedReason: string | null }[];
-  emails: { id: string; type: EmailType; status: EmailStatus; attempts: number; lastError: string | null; sentAt: string | null; createdAt: string }[];
+  submissions: {
+    id: string;
+    status: SubmissionStatus;
+    txnId: string | null;
+    sentFrom: string | null;
+    amountMinor: number | null;
+    createdAt: string;
+    decidedAt: string | null;
+    decidedBy: string | null;
+    customerReason: string | null;
+    internalNote: string | null;
+  }[];
+  tickets: {
+    id: string;
+    seq: number;
+    holderName: string;
+    ticketType: string;
+    status: TicketStatus;
+    checkedInAt: string | null;
+    checkedInGate: string | null;
+    revokedAt: string | null;
+    revokedReason: string | null;
+  }[];
+  emails: {
+    id: string;
+    type: EmailType;
+    status: EmailStatus;
+    attempts: number;
+    lastError: string | null;
+    sentAt: string | null;
+    createdAt: string;
+  }[];
 }
 export interface QueueItem {
   submissionId: string;
@@ -271,7 +329,14 @@ export interface PaymentDetail extends QueueItem {
   declaredAmountMinor: number | null;
   bookingStatus: BookingStatus;
   proofUrl: string;
-  history: { id: string; status: SubmissionStatus; at: string; decidedAt: string | null; customerReason: string | null; internalNote: string | null }[];
+  history: {
+    id: string;
+    status: SubmissionStatus;
+    at: string;
+    decidedAt: string | null;
+    customerReason: string | null;
+    internalNote: string | null;
+  }[];
 }
 export interface ClaimResult {
   heldByMe: boolean;
@@ -312,14 +377,33 @@ export interface ScanOutcome {
 }
 export interface ScannerEvents {
   staff: { name: string; userId: string };
-  events: { id: string; title: string; startsAt: string; endsAt: string; venue: string; gate: string; checkedIn: number; remaining: number }[];
+  events: {
+    id: string;
+    title: string;
+    startsAt: string;
+    endsAt: string;
+    venue: string;
+    gate: string;
+    checkedIn: number;
+    remaining: number;
+  }[];
 }
 export interface CheckinOverview {
   event: { id: string; title: string; startsAt: string };
   totals: { validTickets: number; checkedIn: number; revoked: number; remaining: number };
   byType: { ticketTypeId: string; name: string; total: number; checkedIn: number }[];
   arrivals: { at: string; count: number }[];
-  scans: { id: string; at: string; result: ScanResult; reason: InvalidReason | null; method: "QR" | "MANUAL"; ticketId: string | null; holder: string | null; gate: string; staff: string }[];
+  scans: {
+    id: string;
+    at: string;
+    result: ScanResult;
+    reason: InvalidReason | null;
+    method: "QR" | "MANUAL";
+    ticketId: string | null;
+    holder: string | null;
+    gate: string;
+    staff: string;
+  }[];
 }
 export interface EmailRow {
   id: string;
@@ -340,7 +424,15 @@ export interface ReportsOverview {
   tickets: { valid: number; checkedIn: number; revoked: number };
   paymentsWaiting: { count: number; oldestMinutes: number | null };
   emailsFailed: number;
-  byTicketType: { ticketTypeId: string; name: string; eventId: string; capacity: number; sold: number; held: number; revenueMinor: number }[];
+  byTicketType: {
+    ticketTypeId: string;
+    name: string;
+    eventId: string;
+    capacity: number;
+    sold: number;
+    held: number;
+    revenueMinor: number;
+  }[];
   salesByDay: { day: string; bookings: number; revenueMinor: number }[];
 }
 export interface CustomerRow {

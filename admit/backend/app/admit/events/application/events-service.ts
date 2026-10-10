@@ -8,13 +8,7 @@ import type { IAuditLogger } from "@core/contracts/index.js";
 import type { Principal } from "@core/http/principal.js";
 import { isUniqueViolation } from "@admit/admit/shared/pg-errors.js";
 import { EventAccess } from "./event-access.js";
-import {
-  EventsRepository,
-  type EventRecord,
-  type PaymentMethodRecord,
-  type TicketTypeRecord,
-  type VenueRecord,
-} from "../infrastructure/events-repository.js";
+import { EventsRepository, type EventRecord, type PaymentMethodRecord, type TicketTypeRecord, type VenueRecord } from "../infrastructure/events-repository.js";
 import type {
   CreateEventBody,
   PaymentMethodBody,
@@ -131,7 +125,13 @@ export class EventsService {
       return await this.uow.transaction(async () => {
         if (!(await this.repo.findVenue(b.venueId))) throw ValidationError("admit.venue_not_found", "Choose an existing venue.");
         const id = await this.repo.insertEvent(b, who.userId);
-        await this.audit.record({ actorId: who.userId, action: "admit.event.created", resourceType: "admit_event", resourceId: id, after: { slug: b.slug, title: b.title } });
+        await this.audit.record({
+          actorId: who.userId,
+          action: "admit.event.created",
+          resourceType: "admit_event",
+          resourceId: id,
+          after: { slug: b.slug, title: b.title },
+        });
         return (await this.assemble([(await this.repo.findEvent(id))!]))[0]!;
       });
     } catch (err) {
@@ -159,7 +159,14 @@ export class EventsService {
           if (total > venue.capacity) throw Conflict("admit.venue_capacity", `Ticket quantities exceed the venue capacity by ${total - venue.capacity}.`);
         }
         await this.repo.updateEvent(id, b);
-        await this.audit.record({ actorId: who.userId, action: "admit.event.updated", resourceType: "admit_event", resourceId: id, before: { title: before.title, slug: before.slug }, after: b });
+        await this.audit.record({
+          actorId: who.userId,
+          action: "admit.event.updated",
+          resourceType: "admit_event",
+          resourceId: id,
+          before: { title: before.title, slug: before.slug },
+          after: b,
+        });
         return (await this.assemble([(await this.repo.findEvent(id))!]))[0]!;
       });
     } catch (err) {
@@ -177,7 +184,8 @@ export class EventsService {
       if (view.endsAt <= this.clock.now()) throw ValidationError("admit.event_in_past", "This event has already ended.");
       const onSale = view.ticketTypes.filter((t) => t.onSale && t.quantity > 0);
       if (!onSale.length) throw ValidationError("admit.no_ticket_types", "Add at least one ticket type that is on sale.");
-      if (!view.paymentMethods.some((m) => m.enabled)) throw ValidationError("admit.no_payment_method", "Enable at least one payment method so customers know where to send money.");
+      if (!view.paymentMethods.some((m) => m.enabled))
+        throw ValidationError("admit.no_payment_method", "Enable at least one payment method so customers know where to send money.");
       if (view.capacityAllocated > view.venue.capacity) {
         throw ValidationError("admit.venue_capacity", `Ticket quantities exceed the venue capacity by ${view.capacityAllocated - view.venue.capacity}.`);
       }
@@ -203,7 +211,14 @@ export class EventsService {
       const e = (await this.requireEvents(id))[0]!;
       if (!from.includes(e.status)) throw Conflict("admit.event_state", `An event that is ${e.status} cannot be moved to ${to}.`);
       await this.repo.setStatus(id, to, to === "draft" ? null : undefined);
-      await this.audit.record({ actorId: who.userId, action, resourceType: "admit_event", resourceId: id, before: { status: e.status }, after: { status: to } });
+      await this.audit.record({
+        actorId: who.userId,
+        action,
+        resourceType: "admit_event",
+        resourceId: id,
+        before: { status: e.status },
+        after: { status: to },
+      });
       return (await this.assemble(await this.requireEvents(id)))[0]!;
     });
   }
@@ -237,11 +252,19 @@ export class EventsService {
       this.assertEditable(view);
       const current = view.ticketTypes.find((t) => t.id === typeId)!;
       if (b.quantity !== undefined) {
-        if (b.quantity < current.held) throw Conflict("admit.quantity_below_sold", `${current.held} tickets are already booked or held; the quantity cannot go below that.`);
+        if (b.quantity < current.held)
+          throw Conflict("admit.quantity_below_sold", `${current.held} tickets are already booked or held; the quantity cannot go below that.`);
         this.assertCapacity(view, view.capacityAllocated - current.quantity + b.quantity);
       }
       await this.repo.updateType(typeId, b);
-      await this.audit.record({ actorId: who.userId, action: "admit.ticket_type.updated", resourceType: "admit_ticket_type", resourceId: typeId, before: { priceMinor: current.priceMinor, quantity: current.quantity }, after: b });
+      await this.audit.record({
+        actorId: who.userId,
+        action: "admit.ticket_type.updated",
+        resourceType: "admit_ticket_type",
+        resourceId: typeId,
+        before: { priceMinor: current.priceMinor, quantity: current.quantity },
+        after: b,
+      });
       return (await this.assemble(await this.requireEvents(locked.eventId)))[0]!.ticketTypes.find((t) => t.id === typeId)!;
     });
   }
@@ -251,7 +274,8 @@ export class EventsService {
       const t = await this.repo.findType(typeId);
       if (!t) throw NotFound("admit.ticket_type_not_found", "Ticket type not found.");
       await this.access.assertEvent(who, t.eventId);
-      if (await this.repo.typeHasBookings(typeId)) throw Conflict("admit.ticket_type_in_use", "This ticket type has bookings. Take it off sale instead of deleting it.");
+      if (await this.repo.typeHasBookings(typeId))
+        throw Conflict("admit.ticket_type_in_use", "This ticket type has bookings. Take it off sale instead of deleting it.");
       await this.repo.deleteType(typeId);
       await this.audit.record({ actorId: who.userId, action: "admit.ticket_type.deleted", resourceType: "admit_ticket_type", resourceId: typeId, before: t });
     });
@@ -263,7 +287,13 @@ export class EventsService {
       await this.access.assertEvent(who, eventId);
       this.assertEditable((await this.assemble(await this.requireEvents(eventId)))[0]!);
       const id = await this.repo.insertMethod(eventId, b);
-      await this.audit.record({ actorId: who.userId, action: "admit.payment_method.created", resourceType: "admit_payment_method", resourceId: id, after: { type: b.type, label: b.label } });
+      await this.audit.record({
+        actorId: who.userId,
+        action: "admit.payment_method.created",
+        resourceType: "admit_payment_method",
+        resourceId: id,
+        after: { type: b.type, label: b.label },
+      });
       return (await this.repo.findMethod(id))!;
     });
   }
@@ -274,7 +304,13 @@ export class EventsService {
       if (!m) throw NotFound("admit.payment_method_not_found", "Payment method not found.");
       await this.access.assertEvent(who, m.eventId);
       await this.repo.updateMethod(id, b);
-      await this.audit.record({ actorId: who.userId, action: "admit.payment_method.updated", resourceType: "admit_payment_method", resourceId: id, after: { ...b, identifier: b.identifier ? "(changed)" : undefined } });
+      await this.audit.record({
+        actorId: who.userId,
+        action: "admit.payment_method.updated",
+        resourceType: "admit_payment_method",
+        resourceId: id,
+        after: { ...b, identifier: b.identifier ? "(changed)" : undefined },
+      });
       return (await this.repo.findMethod(id))!;
     });
   }
@@ -284,7 +320,8 @@ export class EventsService {
       const m = await this.repo.findMethod(id);
       if (!m) throw NotFound("admit.payment_method_not_found", "Payment method not found.");
       await this.access.assertEvent(who, m.eventId);
-      if (await this.repo.methodInUse(id)) throw Conflict("admit.payment_method_in_use", "Customers have already paid with this method. Disable it instead of deleting it.");
+      if (await this.repo.methodInUse(id))
+        throw Conflict("admit.payment_method_in_use", "Customers have already paid with this method. Disable it instead of deleting it.");
       await this.repo.deleteMethod(id);
       await this.audit.record({ actorId: who.userId, action: "admit.payment_method.deleted", resourceType: "admit_payment_method", resourceId: id });
     });

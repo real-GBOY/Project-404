@@ -4,11 +4,7 @@
  * proxies appends the address it received from, so entries further left came from the client
  * and can be forged. A missing or short header falls back to the socket address.
  */
-export function clientIp(
-  socketIp: string,
-  forwardedFor: string | string[] | undefined,
-  trustedHops: number,
-): string {
+export function clientIp(socketIp: string, forwardedFor: string | string[] | undefined, trustedHops: number): string {
   if (trustedHops <= 0 || !forwardedFor) return socketIp;
   const header = Array.isArray(forwardedFor) ? forwardedFor.join(",") : forwardedFor;
   const hops = header

@@ -21,16 +21,46 @@ export interface TicketRecord {
 }
 
 const cols = [
-  "id", "booking_id", "event_id", "ticket_type_id", "seq", "holder_name", "status", "checked_in_at", "checked_in_gate", "checked_in_by",
-  "revoked_at", "revoked_reason",
+  "id",
+  "booking_id",
+  "event_id",
+  "ticket_type_id",
+  "seq",
+  "holder_name",
+  "status",
+  "checked_in_at",
+  "checked_in_gate",
+  "checked_in_by",
+  "revoked_at",
+  "revoked_reason",
 ] as const;
 
 const toTicket = (r: {
-  id: string; booking_id: string; event_id: string; ticket_type_id: string; seq: number; holder_name: string; status: TicketStatus;
-  checked_in_at: Date | null; checked_in_gate: string | null; checked_in_by: string | null; revoked_at: Date | null; revoked_reason: string | null;
+  id: string;
+  booking_id: string;
+  event_id: string;
+  ticket_type_id: string;
+  seq: number;
+  holder_name: string;
+  status: TicketStatus;
+  checked_in_at: Date | null;
+  checked_in_gate: string | null;
+  checked_in_by: string | null;
+  revoked_at: Date | null;
+  revoked_reason: string | null;
 }): TicketRecord => ({
-  id: r.id, bookingId: r.booking_id, eventId: r.event_id, ticketTypeId: r.ticket_type_id, seq: r.seq, holderName: r.holder_name, status: r.status,
-  checkedInAt: r.checked_in_at, checkedInGate: r.checked_in_gate, checkedInBy: r.checked_in_by, revokedAt: r.revoked_at, revokedReason: r.revoked_reason,
+  id: r.id,
+  bookingId: r.booking_id,
+  eventId: r.event_id,
+  ticketTypeId: r.ticket_type_id,
+  seq: r.seq,
+  holderName: r.holder_name,
+  status: r.status,
+  checkedInAt: r.checked_in_at,
+  checkedInGate: r.checked_in_gate,
+  checkedInBy: r.checked_in_by,
+  revokedAt: r.revoked_at,
+  revokedReason: r.revoked_reason,
 });
 
 /** The only code that touches issued tickets. Tickets are never deleted. */
@@ -45,8 +75,14 @@ export class TicketsRepository {
       .insertInto("admit_tickets")
       .values(
         rows.map((r) => ({
-          id: r.id, organization_id: requireOrganizationId(), booking_id: r.bookingId, event_id: r.eventId, ticket_type_id: r.ticketTypeId, seq: r.seq,
-          holder_name: r.holderName, token_hash: r.tokenHash,
+          id: r.id,
+          organization_id: requireOrganizationId(),
+          booking_id: r.bookingId,
+          event_id: r.eventId,
+          ticket_type_id: r.ticketTypeId,
+          seq: r.seq,
+          holder_name: r.holderName,
+          token_hash: r.tokenHash,
         })),
       )
       .onConflict((oc) => oc.columns(["booking_id", "seq"]).doNothing())
@@ -56,14 +92,30 @@ export class TicketsRepository {
 
   async forBookings(bookingIds: string[]): Promise<TicketRecord[]> {
     if (!bookingIds.length) return [];
-    return (await admitDb().selectFrom("admit_tickets").select([...cols]).where("booking_id", "in", bookingIds).orderBy("booking_id").orderBy("seq").execute()).map(toTicket);
+    return (
+      await admitDb()
+        .selectFrom("admit_tickets")
+        .select([...cols])
+        .where("booking_id", "in", bookingIds)
+        .orderBy("booking_id")
+        .orderBy("seq")
+        .execute()
+    ).map(toTicket);
   }
   async find(id: string): Promise<TicketRecord | undefined> {
-    const r = await admitDb().selectFrom("admit_tickets").select([...cols]).where("id", "=", id).executeTakeFirst();
+    const r = await admitDb()
+      .selectFrom("admit_tickets")
+      .select([...cols])
+      .where("id", "=", id)
+      .executeTakeFirst();
     return r ? toTicket(r) : undefined;
   }
   async findByTokenHash(hash: string): Promise<TicketRecord | undefined> {
-    const r = await admitDb().selectFrom("admit_tickets").select([...cols]).where("token_hash", "=", hash).executeTakeFirst();
+    const r = await admitDb()
+      .selectFrom("admit_tickets")
+      .select([...cols])
+      .where("token_hash", "=", hash)
+      .executeTakeFirst();
     return r ? toTicket(r) : undefined;
   }
 
@@ -104,7 +156,9 @@ export class TicketsRepository {
 
   async search(opts: { eventIds: string[] | null; eventId?: string; q?: string; limit: number; offset: number }): Promise<TicketRecord[]> {
     if (opts.eventIds && !opts.eventIds.length) return [];
-    let q = admitDb().selectFrom("admit_tickets").select([...cols]);
+    let q = admitDb()
+      .selectFrom("admit_tickets")
+      .select([...cols]);
     if (opts.eventIds) q = q.where("event_id", "in", opts.eventIds);
     if (opts.eventId) q = q.where("event_id", "=", opts.eventId);
     if (opts.q) {
@@ -116,7 +170,12 @@ export class TicketsRepository {
 
   // ---- check-in aggregates --------------------------------------------------------------------
   async countsByStatus(eventId: string): Promise<Record<TicketStatus, number>> {
-    const rows = await admitDb().selectFrom("admit_tickets").select(["status", sql<string>`count(*)`.as("n")]).where("event_id", "=", eventId).groupBy("status").execute();
+    const rows = await admitDb()
+      .selectFrom("admit_tickets")
+      .select(["status", sql<string>`count(*)`.as("n")])
+      .where("event_id", "=", eventId)
+      .groupBy("status")
+      .execute();
     const out: Record<TicketStatus, number> = { VALID: 0, USED: 0, REVOKED: 0 };
     for (const r of rows) out[r.status] = Number(r.n);
     return out;
@@ -124,7 +183,11 @@ export class TicketsRepository {
   async countsByType(eventId: string): Promise<Array<{ ticketTypeId: string; total: number; used: number }>> {
     const rows = await admitDb()
       .selectFrom("admit_tickets")
-      .select(["ticket_type_id", sql<string>`count(*) filter (where status <> 'REVOKED')`.as("total"), sql<string>`count(*) filter (where status = 'USED')`.as("used")])
+      .select([
+        "ticket_type_id",
+        sql<string>`count(*) filter (where status <> 'REVOKED')`.as("total"),
+        sql<string>`count(*) filter (where status = 'USED')`.as("used"),
+      ])
       .where("event_id", "=", eventId)
       .groupBy("ticket_type_id")
       .execute();

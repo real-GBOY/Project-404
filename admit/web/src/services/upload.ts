@@ -12,7 +12,10 @@ export function putWithProgress(
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) onProgress(Math.min(Math.round((e.loaded / e.total) * 100), 99));
     };
-    xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? (onProgress(100), resolve()) : reject(new Error(`upload ${xhr.status}`)));
+    xhr.onload = () =>
+      xhr.status >= 200 && xhr.status < 300
+        ? (onProgress(100), resolve())
+        : reject(new Error(`upload ${xhr.status}`));
     xhr.onerror = () => reject(new Error("network"));
     xhr.onabort = () => reject(new Error("aborted"));
     signal?.addEventListener("abort", () => xhr.abort());

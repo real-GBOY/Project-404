@@ -62,7 +62,14 @@ export class SettingsService {
       const readsAll = who.permissions.some((p) => p === "read_all:event" || p === "*:*" || p === "*:event" || p === "read_all:*");
       return {
         user: { id: who.userId, email: user?.email ?? who.email, name: user?.displayName ?? user?.email ?? who.email },
-        organizer: { id: org.id, slug: org.slug, name: profile.organizerName, supportEmail: profile.supportEmail, logoUrl: profile.logoUrl, timeZone: profile.timeZone },
+        organizer: {
+          id: org.id,
+          slug: org.slug,
+          name: profile.organizerName,
+          supportEmail: profile.supportEmail,
+          logoUrl: profile.logoUrl,
+          timeZone: profile.timeZone,
+        },
         permissions: who.permissions,
         eventReach: readsAll ? ("all" as const) : ("assigned" as const),
       };

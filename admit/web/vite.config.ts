@@ -20,6 +20,7 @@ export default defineConfig({
   },
   preview: { port: 4799, proxy: { "/api": { target: api, changeOrigin: true } } },
   test: {
+    exclude: ["e2e/**", "node_modules/**"],
     environment: "jsdom",
     globals: true,
     setupFiles: ["./src/test/setup.ts"],

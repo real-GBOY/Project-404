@@ -1,9 +1,6 @@
 import type { Json } from "../../../../../core/kernel/db/json.js";
 import type { ColumnType } from "kysely";
-export type Generated<T> =
-  T extends ColumnType<infer S, infer I, infer U>
-    ? ColumnType<S, I | undefined, U>
-    : ColumnType<T, T | undefined, T>;
+export type Generated<T> = T extends ColumnType<infer S, infer I, infer U> ? ColumnType<S, I | undefined, U> : ColumnType<T, T | undefined, T>;
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
 export type admit_booking_lines = {
@@ -40,9 +37,7 @@ export type admit_bookings = {
   /**
    * @kyselyType('AWAITING_PAYMENT' | 'IN_REVIEW' | 'CONFIRMED' | 'REJECTED' | 'EXPIRED' | 'CANCELLED')
    */
-  status: Generated<
-    "AWAITING_PAYMENT" | "IN_REVIEW" | "CONFIRMED" | "REJECTED" | "EXPIRED" | "CANCELLED"
-  >;
+  status: Generated<"AWAITING_PAYMENT" | "IN_REVIEW" | "CONFIRMED" | "REJECTED" | "EXPIRED" | "CANCELLED">;
   customer_name: string;
   email: string;
   phone: string;
@@ -65,14 +60,7 @@ export type admit_email_messages = {
   /**
    * @kyselyType('INSTRUCTIONS' | 'PROOF_RECEIVED' | 'TICKETS' | 'REJECTED' | 'EXPIRED' | 'CANCELLED' | 'MAGIC_LINK')
    */
-  type:
-    | "INSTRUCTIONS"
-    | "PROOF_RECEIVED"
-    | "TICKETS"
-    | "REJECTED"
-    | "EXPIRED"
-    | "CANCELLED"
-    | "MAGIC_LINK";
+  type: "INSTRUCTIONS" | "PROOF_RECEIVED" | "TICKETS" | "REJECTED" | "EXPIRED" | "CANCELLED" | "MAGIC_LINK";
   to_email: string;
   /**
    * @kyselyType(Json<Record<string, unknown>>)

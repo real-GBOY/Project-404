@@ -81,43 +81,122 @@ export interface EventInput {
 export const HELD_STATUSES = ["AWAITING_PAYMENT", "IN_REVIEW", "CONFIRMED"] as const;
 
 const eventCols = [
-  "id", "slug", "title", "category", "description", "venue_id", "starts_at", "ends_at", "cover_url", "status",
-  "max_per_booking", "named_tickets", "hold_hours", "allow_resubmission", "currency", "support_email", "policies",
-  "program", "published_at",
+  "id",
+  "slug",
+  "title",
+  "category",
+  "description",
+  "venue_id",
+  "starts_at",
+  "ends_at",
+  "cover_url",
+  "status",
+  "max_per_booking",
+  "named_tickets",
+  "hold_hours",
+  "allow_resubmission",
+  "currency",
+  "support_email",
+  "policies",
+  "program",
+  "published_at",
 ] as const;
 
 type EventRow = {
-  id: string; slug: string; title: string; category: string; description: string; venue_id: string; starts_at: Date; ends_at: Date;
-  cover_url: string | null; status: EventStatus; max_per_booking: number; named_tickets: boolean; hold_hours: number;
-  allow_resubmission: boolean; currency: string; support_email: string | null; policies: Record<string, string>;
-  program: Array<{ time: string; title: string; detail?: string }>; published_at: Date | null;
+  id: string;
+  slug: string;
+  title: string;
+  category: string;
+  description: string;
+  venue_id: string;
+  starts_at: Date;
+  ends_at: Date;
+  cover_url: string | null;
+  status: EventStatus;
+  max_per_booking: number;
+  named_tickets: boolean;
+  hold_hours: number;
+  allow_resubmission: boolean;
+  currency: string;
+  support_email: string | null;
+  policies: Record<string, string>;
+  program: Array<{ time: string; title: string; detail?: string }>;
+  published_at: Date | null;
 };
 
 const toEvent = (r: EventRow): EventRecord => ({
-  id: r.id, slug: r.slug, title: r.title, category: r.category, description: r.description, venueId: r.venue_id,
-  startsAt: r.starts_at, endsAt: r.ends_at, coverUrl: r.cover_url, status: r.status, maxPerBooking: r.max_per_booking,
-  namedTickets: r.named_tickets, holdHours: r.hold_hours, allowResubmission: r.allow_resubmission, currency: r.currency,
-  supportEmail: r.support_email, policies: r.policies, program: r.program, publishedAt: r.published_at,
+  id: r.id,
+  slug: r.slug,
+  title: r.title,
+  category: r.category,
+  description: r.description,
+  venueId: r.venue_id,
+  startsAt: r.starts_at,
+  endsAt: r.ends_at,
+  coverUrl: r.cover_url,
+  status: r.status,
+  maxPerBooking: r.max_per_booking,
+  namedTickets: r.named_tickets,
+  holdHours: r.hold_hours,
+  allowResubmission: r.allow_resubmission,
+  currency: r.currency,
+  supportEmail: r.support_email,
+  policies: r.policies,
+  program: r.program,
+  publishedAt: r.published_at,
 });
 
 const toType = (r: {
-  id: string; event_id: string; name: string; description: string; price_minor: number; quantity: number;
-  max_per_booking: number; on_sale: boolean; sort_order: number;
+  id: string;
+  event_id: string;
+  name: string;
+  description: string;
+  price_minor: number;
+  quantity: number;
+  max_per_booking: number;
+  on_sale: boolean;
+  sort_order: number;
 }): TicketTypeRecord => ({
-  id: r.id, eventId: r.event_id, name: r.name, description: r.description, priceMinor: r.price_minor, quantity: r.quantity,
-  maxPerBooking: r.max_per_booking, onSale: r.on_sale, sortOrder: r.sort_order,
+  id: r.id,
+  eventId: r.event_id,
+  name: r.name,
+  description: r.description,
+  priceMinor: r.price_minor,
+  quantity: r.quantity,
+  maxPerBooking: r.max_per_booking,
+  onSale: r.on_sale,
+  sortOrder: r.sort_order,
 });
 
 const toMethod = (r: {
-  id: string; event_id: string; type: PaymentMethodType; label: string; recipient_name: string; identifier: string;
-  instructions: string[]; enabled: boolean; sort_order: number;
+  id: string;
+  event_id: string;
+  type: PaymentMethodType;
+  label: string;
+  recipient_name: string;
+  identifier: string;
+  instructions: string[];
+  enabled: boolean;
+  sort_order: number;
 }): PaymentMethodRecord => ({
-  id: r.id, eventId: r.event_id, type: r.type, label: r.label, recipientName: r.recipient_name, identifier: r.identifier,
-  instructions: r.instructions, enabled: r.enabled, sortOrder: r.sort_order,
+  id: r.id,
+  eventId: r.event_id,
+  type: r.type,
+  label: r.label,
+  recipientName: r.recipient_name,
+  identifier: r.identifier,
+  instructions: r.instructions,
+  enabled: r.enabled,
+  sortOrder: r.sort_order,
 });
 
 const toVenue = (r: { id: string; name: string; area: string; address: string; map_url: string | null; capacity: number }): VenueRecord => ({
-  id: r.id, name: r.name, area: r.area, address: r.address, mapUrl: r.map_url, capacity: r.capacity,
+  id: r.id,
+  name: r.name,
+  area: r.area,
+  address: r.address,
+  mapUrl: r.map_url,
+  capacity: r.capacity,
 });
 
 /** The only code that touches the event-catalogue tables. Every call runs inside a tenant transaction (RLS). */
@@ -128,7 +207,11 @@ export class EventsRepository {
     return (await admitDb().selectFrom("admit_venues").select(["id", "name", "area", "address", "map_url", "capacity"]).orderBy("name").execute()).map(toVenue);
   }
   async findVenue(id: string): Promise<VenueRecord | undefined> {
-    const r = await admitDb().selectFrom("admit_venues").select(["id", "name", "area", "address", "map_url", "capacity"]).where("id", "=", id).executeTakeFirst();
+    const r = await admitDb()
+      .selectFrom("admit_venues")
+      .select(["id", "name", "area", "address", "map_url", "capacity"])
+      .where("id", "=", id)
+      .executeTakeFirst();
     return r ? toVenue(r) : undefined;
   }
   async venuesByIds(ids: string[]): Promise<Map<string, VenueRecord>> {
@@ -138,7 +221,10 @@ export class EventsRepository {
   }
   async insertVenue(v: Omit<VenueRecord, "id">): Promise<string> {
     const id = admitId("vnu");
-    await admitDb().insertInto("admit_venues").values({ id, organization_id: requireOrganizationId(), name: v.name, area: v.area, address: v.address, map_url: v.mapUrl, capacity: v.capacity }).execute();
+    await admitDb()
+      .insertInto("admit_venues")
+      .values({ id, organization_id: requireOrganizationId(), name: v.name, area: v.area, address: v.address, map_url: v.mapUrl, capacity: v.capacity })
+      .execute();
     return id;
   }
   async updateVenue(id: string, v: Partial<Omit<VenueRecord, "id">>): Promise<void> {
@@ -157,17 +243,27 @@ export class EventsRepository {
 
   // ---- events ---------------------------------------------------------------------------------
   async findEvent(id: string): Promise<EventRecord | undefined> {
-    const r = await admitDb().selectFrom("admit_events").select([...eventCols]).where("id", "=", id).executeTakeFirst();
+    const r = await admitDb()
+      .selectFrom("admit_events")
+      .select([...eventCols])
+      .where("id", "=", id)
+      .executeTakeFirst();
     return r ? toEvent(r as EventRow) : undefined;
   }
   async findEventBySlug(slug: string): Promise<EventRecord | undefined> {
-    const r = await admitDb().selectFrom("admit_events").select([...eventCols]).where("slug", "=", slug).executeTakeFirst();
+    const r = await admitDb()
+      .selectFrom("admit_events")
+      .select([...eventCols])
+      .where("slug", "=", slug)
+      .executeTakeFirst();
     return r ? toEvent(r as EventRow) : undefined;
   }
   /** `ids = null` means every event of the organizer. */
   async listEvents(opts: { ids: string[] | null; status?: EventStatus[] }): Promise<EventRecord[]> {
     if (opts.ids && !opts.ids.length) return [];
-    let q = admitDb().selectFrom("admit_events").select([...eventCols]);
+    let q = admitDb()
+      .selectFrom("admit_events")
+      .select([...eventCols]);
     if (opts.ids) q = q.where("id", "in", opts.ids);
     if (opts.status?.length) q = q.where("status", "in", opts.status);
     return (await q.orderBy("starts_at", "desc").execute()).map((r) => toEvent(r as EventRow));
@@ -177,10 +273,24 @@ export class EventsRepository {
     await admitDb()
       .insertInto("admit_events")
       .values({
-        id, organization_id: requireOrganizationId(), slug: i.slug, title: i.title, category: i.category, description: i.description,
-        venue_id: i.venueId, starts_at: i.startsAt, ends_at: i.endsAt, cover_url: i.coverUrl ?? null, max_per_booking: i.maxPerBooking,
-        named_tickets: i.namedTickets, hold_hours: i.holdHours, allow_resubmission: i.allowResubmission, support_email: i.supportEmail ?? null,
-        policies: i.policies, program: JSON.stringify(i.program) as never, created_by: createdBy,
+        id,
+        organization_id: requireOrganizationId(),
+        slug: i.slug,
+        title: i.title,
+        category: i.category,
+        description: i.description,
+        venue_id: i.venueId,
+        starts_at: i.startsAt,
+        ends_at: i.endsAt,
+        cover_url: i.coverUrl ?? null,
+        max_per_booking: i.maxPerBooking,
+        named_tickets: i.namedTickets,
+        hold_hours: i.holdHours,
+        allow_resubmission: i.allowResubmission,
+        support_email: i.supportEmail ?? null,
+        policies: i.policies,
+        program: JSON.stringify(i.program) as never,
+        created_by: createdBy,
       })
       .execute();
     return id;
@@ -219,7 +329,9 @@ export class EventsRepository {
   // ---- ticket types ---------------------------------------------------------------------------
   async listTypes(eventIds: string[]): Promise<TicketTypeRecord[]> {
     if (!eventIds.length) return [];
-    return (await admitDb().selectFrom("admit_ticket_types").selectAll().where("event_id", "in", eventIds).orderBy("sort_order").orderBy("price_minor").execute()).map(toType);
+    return (
+      await admitDb().selectFrom("admit_ticket_types").selectAll().where("event_id", "in", eventIds).orderBy("sort_order").orderBy("price_minor").execute()
+    ).map(toType);
   }
   async findType(id: string): Promise<TicketTypeRecord | undefined> {
     const r = await admitDb().selectFrom("admit_ticket_types").selectAll().where("id", "=", id).executeTakeFirst();
@@ -228,14 +340,31 @@ export class EventsRepository {
   /** Locks the type rows (in id order, so two bookings can never deadlock) before inventory is counted. */
   async lockTypes(ids: string[]): Promise<TicketTypeRecord[]> {
     if (!ids.length) return [];
-    const rows = await admitDb().selectFrom("admit_ticket_types").selectAll().where("id", "in", [...ids].sort()).orderBy("id").forUpdate().execute();
+    const rows = await admitDb()
+      .selectFrom("admit_ticket_types")
+      .selectAll()
+      .where("id", "in", [...ids].sort())
+      .orderBy("id")
+      .forUpdate()
+      .execute();
     return rows.map(toType);
   }
   async insertType(eventId: string, t: Omit<TicketTypeRecord, "id" | "eventId">): Promise<string> {
     const id = admitId("tkt");
     await admitDb()
       .insertInto("admit_ticket_types")
-      .values({ id, organization_id: requireOrganizationId(), event_id: eventId, name: t.name, description: t.description, price_minor: t.priceMinor, quantity: t.quantity, max_per_booking: t.maxPerBooking, on_sale: t.onSale, sort_order: t.sortOrder })
+      .values({
+        id,
+        organization_id: requireOrganizationId(),
+        event_id: eventId,
+        name: t.name,
+        description: t.description,
+        price_minor: t.priceMinor,
+        quantity: t.quantity,
+        max_per_booking: t.maxPerBooking,
+        on_sale: t.onSale,
+        sort_order: t.sortOrder,
+      })
       .execute();
     return id;
   }
@@ -290,7 +419,18 @@ export class EventsRepository {
     const id = admitId("pmt");
     await admitDb()
       .insertInto("admit_payment_methods")
-      .values({ id, organization_id: requireOrganizationId(), event_id: eventId, type: m.type, label: m.label, recipient_name: m.recipientName, identifier: m.identifier, instructions: JSON.stringify(m.instructions) as never, enabled: m.enabled, sort_order: m.sortOrder })
+      .values({
+        id,
+        organization_id: requireOrganizationId(),
+        event_id: eventId,
+        type: m.type,
+        label: m.label,
+        recipient_name: m.recipientName,
+        identifier: m.identifier,
+        instructions: JSON.stringify(m.instructions) as never,
+        enabled: m.enabled,
+        sort_order: m.sortOrder,
+      })
       .execute();
     return id;
   }

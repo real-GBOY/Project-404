@@ -52,8 +52,13 @@ export class TicketsService {
       for (let i = 0; i < line.quantity; i++) {
         const id = newTicketId();
         rows.push({
-          id, bookingId: booking.id, eventId: booking.eventId, ticketTypeId: line.ticketTypeId, seq: seq++,
-          holderName: line.holderNames[i] || booking.customerName, tokenHash: ticketTokenHash(id),
+          id,
+          bookingId: booking.id,
+          eventId: booking.eventId,
+          ticketTypeId: line.ticketTypeId,
+          seq: seq++,
+          holderName: line.holderNames[i] || booking.customerName,
+          tokenHash: ticketTokenHash(id),
         });
       }
     }
@@ -70,8 +75,18 @@ export class TicketsService {
     const ev = new Map(events.filter((e) => !!e).map((e) => [e!.id, e!.title]));
     const tn = new Map(types.map((t) => [t.id, t.name]));
     return tickets.map((t) => ({
-      id: t.id, bookingRef: bk.get(t.bookingId) ?? "", eventId: t.eventId, eventTitle: ev.get(t.eventId) ?? "", ticketType: tn.get(t.ticketTypeId) ?? "", holderName: t.holderName,
-      seq: t.seq, status: t.status, checkedInAt: t.checkedInAt, checkedInGate: t.checkedInGate, revokedAt: t.revokedAt, revokedReason: t.revokedReason,
+      id: t.id,
+      bookingRef: bk.get(t.bookingId) ?? "",
+      eventId: t.eventId,
+      eventTitle: ev.get(t.eventId) ?? "",
+      ticketType: tn.get(t.ticketTypeId) ?? "",
+      holderName: t.holderName,
+      seq: t.seq,
+      status: t.status,
+      checkedInAt: t.checkedInAt,
+      checkedInGate: t.checkedInGate,
+      revokedAt: t.revokedAt,
+      revokedReason: t.revokedReason,
     }));
   }
 
@@ -105,9 +120,17 @@ export class TicketsService {
       await this.access.assertEvent(who, t.eventId);
       if (t.status === "REVOKED") throw Conflict("admit.ticket_already_revoked", "This ticket is already revoked.");
       if (t.status === "USED") throw Conflict("admit.ticket_used", "This ticket has already been used to enter.");
-      if (!(await this.repo.revoke(id, this.clock.now(), who.userId, reason))) throw Conflict("admit.ticket_changed", "This ticket just changed. Reload and try again.");
+      if (!(await this.repo.revoke(id, this.clock.now(), who.userId, reason)))
+        throw Conflict("admit.ticket_changed", "This ticket just changed. Reload and try again.");
       await this.bookings.addTimeline(t.bookingId, "Ticket revoked", { actorId: who.userId, note: reason });
-      await this.audit.record({ actorId: who.userId, action: "admit.ticket.revoked", resourceType: "admit_ticket", resourceId: id, before: { status: t.status }, after: { status: "REVOKED", reason } });
+      await this.audit.record({
+        actorId: who.userId,
+        action: "admit.ticket.revoked",
+        resourceType: "admit_ticket",
+        resourceId: id,
+        before: { status: t.status },
+        after: { status: "REVOKED", reason },
+      });
       return (await this.views([(await this.repo.find(id))!]))[0]!;
     });
   }

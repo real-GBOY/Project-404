@@ -24,5 +24,7 @@ export const http = createHttpClient({
 
 /** An API-served asset path such as `/api/admit/public/.../qr.png?k=`, made absolute when the API lives on another origin than the page. */
 export function assetUrl(path: string): string {
-  return /^https?:\/\//i.test(path) || !/^https?:\/\//i.test(API_BASE_URL) ? path : new URL(API_BASE_URL).origin + path;
+  return /^https?:\/\//i.test(path) || !/^https?:\/\//i.test(API_BASE_URL)
+    ? path
+    : new URL(API_BASE_URL).origin + path;
 }

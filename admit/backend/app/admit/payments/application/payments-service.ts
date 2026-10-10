@@ -78,7 +78,10 @@ export class PaymentsService {
   private async payable(ref: string, secret: string): Promise<BookingRecord> {
     const { booking } = await this.bookingsService.guest(ref, secret);
     if (booking.status !== "AWAITING_PAYMENT") {
-      throw Conflict("admit.booking_state", booking.status === "IN_REVIEW" ? "Your proof is already being reviewed." : "This booking is not waiting for payment.");
+      throw Conflict(
+        "admit.booking_state",
+        booking.status === "IN_REVIEW" ? "Your proof is already being reviewed." : "This booking is not waiting for payment.",
+      );
     }
     if (booking.holdExpiresAt <= this.clock.now()) throw Conflict("admit.hold_expired", "The time to pay for this booking has run out.");
     return booking;
@@ -89,13 +92,23 @@ export class PaymentsService {
     const booking = await readInTenant(() => this.payable(ref, secret));
     const max = readAdmitConfig().proofMaxBytes;
     if (b.byteSize > max) {
-      throw ValidationError("admit.proof_too_large", `This file is ${Math.ceil(b.byteSize / 1_048_576)} MB. Upload one under ${Math.floor(max / 1_048_576)} MB.`, { fields: [{ path: "file", message: `This file is ${Math.ceil(b.byteSize / 1_048_576)} MB. Upload one under ${Math.floor(max / 1_048_576)} MB.` }] });
+      throw ValidationError(
+        "admit.proof_too_large",
+        `This file is ${Math.ceil(b.byteSize / 1_048_576)} MB. Upload one under ${Math.floor(max / 1_048_576)} MB.`,
+        { fields: [{ path: "file", message: `This file is ${Math.ceil(b.byteSize / 1_048_576)} MB. Upload one under ${Math.floor(max / 1_048_576)} MB.` }] },
+      );
     }
     if (!(PROOF_TYPES as readonly string[]).includes(b.contentType)) {
-      throw ValidationError("admit.proof_type", "Upload a photo (JPG, PNG, HEIC) or a PDF.", { fields: [{ path: "file", message: "Upload a photo (JPG, PNG, HEIC) or a PDF." }] });
+      throw ValidationError("admit.proof_type", "Upload a photo (JPG, PNG, HEIC) or a PDF.", {
+        fields: [{ path: "file", message: "Upload a photo (JPG, PNG, HEIC) or a PDF." }],
+      });
     }
     const out = await this.files.createUpload({
-      originalName: b.fileName.slice(0, 120), contentType: b.contentType, byteSize: b.byteSize, visibility: "private", metadata: { kind: "payment_proof", bookingId: booking.id },
+      originalName: b.fileName.slice(0, 120),
+      contentType: b.contentType,
+      byteSize: b.byteSize,
+      visibility: "private",
+      metadata: { kind: "payment_proof", bookingId: booking.id },
     });
     return out;
   }
@@ -126,14 +139,29 @@ export class PaymentsService {
       if (booking.status !== "AWAITING_PAYMENT") throw Conflict("admit.booking_state", "Your proof is already being reviewed.");
       const now = this.clock.now();
       if (booking.holdExpiresAt <= now) throw Conflict("admit.hold_expired", "The time to pay for this booking has run out.");
-      if (b.methodId && !(await this.events.findMethod(b.methodId))) throw ValidationError("admit.payment_method_not_found", "Choose one of the listed payment methods.");
+      if (b.methodId && !(await this.events.findMethod(b.methodId)))
+        throw ValidationError("admit.payment_method_not_found", "Choose one of the listed payment methods.");
       await this.repo.supersedeOpen(booking.id);
-      const id = await this.repo.insert({ bookingId: booking.id, methodId: b.methodId ?? null, fileId: b.fileId, txnId: b.transactionId ?? null, sentFrom: b.sentFrom ?? null, amountMinor: b.amountMinor ?? null });
+      const id = await this.repo.insert({
+        bookingId: booking.id,
+        methodId: b.methodId ?? null,
+        fileId: b.fileId,
+        txnId: b.transactionId ?? null,
+        sentFrom: b.sentFrom ?? null,
+        amountMinor: b.amountMinor ?? null,
+      });
       await this.bookings.transition(booking.id, ["AWAITING_PAYMENT"], "IN_REVIEW", { rejectionReason: null });
       await this.bookings.addTimeline(booking.id, "Payment proof submitted", { at: now });
       await this.bookings.addTimeline(booking.id, "Waiting for review", { state: "pending", at: now });
       await this.composer.proofReceived(booking.id, id);
-      await this.audit.record({ actorId: null, actorType: "system", action: "admit.payment.submitted", resourceType: "admit_payment_submission", resourceId: id, after: { bookingId: booking.id } });
+      await this.audit.record({
+        actorId: null,
+        actorType: "system",
+        action: "admit.payment.submitted",
+        resourceType: "admit_payment_submission",
+        resourceId: id,
+        after: { bookingId: booking.id },
+      });
       return { submissionId: id, status: "IN_REVIEW" as const };
     });
   }
@@ -165,9 +193,22 @@ export class PaymentsService {
       if (s.amountMinor != null && s.amountMinor !== b.totalMinor) flags.push("amount_mismatch");
       if (s.txnId && (txnCount.get(s.txnId) ?? 0) > 1) flags.push("duplicate_transaction");
       return {
-        submissionId: s.id, version: s.version, bookingId: b.id, bookingRef: b.ref, customer: b.customerName, eventId: s.eventId, eventTitle: ev.get(s.eventId)?.title ?? "",
-        amountMinor: b.totalMinor, currency: b.currency, method: s.methodId ? (mn.get(s.methodId) ?? null) : null, submittedAt: s.createdAt, flags,
-        lock: s.claimedBy && s.claimedAt && this.clock.now().getTime() - s.claimedAt.getTime() < CLAIM_TTL_MS ? { by: s.claimedBy, byName: null, at: s.claimedAt } : null,
+        submissionId: s.id,
+        version: s.version,
+        bookingId: b.id,
+        bookingRef: b.ref,
+        customer: b.customerName,
+        eventId: s.eventId,
+        eventTitle: ev.get(s.eventId)?.title ?? "",
+        amountMinor: b.totalMinor,
+        currency: b.currency,
+        method: s.methodId ? (mn.get(s.methodId) ?? null) : null,
+        submittedAt: s.createdAt,
+        flags,
+        lock:
+          s.claimedBy && s.claimedAt && this.clock.now().getTime() - s.claimedAt.getTime() < CLAIM_TTL_MS
+            ? { by: s.claimedBy, byName: null, at: s.claimedAt }
+            : null,
       };
     });
   }
@@ -188,7 +229,14 @@ export class PaymentsService {
         declaredAmountMinor: s.amountMinor,
         bookingStatus: booking.status,
         proofUrl: `/api/admit/payments/${s.id}/proof`,
-        history: history.map((h) => ({ id: h.id, status: h.status, at: h.createdAt, decidedAt: h.decidedAt, customerReason: h.customerReason, internalNote: h.internalNote })),
+        history: history.map((h) => ({
+          id: h.id,
+          status: h.status,
+          at: h.createdAt,
+          decidedAt: h.decidedAt,
+          customerReason: h.customerReason,
+          internalNote: h.internalNote,
+        })),
       };
     });
   }
@@ -213,7 +261,8 @@ export class PaymentsService {
       if (!s) throw NotFound("admit.submission_not_found", "Payment not found.");
       const booking = (await this.bookings.find(s.bookingId))!;
       await this.access.assertEvent(who, booking.eventId);
-      if (s.status !== "SUBMITTED") throw Conflict("admit.payment_changed", "This payment was already decided.", { status: s.status, decidedBy: s.decidedBy, decidedAt: s.decidedAt });
+      if (s.status !== "SUBMITTED")
+        throw Conflict("admit.payment_changed", "This payment was already decided.", { status: s.status, decidedBy: s.decidedBy, decidedAt: s.decidedAt });
       const held = await this.repo.claim(id, who.userId, this.clock.now(), CLAIM_TTL_MS);
       return { heldByMe: held.claimedBy === who.userId, claimedBy: held.claimedBy, claimedAt: held.claimedAt, version: s.version };
     });
@@ -224,39 +273,73 @@ export class PaymentsService {
 
   async approve(who: Principal, id: string, b: ApproveBody): Promise<DecisionResult> {
     return this.decide(who, id, b.version, b.idempotencyKey, async (booking, sub, now) => {
-      if (!(await this.repo.decide(id, b.version, "APPROVED", { by: who.userId, at: now, customerReason: null, internalNote: b.internalNote ?? null, decisionKey: b.idempotencyKey }))) {
+      if (
+        !(await this.repo.decide(id, b.version, "APPROVED", {
+          by: who.userId,
+          at: now,
+          customerReason: null,
+          internalNote: b.internalNote ?? null,
+          decisionKey: b.idempotencyKey,
+        }))
+      ) {
         throw this.changed(sub);
       }
-      if (!(await this.bookings.transition(booking.id, ["IN_REVIEW"], "CONFIRMED", { confirmedAt: now }))) throw Conflict("admit.booking_changed", "This booking just changed. Reload and try again.");
+      if (!(await this.bookings.transition(booking.id, ["IN_REVIEW"], "CONFIRMED", { confirmedAt: now })))
+        throw Conflict("admit.booking_changed", "This booking just changed. Reload and try again.");
       const issued = await this.tickets.issueForBooking(booking);
       await this.bookings.addTimeline(booking.id, "Payment approved", { actorId: who.userId, at: now });
       await this.bookings.addTimeline(booking.id, "Tickets issued", { actorId: who.userId, at: now });
       await this.composer.ticketsIssued(booking.id);
-      await this.audit.record({ actorId: who.userId, action: "admit.payment.approved", resourceType: "admit_payment_submission", resourceId: id, after: { bookingId: booking.id, tickets: issued } });
+      await this.audit.record({
+        actorId: who.userId,
+        action: "admit.payment.approved",
+        resourceType: "admit_payment_submission",
+        resourceId: id,
+        after: { bookingId: booking.id, tickets: issued },
+      });
       return { status: "APPROVED" as const, bookingStatus: "CONFIRMED" as const, ticketsIssued: issued };
     });
   }
 
   async reject(who: Principal, id: string, b: RejectBody): Promise<DecisionResult> {
     return this.decide(who, id, b.version, b.idempotencyKey, async (booking, sub, now) => {
-      if (!(await this.repo.decide(id, b.version, "REJECTED", { by: who.userId, at: now, customerReason: b.reason, internalNote: b.internalNote ?? null, decisionKey: b.idempotencyKey }))) {
+      if (
+        !(await this.repo.decide(id, b.version, "REJECTED", {
+          by: who.userId,
+          at: now,
+          customerReason: b.reason,
+          internalNote: b.internalNote ?? null,
+          decisionKey: b.idempotencyKey,
+        }))
+      ) {
         throw this.changed(sub);
       }
       const event = (await this.events.findEvent(booking.eventId))!;
       // A rejected customer may fix the problem while the hold lasts; otherwise the seats go back on sale.
       const resubmit = event.allowResubmission && booking.holdExpiresAt > now;
       const to = resubmit ? "AWAITING_PAYMENT" : "REJECTED";
-      if (!(await this.bookings.transition(booking.id, ["IN_REVIEW"], to, { rejectionReason: b.reason }))) throw Conflict("admit.booking_changed", "This booking just changed. Reload and try again.");
+      if (!(await this.bookings.transition(booking.id, ["IN_REVIEW"], to, { rejectionReason: b.reason })))
+        throw Conflict("admit.booking_changed", "This booking just changed. Reload and try again.");
       await this.bookings.addTimeline(booking.id, "Payment rejected", { state: "failed", actorId: who.userId, note: b.reason, at: now });
       if (resubmit) await this.bookings.addTimeline(booking.id, "Waiting for a new payment proof", { state: "pending", at: now });
       await this.composer.rejected(booking.id, id, b.reason, resubmit);
-      await this.audit.record({ actorId: who.userId, action: "admit.payment.rejected", resourceType: "admit_payment_submission", resourceId: id, after: { bookingId: booking.id, resubmit } });
+      await this.audit.record({
+        actorId: who.userId,
+        action: "admit.payment.rejected",
+        resourceType: "admit_payment_submission",
+        resourceId: id,
+        after: { bookingId: booking.id, resubmit },
+      });
       return { status: "REJECTED" as const, bookingStatus: to as BookingRecord["status"], ticketsIssued: 0 };
     });
   }
 
   private changed(sub: SubmissionRecord): Error {
-    return Conflict("admit.payment_changed", "This booking changed while you were looking at it.", { status: sub.status, decidedBy: sub.decidedBy, decidedAt: sub.decidedAt });
+    return Conflict("admit.payment_changed", "This booking changed while you were looking at it.", {
+      status: sub.status,
+      decidedBy: sub.decidedBy,
+      decidedAt: sub.decidedAt,
+    });
   }
 
   private async decide(
@@ -264,7 +347,11 @@ export class PaymentsService {
     id: string,
     version: number,
     key: string,
-    run: (booking: BookingRecord, sub: SubmissionRecord, now: Date) => Promise<{ status: SubmissionRecord["status"]; bookingStatus: BookingRecord["status"]; ticketsIssued: number }>,
+    run: (
+      booking: BookingRecord,
+      sub: SubmissionRecord,
+      now: Date,
+    ) => Promise<{ status: SubmissionRecord["status"]; bookingStatus: BookingRecord["status"]; ticketsIssued: number }>,
   ): Promise<DecisionResult> {
     return this.uow.transaction(async () => {
       const seen = await this.repo.find(id);
@@ -276,7 +363,14 @@ export class PaymentsService {
       const prior = await this.repo.findByDecisionKey(key);
       if (prior) {
         const b = (await this.bookings.find(prior.bookingId))!;
-        return { submissionId: prior.id, status: prior.status, bookingStatus: b.status, ticketsIssued: (await this.tickets.countFor(b.id)), decidedAt: prior.decidedAt, replayed: true };
+        return {
+          submissionId: prior.id,
+          status: prior.status,
+          bookingStatus: b.status,
+          ticketsIssued: await this.tickets.countFor(b.id),
+          decidedAt: prior.decidedAt,
+          replayed: true,
+        };
       }
       const booking = (await this.bookings.lock(seen.bookingId))!;
       const sub = (await this.repo.lock(id))!;

@@ -15,13 +15,21 @@ export function useOrg(): string {
 
 export function useCatalogue() {
   const org = useOrg();
-  return useQuery({ queryKey: qk.catalogue(org), queryFn: () => publicApi.catalogue(org), staleTime: 15_000 });
+  return useQuery({
+    queryKey: qk.catalogue(org),
+    queryFn: () => publicApi.catalogue(org),
+    staleTime: 15_000,
+  });
 }
 
 export function usePublicEvent() {
   const org = useOrg();
   const event = useParams().event ?? "";
-  return useQuery({ queryKey: qk.event(org, event), queryFn: () => publicApi.event(org, event), staleTime: 10_000 });
+  return useQuery({
+    queryKey: qk.event(org, event),
+    queryFn: () => publicApi.event(org, event),
+    staleTime: 10_000,
+  });
 }
 
 /** A booking page is addressed by the ref in the path and the magic-link secret `k` in the query. */
@@ -39,17 +47,37 @@ export function useGuestBooking(poll = false) {
     queryFn: () => publicApi.booking(org, ref, k),
     enabled: !!k,
     retry: false,
-    refetchInterval: (q) => (poll && q.state.data && (q.state.data.status === "IN_REVIEW" || q.state.data.status === "AWAITING_PAYMENT" || (q.state.data.status === "CONFIRMED" && q.state.data.emailStatus !== "ACCEPTED" && q.state.data.emailStatus !== "DELIVERED")) ? 30_000 : false),
+    refetchInterval: (q) =>
+      poll &&
+      q.state.data &&
+      (q.state.data.status === "IN_REVIEW" ||
+        q.state.data.status === "AWAITING_PAYMENT" ||
+        (q.state.data.status === "CONFIRMED" &&
+          q.state.data.emailStatus !== "ACCEPTED" &&
+          q.state.data.emailStatus !== "DELIVERED"))
+        ? 30_000
+        : false,
   });
 }
 
 export function useGuestTickets() {
   const { org, ref, k } = useBookingAccess();
-  return useQuery({ queryKey: qk.tickets(org, ref), queryFn: () => publicApi.tickets(org, ref, k), enabled: !!k, retry: false });
+  return useQuery({
+    queryKey: qk.tickets(org, ref),
+    queryFn: () => publicApi.tickets(org, ref, k),
+    enabled: !!k,
+    retry: false,
+  });
 }
 
 /** Pages a booking link opens at: `/b/:org/:ref/...?k=`. Keep `k` when moving between them. */
-export function bookingPath(org: string, ref: string, k: string, page: "" | "pay" | "upload" | "submitted" = ""): string {
+export function bookingPath(
+  org: string,
+  ref: string,
+  k: string,
+  page: "" | "pay" | "upload" | "submitted" = "",
+): string {
   return `/b/${org}/${ref}${page ? `/${page}` : ""}?k=${encodeURIComponent(k)}`;
 }
-export const ticketsPath = (org: string, ref: string, k: string) => `/t/${org}/${ref}?k=${encodeURIComponent(k)}`;
+export const ticketsPath = (org: string, ref: string, k: string) =>
+  `/t/${org}/${ref}?k=${encodeURIComponent(k)}`;

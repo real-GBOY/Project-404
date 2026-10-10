@@ -87,7 +87,11 @@ export class TeamService {
     await this.uow.transaction(async () => {
       await this.access.require(who, "manage_members", "organization");
       await this.access.require(who, "assign", "role");
-      const user = await currentExecutor().selectFrom("users").select(["id", "email"]).where("email_normalized", "=", email.trim().toLowerCase()).executeTakeFirst();
+      const user = await currentExecutor()
+        .selectFrom("users")
+        .select(["id", "email"])
+        .where("email_normalized", "=", email.trim().toLowerCase())
+        .executeTakeFirst();
       if (!user) throw NotFound("admit.no_account", "No account uses that email. Ask them to register first, then add them here.");
       try {
         await this.orgs.addMember({ organizationId: requireOrganizationId(), userId: user.id, actorId: who.userId });

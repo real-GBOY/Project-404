@@ -71,3 +71,9 @@ def test_missing_required_fields_are_a_permanent_render_error():
 def test_subjects_have_no_unfilled_format_fields():
     for kind, s in SUBJECTS.items():
         assert not re.search(r"\{(?!event_name\})", s)
+
+
+def test_plain_text_part_has_no_hidden_preheader_padding():
+    _, _, text = render("PROOF_RECEIVED", sample("PROOF_RECEIVED"))
+    assert "﻿" not in text and "͏" not in text
+    assert text.lstrip().startswith("ADMIT") or "Booking" in text.splitlines()[0]

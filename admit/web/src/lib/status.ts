@@ -1,4 +1,11 @@
-import type { BookingStatus, EmailStatus, EventStatus, ScanResult, SubmissionStatus, TicketStatus } from "@/api/types";
+import type {
+  BookingStatus,
+  EmailStatus,
+  EventStatus,
+  ScanResult,
+  SubmissionStatus,
+  TicketStatus,
+} from "@/api/types";
 
 /**
  * The status system: one meaning per color, product-wide. Every status is glyph + word + color, never color alone.
@@ -12,7 +19,15 @@ export interface StatusView {
   label: string;
 }
 
-export const GLYPH: Record<Tone, string> = { pending: "◷", ok: "✓", bad: "✕", used: "!", todo: "→", off: "—", info: "i" };
+export const GLYPH: Record<Tone, string> = {
+  pending: "◷",
+  ok: "✓",
+  bad: "✕",
+  used: "!",
+  todo: "→",
+  off: "—",
+  info: "i",
+};
 
 const v = (tone: Tone, label: string): StatusView => ({ tone, glyph: GLYPH[tone], label });
 

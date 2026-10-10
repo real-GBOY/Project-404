@@ -64,17 +64,31 @@ export class PublicService {
 
   private async cards(events: EventRecord[], now: Date) {
     const ids = events.map((e) => e.id);
-    const [venues, types, held] = await Promise.all([this.events.venuesByIds([...new Set(events.map((e) => e.venueId))]), this.events.listTypes(ids), this.events.heldByType(ids)]);
+    const [venues, types, held] = await Promise.all([
+      this.events.venuesByIds([...new Set(events.map((e) => e.venueId))]),
+      this.events.listTypes(ids),
+      this.events.heldByType(ids),
+    ]);
     return events.map((e) => {
       const myTypes = types.filter((t) => t.eventId === e.id).map((t) => ({ ...t, remaining: Math.max(t.quantity - (held.get(t.id) ?? 0), 0) }));
       const v = venues.get(e.venueId)!;
       const prices = myTypes.filter((t) => t.onSale).map((t) => t.priceMinor);
       return {
         card: {
-          id: e.id, slug: e.slug, title: e.title, category: e.category, startsAt: e.startsAt, endsAt: e.endsAt, coverUrl: e.coverUrl, currency: e.currency,
-          venue: { name: v.name, area: v.area }, minPriceMinor: prices.length ? Math.min(...prices) : null, availability: this.label(myTypes, e, now),
+          id: e.id,
+          slug: e.slug,
+          title: e.title,
+          category: e.category,
+          startsAt: e.startsAt,
+          endsAt: e.endsAt,
+          coverUrl: e.coverUrl,
+          currency: e.currency,
+          venue: { name: v.name, area: v.area },
+          minPriceMinor: prices.length ? Math.min(...prices) : null,
+          availability: this.label(myTypes, e, now),
         },
-        types: myTypes, venue: v,
+        types: myTypes,
+        venue: v,
       };
     });
   }
@@ -112,8 +126,13 @@ export class PublicService {
           venue: { name: c!.venue.name, area: c!.venue.area, address: c!.venue.address, mapUrl: c!.venue.mapUrl },
           organizer: { slug: org.slug, name: profile.organizerName, supportEmail: event.supportEmail ?? profile.supportEmail },
           ticketTypes: c!.types.map((t) => ({
-            id: t.id, name: t.name, description: t.description, priceMinor: t.priceMinor, maxPerBooking: Math.min(t.maxPerBooking, event.maxPerBooking),
-            remaining: Math.min(t.remaining, REMAINING_DISPLAY_CAP), onSale: t.onSale && t.remaining > 0,
+            id: t.id,
+            name: t.name,
+            description: t.description,
+            priceMinor: t.priceMinor,
+            maxPerBooking: Math.min(t.maxPerBooking, event.maxPerBooking),
+            remaining: Math.min(t.remaining, REMAINING_DISPLAY_CAP),
+            onSale: t.onSale && t.remaining > 0,
           })),
         };
       }),
@@ -125,7 +144,14 @@ export class PublicService {
     return this.asOrganizer(slug, async (org) => {
       const { booking, created } = await this.bookings.create(eventSlug, body, idempotencyKey);
       const links = await readInTenant(() => this.composer.links(booking, org.slug));
-      return { created, ref: booking.ref, holdExpiresAt: booking.holdExpiresAt, totalMinor: booking.totalMinor, currency: booking.currency, links: { status: links.status, upload: links.upload } };
+      return {
+        created,
+        ref: booking.ref,
+        holdExpiresAt: booking.holdExpiresAt,
+        totalMinor: booking.totalMinor,
+        currency: booking.currency,
+        links: { status: links.status, upload: links.upload },
+      };
     });
   }
 
@@ -145,7 +171,15 @@ export class PublicService {
       const out = await this.payments.presign(ref, k, b);
       // The local driver's target is the authenticated files route, which a guest cannot call: use Admit's own for this booking.
       if (out.upload.url.startsWith("/")) {
-        return { fileId: out.fileId, upload: { ...out.upload, url: `/api/admit/public/${slug}/bookings/${ref}/proof/${out.fileId}/bytes?k=${encodeURIComponent(k)}`, method: "PUT", headers: { "content-type": "application/octet-stream" } } };
+        return {
+          fileId: out.fileId,
+          upload: {
+            ...out.upload,
+            url: `/api/admit/public/${slug}/bookings/${ref}/proof/${out.fileId}/bytes?k=${encodeURIComponent(k)}`,
+            method: "PUT",
+            headers: { "content-type": "application/octet-stream" },
+          },
+        };
       }
       return out;
     });
@@ -174,7 +208,12 @@ export class PublicService {
           bookingStatus: booking.status,
           event: { title: event.title, startsAt: event.startsAt, endsAt: event.endsAt, venue: { name: v.name, address: v.address, mapUrl: v.mapUrl } },
           tickets: list.map((t) => ({
-            id: t.id, seq: t.seq, holderName: t.holderName, ticketType: tn.get(t.ticketTypeId) ?? "", status: t.status, checkedInAt: t.checkedInAt,
+            id: t.id,
+            seq: t.seq,
+            holderName: t.holderName,
+            ticketType: tn.get(t.ticketTypeId) ?? "",
+            status: t.status,
+            checkedInAt: t.checkedInAt,
             // The QR is an image the page loads; the token itself never appears in JSON.
             qrImageUrl: t.status === "REVOKED" ? null : links.qr(t.id).replace(/^https?:\/\/[^/]+/, ""),
           })),
@@ -192,7 +231,13 @@ export class PublicService {
         if (!ticket || ticket.status === "REVOKED") throw NotFound("admit.ticket_not_found", "Ticket not found.");
         return ticket;
       });
-      return QRCode.toBuffer(ticketToken(t.id), { type: "png", errorCorrectionLevel: "M", margin: 4, width: 400, color: { dark: "#000000", light: "#FFFFFF" } });
+      return QRCode.toBuffer(ticketToken(t.id), {
+        type: "png",
+        errorCorrectionLevel: "M",
+        margin: 4,
+        width: 400,
+        color: { dark: "#000000", light: "#FFFFFF" },
+      });
     });
   }
 }

@@ -20,14 +20,44 @@ export interface EmailRecord {
   createdAt: Date;
 }
 
-const cols = ["id", "booking_id", "type", "to_email", "status", "attempts", "max_attempts", "last_error", "provider_message_id", "sent_at", "created_at"] as const;
+const cols = [
+  "id",
+  "booking_id",
+  "type",
+  "to_email",
+  "status",
+  "attempts",
+  "max_attempts",
+  "last_error",
+  "provider_message_id",
+  "sent_at",
+  "created_at",
+] as const;
 
 const toEmail = (r: {
-  id: string; booking_id: string | null; type: EmailType; to_email: string; status: EmailStatus; attempts: number; max_attempts: number;
-  last_error: string | null; provider_message_id: string | null; sent_at: Date | null; created_at: Date;
+  id: string;
+  booking_id: string | null;
+  type: EmailType;
+  to_email: string;
+  status: EmailStatus;
+  attempts: number;
+  max_attempts: number;
+  last_error: string | null;
+  provider_message_id: string | null;
+  sent_at: Date | null;
+  created_at: Date;
 }): EmailRecord => ({
-  id: r.id, bookingId: r.booking_id, type: r.type, toEmail: r.to_email, status: r.status, attempts: r.attempts, maxAttempts: r.max_attempts,
-  lastError: r.last_error, providerMessageId: r.provider_message_id, sentAt: r.sent_at, createdAt: r.created_at,
+  id: r.id,
+  bookingId: r.booking_id,
+  type: r.type,
+  toEmail: r.to_email,
+  status: r.status,
+  attempts: r.attempts,
+  maxAttempts: r.max_attempts,
+  lastError: r.last_error,
+  providerMessageId: r.provider_message_id,
+  sentAt: r.sent_at,
+  createdAt: r.created_at,
 });
 
 /**
@@ -42,7 +72,13 @@ export class EmailRepository {
     const res = await admitDb()
       .insertInto("admit_email_messages")
       .values({
-        id: admitId("eml"), organization_id: requireOrganizationId(), booking_id: e.bookingId, type: e.type, to_email: e.to, payload: e.payload, dedupe_key: e.dedupeKey,
+        id: admitId("eml"),
+        organization_id: requireOrganizationId(),
+        booking_id: e.bookingId,
+        type: e.type,
+        to_email: e.to,
+        payload: e.payload,
+        dedupe_key: e.dedupeKey,
       })
       .onConflict((oc) => oc.columns(["organization_id", "dedupe_key"]).where("dedupe_key", "is not", null).doNothing())
       .executeTakeFirst();
@@ -52,7 +88,9 @@ export class EmailRepository {
   /** `eventIds = null` means every event; a list narrows to emails of bookings of those events. */
   async list(f: { eventIds?: string[] | null; bookingId?: string; status?: EmailStatus[]; limit: number; offset: number }): Promise<EmailRecord[]> {
     if (f.eventIds && !f.eventIds.length) return [];
-    let q = admitDb().selectFrom("admit_email_messages").select([...cols]);
+    let q = admitDb()
+      .selectFrom("admit_email_messages")
+      .select([...cols]);
     if (f.eventIds) q = q.where("booking_id", "in", admitDb().selectFrom("admit_bookings").select("id").where("event_id", "in", f.eventIds));
     if (f.bookingId) q = q.where("booking_id", "=", f.bookingId);
     if (f.status?.length) q = q.where("status", "in", f.status);
@@ -60,14 +98,29 @@ export class EmailRepository {
   }
   async forBookings(bookingIds: string[]): Promise<EmailRecord[]> {
     if (!bookingIds.length) return [];
-    return (await admitDb().selectFrom("admit_email_messages").select([...cols]).where("booking_id", "in", bookingIds).orderBy("created_at").execute()).map(toEmail);
+    return (
+      await admitDb()
+        .selectFrom("admit_email_messages")
+        .select([...cols])
+        .where("booking_id", "in", bookingIds)
+        .orderBy("created_at")
+        .execute()
+    ).map(toEmail);
   }
   async find(id: string): Promise<EmailRecord | undefined> {
-    const r = await admitDb().selectFrom("admit_email_messages").select([...cols]).where("id", "=", id).executeTakeFirst();
+    const r = await admitDb()
+      .selectFrom("admit_email_messages")
+      .select([...cols])
+      .where("id", "=", id)
+      .executeTakeFirst();
     return r ? toEmail(r) : undefined;
   }
   async countFailed(): Promise<number> {
-    const r = await admitDb().selectFrom("admit_email_messages").select((eb) => eb.fn.countAll<string>().as("n")).where("status", "=", "FAILED").executeTakeFirstOrThrow();
+    const r = await admitDb()
+      .selectFrom("admit_email_messages")
+      .select((eb) => eb.fn.countAll<string>().as("n"))
+      .where("status", "=", "FAILED")
+      .executeTakeFirstOrThrow();
     return Number(r.n);
   }
 

@@ -30,7 +30,11 @@ export function ReasonDialog({
     <Dialog open={open} onClose={onClose} title={title}>
       <div className="flex flex-col gap-3 px-[22px] pt-2.5">
         <p className="text-sm leading-normal text-ink-2">{body}</p>
-        <TextArea label="Reason (kept in the audit log)" value={reason} onChange={(e) => setReason(e.target.value)} />
+        <TextArea
+          label="Reason (kept in the audit log)"
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+        />
         {error ? (
           <p role="alert" className="text-sm text-bad-solid">
             {error}
@@ -41,7 +45,13 @@ export function ReasonDialog({
         <Button variant="secondary" size="md" onClick={onClose}>
           Back
         </Button>
-        <Button variant="ink" size="md" loading={busy} disabled={reason.trim().length < minLength} onClick={() => onConfirm(reason.trim())}>
+        <Button
+          variant="ink"
+          size="md"
+          loading={busy}
+          disabled={reason.trim().length < minLength}
+          onClick={() => onConfirm(reason.trim())}
+        >
           {confirmLabel}
         </Button>
       </div>

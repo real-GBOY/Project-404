@@ -8,9 +8,20 @@ const TONES = {
 } as const;
 
 /** Persistent in-page banner for state that lives on the record (use a toast only for instant local actions). */
-export function Notice({ tone = "warn", children, role }: { tone?: keyof typeof TONES; children: ReactNode; role?: "alert" | "status" }) {
+export function Notice({
+  tone = "warn",
+  children,
+  role,
+}: {
+  tone?: keyof typeof TONES;
+  children: ReactNode;
+  role?: "alert" | "status";
+}) {
   return (
-    <div role={role ?? (tone === "bad" ? "alert" : "status")} className={`rounded-sm border px-4 py-3 text-sm leading-relaxed ${TONES[tone]}`}>
+    <div
+      role={role ?? (tone === "bad" ? "alert" : "status")}
+      className={`rounded-sm border px-4 py-3 text-sm leading-relaxed ${TONES[tone]}`}
+    >
       {children}
     </div>
   );

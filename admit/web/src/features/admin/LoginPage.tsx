@@ -38,7 +38,13 @@ export function LoginPage({ to = "/admin" }: { to?: string }) {
     try {
       await login(email.trim(), password);
     } catch (err) {
-      setMessage(err instanceof ApiError && (err.status === 401 || err.status === 400) ? "That email and password do not match an account." : err instanceof ApiError ? err.message : "We could not reach the server. Check your connection.");
+      setMessage(
+        err instanceof ApiError && (err.status === 401 || err.status === 400)
+          ? "That email and password do not match an account."
+          : err instanceof ApiError
+            ? err.message
+            : "We could not reach the server. Check your connection.",
+      );
       setBusy(false);
     }
   };
@@ -50,8 +56,22 @@ export function LoginPage({ to = "/admin" }: { to?: string }) {
       <h1 className="display text-5xl">Organizer sign in</h1>
       <form onSubmit={submit} className="flex flex-col gap-4" aria-label="Sign in">
         {reason ? <Notice tone="bad">{reason}</Notice> : null}
-        <TextField label="Email" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        <TextField label="Password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+        <TextField
+          label="Email"
+          type="email"
+          autoComplete="username"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+        <TextField
+          label="Password"
+          type="password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
         <Button type="submit" loading={busy} block>
           Sign in
         </Button>

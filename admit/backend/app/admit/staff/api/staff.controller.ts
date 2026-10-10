@@ -25,7 +25,12 @@ export class StaffController {
 
   @Put(":userId")
   @RequirePermission("manage", "event_staff")
-  async assign(@CurrentUser() who: Principal, @Param("eventId") eventId: string, @Param("userId") userId: string, @Body(ZodBody(assignSchema)) b: z.infer<typeof assignSchema>) {
+  async assign(
+    @CurrentUser() who: Principal,
+    @Param("eventId") eventId: string,
+    @Param("userId") userId: string,
+    @Body(ZodBody(assignSchema)) b: z.infer<typeof assignSchema>,
+  ) {
     return { items: await this.service.assign(who, eventId, userId, b.gate) };
   }
 

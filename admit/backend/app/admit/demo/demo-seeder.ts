@@ -65,12 +65,24 @@ export class DemoSeeder {
           userIds.set(s.key, id);
           await ex
             .insertInto("users")
-            .values({ id, email: s.email, email_normalized: s.email.toLowerCase(), password_hash: passwordHash, display_name: s.name, status: "active", email_verified_at: now, locale: "en" })
+            .values({
+              id,
+              email: s.email,
+              email_normalized: s.email.toLowerCase(),
+              password_hash: passwordHash,
+              display_name: s.name,
+              status: "active",
+              email_verified_at: now,
+              locale: "en",
+            })
             .execute();
         }
         await ex.insertInto("organizations").values({ id: orgId, name: DEMO_ORG.name, slug: DEMO_ORG.slug, settings: {} }).execute();
         for (const s of DEMO_STAFF) {
-          await ex.insertInto("organization_members").values({ id: newId("mem"), organization_id: orgId, user_id: userIds.get(s.key)!, membership_role: s.membershipRole }).execute();
+          await ex
+            .insertInto("organization_members")
+            .values({ id: newId("mem"), organization_id: orgId, user_id: userIds.get(s.key)!, membership_role: s.membershipRole })
+            .execute();
         }
       }),
     );
@@ -86,26 +98,61 @@ export class DemoSeeder {
       await this.settings.update(ownerId, { organizerName: DEMO_ORG.name, supportEmail: DEMO_ORG.supportEmail });
 
       const venueIds = new Map<string, string>();
-      for (const v of DEMO_VENUES) venueIds.set(v.key, (await this.events.createVenue(who("owner"), { name: v.name, area: v.area, address: v.address, mapUrl: null, capacity: v.capacity })).id);
+      for (const v of DEMO_VENUES)
+        venueIds.set(
+          v.key,
+          (await this.events.createVenue(who("owner"), { name: v.name, area: v.area, address: v.address, mapUrl: null, capacity: v.capacity })).id,
+        );
 
       const eventIds = new Map<string, string>();
       const typeIds = new Map<string, string[]>();
       for (const e of DEMO_EVENTS) {
         const day = new Date(now.getTime() + e.startsInDays * 86_400_000);
-        const starts = e.live ? new Date(now.getTime() - 3_600_000) : new Date(Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate(), e.startHour - 2));
+        const starts = e.live
+          ? new Date(now.getTime() - 3_600_000)
+          : new Date(Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate(), e.startHour - 2));
         const ends = new Date(starts.getTime() + e.hours * 3_600_000);
         const created = await this.events.create(who("owner"), {
-          slug: e.slug, title: e.title, category: e.category, description: e.description, venueId: venueIds.get(e.venue)!, startsAt: starts, endsAt: ends, coverUrl: null,
-          maxPerBooking: 6, namedTickets: e.namedTickets, holdHours: 24, allowResubmission: true, supportEmail: null, policies: e.policies ?? {}, program: e.program ?? [],
+          slug: e.slug,
+          title: e.title,
+          category: e.category,
+          description: e.description,
+          venueId: venueIds.get(e.venue)!,
+          startsAt: starts,
+          endsAt: ends,
+          coverUrl: null,
+          maxPerBooking: 6,
+          namedTickets: e.namedTickets,
+          holdHours: 24,
+          allowResubmission: true,
+          supportEmail: null,
+          policies: e.policies ?? {},
+          program: e.program ?? [],
         });
         eventIds.set(e.slug, created.id);
         const ids: string[] = [];
         for (const [i, t] of e.types.entries()) {
-          ids.push((await this.events.createType(who("owner"), created.id, { name: t.name, description: t.description, priceMinor: t.price * 100, quantity: t.quantity, maxPerBooking: 6, onSale: true, sortOrder: i })).id);
+          ids.push(
+            (
+              await this.events.createType(who("owner"), created.id, {
+                name: t.name,
+                description: t.description,
+                priceMinor: t.price * 100,
+                quantity: t.quantity,
+                maxPerBooking: 6,
+                onSale: true,
+                sortOrder: i,
+              })
+            ).id,
+          );
         }
         typeIds.set(e.slug, ids);
         for (const [i, m] of DEMO_METHODS.entries()) {
-          await this.events.createMethod(who("owner"), created.id, { ...m, enabled: m.type !== "bank" || e.slug === "design-systems-cairo-2026", sortOrder: i });
+          await this.events.createMethod(who("owner"), created.id, {
+            ...m,
+            enabled: m.type !== "bank" || e.slug === "design-systems-cairo-2026",
+            sortOrder: i,
+          });
         }
         if (e.publish) await this.events.publish(who("owner"), created.id);
       }
@@ -120,19 +167,23 @@ export class DemoSeeder {
 
       // ---- bookings, played through the real services --------------------------------------------------------
       let n = 0;
-      for (const b of DEMO_BOOKINGS) await this.play(b, ++n, typeIds, who, userIds);
+      for (const b of DEMO_BOOKINGS) await this.play(b, ++n, typeIds, who);
     });
 
     await this.settleEmails();
     log.info({ organizer: DEMO_ORG.slug, staff: DEMO_STAFF.length, events: DEMO_EVENTS.length, bookings: DEMO_BOOKINGS.length }, "admit demo seeded");
   }
 
-  private async play(b: DemoBooking, n: number, typeIds: Map<string, string[]>, who: (k: string) => Principal, userIds: Map<string, string>): Promise<void> {
+  private async play(b: DemoBooking, n: number, typeIds: Map<string, string[]>, who: (k: string) => Principal): Promise<void> {
     const c = DEMO_CUSTOMERS[b.customer]!;
     const types = typeIds.get(b.event)!;
     const { booking } = await this.bookings.create(
       b.event,
-      { items: b.qty.map(([i, q]) => ({ ticketTypeId: types[i]!, quantity: q, holderNames: b.holders?.slice(0, q) })), customer: { name: c.name, email: c.email, phone: c.phone }, policyAck: true },
+      {
+        items: b.qty.map(([i, q]) => ({ ticketTypeId: types[i]!, quantity: q, holderNames: b.holders?.slice(0, q) })),
+        customer: { name: c.name, email: c.email, phone: c.phone },
+        policyAck: true,
+      },
       `demo-booking-${n}-${b.event}`,
     );
     const secret = accessSecret(booking.id);
@@ -140,16 +191,30 @@ export class DemoSeeder {
 
     const submitProof = async () => {
       const png = await QRCode.toBuffer(`DEMO RECEIPT ${booking.ref} EGP ${(booking.totalMinor / 100).toFixed(2)}`, { type: "png", width: 360, margin: 2 });
-      const stored = await this.files.upload({ content: png, originalName: "instapay-receipt.png", contentType: "image/png", visibility: "private", metadata: { kind: "payment_proof", bookingId: booking.id } });
+      const stored = await this.files.upload({
+        content: png,
+        originalName: "instapay-receipt.png",
+        contentType: "image/png",
+        visibility: "private",
+        metadata: { kind: "payment_proof", bookingId: booking.id },
+      });
       const methods = await this.events.get(who("owner"), booking.eventId);
       await this.payments.submit(booking.ref, secret, {
-        fileId: stored.id, methodId: methods.paymentMethods[0]?.id ?? null, transactionId: `${4800 + n} 1150 ${30 + n}`, sentFrom: c.name, amountMinor: booking.totalMinor,
+        fileId: stored.id,
+        methodId: methods.paymentMethods[0]?.id ?? null,
+        transactionId: `${4800 + n} 1150 ${30 + n}`,
+        sentFrom: c.name,
+        amountMinor: booking.totalMinor,
       });
     };
     const openSubmission = async () => (await this.payments.queue(reviewer, {})).find((q) => q.bookingRef === booking.ref)!;
     const approve = async () => {
       const q = await openSubmission();
-      await this.payments.approve(reviewer, q.submissionId, { version: q.version, idempotencyKey: `demo-approve-${booking.id}`, internalNote: "Found in the InstaPay account." });
+      await this.payments.approve(reviewer, q.submissionId, {
+        version: q.version,
+        idempotencyKey: `demo-approve-${booking.id}`,
+        internalNote: "Found in the InstaPay account.",
+      });
     };
 
     switch (b.outcome) {
@@ -168,13 +233,24 @@ export class DemoSeeder {
         await submitProof();
         const q = await openSubmission();
         await this.payments.reject(reviewer, q.submissionId, {
-          version: q.version, idempotencyKey: `demo-reject-${booking.id}`, reason: "The screenshot shows a different amount from the total due. Please transfer the difference and upload both receipts.", internalNote: "Short by 150 EGP.",
+          version: q.version,
+          idempotencyKey: `demo-reject-${booking.id}`,
+          reason: "The screenshot shows a different amount from the total due. Please transfer the difference and upload both receipts.",
+          internalNote: "Short by 150 EGP.",
         });
         if (b.outcome === "rejected_resubmitted") await submitProof();
         break;
       }
       case "expired":
-        await runAsSystem(() => unitOfWork.transaction(() => admitDb().updateTable("admit_bookings").set({ hold_expires_at: new Date(Date.now() - 3_600_000) }).where("id", "=", booking.id).execute()));
+        await runAsSystem(() =>
+          unitOfWork.transaction(() =>
+            admitDb()
+              .updateTable("admit_bookings")
+              .set({ hold_expires_at: new Date(Date.now() - 3_600_000) })
+              .where("id", "=", booking.id)
+              .execute(),
+          ),
+        );
         await this.bookings.expireLapsedHolds();
         break;
       case "cancelled":
@@ -211,11 +287,31 @@ export class DemoSeeder {
       await runAsSystem(() =>
         unitOfWork.transaction(async () => {
           const db = admitDb();
-          await db.updateTable("admit_bookings").set({ created_at: sql`created_at - ${d}`, confirmed_at: sql`confirmed_at - ${d}` }).where("id", "=", booking.id).execute();
-          await db.updateTable("admit_booking_timeline").set({ at: sql`at - ${d}` }).where("booking_id", "=", booking.id).execute();
-          await db.updateTable("admit_payment_submissions").set({ created_at: sql`created_at - ${d}`, decided_at: sql`decided_at - ${d}` }).where("booking_id", "=", booking.id).execute();
-          await db.updateTable("admit_tickets").set({ created_at: sql`created_at - ${d}` }).where("booking_id", "=", booking.id).execute();
-          await db.updateTable("admit_email_messages").set({ created_at: sql`created_at - ${d}` }).where("booking_id", "=", booking.id).execute();
+          await db
+            .updateTable("admit_bookings")
+            .set({ created_at: sql`created_at - ${d}`, confirmed_at: sql`confirmed_at - ${d}` })
+            .where("id", "=", booking.id)
+            .execute();
+          await db
+            .updateTable("admit_booking_timeline")
+            .set({ at: sql`at - ${d}` })
+            .where("booking_id", "=", booking.id)
+            .execute();
+          await db
+            .updateTable("admit_payment_submissions")
+            .set({ created_at: sql`created_at - ${d}`, decided_at: sql`decided_at - ${d}` })
+            .where("booking_id", "=", booking.id)
+            .execute();
+          await db
+            .updateTable("admit_tickets")
+            .set({ created_at: sql`created_at - ${d}` })
+            .where("booking_id", "=", booking.id)
+            .execute();
+          await db
+            .updateTable("admit_email_messages")
+            .set({ created_at: sql`created_at - ${d}` })
+            .where("booking_id", "=", booking.id)
+            .execute();
         }),
       );
     }
@@ -234,7 +330,12 @@ export class DemoSeeder {
           .execute();
         await db
           .updateTable("admit_email_messages")
-          .set({ status: "ACCEPTED", attempts: 1, sent_at: sql`created_at + interval '2 seconds'`, provider_message_id: sql`'<demo-' || id || '@admit.example>'` })
+          .set({
+            status: "ACCEPTED",
+            attempts: 1,
+            sent_at: sql`created_at + interval '2 seconds'`,
+            provider_message_id: sql`'<demo-' || id || '@admit.example>'`,
+          })
           .where("status", "=", "QUEUED")
           .where("created_at", "<", new Date(Date.now() - 6 * 3_600_000))
           .execute();

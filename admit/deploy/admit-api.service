@@ -1,0 +1,14 @@
+[Unit]
+Description=Admit API
+After=network.target postgresql.service
+
+[Service]
+WorkingDirectory=/opt/admit/backend
+EnvironmentFile=/opt/admit/backend/.env
+ExecStart=/usr/bin/node dist/admit/backend/main.js
+Restart=always
+RestartSec=3
+User=admit
+
+[Install]
+WantedBy=multi-user.target

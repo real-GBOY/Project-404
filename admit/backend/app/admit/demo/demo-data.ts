@@ -28,7 +28,15 @@ export const DEMO_STAFF: DemoPerson[] = [
   { key: "owner", name: "Salma Adel", email: "salma@nilesessions.example", roleKey: "owner", membershipRole: "owner" },
   { key: "manager", name: "Dalia Samir", email: "dalia@nilesessions.example", roleKey: "event_manager", membershipRole: "member" },
   { key: "finance", name: "Karim Fathy", email: "karim@nilesessions.example", roleKey: "finance_reviewer", membershipRole: "member", events: ["*"] },
-  { key: "door", name: "Ali Mansour", email: "ali@nilesessions.example", roleKey: "door_staff", membershipRole: "member", events: ["gallery-night-print-fair", "cairo-jazz-nights"], gate: "Gate A" },
+  {
+    key: "door",
+    name: "Ali Mansour",
+    email: "ali@nilesessions.example",
+    roleKey: "door_staff",
+    membershipRole: "member",
+    events: ["gallery-night-print-fair", "cairo-jazz-nights"],
+    gate: "Gate A",
+  },
   { key: "viewer", name: "Mona Hegazy", email: "mona@nilesessions.example", roleKey: "viewer", membershipRole: "member" },
 ];
 
@@ -223,9 +231,42 @@ export const DEMO_EVENTS: DemoEvent[] = [
 ];
 
 export const DEMO_METHODS = [
-  { type: "instapay" as const, label: "InstaPay", recipientName: "Nile Sessions Events", identifier: "nilesessions@instapay", instructions: ["Open your bank app or the InstaPay app and choose Send money, then IPA.", "Paste the address above and check the recipient name matches.", "Enter exactly the total shown. A different amount delays verification.", "Add your booking reference in the note, send, and screenshot the confirmation."] },
-  { type: "wallet" as const, label: "Vodafone Cash", recipientName: "Nile Sessions Events", identifier: "010 0000 0000", instructions: ["Open the Vodafone Cash app or menu and choose Transfer money.", "Enter the wallet number above and confirm the registered name.", "Enter exactly the total shown and confirm with your PIN.", "Screenshot the app receipt or confirmation SMS, including the transaction ID."] },
-  { type: "bank" as const, label: "Bank transfer", recipientName: "Nile Sessions Events LLC", identifier: "EG00 0000 0000 0000 0000 0000 0000 0", instructions: ["Create a transfer to the account above from your bank.", "Use your booking reference as the transfer reference.", "Bank transfers can take one working day to arrive.", "Download or screenshot the transfer receipt."] },
+  {
+    type: "instapay" as const,
+    label: "InstaPay",
+    recipientName: "Nile Sessions Events",
+    identifier: "nilesessions@instapay",
+    instructions: [
+      "Open your bank app or the InstaPay app and choose Send money, then IPA.",
+      "Paste the address above and check the recipient name matches.",
+      "Enter exactly the total shown. A different amount delays verification.",
+      "Add your booking reference in the note, send, and screenshot the confirmation.",
+    ],
+  },
+  {
+    type: "wallet" as const,
+    label: "Vodafone Cash",
+    recipientName: "Nile Sessions Events",
+    identifier: "010 0000 0000",
+    instructions: [
+      "Open the Vodafone Cash app or menu and choose Transfer money.",
+      "Enter the wallet number above and confirm the registered name.",
+      "Enter exactly the total shown and confirm with your PIN.",
+      "Screenshot the app receipt or confirmation SMS, including the transaction ID.",
+    ],
+  },
+  {
+    type: "bank" as const,
+    label: "Bank transfer",
+    recipientName: "Nile Sessions Events LLC",
+    identifier: "EG00 0000 0000 0000 0000 0000 0000 0",
+    instructions: [
+      "Create a transfer to the account above from your bank.",
+      "Use your booking reference as the transfer reference.",
+      "Bank transfers can take one working day to arrive.",
+      "Download or screenshot the transfer receipt.",
+    ],
+  },
 ];
 
 export interface DemoCustomer {
@@ -267,11 +308,28 @@ export interface DemoBooking {
 
 export const DEMO_BOOKINGS: DemoBooking[] = [
   // Cairo Jazz Nights
-  { event: "cairo-jazz-nights", customer: 1, qty: [[0, 4]], outcome: "confirmed", daysAgo: 8, holders: ["Omar Said", "Salma Said", "Hassan Said", "Reem Said"] },
+  {
+    event: "cairo-jazz-nights",
+    customer: 1,
+    qty: [[0, 4]],
+    outcome: "confirmed",
+    daysAgo: 8,
+    holders: ["Omar Said", "Salma Said", "Hassan Said", "Reem Said"],
+  },
   { event: "cairo-jazz-nights", customer: 10, qty: [[1, 1]], outcome: "confirmed", daysAgo: 7, holders: ["Sara Nabil"] },
   { event: "cairo-jazz-nights", customer: 9, qty: [[0, 2]], outcome: "confirmed", daysAgo: 6, holders: ["Laila Mostafa", "Nada Mostafa"] },
   { event: "cairo-jazz-nights", customer: 7, qty: [[0, 2]], outcome: "email_failed", daysAgo: 5, holders: ["Dina Farouk", "Rami Farouk"] },
-  { event: "cairo-jazz-nights", customer: 0, qty: [[0, 2], [1, 1]], outcome: "in_review", daysAgo: 0, holders: ["Nour Hassan", "Omar Hassan", "Laila Mostafa"] },
+  {
+    event: "cairo-jazz-nights",
+    customer: 0,
+    qty: [
+      [0, 2],
+      [1, 1],
+    ],
+    outcome: "in_review",
+    daysAgo: 0,
+    holders: ["Nour Hassan", "Omar Hassan", "Laila Mostafa"],
+  },
   { event: "cairo-jazz-nights", customer: 5, qty: [[0, 2]], outcome: "in_review", daysAgo: 0, holders: ["Karim Fathy", "Mona Fathy"] },
   { event: "cairo-jazz-nights", customer: 8, qty: [[0, 2]], outcome: "rejected_open", daysAgo: 1, holders: ["Youssef Gamal", "Adam Gamal"] },
   { event: "cairo-jazz-nights", customer: 6, qty: [[1, 2]], outcome: "awaiting", daysAgo: 0, holders: ["Ahmed Samir", "Yara Samir"] },

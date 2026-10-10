@@ -89,7 +89,12 @@ export class EmailComposer {
   }
 
   /** Queue one email. `dedupe` makes the (booking, type, occasion) unique, so a replayed transaction never duplicates it. */
-  async queue(type: EmailType, bookingId: string, occasion: string, extra: (ctx: { booking: BookingRecord; event: EventRecord; links: PublicLinks }) => Promise<Record<string, unknown>> | Record<string, unknown> = () => ({})): Promise<void> {
+  async queue(
+    type: EmailType,
+    bookingId: string,
+    occasion: string,
+    extra: (ctx: { booking: BookingRecord; event: EventRecord; links: PublicLinks }) => Promise<Record<string, unknown>> | Record<string, unknown> = () => ({}),
+  ): Promise<void> {
     const booking = await this.bookings.find(bookingId);
     if (!booking) return;
     const event = (await this.events.findEvent(booking.eventId))!;
@@ -108,8 +113,14 @@ export class EmailComposer {
       const tn = new Map(types.map((t) => [t.id, t.name]));
       return {
         total: formatMoney(booking.totalMinor, booking.currency),
-        hold_expires: new Intl.DateTimeFormat("en-GB", { timeZone: (await this.settings.profile()).timeZone, dateStyle: "full", timeStyle: "short" }).format(booking.holdExpiresAt),
-        items: lines.map((l) => ({ name: tn.get(l.ticketTypeId) ?? "Ticket", quantity: l.quantity, line_total: formatMoney(l.quantity * l.unitPriceMinor, booking.currency) })),
+        hold_expires: new Intl.DateTimeFormat("en-GB", { timeZone: (await this.settings.profile()).timeZone, dateStyle: "full", timeStyle: "short" }).format(
+          booking.holdExpiresAt,
+        ),
+        items: lines.map((l) => ({
+          name: tn.get(l.ticketTypeId) ?? "Ticket",
+          quantity: l.quantity,
+          line_total: formatMoney(l.quantity * l.unitPriceMinor, booking.currency),
+        })),
         payment_methods: methods.map((m) => ({ label: m.label, recipient: m.recipientName, identifier: m.identifier, instructions: m.instructions })),
       };
     });

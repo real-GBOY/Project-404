@@ -28,8 +28,17 @@ export class EmailsService {
       const ref = new Map(bookings.map((b) => [b.id, b.ref]));
       return {
         items: rows.map((r) => ({
-          id: r.id, at: r.createdAt, to: r.toEmail, type: r.type, bookingRef: r.bookingId ? (ref.get(r.bookingId) ?? null) : null, status: r.status, attempts: r.attempts,
-          maxAttempts: r.maxAttempts, lastError: r.lastError, providerMessageId: r.providerMessageId, sentAt: r.sentAt,
+          id: r.id,
+          at: r.createdAt,
+          to: r.toEmail,
+          type: r.type,
+          bookingRef: r.bookingId ? (ref.get(r.bookingId) ?? null) : null,
+          status: r.status,
+          attempts: r.attempts,
+          maxAttempts: r.maxAttempts,
+          lastError: r.lastError,
+          providerMessageId: r.providerMessageId,
+          sentAt: r.sentAt,
         })),
         failedCount: await this.repo.countFailed(),
       };

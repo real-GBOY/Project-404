@@ -46,9 +46,13 @@ export function reduce(s: Screen, a: Action): Screen {
       return { name: "camera_missing" };
     case "code_read":
       // Only a scanner that is looking (or a typed ID) may start a check; a stray read while a verdict is up is ignored.
-      return s.name === "scanning" || s.name === "manual" ? { name: "checking", request: a.request } : s;
+      return s.name === "scanning" || s.name === "manual"
+        ? { name: "checking", request: a.request }
+        : s;
     case "answered":
-      return s.name === "checking" ? { name: "verdict", outcome: a.outcome, request: s.request } : s;
+      return s.name === "checking"
+        ? { name: "verdict", outcome: a.outcome, request: s.request }
+        : s;
     case "no_answer":
       return s.name === "checking" ? { name: "offline", request: s.request } : s;
     case "retry":
@@ -61,7 +65,11 @@ export const DEDUPE_MS = 3000;
 /** No answer within this long is "no connection": nothing was recorded. */
 export const ANSWER_TIMEOUT_MS = 5000;
 
-export function isDuplicateRead(last: { code: string; at: number } | null, code: string, now: number): boolean {
+export function isDuplicateRead(
+  last: { code: string; at: number } | null,
+  code: string,
+  now: number,
+): boolean {
   return !!last && last.code === code && now - last.at < DEDUPE_MS;
 }
 
@@ -88,4 +96,5 @@ export function normalizeTicketId(raw: string): string {
   const body = v.startsWith("TKT") ? v.slice(3) : v;
   return body.length === 8 ? `TKT-${body.slice(0, 4)}-${body.slice(4)}` : raw.trim().toUpperCase();
 }
-export const isCompleteTicketId = (v: string) => /^TKT-[A-HJ-NP-Z0-9]{4}-[A-HJ-NP-Z0-9]{4}$/.test(normalizeTicketId(v));
+export const isCompleteTicketId = (v: string) =>
+  /^TKT-[A-HJ-NP-Z0-9]{4}-[A-HJ-NP-Z0-9]{4}$/.test(normalizeTicketId(v));

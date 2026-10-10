@@ -1,0 +1,14 @@
+[Unit]
+Description=Admit email worker
+After=network.target postgresql.service
+
+[Service]
+WorkingDirectory=/opt/admit/worker
+EnvironmentFile=/opt/admit/worker/.env
+ExecStart=/opt/admit/worker/.venv/bin/python -m admit_worker
+Restart=always
+RestartSec=3
+User=admit
+
+[Install]
+WantedBy=multi-user.target

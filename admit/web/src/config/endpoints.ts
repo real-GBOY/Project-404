@@ -14,10 +14,14 @@ export const ENDPOINTS = {
     event: (org: string, event: string) => `${pub(org)}/events/${e(event)}`,
     book: (org: string, event: string) => `${pub(org)}/events/${e(event)}/bookings`,
     booking: (org: string, ref: string, k: string) => withK(`${pub(org)}/bookings/${e(ref)}`, k),
-    cancel: (org: string, ref: string, k: string) => withK(`${pub(org)}/bookings/${e(ref)}/cancel`, k),
-    presign: (org: string, ref: string, k: string) => withK(`${pub(org)}/bookings/${e(ref)}/proof/presign`, k),
-    proof: (org: string, ref: string, k: string) => withK(`${pub(org)}/bookings/${e(ref)}/proof`, k),
-    tickets: (org: string, ref: string, k: string) => withK(`${pub(org)}/bookings/${e(ref)}/tickets`, k),
+    cancel: (org: string, ref: string, k: string) =>
+      withK(`${pub(org)}/bookings/${e(ref)}/cancel`, k),
+    presign: (org: string, ref: string, k: string) =>
+      withK(`${pub(org)}/bookings/${e(ref)}/proof/presign`, k),
+    proof: (org: string, ref: string, k: string) =>
+      withK(`${pub(org)}/bookings/${e(ref)}/proof`, k),
+    tickets: (org: string, ref: string, k: string) =>
+      withK(`${pub(org)}/bookings/${e(ref)}/tickets`, k),
     resend: (org: string) => `${pub(org)}/links/resend`,
   },
   events: {
@@ -50,10 +54,21 @@ export const ENDPOINTS = {
     approve: (id: string) => `/admit/payments/${id}/approve`,
     reject: (id: string) => `/admit/payments/${id}/reject`,
   },
-  tickets: { list: "/admit/tickets", byId: (id: string) => `/admit/tickets/${id}`, revoke: (id: string) => `/admit/tickets/${id}/revoke` },
-  checkin: { scan: "/admit/checkin", events: "/admit/checkin/events", overview: (id: string) => `/admit/checkin/events/${id}/overview` },
+  tickets: {
+    list: "/admit/tickets",
+    byId: (id: string) => `/admit/tickets/${id}`,
+    revoke: (id: string) => `/admit/tickets/${id}/revoke`,
+  },
+  checkin: {
+    scan: "/admit/checkin",
+    events: "/admit/checkin/events",
+    overview: (id: string) => `/admit/checkin/events/${id}/overview`,
+  },
   emails: { list: "/admit/emails", retry: (id: string) => `/admit/emails/${id}/retry` },
   reports: { overview: "/admit/reports/overview" },
   settings: "/admit/settings",
-  team: { list: "/admit/team", role: (userId: string, role: string) => `/admit/team/${userId}/roles/${role}` },
+  team: {
+    list: "/admit/team",
+    role: (userId: string, role: string) => `/admit/team/${userId}/roles/${role}`,
+  },
 } as const;
