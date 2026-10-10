@@ -12,7 +12,7 @@ import type { IFileStorage } from "@core/contracts/index.js";
 import type { Principal } from "@core/http/principal.js";
 import type { Clock } from "@core/kernel/clock.js";
 import { admitDb } from "@admit/admit/db/executor.js";
-import { accessSecret, ticketToken } from "@admit/admit/shared/secrets.js";
+import { accessSecret, qrPayload, sha256Hex, ticketToken } from "@admit/admit/shared/secrets.js";
 import { readAdmitConfig } from "@admit/config.js";
 import { SettingsService } from "@admit/admit/settings/application/settings-service.js";
 import { EventsService } from "@admit/admit/events/application/events-service.js";
@@ -190,7 +190,13 @@ export class DemoSeeder {
     const reviewer = who("finance");
 
     const submitProof = async () => {
-      const png = await QRCode.toBuffer(`DEMO RECEIPT ${booking.ref} EGP ${(booking.totalMinor / 100).toFixed(2)}`, { type: "png", width: 360, margin: 2 });
+      // The demo receipt is a real QR code whose link opens the QR landing picture: scan it with any phone and you see the photo.
+      const png = await QRCode.toBuffer(qrPayload(sha256Hex(`demo-receipt:${booking.id}`).slice(0, 22)), {
+        type: "png",
+        errorCorrectionLevel: "M",
+        width: 360,
+        margin: 4,
+      });
       const stored = await this.files.upload({
         content: png,
         originalName: "instapay-receipt.png",
