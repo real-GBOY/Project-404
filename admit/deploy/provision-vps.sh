@@ -43,8 +43,11 @@ if [[ ! -f "$ENV_FILE" ]]; then
     echo "AURIC_CORS_ORIGINS=$WEB_ORIGIN,*.vercel.app"
     echo "AURIC_SELF_SIGNUP=false"
     echo "AURIC_DOCS_ENABLED=false"
-    echo "AURIC_FILE_STORAGE_DRIVER=local"
-    echo "AURIC_FILE_STORAGE_PATH=/opt/admit/storage/files"
+    # payment proofs go to Cloudflare R2 (bucket admit-files, created with a CORS rule for the web origin): the same account and S3
+    # token Raqib uses, copied on the box and never printed
+    echo "AURIC_FILE_STORAGE_DRIVER=r2"
+    grep -E "^AURIC_R2_(ACCOUNT_ID|ACCESS_KEY_ID|SECRET_ACCESS_KEY)=" "$RAQIB_ENV"
+    echo "AURIC_R2_BUCKET=admit-files"
     echo "ADMIT_PUBLIC_URL=$WEB_ORIGIN"
     echo "ADMIT_API_URL=https://$API_HOST"
     echo "ADMIT_TRUSTED_PROXY_HOPS=1"

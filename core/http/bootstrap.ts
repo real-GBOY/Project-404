@@ -87,7 +87,7 @@ export async function configureAuricHttp(
         cb(null, allowed);
       },
       methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
-      allowedHeaders: ["authorization", "content-type"],
+      allowedHeaders: ["authorization", "content-type", "idempotency-key"],
       maxAge: 86_400,
     });
   }

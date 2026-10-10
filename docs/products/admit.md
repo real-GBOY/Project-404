@@ -10,7 +10,7 @@ ticket, which admits it exactly once. It's the fifth product on Project-404 Core
 dashboard, door scanner, seven emails).
 
 **Live demo:** [admit-web-lime.vercel.app](https://admit-web-lime.vercel.app) (sign in at `/admin` with any account from the demo list below;
-the API runs on the Raqib VPS). How it is deployed: [docs/admit-deployment.md](../admit-deployment.md).
+the API runs on the Raqib VPS, proofs go to Cloudflare R2). How it is deployed: [docs/admit-deployment.md](../admit-deployment.md).
 
 ![Admit organizer overview](../screenshots/admit/dashboard.png)
 
@@ -72,8 +72,8 @@ admit/
   worker/    Python 3.12: drains the admit_email_messages outbox (psycopg + Jinja2)
 ```
 
-Modules (`backend/app/admit/`): events, bookings, payments, tickets, checkin, emails, public, staff, reports, settings, jobs, demo. Core is
-not modified and never imports Admit. The audit of what Core provided, the gaps found and how each was handled is in
+Modules (`backend/app/admit/`): events, bookings, payments, tickets, checkin, emails, public, staff, reports, settings, jobs, demo. Core never imports
+Admit (its only change for Admit is one generic CORS header, `idempotency-key`). The audit of what Core provided, the gaps found and how each was handled is in
 [admit/docs/architecture.md](../../admit/docs/architecture.md).
 
 ## Run it locally

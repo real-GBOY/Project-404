@@ -100,7 +100,7 @@ verifies the transfer by hand, and it's the first product with a **non-Node part
 | **A durable email outbox with a Python worker** | The API writes each complete, already-decided email into a product-owned table in the same transaction as the change. The worker claims rows with `FOR UPDATE SKIP LOCKED`, renders seven templates and sends over SMTP with leases and backoff. A failed email never invalidates a ticket. |
 | **QR codes anyone can scan** | The QR holds the organizer's picture URL plus `#<token>`: a phone camera opens the picture, the door scanner reads the token. |
 | **Tenancy and permissions** | An organizer is a Core organization; 13 tenant tables with forced RLS; 22 permissions across 5 roles; anyone below an owner reaches only the events they are assigned. |
-| **The numbers** | 52 backend tests on real PostgreSQL, 26 worker tests, 31 web tests and 8 browser tests in real Chrome. Core was not modified. |
+| **The numbers** | 52 backend tests on real PostgreSQL, 26 worker tests, 31 web tests and 8 browser tests in real Chrome. Core gained one generic CORS header (`idempotency-key`) and nothing else. |
 
 [Admit tab →](docs/products/admit.md)
 
@@ -122,7 +122,7 @@ by shipping products on top of it:
 5. **Admit** is the fifth, a ticketing product with public guest checkout. It proved Core could carry
    anonymous traffic (guests are served inside the organizer's tenant context, so RLS still applies) and a
    consumer in another language: its email is delivered by a Python worker over a transactional outbox, with
-   Core untouched.
+   one generic CORS header added to Core.
 
 Each product took a fraction of the first one's effort, because none of them rebuilt the foundation.
 
@@ -204,7 +204,7 @@ Each capability documents its contract next to the code; start at [core/README.m
 | AI | OpenAI-compatible provider boundary (Groq in production) |
 | Email worker | Python 3.12, psycopg, Jinja2 (Admit): a durable outbox in PostgreSQL, `FOR UPDATE SKIP LOCKED` |
 | Testing | Vitest, Playwright (real Chrome), pytest |
-| Hosting | VPS (systemd + nginx) for the APIs (Raqib and Admit on the Interserver VPS, the others on a shared AWS box), Vercel for web frontends, Cloudflare R2 for files (`mizan-files`, `raqib-files`; Admit keeps payment proofs on the VPS disk) |
+| Hosting | VPS (systemd + nginx) for the APIs (Raqib and Admit on the Interserver VPS, the others on a shared AWS box), Vercel for web frontends, Cloudflare R2 for files (`mizan-files`, `raqib-files`, `admit-files`) |
 
 ## Getting started
 

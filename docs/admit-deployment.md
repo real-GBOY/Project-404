@@ -8,7 +8,7 @@ Admit is **live** (a showcase deployment with the demo organizer, like the other
 | **API** | **https://admit.162-35-28-116.sslip.io/api** (systemd `admit`, `127.0.0.1:3400`, user `admit`, `/opt/admit/backend`) | nginx + Let's Encrypt, API only |
 | **Email worker** | systemd `admit-worker`, `/opt/admit/worker` (Python venv) | transport `log` for now, see "Email" |
 | **Database** | `admit` on the box's PostgreSQL, shared `auric_app` / `auric_system` roles | its own database, nothing shared with Raqib |
-| **Files** | local disk `/opt/admit/storage/files` (payment proofs) | included in the nightly backup |
+| **Files** | Cloudflare R2 bucket **`admit-files`** (Western Europe, same account as `raqib-files`): payment proofs, uploaded straight from the browser over presigned URLs | bucket CORS allows `*.vercel.app` and the local dev ports |
 
 It runs on the **same VPS as Raqib** (Interserver, `root@162.35.28.116`, 1 vCPU, 1.6 GB RAM + swap). The two products share the machine, nginx
 and the PostgreSQL cluster and nothing else: separate directories, system users, ports, databases, secrets and certificates.
@@ -47,7 +47,8 @@ tar -czf - --exclude=.venv --exclude=outbox --exclude=__pycache__ --exclude=.env
 
 1. system user `admit`, directories `/opt/admit/{backend,worker,storage}`, database `admit`;
 2. `/opt/admit/backend/.env` (mode 600): a new `AURIC_JWT_SECRET` and **`ADMIT_TICKET_KEY`** generated on the box, the shared role passwords
-   read from Raqib's `.env` and pointed at database `admit`, CORS, public/API URLs, local file storage, demo flags;
+   read from Raqib's `.env` and pointed at database `admit`, the R2 settings (account and S3 token copied from Raqib's `.env`, bucket
+   `admit-files`), CORS, public/API URLs, demo flags;
 3. the `admit` and `admit-worker` systemd units (`admit/deploy/*.service`), the nginx server block (API only; `/` redirects to the web
    app) and the Let's Encrypt certificate;
 4. then the API is shipped with `scripts/deploy-admit-local.sh`, the worker venv is created (`apt install python3-venv` once) and its `.env`
@@ -55,6 +56,17 @@ tar -czf - --exclude=.venv --exclude=outbox --exclude=__pycache__ --exclude=.env
 
 **Back up `ADMIT_TICKET_KEY`** with the database password. Every QR token and booking link is derived from it: losing it invalidates
 every issued ticket and every emailed link.
+
+## Payment proof storage (R2)
+
+The guest's proof upload is three steps: `POST .../proof/presign` (the API checks type and size and returns a presigned PUT URL), the browser
+`PUT`s the file **directly to R2**, then `POST .../proof` attaches it to the booking as a submission. Staff view a proof through
+`GET /api/admit/payments/:id/proof`, which the API streams from R2 after the permission check, so a proof is never reachable by a plain link.
+
+The bucket needs a CORS rule for the web origin (GET, PUT, HEAD, DELETE, any header, expose `ETag`). It was created with the Cloudflare API:
+`admit-files`, location hint `weur`, origins `https://*.vercel.app` plus `http://localhost:4700` and `:4799`. The web CSP allows the upload with
+`connect-src https://*.r2.cloudflarestorage.com`. Verified on the live site: a proof uploaded in the browser appears in the bucket with the right
+size, and the reviewer sees it. The local disk driver remains for development (the API accepts the bytes itself for a guest's own pending proof).
 
 ## Demo mode on this deployment
 
@@ -81,7 +93,7 @@ the dashboard's **Email delivery** with a Retry button; it never affects the boo
 ## Backups
 
 `/opt/admit/admit-backup.sh` (source: `scripts/admit-backup.sh`) runs from root's crontab at 03:30: a verified `pg_dump -Fc` into
-`/var/backups/admit` plus an archive of `/opt/admit/storage` (payment proofs), 14 of each kept. These copies are on the same machine; copy
+`/var/backups/admit` (14 kept). Payment proofs live in R2, not on the box, so they are not in this backup. These copies are on the same machine; copy
 them off the box (for example with `scp`) before relying on them against losing the server. Restore:
 
 ```bash
@@ -98,7 +110,7 @@ If the API host changes, update `connect-src` and `img-src` there.
 
 1. `curl https://admit.162-35-28-116.sslip.io/api/health/ready` is `ready` (database and outbox ok).
 2. The web app lists the Nile Sessions events and the sign-in page signs in as `karim@nilesessions.example`.
-3. In the review queue a proof image loads (it comes from the API under the CSP).
+3. Book as a guest on the site and upload a proof: it reaches R2 (the upload step shows "Uploaded"), and in the review queue the image loads (streamed by the API).
 4. A booking made on the site shows in the queue; approving it queues the ticket email and the worker accepts it
    (`journalctl -u admit-worker -n 20`).
 5. `/scan` signs in as `ali@nilesessions.example` and a ticket ID entered by hand answers "Entry approved" once and "Already used" after.
@@ -112,5 +124,5 @@ If the API host changes, update `connect-src` and `img-src` there.
 
 ## Not on this deployment
 
-Outgoing mail (see Email), off-machine backups, malware scanning of proof uploads, a custom domain (the sslip.io hostname stands in for one),
+Outgoing mail (see Email), off-machine database backups, malware scanning of proof uploads, a custom domain (the sslip.io hostname stands in for one),
 and provider delivery webhooks (the top email status is `ACCEPTED`).

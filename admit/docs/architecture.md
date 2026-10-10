@@ -3,7 +3,7 @@
 Admit sells tickets for events. A guest books, pays the organizer **outside the system** (InstaPay, a wallet, a bank transfer), uploads
 proof, a person with the right permission verifies it, tickets with QR codes are issued and emailed, and door staff scan them exactly
 once. It is the fifth AURIC product and follows the pattern of the other four: its own folder, its own backend deployment and database,
-AURIC Core consumed **by source** (`@core/*`), Core untouched.
+AURIC Core consumed **by source** (`@core/*`), Core changed by one line only (see below).
 
 ```
 admit/
@@ -29,8 +29,11 @@ admit/
 | Config, validation (zod), errors, logging, health | implemented | reused (`AppError`, `ZodBody`, `readAdmitConfig`) |
 | Test conventions | Vitest + real Postgres, `createXTestApp` helpers | followed (`tests/helpers.ts`, `foundation`, `journey`, `demo` suites) |
 
-**Core was not modified.** The only change outside `admit/` is the `qrcode` dependency (plus its types) added at the repo root, which
-is where every product's dependencies live; it renders ticket QR PNGs.
+**Core was changed by one line, and nothing else was.** Cross-origin browsers (the web app on Vercel, the API on a VPS) send a CORS preflight for
+the `Idempotency-Key` header that guest checkout uses, and Core's shared CORS setup only allowed `authorization` and `content-type`, so the
+booking failed with "could not reach the server" in production (it never showed locally, where the dev proxy is same-origin). `idempotency-key` is
+now in the allowed list in `core/http/bootstrap.ts`: a generic, standard header, no Admit knowledge in Core. The other change outside `admit/`
+is the `qrcode` dependency (plus its types) added at the repo root, which is where every product's dependencies live; it renders ticket QR PNGs.
 
 ### Gaps found in Core, and how each was handled
 
