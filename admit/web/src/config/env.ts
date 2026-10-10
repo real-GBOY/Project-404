@@ -13,3 +13,8 @@ export const DEMO_PASSWORD: string = import.meta.env.VITE_DEMO_PASSWORD ?? "demo
 
 /** Time zone dates are shown in (v1 is single-timezone; the backend formats emails in the organizer's setting). */
 export const TIME_ZONE = "Africa/Cairo";
+
+/** The picture a ticket QR link (`/q/<token>`) shows when scanned with an ordinary phone camera. Hosted, so it works on any deployment. */
+export const QR_LANDING_IMAGE: string =
+  import.meta.env.VITE_QR_LANDING_IMAGE ??
+  "https://i.postimg.cc/cCvLrpyG/Whats-App-Image-2026-10-10-at-2-27-41-PM.jpg";
