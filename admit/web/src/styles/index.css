@@ -1,0 +1,155 @@
+@import "tailwindcss";
+
+/*
+ * Admit design tokens - the single source for color, type and shape (approved design: "Design System.dc.html").
+ * Paper and ink keep payments and validation calm; one vermilion accent is for primary actions and the brand mark only.
+ * Status colors are reserved for status and always travel with a glyph and a word, never color alone.
+ */
+@theme {
+  --color-paper: #f4f1eb;
+  --color-surface: #ffffff;
+  --color-sunken: #ece8e1;
+  --color-ink: #16140f;
+  --color-ink-2: #4a463f;
+  --color-ink-3: #2e2a24;
+  --color-muted: #77716a;
+  --color-faint: #8c867d;
+  --color-rule: #e2ddd4;
+  --color-rule-soft: #f0ece5;
+  --color-rule-strong: #cfc8bc;
+  --color-brand: #e0472b;
+  --color-brand-deep: #c73a20;
+  --color-brand-press: #a93118;
+  --color-brand-tint: #fbe6df;
+  --color-brand-soft: #f08a73;
+  --color-night: #1f1b16;
+  --color-night-2: #2a251f;
+  --color-night-rule: #3a352e;
+
+  /* status families: one meaning per color, product-wide */
+  --color-pending-fg: #5b3fb0;
+  --color-pending-bg: #eee9fa;
+  --color-ok-fg: #1e6b44;
+  --color-ok-bg: #e1f1e7;
+  --color-ok-solid: #1e7a4c;
+  --color-bad-fg: #a3201a;
+  --color-bad-bg: #fbe4e1;
+  --color-bad-solid: #b42318;
+  --color-bad-ink: #7a1a12;
+  --color-bad-line: #f0c3bd;
+  --color-used-fg: #8a5300;
+  --color-used-bg: #fcefd6;
+  --color-used-solid: #e8a317;
+  --color-used-line: #ebcb8b;
+  --color-used-ink: #5e3a00;
+  --color-off-fg: #55504a;
+  --color-off-bg: #ece8e1;
+  --color-info-fg: #1f4fb8;
+  --color-info-bg: #e4ecfb;
+
+  --font-display: "Archivo", "Arial Narrow", Arial, sans-serif;
+  --font-sans: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --radius-xs: 2px;
+  --radius-sm: 6px;
+  --radius-ticket: 12px;
+
+  --shadow-float: 0 12px 32px -12px rgba(22, 20, 15, 0.28), 0 0 0 1px rgba(22, 20, 15, 0.08);
+}
+
+@layer base {
+  html {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-size-adjust: 100%;
+  }
+  body {
+    margin: 0;
+    min-height: 100vh;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  a {
+    color: inherit;
+    text-decoration-line: underline;
+    text-decoration-color: var(--color-brand);
+    text-underline-offset: 3px;
+  }
+  a:hover {
+    color: var(--color-brand-deep);
+  }
+  button,
+  input,
+  select,
+  textarea {
+    font-family: inherit;
+    color: inherit;
+  }
+  button {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+  /* Focus ring: 2px ink, 3px offset, never removed. */
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 3px;
+  }
+  /* Motion: 120ms feedback, none for users who ask for none. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* Condensed display type: event titles, section heads, verdicts. */
+  .display {
+    font-family: var(--font-display);
+    font-weight: 850;
+    text-transform: uppercase;
+    font-stretch: 68%;
+    line-height: 0.92;
+    letter-spacing: -0.005em;
+  }
+  .display-l {
+    font-family: var(--font-display);
+    font-weight: 800;
+    text-transform: uppercase;
+    font-stretch: 72%;
+    line-height: 1;
+  }
+  .label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .stripes {
+    background: repeating-linear-gradient(135deg, #e9e4db 0 10px, #e2dcd1 10px 20px);
+  }
+  .stripes-night {
+    background: repeating-linear-gradient(135deg, #2a251f 0 12px, #252019 12px 24px);
+  }
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+  .spin {
+    animation: admit-spin 0.8s linear infinite;
+  }
+  @keyframes admit-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+}

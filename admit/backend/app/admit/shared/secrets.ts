@@ -13,8 +13,8 @@ import { readAdmitConfig } from "@admit/config.js";
  *                         re-rendered on demand without keeping the token anywhere.
  */
 
-/** No 0/O/1/I/L - read aloud and typed from a screenshot without mistakes. */
-const REF_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+/** No O and no I, so 0 and 1 are always digits - read aloud and typed from a screenshot without mistakes. */
+const REF_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ0123456789";
 
 function block(n: number): string {
   let out = "";
@@ -32,7 +32,7 @@ export function newTicketId(): string {
   return `TKT-${block(4)}-${block(4)}`;
 }
 
-export const TICKET_ID_SHAPE = /^TKT-[A-HJ-KM-NP-Z2-9]{4}-[A-HJ-KM-NP-Z2-9]{4}$/;
+export const TICKET_ID_SHAPE = /^TKT-[A-HJ-NP-Z0-9]{4}-[A-HJ-NP-Z0-9]{4}$/;
 
 export const sha256Hex = (value: string): string => createHash("sha256").update(value).digest("hex");
 

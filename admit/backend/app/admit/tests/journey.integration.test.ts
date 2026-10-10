@@ -162,7 +162,7 @@ describe.skipIf(!hasTestDb)("Admit journey", () => {
     it("books, holds the seats and queues the payment-instructions email in the same transaction", async () => {
       const r = await book([{ ticketTypeId: generalId, quantity: 2 }], 1);
       expect(r.status).toBe(201);
-      expect(r.body.ref).toMatch(/^ADM-[A-Z2-9]{4}-[A-Z2-9]{4}$/);
+      expect(r.body.ref).toMatch(/^ADM-[A-HJ-NP-Z0-9]{4}-[A-HJ-NP-Z0-9]{4}$/);
       expect(r.body.totalMinor).toBe(50000);
       const d = await call("GET", pub("/events/jazz-night"));
       expect(d.body.ticketTypes[0].remaining).toBe(28);
@@ -390,7 +390,7 @@ describe.skipIf(!hasTestDb)("Admit journey", () => {
       const item = await queueItem(r.body.ref);
       await approve(item!.submissionId, item!.version);
       const t = await ownerQuery<{ id: string }>(`SELECT t.id FROM admit_tickets t JOIN admit_bookings b ON b.id = t.booking_id WHERE b.ref = $1`, [r.body.ref]);
-      expect(t[0]!.id).toMatch(/^TKT-[A-Z2-9]{4}-[A-Z2-9]{4}$/);
+      expect(t[0]!.id).toMatch(/^TKT-[A-HJ-NP-Z0-9]{4}-[A-HJ-NP-Z0-9]{4}$/);
 
       // the owner works another event: this ticket is valid, but not here
       const venue = (await call("POST", "/admit/venues", { token: owner, body: { name: "Other Hall", capacity: 50 } })).body.id;

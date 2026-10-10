@@ -1,0 +1,3 @@
+# generated from colors.ts by `npm run colors:sync`
+src/styles/tokens.css
+dist
