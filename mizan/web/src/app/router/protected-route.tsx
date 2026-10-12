@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/auth/use-auth";
@@ -11,6 +12,10 @@ import { Spinner } from "@/components/ui/spinner";
 export function ProtectedRoute() {
   const { status } = useAuth();
   const location = useLocation();
+  // Remember that this tab held a session: if it is lost (sign-out, expiry) the next person to sign in, possibly another
+  // role, must start at their own home rather than the previous person's page.
+  const hadSession = useRef(false);
+  if (status === "authed") hadSession.current = true;
   const { t } = useTranslation("common");
 
   if (status === "loading") {
@@ -26,7 +31,7 @@ export function ProtectedRoute() {
   }
 
   if (status === "anon") {
-    return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
+    return <Navigate to="/login" replace state={hadSession.current ? undefined : { from: location.pathname + location.search }} />;
   }
 
   return <Outlet />;
