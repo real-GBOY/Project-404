@@ -224,7 +224,7 @@ function Home() {
 }
 
 function RequireAuth() {
-  const { status } = useAuth();
+  const { status, error } = useAuth();
   const loc = useLocation();
   if (status === "loading")
     return (
@@ -233,7 +233,15 @@ function RequireAuth() {
       </p>
     );
   if (status === "unauthenticated")
-    return <Navigate to="/admin/login" state={{ from: loc.pathname }} replace />;
+    // Only an expired session resumes where it left off. A deliberate sign-out must not pin the next person (possibly another role)
+    // to the previous person's page.
+    return (
+      <Navigate
+        to="/admin/login"
+        state={error === "session_expired" ? { from: loc.pathname } : undefined}
+        replace
+      />
+    );
   return <Shell />;
 }
 

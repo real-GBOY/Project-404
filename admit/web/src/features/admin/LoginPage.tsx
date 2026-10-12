@@ -31,7 +31,7 @@ export function LoginPage({ to = "/admin" }: { to?: string }) {
   const [message, setMessage] = useState<string | null>(null);
 
   if (status === "authenticated")
-    return <Navigate to={loc.state?.from ?? (isDoorOnly(can) ? "/scan" : to)} replace />;
+    return <Navigate to={isDoorOnly(can) ? "/scan" : (loc.state?.from ?? to)} replace />;
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
