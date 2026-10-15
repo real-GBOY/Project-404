@@ -79,7 +79,7 @@ export class EmailComposer {
         event_venue: v.name,
         event_address: [v.address, v.area].filter(Boolean).join(", "),
         event_map_url: v.mapUrl ?? "",
-        event_image_url: event.coverUrl ?? "",
+        event_image_url: "", // the cover photo is for the website only; emails stay text and QR
         policy_summary: event.policies.refund ?? "",
         status_url: links.status,
         ticket_page_url: links.tickets,
