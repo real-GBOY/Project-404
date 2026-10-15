@@ -13,7 +13,6 @@ ADMIT_SEED_DEMO=false              # (or remove it)
 ```
 
 In production Admit refuses `ADMIT_SEED_DEMO=true` without the second flag, so the demo organizer can never appear next to real data by accident.
-On the web app set `VITE_DEMO=false` (it hides the demo account list on the sign-in page).
 
 ## 2. Create the organizer and its owner
 

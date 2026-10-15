@@ -4,17 +4,8 @@ import { Button } from "@/components/Button";
 import { TextField } from "@/components/Field";
 import { Logo } from "@/components/Logo";
 import { Notice } from "@/components/Notice";
-import { DEMO_MODE, DEMO_PASSWORD } from "@/config/env";
 import { ApiError } from "@/services/http";
 import { isDoorOnly, useAuth } from "./auth";
-
-const DEMO_ACCOUNTS = [
-  ["Owner", "desha@cairojazz.example"],
-  ["Event manager", "omar@cairojazz.example"],
-  ["Payment reviewer", "karim@cairojazz.example"],
-  ["Door staff", "ali@cairojazz.example"],
-  ["Viewer", "youssef@cairojazz.example"],
-] as const;
 
 const REASONS: Record<string, string> = {
   session_expired: "Your session ended. Sign in again to continue.",
@@ -80,28 +71,6 @@ export function LoginPage({ to = "/admin" }: { to?: string }) {
           Sign in
         </Button>
       </form>
-      {DEMO_MODE ? (
-        <section className="border-t border-rule-strong pt-4" aria-label="Demo accounts">
-          <p className="label mb-2 text-muted">Demo accounts</p>
-          <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
-            {DEMO_ACCOUNTS.map(([role, mail]) => (
-              <li key={mail}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmail(mail);
-                    setPassword(DEMO_PASSWORD);
-                  }}
-                  className="flex w-full items-baseline justify-between rounded-sm border border-rule-strong bg-surface px-3 py-2 text-left text-sm hover:border-ink"
-                >
-                  <span className="font-semibold">{role}</span>
-                  <span className="font-mono text-xs text-muted">{mail}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
     </main>
   );
 }

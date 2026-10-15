@@ -50,7 +50,7 @@ export default defineConfig({
       url: WEB,
       timeout: 240_000,
       reuseExistingServer: !!process.env.ADMIT_E2E_REUSE,
-      env: { VITE_DEMO: "true", VITE_ORG_SLUG: "nile-sessions", ADMIT_API_PROXY_TARGET: API },
+      env: { VITE_ORG_SLUG: "nile-sessions", ADMIT_API_PROXY_TARGET: API },
     },
   ],
 });

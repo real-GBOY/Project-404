@@ -8,8 +8,6 @@ export const API_BASE_URL: string = import.meta.env.VITE_API_BASE ?? "/api";
 export const DEFAULT_ORG: string = import.meta.env.VITE_ORG_SLUG ?? "cairo-jazz";
 
 /** Demo deployments show the demo accounts on the organizer sign-in page. */
-export const DEMO_MODE: boolean = import.meta.env.VITE_DEMO === "true" || import.meta.env.DEV;
-export const DEMO_PASSWORD: string = import.meta.env.VITE_DEMO_PASSWORD ?? "demo-password-2026";
 
 /** Time zone dates are shown in (v1 is single-timezone; the backend formats emails in the organizer's setting). */
 export const TIME_ZONE = "Africa/Cairo";
