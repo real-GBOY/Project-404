@@ -70,6 +70,18 @@ export const adminApi = {
     create: (body: T.EventInput) => http<T.AdminEvent>(E.events.list, { method: "POST", body }),
     update: (id: string, body: Partial<T.EventInput>) =>
       http<T.AdminEvent>(E.events.byId(id), { method: "PATCH", body }),
+    /** Upload the cover photo as raw bytes (the server detects JPG/PNG/WebP from the bytes). */
+    async setCover(id: string, file: Blob): Promise<T.AdminEvent> {
+      const res = await fetch(http.withApiBase(E.events.cover(id)), {
+        method: "PUT",
+        headers: { ...http.bearerHeaders(), "content-type": "application/octet-stream" },
+        body: file,
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(body?.error?.message ?? `Upload failed (${res.status}).`);
+      return body as T.AdminEvent;
+    },
+    clearCover: (id: string) => http<T.AdminEvent>(E.events.cover(id), { method: "DELETE" }),
     publish: (id: string) => http<T.AdminEvent>(E.events.publish(id), { method: "POST" }),
     unpublish: (id: string) => http<T.AdminEvent>(E.events.unpublish(id), { method: "POST" }),
     cancel: (id: string) => http<T.AdminEvent>(E.events.cancel(id), { method: "POST" }),

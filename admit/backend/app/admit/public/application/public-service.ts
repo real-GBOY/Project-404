@@ -3,7 +3,8 @@ import QRCode from "qrcode";
 import type { UnitOfWork } from "@core/kernel/db/db.js";
 import { currentExecutor, readInTenant } from "@core/kernel/db/db.js";
 import { NotFound } from "@core/kernel/errors.js";
-import { UNIT_OF_WORK } from "@core/kernel/tokens.js";
+import { FILE_STORAGE, UNIT_OF_WORK } from "@core/kernel/tokens.js";
+import type { IFileStorage } from "@core/contracts/index.js";
 import { getContext, runAsSystem, runWithContext } from "@core/kernel/logging/context.js";
 import { qrPayload, ticketToken } from "@admit/admit/shared/secrets.js";
 import { EventsRepository, type EventRecord, type TicketTypeRecord } from "@admit/admit/events/infrastructure/events-repository.js";
@@ -37,6 +38,7 @@ export class PublicService {
     private readonly settings: SettingsService,
     private readonly composer: EmailComposer,
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
+    @Inject(FILE_STORAGE) private readonly files: IFileStorage,
   ) {}
 
   /**
@@ -90,6 +92,16 @@ export class PublicService {
         types: myTypes,
         venue: v,
       };
+    });
+  }
+
+  /** The cover photo. `v` is the unguessable file id embedded in the event's coverUrl, so a draft's cover is not reachable by slug alone. */
+  cover(slug: string, eventSlug: string, v: string) {
+    return this.asOrganizer(slug, async () => {
+      const event = await readInTenant(() => this.events.findEventBySlug(eventSlug));
+      if (!event?.coverUrl || !event.coverUrl.endsWith(`?v=${v}`)) throw NotFound("admit.cover_not_found", "Cover not found.");
+      const { content, ref } = await readInTenant(() => this.files.getContent({ id: v }));
+      return { content, contentType: ref.contentType };
     });
   }
 

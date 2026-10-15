@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { adminApi } from "@/api";
@@ -15,7 +15,7 @@ import { fromInputValue, slugify, toInputValue } from "@/lib/datetime";
 import { errorText } from "@/lib/errors";
 import { moneyShort } from "@/lib/format";
 import { EVENT } from "@/lib/status";
-import { ApiError } from "@/services/http";
+import { ApiError, assetUrl } from "@/services/http";
 import { Forbidden } from "./AdminApp";
 import { useAuth } from "./auth";
 import { readiness } from "./event-readiness";
@@ -85,7 +85,6 @@ const toInput = (d: Draft): EventInput => ({
   venueId: d.venueId,
   startsAt: fromInputValue(d.startsAt),
   endsAt: fromInputValue(d.endsAt),
-  coverUrl: null,
   maxPerBooking: d.maxPerBooking,
   namedTickets: d.namedTickets,
   holdHours: d.holdHours,
@@ -138,6 +137,35 @@ function Editor({ event, venues }: { event?: AdminEvent; venues: Venue[] }) {
     setD((p) => ({ ...p, [k]: v }));
     setDirty(true);
   };
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverRemoved, setCoverRemoved] = useState(false);
+  const [coverError, setCoverError] = useState<string | null>(null);
+  const coverInput = useRef<HTMLInputElement>(null);
+  const coverPreview = useMemo(
+    () => (coverFile ? URL.createObjectURL(coverFile) : null),
+    [coverFile],
+  );
+  useEffect(() => () => void (coverPreview && URL.revokeObjectURL(coverPreview)), [coverPreview]);
+  const coverSrc =
+    coverPreview ?? (!coverRemoved && event?.coverUrl ? assetUrl(event.coverUrl) : null);
+  const pickCover = (f: File | undefined) => {
+    if (!f) return;
+    if (!/^image\/(jpeg|png|webp)$/.test(f.type))
+      return setCoverError("Choose a JPG, PNG or WebP photo.");
+    if (f.size > 5 * 1_048_576)
+      return setCoverError("That photo is over 5 MB. Choose a smaller one.");
+    setCoverError(null);
+    setCoverFile(f);
+    setCoverRemoved(false);
+    setDirty(true);
+  };
+  /** The cover has its own upload call, so it is sent after the event exists (a new event is created first). */
+  const persistCover = async (id: string) => {
+    if (coverFile) await adminApi.events.setCover(id, coverFile);
+    else if (coverRemoved && event?.coverUrl) await adminApi.events.clearCover(id);
+    setCoverFile(null);
+    setCoverRemoved(false);
+  };
   const venue = venues.find((v) => v.id === d.venueId);
   const ready = useMemo(
     () =>
@@ -169,7 +197,11 @@ function Editor({ event, venues }: { event?: AdminEvent; venues: Venue[] }) {
       setError(null);
       setFieldErrors({});
       const body = toInput(d);
-      return event ? adminApi.events.update(event.id, body) : adminApi.events.create(body);
+      const saved = event
+        ? await adminApi.events.update(event.id, body)
+        : await adminApi.events.create(body);
+      await persistCover(saved.id);
+      return saved;
     },
     onSuccess: async (saved) => {
       setDirty(false);
@@ -182,7 +214,10 @@ function Editor({ event, venues }: { event?: AdminEvent; venues: Venue[] }) {
   const act = useMutation({
     mutationFn: async (a: "publish" | "unpublish" | "cancel" | "archive") => {
       setError(null);
-      if (dirty) await adminApi.events.update(event!.id, toInput(d));
+      if (dirty) {
+        await adminApi.events.update(event!.id, toInput(d));
+        await persistCover(event!.id);
+      }
       return adminApi.events[a](event!.id);
     },
     onSuccess: async () => {
@@ -329,6 +364,59 @@ function Editor({ event, venues }: { event?: AdminEvent; venues: Venue[] }) {
               disabled={locked}
               hint={`${d.description.length} / 5,000. A blank line starts a new paragraph.`}
             />
+          </Section>
+
+          <Section id="cover" title="Event photo">
+            <p className="m-0 text-[13px] text-muted">
+              Shown on the home page and the event page. Landscape works best (JPG, PNG or WebP, up
+              to 5 MB).
+            </p>
+            {coverSrc ? (
+              <img
+                src={coverSrc}
+                alt=""
+                className="w-full max-w-md border border-ink object-cover"
+                style={{ aspectRatio: "4/3" }}
+              />
+            ) : (
+              <div
+                className="stripes flex w-full max-w-md items-center justify-center border border-ink font-mono text-xs text-muted"
+                style={{ aspectRatio: "4/3" }}
+              >
+                No photo yet
+              </div>
+            )}
+            {!locked ? (
+              <div className="flex flex-wrap gap-2">
+                <input
+                  ref={coverInput}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  hidden
+                  onChange={(e) => {
+                    pickCover(e.target.files?.[0]);
+                    e.target.value = "";
+                  }}
+                />
+                <Button variant="secondary" size="md" onClick={() => coverInput.current?.click()}>
+                  {coverSrc ? "Replace photo" : "Upload photo"}
+                </Button>
+                {coverSrc ? (
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    onClick={() => {
+                      setCoverFile(null);
+                      setCoverRemoved(true);
+                      setDirty(true);
+                    }}
+                  >
+                    Remove
+                  </Button>
+                ) : null}
+              </div>
+            ) : null}
+            {coverError ? <Notice tone="bad">{coverError}</Notice> : null}
           </Section>
 
           <Section

@@ -1,8 +1,9 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { CurrentUser, RequirePermission } from "@core/http/decorators.js";
 import { JwtAuthGuard } from "@core/http/jwt-auth.guard.js";
 import { PermissionGuard } from "@core/http/permission.guard.js";
+import { ValidationError } from "@core/kernel/errors.js";
 import { ZodBody } from "@core/http/zod.pipe.js";
 import type { Principal } from "@core/http/principal.js";
 import { EventsService } from "../application/events-service.js";
@@ -63,6 +64,20 @@ export class EventsController {
   @RequirePermission("update", "event")
   async remove(@CurrentUser() who: Principal, @Param("id") id: string) {
     await this.service.remove(who, id);
+  }
+
+  /** Raw image bytes (sent as application/octet-stream); the type is detected from the bytes. */
+  @Put("events/:id/cover")
+  @RequirePermission("update", "event")
+  setCover(@CurrentUser() who: Principal, @Param("id") id: string, @Body() content: Buffer) {
+    if (!Buffer.isBuffer(content) || !content.length) throw ValidationError("admit.empty_upload", "The uploaded file is empty.");
+    return this.service.setCover(who, id, content);
+  }
+
+  @Delete("events/:id/cover")
+  @RequirePermission("update", "event")
+  clearCover(@CurrentUser() who: Principal, @Param("id") id: string) {
+    return this.service.clearCover(who, id);
   }
 
   @Post("events/:id/publish")

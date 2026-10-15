@@ -1,10 +1,10 @@
 import { Inject, Injectable } from "@nestjs/common";
 import type { UnitOfWork } from "@core/kernel/db/db.js";
-import { readInTenant } from "@core/kernel/db/db.js";
+import { currentExecutor, readInTenant } from "@core/kernel/db/db.js";
 import { Conflict, NotFound, ValidationError } from "@core/kernel/errors.js";
-import { AUDIT_LOGGER, CLOCK, UNIT_OF_WORK } from "@core/kernel/tokens.js";
+import { AUDIT_LOGGER, CLOCK, FILE_STORAGE, UNIT_OF_WORK } from "@core/kernel/tokens.js";
 import type { Clock } from "@core/kernel/clock.js";
-import type { IAuditLogger } from "@core/contracts/index.js";
+import type { IAuditLogger, IFileStorage } from "@core/contracts/index.js";
 import type { Principal } from "@core/http/principal.js";
 import { isUniqueViolation } from "@admit/admit/shared/pg-errors.js";
 import { EventAccess } from "./event-access.js";
@@ -31,6 +31,21 @@ export interface EventView extends Omit<EventRecord, "venueId"> {
   capacityAllocated: number;
 }
 
+/** Core's FILE_STORAGE binding is the concrete FileStorageService; covers need members the IFileStorage contract does not list. */
+interface CoverStore extends IFileStorage {
+  writeBytes(id: string, content: Buffer): Promise<void>;
+}
+
+export const COVER_MAX_BYTES = 5 * 1_048_576;
+
+/** Image kinds a cover may be, detected from the bytes (the client-sent type is not trusted). */
+export function sniffImage(b: Buffer): "image/jpeg" | "image/png" | "image/webp" | null {
+  if (b.length > 12 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return "image/jpeg";
+  if (b.length > 12 && b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return "image/png";
+  if (b.length > 12 && b.subarray(0, 4).toString("ascii") === "RIFF" && b.subarray(8, 12).toString("ascii") === "WEBP") return "image/webp";
+  return null;
+}
+
 /** Admin side of the event catalogue: venues, events, ticket types and payment instructions. */
 @Injectable()
 export class EventsService {
@@ -40,6 +55,7 @@ export class EventsService {
     @Inject(AUDIT_LOGGER) private readonly audit: IAuditLogger,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
+    @Inject(FILE_STORAGE) private readonly files: CoverStore,
   ) {}
 
   // ---- reads ----------------------------------------------------------------------------------
@@ -194,6 +210,66 @@ export class EventsService {
     } catch (err) {
       throw this.translate(err, b.slug);
     }
+  }
+
+  /** Upload the event's cover photo. Stored privately in Core's file storage and served publicly only through the event's own cover route. */
+  async setCover(who: Principal, id: string, content: Buffer): Promise<EventView> {
+    const type = sniffImage(content);
+    if (!type)
+      throw ValidationError("admit.cover_type", "Upload a JPG, PNG or WebP photo.", {
+        fields: [{ path: "cover", message: "Upload a JPG, PNG or WebP photo." }],
+      });
+    if (content.byteLength > COVER_MAX_BYTES) {
+      const m = "This photo is over 5 MB. Upload a smaller one.";
+      throw ValidationError("admit.cover_too_large", m, { fields: [{ path: "cover", message: m }] });
+    }
+    const ev = await readInTenant(async () => {
+      await this.access.assertEvent(who, id);
+      const e = await this.repo.findEvent(id);
+      if (!e) throw NotFound("admit.event_not_found", "Event not found.");
+      if (e.status === "archived") throw Conflict("admit.event_archived", "An archived event cannot be edited.");
+      const org = await currentExecutor().selectFrom("organizations").select("slug").where("id", "=", who.organizationId!).executeTakeFirstOrThrow();
+      return { e, orgSlug: org.slug };
+    });
+    const up = await this.files.createUpload({
+      originalName: `cover-${ev.e.slug}`.slice(0, 120),
+      contentType: type,
+      byteSize: content.byteLength,
+      visibility: "private",
+      metadata: { kind: "event_cover", eventId: id },
+    });
+    await this.files.writeBytes(up.fileId, content);
+    await this.files.confirmUpload(up.fileId);
+    const coverUrl = `/api/admit/public/${ev.orgSlug}/events/${ev.e.slug}/cover?v=${up.fileId}`;
+    return this.uow.transaction(async () => {
+      await this.repo.updateEvent(id, { coverUrl });
+      await this.audit.record({
+        actorId: who.userId,
+        action: "admit.event.cover_set",
+        resourceType: "admit_event",
+        resourceId: id,
+        before: null,
+        after: { fileId: up.fileId },
+      });
+      return (await this.assemble([(await this.repo.findEvent(id))!]))[0]!;
+    });
+  }
+
+  async clearCover(who: Principal, id: string): Promise<EventView> {
+    return this.uow.transaction(async () => {
+      await this.access.assertEvent(who, id);
+      if (!(await this.repo.findEvent(id))) throw NotFound("admit.event_not_found", "Event not found.");
+      await this.repo.updateEvent(id, { coverUrl: null });
+      await this.audit.record({
+        actorId: who.userId,
+        action: "admit.event.cover_removed",
+        resourceType: "admit_event",
+        resourceId: id,
+        before: null,
+        after: null,
+      });
+      return (await this.assemble([(await this.repo.findEvent(id))!]))[0]!;
+    });
   }
 
   /** Publishing is a promise to customers, so it checks the event can actually be bought. */

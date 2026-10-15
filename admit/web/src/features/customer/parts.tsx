@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import type { EventCard as EventCardData } from "@/api/types";
+import { assetUrl } from "@/services/http";
 import { dateBlock, fmtTime, moneyShort } from "@/lib/format";
 import { availabilityText } from "./availability";
 
@@ -57,7 +58,7 @@ export function Cover({
   if (url)
     return (
       <img
-        src={url}
+        src={assetUrl(url)}
         alt=""
         className={`w-full object-cover ${className}`}
         style={{ aspectRatio: ratio }}

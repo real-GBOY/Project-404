@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { FilesModule } from "@core/index.js";
 import { AdmitEventsModule } from "@admit/admit/events/events.module.js";
 import { BookingsStoreModule } from "@admit/admit/bookings/bookings-store.module.js";
 import { BookingsModule } from "@admit/admit/bookings/bookings.module.js";
@@ -11,7 +12,7 @@ import { RateLimiter } from "./infrastructure/rate-limiter.js";
 
 /** The customer API for the public site (see PublicController): catalogue, guest checkout, proof upload, tickets, QR. */
 @Module({
-  imports: [AdmitEventsModule, BookingsStoreModule, BookingsModule, PaymentsModule, EmailsModule, SettingsModule],
+  imports: [FilesModule, AdmitEventsModule, BookingsStoreModule, BookingsModule, PaymentsModule, EmailsModule, SettingsModule],
   controllers: [PublicController],
   providers: [PublicService, RateLimiter],
   exports: [RateLimiter, PublicService],

@@ -66,6 +66,25 @@ export class PublicController {
     return this.service.eventDetail(org, event, this.clock.now());
   }
 
+  /** The event's cover photo (an image the page loads). The file id in `v` changes with each upload, so it caches for a year. */
+  @Get("events/:event/cover")
+  async cover(
+    @Param("org") org: string,
+    @Param("event") event: string,
+    @Query("v") v: string | undefined,
+    @Req() req: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
+    await this.limit(PUBLIC_RATE_POLICIES.read, this.slug(org), req, reply);
+    if (!slugParam.safeParse(event).success || !v || !idParam.safeParse(v).success) throw NotFound("admit.cover_not_found", "Cover not found.");
+    const f = await this.service.cover(org, event, v);
+    reply.header("content-type", f.contentType);
+    reply.header("cache-control", "public, max-age=31536000, immutable");
+    reply.header("x-content-type-options", "nosniff");
+    reply.header("cross-origin-resource-policy", "cross-origin");
+    return new StreamableFile(f.content);
+  }
+
   @Post("events/:event/bookings")
   @HttpCode(201)
   async book(

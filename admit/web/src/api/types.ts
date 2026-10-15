@@ -233,7 +233,8 @@ export interface EventInput {
   venueId: string;
   startsAt: string;
   endsAt: string;
-  coverUrl: string | null;
+  /** Left out on save: the cover is managed by its own upload call. */
+  coverUrl?: string | null;
   maxPerBooking: number;
   namedTickets: boolean;
   holdHours: number;

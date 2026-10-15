@@ -28,6 +28,7 @@ export const ENDPOINTS = {
   events: {
     list: "/admit/events",
     byId: (id: string) => `/admit/events/${id}`,
+    cover: (id: string) => `/admit/events/${id}/cover`,
     publish: (id: string) => `/admit/events/${id}/publish`,
     unpublish: (id: string) => `/admit/events/${id}/unpublish`,
     cancel: (id: string) => `/admit/events/${id}/cancel`,
