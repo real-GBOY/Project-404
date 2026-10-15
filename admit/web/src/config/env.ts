@@ -5,7 +5,7 @@
 export const API_BASE_URL: string = import.meta.env.VITE_API_BASE ?? "/api";
 
 /** The organizer whose site `/` opens. Any other organizer is reached at `/e/<slug>`. */
-export const DEFAULT_ORG: string = import.meta.env.VITE_ORG_SLUG ?? "nile-sessions";
+export const DEFAULT_ORG: string = import.meta.env.VITE_ORG_SLUG ?? "cairo-jazz";
 
 /** Demo deployments show the demo accounts on the organizer sign-in page. */
 export const DEMO_MODE: boolean = import.meta.env.VITE_DEMO === "true" || import.meta.env.DEV;

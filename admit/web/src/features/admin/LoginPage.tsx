@@ -9,11 +9,11 @@ import { ApiError } from "@/services/http";
 import { isDoorOnly, useAuth } from "./auth";
 
 const DEMO_ACCOUNTS = [
-  ["Owner", "salma@nilesessions.example"],
-  ["Event manager", "dalia@nilesessions.example"],
-  ["Payment reviewer", "karim@nilesessions.example"],
-  ["Door staff", "ali@nilesessions.example"],
-  ["Viewer", "mona@nilesessions.example"],
+  ["Owner", "desha@cairojazz.example"],
+  ["Event manager", "omar@cairojazz.example"],
+  ["Payment reviewer", "karim@cairojazz.example"],
+  ["Door staff", "ali@cairojazz.example"],
+  ["Viewer", "youssef@cairojazz.example"],
 ] as const;
 
 const REASONS: Record<string, string> = {
