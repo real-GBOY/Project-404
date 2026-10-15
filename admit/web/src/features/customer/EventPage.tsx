@@ -137,6 +137,16 @@ function EventView({ event }: { event: PublicEvent }) {
               </section>
             ) : null}
           </div>
+          {event.venue.mapUrl ? (
+            <iframe
+              title={`Map of ${event.venue.name}`}
+              src={`https://www.google.com/maps?q=${encodeURIComponent(`${event.venue.name}, ${event.venue.address}`)}&output=embed`}
+              className="h-[300px] w-full max-w-[640px] border border-ink"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              allowFullScreen
+            />
+          ) : null}
         </div>
 
         <aside

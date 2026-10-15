@@ -817,6 +817,7 @@ function VenueDialog({
     name: venue?.name ?? "",
     area: venue?.area ?? "",
     address: venue?.address ?? "",
+    mapUrl: venue?.mapUrl ?? "",
     capacity: venue ? String(venue.capacity) : "",
   });
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -824,7 +825,7 @@ function VenueDialog({
     name: v.name.trim(),
     area: v.area.trim(),
     address: v.address.trim(),
-    mapUrl: venue?.mapUrl ?? null,
+    mapUrl: v.mapUrl.trim() || null,
     capacity: Number(v.capacity),
   });
   const save = useMutation({
@@ -863,6 +864,14 @@ function VenueDialog({
           label="Address"
           value={v.address}
           onChange={(e) => setV({ ...v, address: e.target.value })}
+        />
+        <TextField
+          label="Map link"
+          type="url"
+          value={v.mapUrl}
+          onChange={(e) => setV({ ...v, mapUrl: e.target.value })}
+          placeholder="https://maps.google.com/..."
+          hint="Paste the venue's Google Maps link. Customers see a map on the event page when this is set."
         />
         {save.isError || remove.isError ? (
           <p role="alert" className="text-sm text-bad-solid">
