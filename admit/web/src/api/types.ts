@@ -81,14 +81,47 @@ export interface CreateBookingBody {
   items: { ticketTypeId: string; quantity: number; holderNames?: string[] }[];
   customer: { name: string; email: string; phone: string };
   policyAck: boolean;
+  promoCode?: string;
 }
 export interface CreatedBooking {
   created: boolean;
   ref: string;
   holdExpiresAt: string;
   totalMinor: number;
+  discountMinor: number;
   currency: string;
   links: { status: string; upload: string };
+}
+export interface PromoPreview {
+  code: string;
+  kind: "percent" | "fixed";
+  value: number;
+  subtotalMinor: number;
+  discountMinor: number;
+  totalMinor: number;
+  currency: string;
+}
+export interface PromoCode {
+  id: string;
+  code: string;
+  kind: "percent" | "fixed";
+  /** percent: 1-99. fixed: minor units. */
+  value: number;
+  maxUses: number | null;
+  validFrom: string | null;
+  validUntil: string | null;
+  enabled: boolean;
+  usedCount: number;
+  createdAt: string;
+}
+export interface PromoInput {
+  code: string;
+  kind: "percent" | "fixed";
+  value: number;
+  maxUses: number | null;
+  validFrom: string | null;
+  validUntil: string | null;
+  enabled: boolean;
 }
 export interface PaymentMethodView {
   id: string;
@@ -126,6 +159,9 @@ export interface GuestBooking {
   };
   customer: { name: string; emailMasked: string };
   lines: BookingLine[];
+  subtotalMinor: number;
+  discountMinor: number;
+  promoCode: string | null;
   totalMinor: number;
   currency: string;
   holdExpiresAt: string;
@@ -266,6 +302,9 @@ export interface BookingDetail {
   version: number;
   event: { id: string; title: string; startsAt: string };
   customer: { name: string; email: string; phone: string };
+  subtotalMinor: number;
+  discountMinor: number;
+  promoCode: string | null;
   totalMinor: number;
   currency: string;
   holdExpiresAt: string;

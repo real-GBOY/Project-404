@@ -209,6 +209,12 @@ function Status({ b }: { b: GuestBooking }) {
                 <span className="font-mono">{money(l.totalMinor, b.currency)}</span>
               </div>
             ))}
+            {b.discountMinor > 0 ? (
+              <div className="flex justify-between font-semibold text-ok-fg">
+                <span>Promo {b.promoCode}</span>
+                <span className="font-mono">-{money(b.discountMinor, b.currency)}</span>
+              </div>
+            ) : null}
             <div className="flex justify-between border-t border-dashed border-rule-strong pt-2 font-semibold">
               <span>Total</span>
               <span className="font-mono">{total}</span>

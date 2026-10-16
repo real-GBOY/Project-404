@@ -35,6 +35,7 @@ export const createBookingSchema = z
     items: z.array(item).min(1).max(10),
     customer: z.object({ name: fullName, email: emailField, phone: mobileField }).strict(),
     policyAck: z.boolean().default(false),
+    promoCode: z.string().trim().max(40).optional(),
   })
   .strict();
 export type CreateBookingBody = z.infer<typeof createBookingSchema>;

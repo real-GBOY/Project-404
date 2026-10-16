@@ -21,6 +21,12 @@ export const publicApi = {
       headers: { "Idempotency-Key": idempotencyKey },
       ...anon,
     }),
+  /** Price a promo code against the basket (holds nothing). */
+  promo: (
+    org: string,
+    event: string,
+    body: { code: string; items: { ticketTypeId: string; quantity: number }[] },
+  ) => http<T.PromoPreview>(E.public.promo(org, event), { method: "POST", body, ...anon }),
   booking: (org: string, ref: string, k: string) =>
     http<T.GuestBooking>(E.public.booking(org, ref, k), anon),
   cancel: (org: string, ref: string, k: string) =>
@@ -81,6 +87,12 @@ export const adminApi = {
       if (!res.ok) throw new Error(body?.error?.message ?? `Upload failed (${res.status}).`);
       return body as T.AdminEvent;
     },
+    promos: (id: string) => list<T.PromoCode>(E.events.promos(id)),
+    createPromo: (id: string, body: T.PromoInput) =>
+      http<T.PromoCode>(E.events.promos(id), { method: "POST", body }),
+    updatePromo: (promoId: string, body: Partial<Omit<T.PromoInput, "code">>) =>
+      http<T.PromoCode>(E.events.promo(promoId), { method: "PATCH", body }),
+    removePromo: (promoId: string) => http<void>(E.events.promo(promoId), { method: "DELETE" }),
     clearCover: (id: string) => http<T.AdminEvent>(E.events.cover(id), { method: "DELETE" }),
     publish: (id: string) => http<T.AdminEvent>(E.events.publish(id), { method: "POST" }),
     unpublish: (id: string) => http<T.AdminEvent>(E.events.unpublish(id), { method: "POST" }),

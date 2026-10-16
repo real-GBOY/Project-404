@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { AdmitSharedModule } from "@admit/admit/shared/shared.module.js";
 import { SettingsModule } from "@admit/admit/settings/settings.module.js";
 import { AdmitEventsModule } from "@admit/admit/events/events.module.js";
+import { PromosModule } from "@admit/admit/promos/promos.module.js";
 import { BookingsModule } from "@admit/admit/bookings/bookings.module.js";
 import { PaymentsModule } from "@admit/admit/payments/payments.module.js";
 import { TicketsModule } from "@admit/admit/tickets/tickets.module.js";
@@ -22,6 +23,7 @@ import { JobsModule } from "@admit/admit/jobs/jobs.module.js";
     AdmitSharedModule,
     SettingsModule,
     AdmitEventsModule,
+    PromosModule,
     BookingsModule,
     PaymentsModule,
     TicketsModule,

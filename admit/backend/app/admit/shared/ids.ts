@@ -11,6 +11,7 @@ export type AdmitIdPrefix =
   | "evt" // event
   | "tkt" // ticket type
   | "pmt" // payment method
+  | "prm" // promo code
   | "bkg" // booking
   | "bkl" // booking line
   | "sub" // payment submission

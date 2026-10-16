@@ -99,6 +99,26 @@ model admit_payment_methods {
   @@map("admit_payment_methods")
 }
 
+model admit_promo_codes {
+  id              String    @id
+  organization_id String
+  event_id        String
+  code            String
+  /// @kyselyType('percent' | 'fixed')
+  kind            String
+  value           Int
+  max_uses        Int?
+  valid_from      DateTime? @db.Timestamptz(6)
+  valid_until     DateTime? @db.Timestamptz(6)
+  enabled         Boolean   @default(true)
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, id], map: "admit_promo_codes_org_id_uq")
+  @@unique([organization_id, event_id, code], map: "admit_promo_codes_code_uq")
+  @@map("admit_promo_codes")
+}
+
 model admit_event_staff {
   organization_id String
   event_id        String

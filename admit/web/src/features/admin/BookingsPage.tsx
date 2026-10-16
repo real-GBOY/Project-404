@@ -288,6 +288,12 @@ export function BookingDrawer({ id, onClose }: { id: string; onClose: () => void
                   <span className="font-mono text-sm font-semibold">
                     {money(b.totalMinor, b.currency)}
                   </span>
+                  {b.discountMinor > 0 ? (
+                    <span className="text-xs text-ok-fg">
+                      Promo <span className="font-mono">{b.promoCode}</span>: -
+                      {money(b.discountMinor, b.currency)} off {money(b.subtotalMinor, b.currency)}
+                    </span>
+                  ) : null}
                   {b.submissions.map((s) => (
                     <span key={s.id}>
                       <Badge status={SUBMISSION[s.status]} />{" "}

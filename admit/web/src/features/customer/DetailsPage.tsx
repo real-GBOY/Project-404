@@ -2,7 +2,7 @@ import { useMemo, useRef, useState, type FormEvent } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { publicApi } from "@/api";
-import type { PublicEvent } from "@/api/types";
+import type { PromoPreview, PublicEvent } from "@/api/types";
 import { Button } from "@/components/Button";
 import { ErrorSummary, TextField } from "@/components/Field";
 import { Notice } from "@/components/Notice";
@@ -22,6 +22,7 @@ function fieldIdFor(path: string): string {
   const m = /holderNames\.(\d+)/.exec(path);
   if (m) return `holder-${m[1]}`;
   if (path === "policyAck") return "policy";
+  if (path === "promoCode") return "promo";
   return "form";
 }
 
@@ -45,6 +46,8 @@ function DetailsForm({ event }: { event: PublicEvent }) {
   const [policyAck, setPolicyAck] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverMsg, setServerMsg] = useState<string | null>(null);
+  const [promoText, setPromoText] = useState("");
+  const [promo, setPromo] = useState<PromoPreview | null>(null);
   const summary = useRef<HTMLDivElement>(null);
   // one key per visit to this form: a double click or a retried request returns the first booking instead of booking twice
   const idemKey = useRef(`web-${crypto.randomUUID().replaceAll("-", "")}`);
@@ -57,6 +60,27 @@ function DetailsForm({ event }: { event: PublicEvent }) {
     namedTickets: event.namedTickets,
     hasPolicies,
     policyAck,
+  });
+
+  const applyPromo = useMutation({
+    mutationFn: () =>
+      publicApi.promo(org, event.slug, {
+        code: promoText,
+        items: lines.map((t) => ({ ticketTypeId: t.id, quantity: cart[t.id]! })),
+      }),
+    onSuccess: (r) => {
+      setPromo(r);
+      setPromoText(r.code);
+      setErrors((p) => {
+        const n = { ...p };
+        delete n.promo;
+        return n;
+      });
+    },
+    onError: (err) => {
+      setPromo(null);
+      setErrors((p) => ({ ...p, promo: err instanceof Error ? err.message : "Try again." }));
+    },
   });
 
   const book = useMutation({
@@ -79,6 +103,7 @@ function DetailsForm({ event }: { event: PublicEvent }) {
           items,
           customer: { name: name.trim(), email: email.trim(), phone: phone.trim() },
           policyAck,
+          ...(promo ? { promoCode: promo.code } : {}),
         },
         idemKey.current,
       );
@@ -92,6 +117,7 @@ function DetailsForm({ event }: { event: PublicEvent }) {
       if (err instanceof ApiError && err.fields.length) {
         const next: Record<string, string> = {};
         for (const f of err.fields) next[fieldIdFor(f.path)] = f.message;
+        if (next.promo) setPromo(null);
         setErrors(next);
         setServerMsg(null);
         requestAnimationFrame(() => summary.current?.focus());
@@ -303,11 +329,89 @@ function DetailsForm({ event }: { event: PublicEvent }) {
               >
                 Change tickets
               </Link>
-              <div className="flex items-baseline justify-between border-t border-dashed border-rule-strong pt-2.5">
-                <span className="font-semibold">Total to transfer</span>
-                <span className="font-mono text-[22px] font-semibold">
-                  {money(cartTotal(event, cart), event.currency)}
-                </span>
+              <div className="flex flex-col gap-1.5 border-t border-dashed border-rule-strong pt-2.5">
+                {promo ? (
+                  <>
+                    <div className="flex items-baseline justify-between text-sm text-ink-2">
+                      <span>Subtotal</span>
+                      <span className="font-mono">
+                        {money(promo.subtotalMinor, event.currency)}
+                      </span>
+                    </div>
+                    <div className="flex items-baseline justify-between text-sm font-semibold text-ok-fg">
+                      <span>
+                        Promo {promo.code}
+                        {promo.kind === "percent" ? ` (${promo.value}% off)` : ""}
+                      </span>
+                      <span className="font-mono">
+                        -{money(promo.discountMinor, event.currency)}
+                      </span>
+                    </div>
+                  </>
+                ) : null}
+                <div className="flex items-baseline justify-between">
+                  <span className="font-semibold">Total to transfer</span>
+                  <span className="font-mono text-[22px] font-semibold">
+                    {money(promo ? promo.totalMinor : cartTotal(event, cart), event.currency)}
+                  </span>
+                </div>
+              </div>
+              <div className="flex flex-col gap-1.5 border-t border-rule pt-3">
+                <label htmlFor="promo" className="label text-ink-2">
+                  Promo code
+                </label>
+                {promo ? (
+                  <div className="flex items-center justify-between gap-2 text-sm">
+                    <span>
+                      <strong className="font-mono">{promo.code}</strong> applied
+                    </span>
+                    <button
+                      type="button"
+                      className="text-xs text-muted underline"
+                      onClick={() => {
+                        setPromo(null);
+                        setPromoText("");
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      id="promo"
+                      value={promoText}
+                      onChange={(e) => setPromoText(e.target.value.toUpperCase())}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          if (promoText.trim()) applyPromo.mutate();
+                        }
+                      }}
+                      autoComplete="off"
+                      autoCapitalize="characters"
+                      spellCheck={false}
+                      placeholder="Enter code"
+                      aria-invalid={errors.promo ? true : undefined}
+                      className="h-10 min-w-0 flex-1 rounded-sm border border-rule-strong bg-surface px-3 font-mono text-sm uppercase"
+                    />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="md"
+                      loading={applyPromo.isPending}
+                      disabled={!promoText.trim()}
+                      onClick={() => applyPromo.mutate()}
+                    >
+                      Apply
+                    </Button>
+                  </div>
+                )}
+                {errors.promo ? (
+                  <span role="alert" className="text-xs font-medium text-bad-solid">
+                    ✕ {errors.promo}
+                  </span>
+                ) : null}
               </div>
             </div>
           </div>

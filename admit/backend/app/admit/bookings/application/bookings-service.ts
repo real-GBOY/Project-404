@@ -19,9 +19,12 @@ import { EventsRepository, type EventRecord, type PaymentMethodRecord } from "@a
 import { TicketsRepository } from "@admit/admit/tickets/infrastructure/tickets-repository.js";
 import { PaymentsRepository } from "@admit/admit/payments/infrastructure/payments-repository.js";
 import { EmailRepository } from "@admit/admit/emails/infrastructure/email-repository.js";
+import { PromosService } from "@admit/admit/promos/application/promos-service.js";
+import { normalizeCode } from "@admit/admit/promos/domain/pricing.js";
 import { EmailComposer } from "@admit/admit/emails/application/email-composer.js";
 import { BookingsRepository, type BookingRecord, type BookingStatus } from "../infrastructure/bookings-repository.js";
 import type { CreateBookingBody } from "../validation/bookings.schema.js";
+import type { PreviewPromoBody } from "@admit/admit/promos/validation/promos.schema.js";
 
 export interface BookingLineView {
   ticketTypeId: string;
@@ -47,6 +50,10 @@ export interface GuestBookingView {
   };
   customer: { name: string; emailMasked: string };
   lines: BookingLineView[];
+  /** Before any promo code; `totalMinor` is what is left to pay. */
+  subtotalMinor: number;
+  discountMinor: number;
+  promoCode: string | null;
   totalMinor: number;
   currency: string;
   holdExpiresAt: Date;
@@ -98,6 +105,7 @@ export class BookingsService {
     private readonly emails: EmailRepository,
     private readonly composer: EmailComposer,
     private readonly access: EventAccess,
+    private readonly promos: PromosService,
     @Inject(AUDIT_LOGGER) private readonly audit: IAuditLogger,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
@@ -170,6 +178,11 @@ export class BookingsService {
       return { ticketTypeId: t.id, quantity: i.quantity, unitPriceMinor: t.priceMinor, holderNames: names };
     });
 
+    const subtotalMinor = lines.reduce((n, l) => n + l.quantity * l.unitPriceMinor, 0);
+    const code = b.promoCode ? normalizeCode(b.promoCode) : "";
+    const quote = code ? await this.promos.price(event.id, code, subtotalMinor, now, true) : null;
+    const discountMinor = quote?.discountMinor ?? 0;
+
     const id = admitId("bkg");
     const ref = newBookingRef();
     const holdExpiresAt = new Date(now.getTime() + event.holdHours * 3_600_000);
@@ -181,7 +194,11 @@ export class BookingsService {
       customerName: b.customer.name,
       email: b.customer.email.toLowerCase(),
       phone: b.customer.phone,
-      totalMinor: lines.reduce((n, l) => n + l.quantity * l.unitPriceMinor, 0),
+      totalMinor: subtotalMinor - discountMinor,
+      subtotalMinor,
+      discountMinor,
+      promoCodeId: quote?.promo.id ?? null,
+      promoCode: quote?.promo.code ?? null,
       currency: event.currency,
       holdExpiresAt,
       policyAck: b.policyAck,
@@ -197,9 +214,35 @@ export class BookingsService {
       action: "admit.booking.created",
       resourceType: "admit_booking",
       resourceId: id,
-      after: { ref, eventId: event.id, total },
+      after: { ref, eventId: event.id, total, ...(quote && { promoCode: quote.promo.code, discountMinor }) },
     });
     return { booking: (await this.repo.find(id))!, created: true };
+  }
+
+  /** What a guest sees when they apply a code: the discount and the new total, without holding anything. */
+  async previewPromo(eventSlug: string, b: PreviewPromoBody) {
+    const now = this.clock.now();
+    const event = await this.events.findEventBySlug(eventSlug);
+    if (!event || event.status !== "published") throw NotFound("admit.event_not_found", "This event is not on sale.");
+    const items = this.mergeItems(b.items);
+    const types = await this.events.listTypes([event.id]);
+    const price = new Map(types.map((t) => [t.id, t.priceMinor]));
+    let subtotalMinor = 0;
+    for (const i of items) {
+      const p = price.get(i.ticketTypeId);
+      if (p === undefined) throw ValidationError("admit.ticket_type_unavailable", "One of the selected ticket types is not on sale.");
+      subtotalMinor += p * i.quantity;
+    }
+    const q = await this.promos.price(event.id, b.code, subtotalMinor, now, false);
+    return {
+      code: q.promo.code,
+      kind: q.promo.kind,
+      value: q.promo.value,
+      subtotalMinor,
+      discountMinor: q.discountMinor,
+      totalMinor: subtotalMinor - q.discountMinor,
+      currency: event.currency,
+    };
   }
 
   private mergeItems(items: CreateBookingBody["items"]): CreateBookingBody["items"] {
@@ -284,6 +327,9 @@ export class BookingsService {
         unitPriceMinor: l.unitPriceMinor,
         totalMinor: l.quantity * l.unitPriceMinor,
       })),
+      subtotalMinor: booking.subtotalMinor,
+      discountMinor: booking.discountMinor,
+      promoCode: booking.promoCode,
       totalMinor: booking.totalMinor,
       currency: booking.currency,
       holdExpiresAt: booking.holdExpiresAt,
@@ -480,6 +526,9 @@ export class BookingsService {
         version: booking.version,
         event: { id: event.id, title: event.title, startsAt: event.startsAt },
         customer: { name: booking.customerName, email: booking.email, phone: booking.phone },
+        subtotalMinor: booking.subtotalMinor,
+        discountMinor: booking.discountMinor,
+        promoCode: booking.promoCode,
         totalMinor: booking.totalMinor,
         currency: booking.currency,
         holdExpiresAt: booking.holdExpiresAt,

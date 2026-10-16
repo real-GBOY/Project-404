@@ -19,6 +19,7 @@ import { ApiError, assetUrl } from "@/services/http";
 import { Forbidden } from "./AdminApp";
 import { useAuth } from "./auth";
 import { readiness } from "./event-readiness";
+import { PromoCodes } from "./PromoCodes";
 
 interface Draft {
   title: string;
@@ -619,6 +620,14 @@ function Editor({ event, venues }: { event?: AdminEvent; venues: Venue[] }) {
               </Button>
             </div>
           </Section>
+
+          {event ? (
+            <PromoCodes
+              eventId={event.id}
+              currency={event.currency}
+              locked={!!locked || !can("update:event")}
+            />
+          ) : null}
 
           {event && can("publish:event") && !locked ? (
             <Section id="danger" title="Close this event">

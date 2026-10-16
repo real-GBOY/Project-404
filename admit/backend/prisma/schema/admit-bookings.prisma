@@ -13,6 +13,10 @@ model admit_bookings {
   email            String
   phone            String
   total_minor      Int
+  subtotal_minor   Int
+  discount_minor   Int       @default(0)
+  promo_code_id    String?
+  promo_code       String?
   currency         String
   hold_expires_at  DateTime  @db.Timestamptz(6)
   policy_ack       Boolean   @default(false)

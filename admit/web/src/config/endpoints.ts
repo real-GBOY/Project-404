@@ -14,6 +14,7 @@ export const ENDPOINTS = {
     events: (org: string) => `${pub(org)}/events`,
     event: (org: string, event: string) => `${pub(org)}/events/${e(event)}`,
     book: (org: string, event: string) => `${pub(org)}/events/${e(event)}/bookings`,
+    promo: (org: string, event: string) => `${pub(org)}/events/${e(event)}/promo`,
     booking: (org: string, ref: string, k: string) => withK(`${pub(org)}/bookings/${e(ref)}`, k),
     cancel: (org: string, ref: string, k: string) =>
       withK(`${pub(org)}/bookings/${e(ref)}/cancel`, k),
@@ -29,6 +30,8 @@ export const ENDPOINTS = {
     list: "/admit/events",
     byId: (id: string) => `/admit/events/${id}`,
     cover: (id: string) => `/admit/events/${id}/cover`,
+    promos: (id: string) => `/admit/events/${id}/promo-codes`,
+    promo: (promoId: string) => `/admit/promo-codes/${promoId}`,
     publish: (id: string) => `/admit/events/${id}/publish`,
     unpublish: (id: string) => `/admit/events/${id}/unpublish`,
     cancel: (id: string) => `/admit/events/${id}/cancel`,

@@ -13,6 +13,7 @@ import { TicketsRepository } from "@admit/admit/tickets/infrastructure/tickets-r
 import { SettingsService } from "@admit/admit/settings/application/settings-service.js";
 import { PaymentsService } from "@admit/admit/payments/application/payments-service.js";
 import { EmailComposer } from "@admit/admit/emails/application/email-composer.js";
+import type { PreviewPromoBody } from "@admit/admit/promos/validation/promos.schema.js";
 import type { CreateBookingBody } from "@admit/admit/bookings/validation/bookings.schema.js";
 import type { ProofPresignBody, SubmitProofBody } from "@admit/admit/payments/validation/payments.schema.js";
 
@@ -152,6 +153,10 @@ export class PublicService {
   }
 
   // ---- bookings -------------------------------------------------------------------------------
+  previewPromo(slug: string, eventSlug: string, body: PreviewPromoBody) {
+    return this.asOrganizer(slug, () => readInTenant(() => this.bookings.previewPromo(eventSlug, body)));
+  }
+
   async createBooking(slug: string, eventSlug: string, body: CreateBookingBody, idempotencyKey: string | null) {
     return this.asOrganizer(slug, async (org) => {
       const { booking, created } = await this.bookings.create(eventSlug, body, idempotencyKey);
@@ -161,6 +166,7 @@ export class PublicService {
         ref: booking.ref,
         holdExpiresAt: booking.holdExpiresAt,
         totalMinor: booking.totalMinor,
+        discountMinor: booking.discountMinor,
         currency: booking.currency,
         links: { status: links.status, upload: links.upload },
       };

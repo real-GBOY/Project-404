@@ -16,6 +16,9 @@ export interface BookingRecord {
   email: string;
   phone: string;
   totalMinor: number;
+  subtotalMinor: number;
+  discountMinor: number;
+  promoCode: string | null;
   currency: string;
   holdExpiresAt: Date;
   policyAck: boolean;
@@ -51,6 +54,10 @@ export interface NewBooking {
   email: string;
   phone: string;
   totalMinor: number;
+  subtotalMinor: number;
+  discountMinor: number;
+  promoCodeId: string | null;
+  promoCode: string | null;
   currency: string;
   holdExpiresAt: Date;
   policyAck: boolean;
@@ -75,6 +82,9 @@ const toBooking = (r: {
   email: string;
   phone: string;
   total_minor: number;
+  subtotal_minor: number;
+  discount_minor: number;
+  promo_code: string | null;
   currency: string;
   hold_expires_at: Date;
   policy_ack: boolean;
@@ -93,6 +103,9 @@ const toBooking = (r: {
   email: r.email,
   phone: r.phone,
   totalMinor: r.total_minor,
+  subtotalMinor: r.subtotal_minor,
+  discountMinor: r.discount_minor,
+  promoCode: r.promo_code,
   currency: r.currency,
   holdExpiresAt: r.hold_expires_at,
   policyAck: r.policy_ack,
@@ -113,6 +126,9 @@ const cols = [
   "email",
   "phone",
   "total_minor",
+  "subtotal_minor",
+  "discount_minor",
+  "promo_code",
   "currency",
   "hold_expires_at",
   "policy_ack",
@@ -139,6 +155,10 @@ export class BookingsRepository {
         email: b.email,
         phone: b.phone,
         total_minor: b.totalMinor,
+        subtotal_minor: b.subtotalMinor,
+        discount_minor: b.discountMinor,
+        promo_code_id: b.promoCodeId,
+        promo_code: b.promoCode,
         currency: b.currency,
         hold_expires_at: b.holdExpiresAt,
         policy_ack: b.policyAck,

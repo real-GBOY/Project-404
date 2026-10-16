@@ -11,6 +11,7 @@ import { Inject } from "@nestjs/common";
 import { readAdmitConfig } from "@admit/config.js";
 import { createBookingSchema, resendLinkSchema, type CreateBookingBody, type ResendLinkBody } from "@admit/admit/bookings/validation/bookings.schema.js";
 import { proofPresignSchema, submitProofSchema, type ProofPresignBody, type SubmitProofBody } from "@admit/admit/payments/validation/payments.schema.js";
+import { previewPromoSchema, type PreviewPromoBody } from "@admit/admit/promos/validation/promos.schema.js";
 import { clientIp } from "../domain/client-ip.js";
 import { RateLimiter, type RatePolicy } from "../infrastructure/rate-limiter.js";
 import { PublicService } from "../application/public-service.js";
@@ -22,6 +23,8 @@ export const PUBLIC_RATE_POLICIES = {
   access: { name: "public:access", limit: 60, windowSeconds: 60 },
   book: { name: "public:book", limit: 8, windowSeconds: 600 },
   upload: { name: "public:upload", limit: 12, windowSeconds: 600 },
+  /** Trying codes: tight enough that guessing a code is impractical. */
+  promo: { name: "public:promo", limit: 20, windowSeconds: 600 },
   resend: { name: "public:resend", limit: 3, windowSeconds: 600 },
 } satisfies Record<string, RatePolicy>;
 
@@ -83,6 +86,21 @@ export class PublicController {
     reply.header("x-content-type-options", "nosniff");
     reply.header("cross-origin-resource-policy", "cross-origin");
     return new StreamableFile(f.content);
+  }
+
+  /** Price a promo code against a basket before booking. Holds nothing. */
+  @Post("events/:event/promo")
+  @HttpCode(200)
+  async promo(
+    @Param("org") org: string,
+    @Param("event") event: string,
+    @Body(ZodBody(previewPromoSchema)) body: PreviewPromoBody,
+    @Req() req: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
+    await this.limit(PUBLIC_RATE_POLICIES.promo, this.slug(org), req, reply);
+    if (!slugParam.safeParse(event).success) throw NotFound("admit.event_not_found", "Event not found.");
+    return this.service.previewPromo(org, event, body);
   }
 
   @Post("events/:event/bookings")

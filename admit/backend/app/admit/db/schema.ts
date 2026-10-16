@@ -42,6 +42,10 @@ export type admit_bookings = {
   email: string;
   phone: string;
   total_minor: number;
+  subtotal_minor: number;
+  discount_minor: Generated<number>;
+  promo_code_id: string | null;
+  promo_code: string | null;
   currency: string;
   hold_expires_at: Timestamp;
   policy_ack: Generated<boolean>;
@@ -120,6 +124,23 @@ export type admit_events = {
   program: Generated<Json<Array<{ time: string; title: string; detail?: string }>>>;
   published_at: Timestamp | null;
   created_by: string | null;
+  created_at: Generated<Timestamp>;
+  updated_at: Generated<Timestamp>;
+};
+export type admit_promo_codes = {
+  id: string;
+  organization_id: string;
+  event_id: string;
+  code: string;
+  /**
+   * @kyselyType('percent' | 'fixed')
+   */
+  kind: "percent" | "fixed";
+  value: number;
+  max_uses: number | null;
+  valid_from: Timestamp | null;
+  valid_until: Timestamp | null;
+  enabled: Generated<boolean>;
   created_at: Generated<Timestamp>;
   updated_at: Generated<Timestamp>;
 };
@@ -259,6 +280,7 @@ export type AdmitTables = {
   admit_events: admit_events;
   admit_payment_methods: admit_payment_methods;
   admit_payment_submissions: admit_payment_submissions;
+  admit_promo_codes: admit_promo_codes;
   admit_rate_limits: admit_rate_limits;
   admit_scan_attempts: admit_scan_attempts;
   admit_settings: admit_settings;
